@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Solarized palette → shadcn-style tokens. Light default on :root, dark on .dark.
+ * base03 #002b36 / base02 #073642 / base01 #586e75 / base00 #657b83
+ * base0 #839496 / base1 #93a1a1 / base2 #eee8d5 / base3 #fdf6e3
+ * accents: yellow #b58900 orange #cb4b16 red #dc322f magenta #d33682
+ *          violet #6c71c4 blue #268bd2 cyan #2aa198 green #859900 */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+}
+
+:root {
+  --background: #fdf6e3;
+  --foreground: #586e75;
+  --card: #eee8d5;
+  --card-foreground: #586e75;
+  --primary: #268bd2;
+  --primary-foreground: #fdf6e3;
+  --secondary: #eee8d5;
+  --secondary-foreground: #657b83;
+  --muted: #eee8d5;
+  --muted-foreground: #839496;
+  --accent: #eee8d5;
+  --accent-foreground: #586e75;
+  --destructive: #dc322f;
+  --border: #93a1a1;
+  --input: #93a1a1;
+  --ring: #268bd2;
+  --sidebar: #eee8d5;
+  --sidebar-foreground: #657b83;
+  --sidebar-primary: #268bd2;
+  --sidebar-primary-foreground: #fdf6e3;
+  --sidebar-accent: #eee8d5;
+  --sidebar-accent-foreground: #586e75;
+  --sidebar-border: #93a1a1;
+  --sidebar-ring: #268bd2;
+}
+
+.dark {
+  --background: #002b36;
+  --foreground: #839496;
+  --card: #073642;
+  --card-foreground: #93a1a1;
+  --primary: #268bd2;
+  --primary-foreground: #fdf6e3;
+  --secondary: #073642;
+  --secondary-foreground: #93a1a1;
+  --muted: #073642;
+  --muted-foreground: #839496;
+  --accent: #073642;
+  --accent-foreground: #93a1a1;
+  --destructive: #dc322f;
+  --border: #586e75;
+  --input: #586e75;
+  --ring: #2aa198;
+  --sidebar: #073642;
+  --sidebar-foreground: #93a1a1;
+  --sidebar-primary: #268bd2;
+  --sidebar-primary-foreground: #fdf6e3;
+  --sidebar-accent: #073642;
+  --sidebar-accent-foreground: #93a1a1;
+  --sidebar-border: #586e75;
+  --sidebar-ring: #2aa198;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--background);
+  color: var(--foreground);
+}

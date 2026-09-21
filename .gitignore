@@ -1,0 +1,21 @@
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+.env
+.nitro
+.tanstack
+.wrangler
+.output
+.vinxi
+__unconfig*
+todos.json
+# Bun
+bun.lockb
+*.tsbuildinfo
+# Payload generated (regenerate via bunx payload generate:types / generate:importmap)
+payload-types.ts
+src/payload-import-map.ts
+# Docker / local data
+pgdata
