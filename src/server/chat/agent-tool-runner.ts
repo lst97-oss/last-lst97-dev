@@ -190,7 +190,7 @@ export async function runAgentTool(call: AgentToolCall, runner: AgentToolRunner)
     if (runner.knowledgeEnabled !== true) return invalid(call, 'knowledge lookup is disabled', runner)
     if (!runner.knowledge) return unavailable(call, 'Knowledge lookup is temporarily unavailable.', 'SEARCHING MY NOTES…', 'knowledge', parsed.data)
     const result = await withTimeout(
-      runner.knowledge.execute({ message: parsed.data.query, verifiedHistory: runner.verifiedHistory ?? [] }),
+      runner.knowledge.execute({ message: parsed.data.query, verifiedHistory: runner.verifiedHistory ?? [], topicAnchors: runner.topicAnchors ?? [] }),
       timeoutMs,
     )
     if (result === TOOL_TIMEOUT) {

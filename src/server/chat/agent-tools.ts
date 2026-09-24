@@ -45,6 +45,7 @@ export interface AgentPlanner {
     message: string
     currentDateTimeUtc: string
     history: ChatMessage[]
+    topicAnchors?: ChatTopicAnchor[]
     evidence: string
     toolOutputs: string
     stepsUsed: number

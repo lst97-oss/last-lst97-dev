@@ -222,6 +222,9 @@ describe('TypeSafe Jev classifier adapter', () => {
       expect(questions).toContain('Do not answer that no current project exists')
       expect(questions).toContain('WakaTime project activity (last 30 days)')
       expect(questions).toContain('chat assistant only when wording clearly asks')
+      expect(questions).toContain('The latest user message alone defines the requested facts')
+      expect(questions).toContain('topic anchors are reference pointers, never factual evidence')
+      expect(questions).toContain('Do not replay earlier requests')
       expect(state).toContain('What project are you currently working on?')
       expect(state).toContain('"current_datetime_utc":"2026-09-24T03:04:05.000Z"')
     } finally {
