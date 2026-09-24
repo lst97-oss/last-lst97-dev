@@ -141,6 +141,9 @@ describe('knowledge retrieval', () => {
     }
     expect(resolveKnowledgeQuery('What language is that project written in?', [], [anchor]))
       .toBe('What language is QueueKit written in?')
+    expect(resolveKnowledgeQuery('What language is that project written in?', [
+      { role: 'user', content: 'What does the project called OldTool do?' },
+    ], [anchor])).toBe('What language is QueueKit written in?')
     expect(resolveKnowledgeQuery('What does the React project do and how is it licensed?', [], [anchor]))
       .toBe('What does the React project do and how is it licensed?')
   })

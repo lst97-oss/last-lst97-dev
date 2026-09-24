@@ -55,7 +55,7 @@ function buildStandaloneFollowUp(message: string, anchor: ChatTopicAnchor, histo
     const unresolvedReference = /\b(?:that|this|the same)\s+(?:project|repository|repo|codebase)\b/i
     if (!unresolvedReference.test(current)) return undefined
     const retainedEntity = anchor.entityLabel?.trim()
-    const resolvedEntity = entity ?? retainedEntity
+    const resolvedEntity = retainedEntity ?? entity
     if (resolvedEntity) {
       return current.replace(unresolvedReference, resolvedEntity)
     }
