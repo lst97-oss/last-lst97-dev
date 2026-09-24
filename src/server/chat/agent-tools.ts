@@ -3,7 +3,7 @@ import type { WakaTimeStatsClient } from '../wakatime/stats'
 import type { KnowledgeEvidence, PublicCitation, RetrieveKnowledge } from '../knowledge/retrieve'
 import type { ContentReader } from '../content/service'
 import type { Logger } from '../observability/logger'
-import type { ChatMessage, ChatToolName } from './types'
+import type { ChatMessage, ChatToolName, ChatTopicAnchor } from './types'
 
 // Jev authoritatively selects tools at each step. The planner only prepares
 // arguments for Jev-approved tools; every call still passes the fixed,
@@ -24,6 +24,7 @@ export interface AgentToolRoutingInput {
   message: string
   currentDateTimeUtc?: string
   history: ChatMessage[]
+  topicAnchors?: ChatTopicAnchor[]
   evidence: string
   toolOutputs: string
   availableTools: AgentToolName[]
@@ -61,6 +62,7 @@ export interface AgentToolRunner {
   codingHistoryEnabled: boolean
   siteContent?: Pick<ContentReader, 'listProjects' | 'getProject' | 'listPosts' | 'getPost'>
   verifiedHistory?: ChatMessage[]
+  topicAnchors?: ChatTopicAnchor[]
   today: string
   toolTimeoutMs: number
   logger: Pick<Logger, 'warn'>
@@ -69,6 +71,8 @@ export interface AgentToolRunner {
 export interface AgentToolResult {
   call: AgentToolCall
   output: string
+  status: 'completed' | 'unavailable' | 'rejected'
+  validatedArguments?: Record<string, string | number | boolean | undefined>
   sseLabel: string
   sseName: 'coding_stats' | 'coding_history' | 'knowledge' | 'site_content'
   retrieval?: {
