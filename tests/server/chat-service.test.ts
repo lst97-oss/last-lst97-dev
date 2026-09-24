@@ -519,6 +519,7 @@ describe('createChatService.sendStream', () => {
     const service = createChatService(streamingResponder(['Hel', 'lo']), baseDependencies)
 
     expect(await collect(service, 'Hello')).toEqual([
+      { type: 'status', status: 'preparing_arguments' },
       { type: 'status', status: 'composing_reply' },
       { type: 'token', delta: 'Hel' },
       { type: 'token', delta: 'lo' },
@@ -539,9 +540,10 @@ describe('createChatService.sendStream', () => {
     const events = await collect(service, 'How much did you code this week?')
 
     expect(fetchedRange).toBe('last_7_days')
-    expect(events[0]).toMatchObject({ type: 'tool_start', name: 'coding_stats' })
-    expect(events[1]).toMatchObject({ type: 'tool_result', name: 'coding_stats' })
-    expect(events[2]).toEqual({ type: 'status', status: 'composing_reply' })
+    expect(events.some((event) => (event as { status?: string }).status === 'preparing_arguments')).toBe(true)
+    expect(events.find((event) => (event as { type?: string }).type === 'tool_start')).toMatchObject({ type: 'tool_start', name: 'coding_stats' })
+    expect(events.find((event) => (event as { type?: string }).type === 'tool_result')).toMatchObject({ type: 'tool_result', name: 'coding_stats' })
+    expect(events.find((event) => (event as { status?: string }).status === 'composing_reply')).toEqual({ type: 'status', status: 'composing_reply' })
     expect(events[events.length - 1]).toMatchObject({ type: 'done' })
   })
 
@@ -562,9 +564,10 @@ describe('createChatService.sendStream', () => {
     })
     const events = await collect(service, 'What work have I done?')
 
-    expect(events[0]).toMatchObject({ type: 'tool_start' })
-    expect(events[1]).toMatchObject({ type: 'tool_result' })
-    expect(events[2]).toEqual({ type: 'status', status: 'composing_reply' })
+    expect(events.some((event) => (event as { status?: string }).status === 'preparing_arguments')).toBe(true)
+    expect(events.find((event) => (event as { type?: string }).type === 'tool_start')).toMatchObject({ type: 'tool_start' })
+    expect(events.find((event) => (event as { type?: string }).type === 'tool_result')).toMatchObject({ type: 'tool_result' })
+    expect(events.find((event) => (event as { status?: string }).status === 'composing_reply')).toEqual({ type: 'status', status: 'composing_reply' })
     expect(events[events.length - 1]).toMatchObject({ type: 'done' })
   })
 
@@ -588,6 +591,7 @@ describe('createChatService.sendStream', () => {
     const events = await collect(service, 'What work have I done?')
 
     expect(events).toEqual([
+      { type: 'status', status: 'preparing_arguments' },
       { type: 'status', status: 'composing_reply' },
       { type: 'error', message: 'The AI reply provider is rate-limited right now. Please try again in a moment.' },
     ])
@@ -607,6 +611,7 @@ describe('createChatService.sendStream', () => {
     const service = createChatService(responder, baseDependencies)
 
     expect(await collect(service, 'What work have I done?')).toEqual([
+      { type: 'status', status: 'preparing_arguments' },
       { type: 'status', status: 'composing_reply' },
       { type: 'error', message: 'The configured AI model has no available OpenRouter provider right now. Please select another model or try again later.' },
     ])
@@ -664,9 +669,10 @@ describe('createChatService.sendStream', () => {
     const events = await collect(service, 'How much did I code in 2025?')
 
     expect(apiCalls).toBe(0)
-    expect(events[0]).toMatchObject({ type: 'tool_start', name: 'coding_history' })
-    expect(events[1]).toMatchObject({ type: 'tool_result', name: 'coding_history' })
-    expect(events[2]).toEqual({ type: 'status', status: 'composing_reply' })
+    expect(events.some((event) => (event as { status?: string }).status === 'preparing_arguments')).toBe(true)
+    expect(events.find((event) => (event as { type?: string }).type === 'tool_start')).toMatchObject({ type: 'tool_start', name: 'coding_history' })
+    expect(events.find((event) => (event as { type?: string }).type === 'tool_result')).toMatchObject({ type: 'tool_result', name: 'coding_history' })
+    expect(events.find((event) => (event as { status?: string }).status === 'composing_reply')).toEqual({ type: 'status', status: 'composing_reply' })
     expect(events[events.length - 1]).toMatchObject({ type: 'done' })
   })
 
@@ -691,9 +697,10 @@ describe('createChatService.sendStream', () => {
 
     const events = await collect(service, 'How much did you code this week?')
 
-    expect(events[0]).toMatchObject({ type: 'tool_start', name: 'coding_stats' })
-    expect(events[1]).toMatchObject({ type: 'tool_result', name: 'coding_stats' })
-    expect(events[2]).toEqual({ type: 'status', status: 'composing_reply' })
+    expect(events.some((event) => (event as { status?: string }).status === 'preparing_arguments')).toBe(true)
+    expect(events.find((event) => (event as { type?: string }).type === 'tool_start')).toMatchObject({ type: 'tool_start', name: 'coding_stats' })
+    expect(events.find((event) => (event as { type?: string }).type === 'tool_result')).toMatchObject({ type: 'tool_result', name: 'coding_stats' })
+    expect(events.find((event) => (event as { status?: string }).status === 'composing_reply')).toEqual({ type: 'status', status: 'composing_reply' })
     expect(events[events.length - 1]).toMatchObject({ type: 'done' })
   })
 
@@ -719,8 +726,9 @@ describe('createChatService.sendStream', () => {
     const events = await collect(service, 'What is your total coding hours?')
 
     expect(historyCalls).toBe(0)
-    expect(events[0]).toMatchObject({ type: 'tool_start', name: 'coding_stats' })
-    expect(events[1]).toMatchObject({ type: 'tool_result', name: 'coding_stats' })
+    expect(events.some((event) => (event as { status?: string }).status === 'preparing_arguments')).toBe(true)
+    expect(events.find((event) => (event as { type?: string }).type === 'tool_start')).toMatchObject({ type: 'tool_start', name: 'coding_stats' })
+    expect(events.find((event) => (event as { type?: string }).type === 'tool_result')).toMatchObject({ type: 'tool_result', name: 'coding_stats' })
     const citations = events.find((event) => (event as { type: string }).type === 'citations') as { citations: { url: string }[] }
     expect(citations.citations.some((citation) => citation.url === 'https://wakatime.com/@lst97')).toBe(true)
   })
@@ -747,9 +755,11 @@ describe('createChatService.sendStream', () => {
     const events = await collect(service, 'How much time did I spend on best-maker-web in 2025?')
 
     expect(summaryCalls).toBe(0)
-    expect(events[0]).toMatchObject({ type: 'tool_start', name: 'coding_history', label: 'SEARCHING CODING HISTORY…' })
-    expect(events[1]).toMatchObject({ type: 'tool_result', name: 'coding_history' })
-    expect(JSON.stringify(events[1])).toContain('best-maker-web')
+    expect(events.some((event) => (event as { status?: string }).status === 'preparing_arguments')).toBe(true)
+    expect(events.find((event) => (event as { type?: string }).type === 'tool_start')).toMatchObject({ type: 'tool_start', name: 'coding_history', label: 'SEARCHING CODING HISTORY…' })
+    const toolResult = events.find((event) => (event as { type?: string }).type === 'tool_result')
+    expect(toolResult).toMatchObject({ type: 'tool_result', name: 'coding_history' })
+    expect(JSON.stringify(toolResult)).toContain('best-maker-web')
     expect(events[events.length - 1]).toMatchObject({ type: 'done' })
   })
 
