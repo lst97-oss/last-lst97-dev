@@ -3,6 +3,7 @@ import { describe, expect, it } from 'bun:test'
 import { createChatService } from '../../src/server/chat/service'
 import { createChatContextSigner } from '../../src/server/chat/context-signer'
 import type { ChatConversationContext, ChatResponder, ChatStreamingResponder, ChatTopicAnchor } from '../../src/server/chat/types'
+import { resolveKnowledgeQuery } from '../../src/server/knowledge/query-resolution'
 import type { ChatContextSigner } from '../../src/server/chat/context-signer'
 import type { ModerationService } from '../../src/server/moderation/service'
 import { createModerationService } from '../../src/server/moderation/service'
@@ -61,6 +62,155 @@ describe('createChatService', () => {
 
     expect(observedAnchors[1]).toEqual(firstContext?.topicAnchors ?? [])
     expect(responderHistoryLength).toBe(12)
+  })
+
+  it('reuses an experience topic anchor for education after eight chat turns', async () => {
+    const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
+    const educationRouting: Array<{ historyLength: number; anchorQuestions: string[] }> = []
+    const knowledgeQueries: string[] = []
+    const availableDecision = (availableTools: string[], use: string[]) => Object.fromEntries(
+      availableTools.map((tool) => [tool, { label: use.includes(tool) ? 'use' : 'skip', confidence: 0.99 }]),
+    )
+    const classifier: ModerationClassifier = {
+      classify: async () => ({ channel: 'chat', scope: { label: 'owner_context', confidence: 0.99 }, safety: { label: 'safe', confidence: 0.99 } }),
+      classifyChatWithTools: async (input) => {
+        const lower = input.message.toLowerCase()
+        const educationAlreadyAnswered = input.context.some(({ role, content }) => role === 'assistant' && content.includes('Certificate IV'))
+        const use = lower.includes('experience')
+          ? ['search_knowledge']
+          : lower.includes('education') && !educationAlreadyAnswered ? ['search_knowledge'] : []
+        if (lower.includes('education')) educationRouting.push({
+          historyLength: input.context.length,
+          anchorQuestions: (input.topicAnchors ?? []).map(({ question }) => question),
+        })
+        return {
+          finding: { channel: 'chat', scope: { label: 'owner_context', confidence: 0.99 }, safety: { label: 'safe', confidence: 0.99 } },
+          toolDecisions: availableDecision(input.availableTools, use),
+        }
+      },
+      routeTools: async (input) => availableDecision(input.availableTools, []),
+    }
+    const service = createChatService({
+      respond: async ({ message }) => ({
+        text: message.toLowerCase().includes('education')
+          ? 'Nelson completed a Certificate IV at TAFE.'
+          : message.toLowerCase().includes('experience')
+            ? 'Nelson has experience in customer service and automotive work.'
+            : 'Okay.',
+      }),
+    }, {
+      moderation: createModerationService(classifier, 0.75),
+      contextSigner: signer,
+      today: '2026-09-24',
+      knowledgeEnabled: true,
+      knowledge: { execute: async ({ message, verifiedHistory, topicAnchors }) => {
+        knowledgeQueries.push(resolveKnowledgeQuery(message, verifiedHistory, topicAnchors))
+        return { evidence: [], citations: [], degraded: false }
+      } },
+      planner: {
+        planNextStep: async ({ message, stepsUsed }) => {
+          if (stepsUsed > 0 || !/experience|education/i.test(message)) return null
+          return { kind: 'tool_calls', calls: [{ id: 'profile', name: 'search_knowledge', arguments: { query: message } }] }
+        },
+      },
+    })
+
+    let contextToken: string | undefined
+    const send = async (message: string) => {
+      const result = await service.send({ message, contextToken })
+      if (result.status !== 'replied') throw new Error(`Expected a reply for ${message}`)
+      contextToken = result.contextToken
+      return result
+    }
+
+    await send('What is your experience?')
+    for (let turn = 0; turn < 6; turn += 1) await send(`Thanks for the detail ${turn + 1}.`)
+    const education = await send('How about the education?')
+
+    expect(education.status).toBe('replied')
+    expect(educationRouting[0]?.historyLength).toBe(12)
+    expect(educationRouting[0]?.anchorQuestions).toContain('What is your experience?')
+    expect(knowledgeQueries).toEqual(['What is your experience?', "Tell me about Nelson's education."])
+
+    await send('How about the education?')
+    expect(knowledgeQueries).toHaveLength(2)
+  })
+
+  it('refreshes WakaTime data for a current-project follow-up to an old anchor', async () => {
+    const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
+    const staleAnchor: ChatTopicAnchor = {
+      question: 'What project is Nelson currently working on?',
+      observedAtUtc: '2026-07-01T00:00:00.000Z',
+      tools: [
+        { name: 'coding_history', arguments: { op: 'by_project', from: '2026-06-02', to: '2026-07-01' }, status: 'completed' },
+        { name: 'search_knowledge', arguments: { query: 'What project is Nelson currently working on?' }, status: 'completed' },
+      ],
+    }
+    const staleToken = await signer.sign({
+      messages: [
+        { role: 'user', content: 'What project is Nelson currently working on?' },
+        { role: 'assistant', content: 'The recent project was old-project.' },
+      ],
+      topicAnchors: [staleAnchor],
+    })
+    let observedAnchorTime = ''
+    let recentRange: { from: string; to: string } | undefined
+    let currentProjectKnowledgeQueries = 0
+    const classifier: ModerationClassifier = {
+      classify: async () => ({ channel: 'chat', scope: { label: 'owner_projects', confidence: 0.99 }, safety: { label: 'safe', confidence: 0.99 } }),
+      classifyChatWithTools: async (input) => {
+        observedAnchorTime = input.topicAnchors?.[0]?.observedAtUtc ?? ''
+        const currentProject = /project.*(?:working|now|current)|working on/i.test(input.message)
+        return {
+          finding: { channel: 'chat', scope: { label: 'owner_projects', confidence: 0.99 }, safety: { label: 'safe', confidence: 0.99 } },
+          toolDecisions: Object.fromEntries(input.availableTools.map((tool) => [tool, {
+            label: currentProject && ['coding_history', 'search_knowledge'].includes(tool) ? 'use' : 'skip', confidence: 0.99,
+          }])),
+        }
+      },
+      routeTools: async (input) => Object.fromEntries(input.availableTools.map((tool) => [tool, { label: 'skip', confidence: 0.99 }])),
+    }
+    const service = createChatService({ respond: async () => ({ text: 'I checked the latest project activity.' }) }, {
+      moderation: createModerationService(classifier, 0.75),
+      contextSigner: signer,
+      today: '2026-09-24',
+      knowledgeEnabled: true,
+      knowledge: { execute: async () => {
+        currentProjectKnowledgeQueries += 1
+        return { evidence: [], citations: [], degraded: false }
+      } },
+      codingHistoryEnabled: true,
+      codingHistory: {
+        summary: async () => ({ totalSeconds: 3_600, activeDays: 2, heartbeatCount: 10 }),
+        byProject: async (range) => {
+          recentRange = range
+          return [{ name: 'fresh-project', seconds: 3_600, heartbeats: 10 }]
+        },
+        byLanguage: async () => [],
+        projectTime: async () => ({ totalSeconds: 0, activeDays: 0, heartbeatCount: 0 }),
+        dailySeries: async () => [],
+        streaks: async () => ({ longestDays: 0, currentDays: 0 }),
+      },
+      planner: {
+        planNextStep: async ({ message, stepsUsed }) => {
+          if (stepsUsed > 0 || !/project.*(?:working|now|current)|working on/i.test(message)) return null
+          return {
+            kind: 'tool_calls',
+            calls: [
+              { id: 'repository', name: 'search_knowledge', arguments: { query: message } },
+              { id: 'activity', name: 'coding_history', arguments: { op: 'by_project', from: '2026-08-26', to: '2026-09-24' } },
+            ],
+          }
+        },
+      },
+    })
+
+    const result = await service.send({ message: 'What project are you working on now?', contextToken: staleToken })
+
+    expect(result.status).toBe('replied')
+    expect(observedAnchorTime).toBe('2026-07-01T00:00:00.000Z')
+    expect(recentRange).toMatchObject({ from: '2026-08-26', to: '2026-09-24' })
+    expect(currentProjectKnowledgeQueries).toBe(1)
   })
 
   it('normalizes a provider reply into a public chat response', async () => {
