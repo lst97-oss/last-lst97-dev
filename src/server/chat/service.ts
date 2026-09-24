@@ -125,6 +125,7 @@ export function createChatService(responder: ChatResponder, dependencies: {
     toolOutputs: string
     toolSummaries: string[]
     toolObservations: ChatToolObservation[]
+    referenceEntityLabel?: string
     usedTools: Set<string>
     citations: PublicCitation[]
     knowledgeEvidence?: KnowledgeEvidence[]
@@ -134,7 +135,7 @@ export function createChatService(responder: ChatResponder, dependencies: {
 
   function buildNextConversationContext(turn: Extract<PreparedTurn, { ok: true }>, agent: AgentTurnState, assistantText: string): ChatConversationContext {
     const currentAnchor = agent.toolObservations.length > 0
-      ? [{ question: turn.message, observedAtUtc: turn.currentDateTimeUtc, tools: agent.toolObservations.slice(0, 4) }]
+      ? [{ question: turn.message, ...(agent.referenceEntityLabel ? { entityLabel: agent.referenceEntityLabel } : {}), observedAtUtc: turn.currentDateTimeUtc, tools: agent.toolObservations.slice(0, 4) }]
       : []
     return {
       messages: [
@@ -266,6 +267,12 @@ export function createChatService(responder: ChatResponder, dependencies: {
 
   function applyToolResult(state: AgentTurnState, result: AgentToolResult): void {
     const { call } = result
+    if (result.status === 'completed' && call.name === 'coding_history' && result.referenceEntityLabel) {
+      const label = result.referenceEntityLabel.trim()
+      if (label.length > 0 && label.length <= 80 && !/[\u0000-\u001f\u007f/:?#]/.test(label) && !/^https?:/i.test(label)) {
+        state.referenceEntityLabel = label
+      }
+    }
     if (result.validatedArguments) {
       const arguments_ = Object.fromEntries(Object.entries(result.validatedArguments).filter((entry): entry is [string, string | number | boolean] => {
         const value = entry[1]
@@ -491,6 +498,9 @@ export function createChatService(responder: ChatResponder, dependencies: {
       }
       if (!executed) break
       stepsUsed += 1
+      // Jev gets one routing decision per submitted turn. Once its approved
+      // calls have run, do not spend a second routing pass expanding the turn.
+      if (jevRoutingRequired) break
       if (selection.argumentsUnavailable || state.toolRoutingUnavailable) break
     }
     return state
@@ -557,6 +567,7 @@ export function createChatService(responder: ChatResponder, dependencies: {
       }
       if (!executed) break
       stepsUsed += 1
+      if (jevRoutingRequired) break
       if (selection.argumentsUnavailable || state.toolRoutingUnavailable) break
     }
     return state

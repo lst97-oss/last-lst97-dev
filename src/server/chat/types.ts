@@ -17,6 +17,8 @@ export interface ChatToolObservation {
 
 export interface ChatTopicAnchor {
   question: string
+  /** Safe display name returned by an approved source, used only to resolve a later reference. */
+  entityLabel?: string
   observedAtUtc: string
   tools: ChatToolObservation[]
 }

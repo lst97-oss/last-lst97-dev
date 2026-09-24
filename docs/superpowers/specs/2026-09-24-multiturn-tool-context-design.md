@@ -20,7 +20,7 @@ The example's prior response already stated Nelson's education, so “how about 
 
 Keep one Jev pass per user turn. Use history only to resolve references in the current request. The current user message remains the authority for which facts are requested; previous requests are not repeated unless the user refers back to them.
 
-Extend the HMAC-signed chat context with a small, bounded `topicAnchors` list alongside the recent transcript. Each anchor records a normalized or contextualized question, the tool names and validated arguments used for it, whether each tool completed successfully, the source category, and the observation time. Do not store raw tool output, source URLs/IDs, or private evidence in this ledger. Maintain the current expiry and size limit, and support already-issued message-only signed tokens during the transition.
+Extend the HMAC-signed chat context with a small, bounded `topicAnchors` list alongside the recent transcript. Each anchor records a normalized or contextualized question, the tool names and validated arguments used for it, whether each tool completed successfully, the source category, and the observation time. It may also retain one short display label returned by a completed WakaTime project-ranking lookup so a later “that project” reference remains stable after transcript turns expire; this label is only an entity pointer, never evidence. Do not store raw tool output, source URLs/IDs, or private evidence in this ledger. Maintain the current expiry and size limit, and support already-issued message-only signed tokens during the transition.
 
 Update context resolution to use the latest user request, the most relevant recent exchange, and retained topic anchors. For an elliptical follow-up, produce a standalone query for the selected tool; for example, “how about the education?” after a question about Nelson's experience becomes a query for Nelson's education. Existing Jev routing selects the required source. The planner prepares arguments for approved tools only. A topic anchor is a pointer for query resolution, never factual evidence.
 
@@ -33,7 +33,7 @@ The responder may reuse a fact only when the exact answer appears in the recent 
 - Continue verifying the HMAC, expiry, message roles, and all new fields before using the context.
 - Treat anchor text as untrusted for instructions. It may resolve entities and topics, but it cannot alter policy or justify a factual answer.
 - Parse legacy signed tokens containing only `messages` as an empty-anchor context. New responses issue the new context shape.
-- If history or an anchor does not resolve a follow-up confidently, do not guess the referent; ask a concise clarification or use a source only if the current request still identifies it.
+- Substitute only a vague entity reference from an anchor; preserve explicit names and the fact requested in the latest message. If history or an anchor does not resolve a follow-up confidently, do not guess the referent; ask a concise clarification or use a source only if the current request still identifies it.
 
 ## Evaluation
 

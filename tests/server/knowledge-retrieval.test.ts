@@ -123,7 +123,7 @@ describe('knowledge retrieval', () => {
     const project = resolveKnowledgeQuery('What does that project do?', recentUnrelatedHistory, [currentProjectAnchor])
 
     expect(education).toContain("Nelson's education")
-    expect(project).toContain('current project')
+    expect(project).toBe('What does that project do?')
     expect(resolveKnowledgeQuery('Thanks!', history, [experienceAnchor])).toBe('Thanks!')
     expect(resolveKnowledgeQuery('What does TicketQueue do?', history, [experienceAnchor])).toBe('What does TicketQueue do?')
     const unavailableExperience: ChatTopicAnchor = {
@@ -132,6 +132,17 @@ describe('knowledge retrieval', () => {
     }
     expect(resolveKnowledgeQuery('How about the education?', [], [unavailableExperience])).toContain("Nelson's education")
     expect(project.length).toBeLessThanOrEqual(1_000)
+  })
+
+  it('substitutes a retained project label without changing the requested fact', () => {
+    const anchor: ChatTopicAnchor = {
+      ...currentProjectAnchor,
+      entityLabel: 'QueueKit',
+    }
+    expect(resolveKnowledgeQuery('What language is that project written in?', [], [anchor]))
+      .toBe('What language is QueueKit written in?')
+    expect(resolveKnowledgeQuery('What does the React project do and how is it licensed?', [], [anchor]))
+      .toBe('What does the React project do and how is it licensed?')
   })
 
   it('embeds the standalone query resolved from a topic anchor', async () => {

@@ -9,6 +9,7 @@ const MAX_CONTEXT_MESSAGES = 12
 const MAX_MESSAGE_LENGTH = 2_000
 const MAX_TOPIC_ANCHORS = 8
 const MAX_ANCHOR_QUESTION_LENGTH = 500
+const MAX_ENTITY_LABEL_LENGTH = 80
 const MAX_TOOL_OBSERVATIONS = 4
 const MAX_TOOL_ARGUMENTS_LENGTH = 2_500
 const MAX_TOOL_ARGUMENTS = 12
@@ -72,6 +73,13 @@ function isAnchor(value: unknown): value is ChatTopicAnchor {
     || typeof value.question !== 'string'
     || value.question.trim().length === 0
     || value.question.length > MAX_ANCHOR_QUESTION_LENGTH
+    || (value.entityLabel !== undefined && (
+      typeof value.entityLabel !== 'string'
+      || !value.entityLabel.trim()
+      || value.entityLabel.length > MAX_ENTITY_LABEL_LENGTH
+      || !Array.isArray(value.tools)
+      || !value.tools.some((tool) => isObservation(tool) && tool.name === 'coding_history' && tool.status === 'completed')
+    ))
     || typeof value.observedAtUtc !== 'string'
     || !Array.isArray(value.tools)
     || value.tools.length > MAX_TOOL_OBSERVATIONS) return false
@@ -83,24 +91,32 @@ function isAnchor(value: unknown): value is ChatTopicAnchor {
 
 function boundedMessages(messages: ChatMessage[]): ChatMessage[] {
   return messages
-    .filter((item) => isMessage(item) && item.content.trim())
+    .filter((item) => isRecord(item)
+      && (item.role === 'user' || item.role === 'assistant')
+      && typeof item.content === 'string')
     .slice(-MAX_CONTEXT_MESSAGES)
     .map((item) => ({ role: item.role, content: item.content.trim().slice(0, MAX_MESSAGE_LENGTH) }))
+    .filter((item) => item.content.length > 0)
 }
 
 function boundedAnchors(anchors: ChatTopicAnchor[]): ChatTopicAnchor[] {
   return anchors
-    .filter(isAnchor)
+    .filter((anchor) => isRecord(anchor)
+      && typeof anchor.question === 'string'
+      && typeof anchor.observedAtUtc === 'string'
+      && Array.isArray(anchor.tools))
     .slice(-MAX_TOPIC_ANCHORS)
     .map((anchor) => ({
-      question: anchor.question.trim(),
+      question: anchor.question.trim().slice(0, MAX_ANCHOR_QUESTION_LENGTH),
+      ...(typeof anchor.entityLabel === 'string' ? { entityLabel: anchor.entityLabel.trim().slice(0, MAX_ENTITY_LABEL_LENGTH) } : {}),
       observedAtUtc: anchor.observedAtUtc,
-      tools: anchor.tools.map((tool) => ({
+      tools: anchor.tools.filter(isObservation).slice(0, MAX_TOOL_OBSERVATIONS).map((tool) => ({
         name: tool.name,
         arguments: { ...tool.arguments },
         status: tool.status,
       })),
     }))
+    .filter(isAnchor)
 }
 
 export function createChatContextSigner(secret: string, now: () => number = Date.now) {

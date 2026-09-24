@@ -240,11 +240,17 @@ export async function runAgentTool(call: AgentToolCall, runner: AgentToolRunner)
     runner.codingHistory,
     { timeoutMs, today: runner.today, logger: runner.logger },
   )
+  // The warehouse tool emits a compact Top projects line; retain only its
+  // first source-returned display name for later references.
+  const referenceEntityLabel = parsed.data.op === 'by_project' && summary
+    ? summary.match(/\bTop projects: 1\. (.+?) — /)?.[1]
+    : undefined
   return {
     call,
     output: summary ?? 'Coding history is temporarily unavailable.',
     status: summary === null ? 'unavailable' : 'completed',
     validatedArguments: parsed.data,
+    ...(referenceEntityLabel ? { referenceEntityLabel } : {}),
     sseLabel: 'SEARCHING CODING HISTORY…',
     sseName: 'coding_history',
   }

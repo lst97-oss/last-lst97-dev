@@ -74,6 +74,7 @@ export interface AgentToolResult {
   output: string
   status: 'completed' | 'unavailable' | 'rejected'
   validatedArguments?: Record<string, string | number | boolean | undefined>
+  referenceEntityLabel?: string
   sseLabel: string
   sseName: 'coding_stats' | 'coding_history' | 'knowledge' | 'site_content'
   retrieval?: {

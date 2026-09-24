@@ -44,6 +44,7 @@ describe('chat context signer', () => {
     expect(result?.topicAnchors[0]?.question).toBe('question 4')
 
     const invalidToken = await signedPayload({
+      version: 2,
       expiresAt: 86_401_000,
       messages: turns,
       topicAnchors: [{ ...anchor, observedAtUtc: 'yesterday', tools: [{ ...anchor.tools[0], status: 'raw-output' }] }],
@@ -74,5 +75,18 @@ describe('chat context signer', () => {
     const token = await signer.sign(largeContext)
     expect(token.length).toBeLessThanOrEqual(60_000)
     expect(await signer.verify(token)).not.toBeNull()
+  })
+
+  it('truncates oversized server generated messages and anchor questions before signing', async () => {
+    const signer = createChatContextSigner(secret, () => 1_000)
+    const token = await signer.sign({
+      messages: [{ role: 'assistant', content: 'x'.repeat(2_001) }],
+      topicAnchors: [{ ...anchor, question: 'q'.repeat(501) }],
+    })
+
+    await expect(signer.verify(token)).resolves.toMatchObject({
+      messages: [{ role: 'assistant', content: 'x'.repeat(2_000) }],
+      topicAnchors: [{ question: 'q'.repeat(500) }],
+    })
   })
 })

@@ -216,6 +216,73 @@ describe('createChatService', () => {
     expect(currentProjectKnowledgeQueries).toBe(1)
   })
 
+  it('retains the source project label through long turns and resolves the requested follow-up fact', async () => {
+    const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
+    let contextToken: string | undefined
+    let routeToolsCalls = 0
+    let resolvedKnowledgeQuery = ''
+    const availableDecision = (availableTools: string[], use: string[]) => Object.fromEntries(
+      availableTools.map((tool) => [tool, { label: use.includes(tool) ? 'use' : 'skip', confidence: 0.99 }]),
+    )
+    const service = createChatService({ respond: async () => ({ text: 'I used the available project data.' }) }, {
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async ({ message, availableTools = [] }) => ({
+          allowed: true,
+          toolDecisions: availableDecision(availableTools, message.includes('currently doing')
+            ? ['coding_history', 'search_knowledge']
+            : message.includes('language') ? ['search_knowledge'] : []),
+        }),
+        routeTools: async ({ availableTools }) => {
+          routeToolsCalls += 1
+          return availableDecision(availableTools, [])
+        },
+      } as ModerationService,
+      contextSigner: signer,
+      today: '2026-09-24',
+      knowledgeEnabled: true,
+      knowledge: { execute: async ({ message }) => {
+        resolvedKnowledgeQuery = resolveKnowledgeQuery(message, [], (await signer.verify(contextToken))?.topicAnchors ?? [])
+        return { evidence: [], citations: [], degraded: false }
+      } },
+      codingHistoryEnabled: true,
+      codingHistory: {
+        summary: async () => ({ totalSeconds: 3_600, activeDays: 2, heartbeatCount: 10 }),
+        byProject: async () => [{ name: 'QueueKit', seconds: 3_600, heartbeats: 10 }],
+        byLanguage: async () => [],
+        projectTime: async () => ({ totalSeconds: 0, activeDays: 0, heartbeatCount: 0 }),
+        dailySeries: async () => [],
+        streaks: async () => ({ longestDays: 0, currentDays: 0 }),
+      },
+      planner: {
+        planNextStep: async ({ message, allowedTools }) => {
+          if (!allowedTools?.length) return null
+          const calls = allowedTools.map((name, index) => name === 'coding_history'
+            ? { id: `${index}`, name, arguments: { op: 'by_project', from: '2026-08-26', to: '2026-09-24' } }
+            : { id: `${index}`, name, arguments: { query: message } })
+          return { kind: 'tool_calls', calls }
+        },
+      },
+    })
+
+    const send = async (message: string) => {
+      const result = await service.send({ message, contextToken })
+      if (result.status !== 'replied') throw new Error(`Expected a reply for ${message}`)
+      contextToken = result.contextToken
+      return result
+    }
+
+    await send('What project are you currently doing?')
+    const firstContext = await signer.verify(contextToken)
+    expect(firstContext?.topicAnchors.at(-1)?.entityLabel).toBe('QueueKit')
+    for (let turn = 0; turn < 7; turn += 1) await send(`Thanks ${turn + 1}.`)
+    await send('What language is that project written in?')
+
+    expect(resolvedKnowledgeQuery).toBe('What language is QueueKit written in?')
+    for await (const _event of service.sendStream({ message: 'What project are you currently doing?', contextToken })) { /* collect streamed turn */ }
+    expect(routeToolsCalls).toBe(0)
+  })
+
   it('normalizes a provider reply into a public chat response', async () => {
     const responder: ChatResponder = {
       respond: async () => ({ text: 'Hello from the assistant.', model: 'test/model' }),

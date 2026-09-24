@@ -50,9 +50,14 @@ function buildStandaloneFollowUp(message: string, anchor: ChatTopicAnchor, histo
   if (PROJECT_REFERENCE.test(lower)) {
     const anchorQuestion = anchor.question.toLowerCase()
     if (!/\b(?:project|repository|repo|codebase|working on|coding activity)\b/.test(anchorQuestion)) return undefined
-    if (entity && !/\bcurrently|current|active|recent\b/.test(anchorQuestion)) return `What does ${entity} do?`
-    if (anchorHasSource(anchor, 'search_knowledge') || anchorHasSource(anchor, 'coding_history')) {
-      return "What does Nelson's current project do?"
+    // An explicit project name and requested facet belong to the latest user
+    // message. Only replace a genuinely unresolved reference.
+    const unresolvedReference = /\b(?:that|this|the same)\s+(?:project|repository|repo|codebase)\b/i
+    if (!unresolvedReference.test(current)) return undefined
+    const retainedEntity = anchor.entityLabel?.trim()
+    const resolvedEntity = entity ?? retainedEntity
+    if (resolvedEntity) {
+      return current.replace(unresolvedReference, resolvedEntity)
     }
   }
 
