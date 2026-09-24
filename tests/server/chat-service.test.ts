@@ -67,6 +67,7 @@ describe('createChatService', () => {
   it('reuses an experience topic anchor for education after eight chat turns', async () => {
     const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
     const educationRouting: Array<{ historyLength: number; anchorQuestions: string[] }> = []
+    const educationPlannerAnchors: string[][] = []
     const knowledgeQueries: string[] = []
     const availableDecision = (availableTools: string[], use: string[]) => Object.fromEntries(
       availableTools.map((tool) => [tool, { label: use.includes(tool) ? 'use' : 'skip', confidence: 0.99 }]),
@@ -108,7 +109,8 @@ describe('createChatService', () => {
         return { evidence: [], citations: [], degraded: false }
       } },
       planner: {
-        planNextStep: async ({ message, stepsUsed }) => {
+        planNextStep: async ({ message, stepsUsed, topicAnchors }) => {
+          if (/education/i.test(message)) educationPlannerAnchors.push((topicAnchors ?? []).map(({ question }) => question))
           if (stepsUsed > 0 || !/experience|education/i.test(message)) return null
           return { kind: 'tool_calls', calls: [{ id: 'profile', name: 'search_knowledge', arguments: { query: message } }] }
         },
@@ -130,6 +132,7 @@ describe('createChatService', () => {
     expect(education.status).toBe('replied')
     expect(educationRouting[0]?.historyLength).toBe(12)
     expect(educationRouting[0]?.anchorQuestions).toContain('What is your experience?')
+    expect(educationPlannerAnchors[0]).toContain('What is your experience?')
     expect(knowledgeQueries).toEqual(['What is your experience?', "Tell me about Nelson's education."])
 
     await send('How about the education?')

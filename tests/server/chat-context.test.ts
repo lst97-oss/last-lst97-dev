@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 
 import { createChatContextSigner } from '../../src/server/chat/context-signer'
+import type { ChatTopicAnchor } from '../../src/server/chat/types'
 
 const turns = [{ role: 'user' as const, content: 'Question' }, { role: 'assistant' as const, content: 'Answer' }]
 const secret = 'a-secret-key-with-at-least-32-characters'
-const anchor = {
+const anchor: ChatTopicAnchor = {
   question: 'What experience does Nelson have?',
   observedAtUtc: '2026-09-24T00:00:00.000Z',
   tools: [{ name: 'search_knowledge', arguments: { query: 'Nelson work experience' }, status: 'completed' }],
