@@ -1,43 +1,46 @@
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-// NOTE(payload-bun): node:path + node:url kept — Payload/Vite config-file resolution
-// requires Node specifier semantics here. All app/routes/lib code uses Bun.env + Web APIs.
+import { s3Storage } from '@payloadcms/storage-s3'
+import nodemailer from 'nodemailer'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
 
-const filename = fileURLToPath(import.meta.url)
-const dirname = path.dirname(filename)
+import { Media } from './src/collections/Media'
+import { Changelogs } from './src/collections/Changelogs'
+import { Posts } from './src/collections/Posts'
+import { Projects } from './src/collections/Projects'
+import { getServerEnv } from './src/server/env'
+import { buildR2StorageOptions } from './src/server/storage/r2-storage-config'
+import { knowledgePayloadTasks } from './src/server/knowledge/payload-tasks'
+import { migrations } from './src/migrations'
 
-type BunEnvShape = { env?: Record<string, string | undefined> }
-type GlobalWithBunEnv = typeof globalThis & { Bun?: BunEnvShape }
-
-function readEnv(key: string): string | undefined {
-  const bunEnv = (globalThis as GlobalWithBunEnv).Bun?.env
-  if (bunEnv && typeof bunEnv[key] === 'string') {
-    return bunEnv[key]
-  }
-  const nodeEnv = typeof process !== 'undefined' ? process.env : undefined
-  return nodeEnv?.[key]
-}
-
-const databaseUrl = readEnv('DATABASE_URL')
-if (!databaseUrl) {
-  throw new Error('Missing DATABASE_URL — set it in .env (e.g. postgres://postgres:postgres@localhost:5432/app)')
-}
-
-// Bun-first: Bun.env when running under bun, process.env fallback for payload CLI node-compat bundling.
-const payloadSecret = readEnv('PAYLOAD_SECRET')
-if (!payloadSecret) {
-  throw new Error('Missing PAYLOAD_SECRET — generate one and set it in .env')
-}
+const env = getServerEnv()
+const r2StorageOptions = buildR2StorageOptions(env)
+const projectDirectory = typeof Bun !== 'undefined'
+  ? import.meta.dir
+  : import.meta.dirname ?? decodeURIComponent(new URL('.', import.meta.url).pathname).replace(/\/$/, '')
+const projectPath = (relativePath: string) => `${projectDirectory}/${relativePath.replace(/^\.\//, '')}`
+const payloadEmailAdapter = env.SMTP_USER && env.SMTP_APP_PASSWORD
+  ? nodemailerAdapter({
+      defaultFromAddress: env.EMAIL_FROM ?? env.SMTP_USER,
+      defaultFromName: env.EMAIL_FROM_NAME,
+      skipVerify: true,
+      transport: nodemailer.createTransport({
+        auth: { pass: env.SMTP_APP_PASSWORD, user: env.SMTP_USER },
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+      }),
+    })
+  : undefined
 
 export default buildConfig({
+  serverURL: env.PAYLOAD_PUBLIC_SERVER_URL,
   admin: {
     user: 'users',
     importMap: {
-      importMapFile: path.resolve(dirname, 'src/payload-import-map.ts'),
+      importMapFile: projectPath('./src/payload-import-map.ts'),
     },
   },
   collections: [
@@ -47,20 +50,31 @@ export default buildConfig({
       admin: {
         useAsTitle: 'email',
       },
-      fields: [
-        // Email added by default via auth
-      ],
+      fields: [],
     },
+    Media,
+    Changelogs,
+    Posts,
+    Projects,
   ],
   db: postgresAdapter({
+    // Schema changes are applied through the committed Payload migrations, not dev auto-push.
+    push: false,
+    prodMigrations: migrations,
     pool: {
-      connectionString: databaseUrl,
+      connectionString: env.DATABASE_URL,
     },
   }),
+  email: payloadEmailAdapter,
+  jobs: {
+    tasks: knowledgePayloadTasks,
+    autoRun: [{ cron: '* * * * *', queue: 'knowledge', limit: 10 }],
+  },
   editor: lexicalEditor(),
-  secret: payloadSecret,
+  secret: env.PAYLOAD_SECRET,
+  storage: r2StorageOptions ? [s3Storage(r2StorageOptions)] : [],
   sharp,
   typescript: {
-    outputFile: path.resolve(dirname, 'payload-types.ts'),
+    outputFile: projectPath('./payload-types.ts'),
   },
 })
