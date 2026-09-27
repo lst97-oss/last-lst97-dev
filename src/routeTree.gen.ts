@@ -9,38 +9,52 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as PayloadRouteImport } from './routes/_payload'
-import { Route as DemoFormRouteImport } from './routes/demo-form'
-import { Route as DemoQueryRouteImport } from './routes/demo-query'
-import { Route as DemoThemeRouteImport } from './routes/demo-theme'
+import { Route as SiteRouteImport } from './routes/_site'
+import { Route as SiteIndexRouteImport } from './routes/_site.index'
+import { Route as SiteAboutRouteImport } from './routes/_site.about'
+import { Route as SiteChatRouteImport } from './routes/_site.chat'
+import { Route as SiteContactRouteImport } from './routes/_site.contact'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
 import { Route as PayloadAdminIndexRouteImport } from './routes/_payload.admin.index'
 import { Route as PayloadAdminSplatRouteImport } from './routes/_payload.admin.$'
+import { Route as SiteBlogIndexRouteImport } from './routes/_site.blog.index'
+import { Route as SiteBlogSlugRouteImport } from './routes/_site.blog.$slug'
+import { Route as SiteChangelogIndexRouteImport } from './routes/_site.changelog.index'
+import { Route as SiteChangelogSlugRouteImport } from './routes/_site.changelog.$slug'
+import { Route as SiteProjectsIndexRouteImport } from './routes/_site.projects.index'
+import { Route as SiteProjectsSlugRouteImport } from './routes/_site.projects.$slug'
+import { Route as ApiSiteChatRouteImport } from './routes/api.site.chat'
+import { Route as ApiSiteContactRouteImport } from './routes/api.site.contact'
+import { Route as ApiSiteHealthRouteImport } from './routes/api.site.health'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PayloadRoute = PayloadRouteImport.update({
   id: '/_payload',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoFormRoute = DemoFormRouteImport.update({
-  id: '/demo-form',
-  path: '/demo-form',
+const SiteRoute = SiteRouteImport.update({
+  id: '/_site',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoQueryRoute = DemoQueryRouteImport.update({
-  id: '/demo-query',
-  path: '/demo-query',
-  getParentRoute: () => rootRouteImport,
+const SiteIndexRoute = SiteIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SiteRoute,
 } as any)
-const DemoThemeRoute = DemoThemeRouteImport.update({
-  id: '/demo-theme',
-  path: '/demo-theme',
-  getParentRoute: () => rootRouteImport,
+const SiteAboutRoute = SiteAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteChatRoute = SiteChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteContactRoute = SiteContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => SiteRoute,
 } as any)
 const ApiSplatRoute = ApiSplatRouteImport.update({
   id: '/api/$',
@@ -57,85 +71,179 @@ const PayloadAdminSplatRoute = PayloadAdminSplatRouteImport.update({
   path: '/admin/$',
   getParentRoute: () => PayloadRoute,
 } as any)
+const SiteBlogIndexRoute = SiteBlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteBlogSlugRoute = SiteBlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteChangelogIndexRoute = SiteChangelogIndexRouteImport.update({
+  id: '/changelog/',
+  path: '/changelog/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteChangelogSlugRoute = SiteChangelogSlugRouteImport.update({
+  id: '/changelog/$slug',
+  path: '/changelog/$slug',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteProjectsIndexRoute = SiteProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteProjectsSlugRoute = SiteProjectsSlugRouteImport.update({
+  id: '/projects/$slug',
+  path: '/projects/$slug',
+  getParentRoute: () => SiteRoute,
+} as any)
+const ApiSiteChatRoute = ApiSiteChatRouteImport.update({
+  id: '/api/site/chat',
+  path: '/api/site/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSiteContactRoute = ApiSiteContactRouteImport.update({
+  id: '/api/site/contact',
+  path: '/api/site/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSiteHealthRoute = ApiSiteHealthRouteImport.update({
+  id: '/api/site/health',
+  path: '/api/site/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/demo-form': typeof DemoFormRoute
-  '/demo-query': typeof DemoQueryRoute
-  '/demo-theme': typeof DemoThemeRoute
+  '/': typeof SiteIndexRoute
+  '/about': typeof SiteAboutRoute
+  '/chat': typeof SiteChatRoute
+  '/contact': typeof SiteContactRoute
   '/api/$': typeof ApiSplatRoute
   '/admin/$': typeof PayloadAdminSplatRoute
+  '/blog/$slug': typeof SiteBlogSlugRoute
+  '/changelog/$slug': typeof SiteChangelogSlugRoute
+  '/projects/$slug': typeof SiteProjectsSlugRoute
+  '/api/site/chat': typeof ApiSiteChatRoute
+  '/api/site/contact': typeof ApiSiteContactRoute
+  '/api/site/health': typeof ApiSiteHealthRoute
   '/admin/': typeof PayloadAdminIndexRoute
+  '/blog/': typeof SiteBlogIndexRoute
+  '/changelog/': typeof SiteChangelogIndexRoute
+  '/projects/': typeof SiteProjectsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/demo-form': typeof DemoFormRoute
-  '/demo-query': typeof DemoQueryRoute
-  '/demo-theme': typeof DemoThemeRoute
+  '/': typeof SiteIndexRoute
+  '/about': typeof SiteAboutRoute
+  '/chat': typeof SiteChatRoute
+  '/contact': typeof SiteContactRoute
   '/api/$': typeof ApiSplatRoute
   '/admin/$': typeof PayloadAdminSplatRoute
+  '/blog/$slug': typeof SiteBlogSlugRoute
+  '/changelog/$slug': typeof SiteChangelogSlugRoute
+  '/projects/$slug': typeof SiteProjectsSlugRoute
+  '/api/site/chat': typeof ApiSiteChatRoute
+  '/api/site/contact': typeof ApiSiteContactRoute
+  '/api/site/health': typeof ApiSiteHealthRoute
   '/admin': typeof PayloadAdminIndexRoute
+  '/blog': typeof SiteBlogIndexRoute
+  '/changelog': typeof SiteChangelogIndexRoute
+  '/projects': typeof SiteProjectsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/_payload': typeof PayloadRouteWithChildren
-  '/demo-form': typeof DemoFormRoute
-  '/demo-query': typeof DemoQueryRoute
-  '/demo-theme': typeof DemoThemeRoute
+  '/_site': typeof SiteRouteWithChildren
+  '/_site/about': typeof SiteAboutRoute
+  '/_site/chat': typeof SiteChatRoute
+  '/_site/contact': typeof SiteContactRoute
   '/api/$': typeof ApiSplatRoute
+  '/_site/': typeof SiteIndexRoute
   '/_payload/admin/$': typeof PayloadAdminSplatRoute
+  '/_site/blog/$slug': typeof SiteBlogSlugRoute
+  '/_site/changelog/$slug': typeof SiteChangelogSlugRoute
+  '/_site/projects/$slug': typeof SiteProjectsSlugRoute
+  '/api/site/chat': typeof ApiSiteChatRoute
+  '/api/site/contact': typeof ApiSiteContactRoute
+  '/api/site/health': typeof ApiSiteHealthRoute
   '/_payload/admin/': typeof PayloadAdminIndexRoute
+  '/_site/blog/': typeof SiteBlogIndexRoute
+  '/_site/changelog/': typeof SiteChangelogIndexRoute
+  '/_site/projects/': typeof SiteProjectsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/demo-form'
-    | '/demo-query'
-    | '/demo-theme'
+    | '/about'
+    | '/chat'
+    | '/contact'
     | '/api/$'
     | '/admin/$'
+    | '/blog/$slug'
+    | '/changelog/$slug'
+    | '/projects/$slug'
+    | '/api/site/chat'
+    | '/api/site/contact'
+    | '/api/site/health'
     | '/admin/'
+    | '/blog/'
+    | '/changelog/'
+    | '/projects/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/demo-form'
-    | '/demo-query'
-    | '/demo-theme'
+    | '/about'
+    | '/chat'
+    | '/contact'
     | '/api/$'
     | '/admin/$'
+    | '/blog/$slug'
+    | '/changelog/$slug'
+    | '/projects/$slug'
+    | '/api/site/chat'
+    | '/api/site/contact'
+    | '/api/site/health'
     | '/admin'
+    | '/blog'
+    | '/changelog'
+    | '/projects'
   id:
     | '__root__'
-    | '/'
     | '/_payload'
-    | '/demo-form'
-    | '/demo-query'
-    | '/demo-theme'
+    | '/_site'
+    | '/_site/about'
+    | '/_site/chat'
+    | '/_site/contact'
     | '/api/$'
+    | '/_site/'
     | '/_payload/admin/$'
+    | '/_site/blog/$slug'
+    | '/_site/changelog/$slug'
+    | '/_site/projects/$slug'
+    | '/api/site/chat'
+    | '/api/site/contact'
+    | '/api/site/health'
     | '/_payload/admin/'
+    | '/_site/blog/'
+    | '/_site/changelog/'
+    | '/_site/projects/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   PayloadRoute: typeof PayloadRouteWithChildren
-  DemoFormRoute: typeof DemoFormRoute
-  DemoQueryRoute: typeof DemoQueryRoute
-  DemoThemeRoute: typeof DemoThemeRoute
+  SiteRoute: typeof SiteRouteWithChildren
   ApiSplatRoute: typeof ApiSplatRoute
+  ApiSiteChatRoute: typeof ApiSiteChatRoute
+  ApiSiteContactRoute: typeof ApiSiteContactRoute
+  ApiSiteHealthRoute: typeof ApiSiteHealthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_payload': {
       id: '/_payload'
       path: ''
@@ -143,26 +251,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PayloadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo-form': {
-      id: '/demo-form'
-      path: '/demo-form'
-      fullPath: '/demo-form'
-      preLoaderRoute: typeof DemoFormRouteImport
+    '/_site': {
+      id: '/_site'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof SiteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo-query': {
-      id: '/demo-query'
-      path: '/demo-query'
-      fullPath: '/demo-query'
-      preLoaderRoute: typeof DemoQueryRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_site/': {
+      id: '/_site/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof SiteIndexRouteImport
+      parentRoute: typeof SiteRoute
     }
-    '/demo-theme': {
-      id: '/demo-theme'
-      path: '/demo-theme'
-      fullPath: '/demo-theme'
-      preLoaderRoute: typeof DemoThemeRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_site/about': {
+      id: '/_site/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof SiteAboutRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/chat': {
+      id: '/_site/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof SiteChatRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/contact': {
+      id: '/_site/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof SiteContactRouteImport
+      parentRoute: typeof SiteRoute
     }
     '/api/$': {
       id: '/api/$'
@@ -185,6 +307,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PayloadAdminSplatRouteImport
       parentRoute: typeof PayloadRoute
     }
+    '/_site/blog/': {
+      id: '/_site/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof SiteBlogIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/blog/$slug': {
+      id: '/_site/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof SiteBlogSlugRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/changelog/': {
+      id: '/_site/changelog/'
+      path: '/changelog'
+      fullPath: '/changelog/'
+      preLoaderRoute: typeof SiteChangelogIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/changelog/$slug': {
+      id: '/_site/changelog/$slug'
+      path: '/changelog/$slug'
+      fullPath: '/changelog/$slug'
+      preLoaderRoute: typeof SiteChangelogSlugRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/projects/': {
+      id: '/_site/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof SiteProjectsIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/projects/$slug': {
+      id: '/_site/projects/$slug'
+      path: '/projects/$slug'
+      fullPath: '/projects/$slug'
+      preLoaderRoute: typeof SiteProjectsSlugRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/api/site/chat': {
+      id: '/api/site/chat'
+      path: '/api/site/chat'
+      fullPath: '/api/site/chat'
+      preLoaderRoute: typeof ApiSiteChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/site/contact': {
+      id: '/api/site/contact'
+      path: '/api/site/contact'
+      fullPath: '/api/site/contact'
+      preLoaderRoute: typeof ApiSiteContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/site/health': {
+      id: '/api/site/health'
+      path: '/api/site/health'
+      fullPath: '/api/site/health'
+      preLoaderRoute: typeof ApiSiteHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -201,13 +386,41 @@ const PayloadRouteChildren: PayloadRouteChildren = {
 const PayloadRouteWithChildren =
   PayloadRoute._addFileChildren(PayloadRouteChildren)
 
+interface SiteRouteChildren {
+  SiteAboutRoute: typeof SiteAboutRoute
+  SiteChatRoute: typeof SiteChatRoute
+  SiteContactRoute: typeof SiteContactRoute
+  SiteIndexRoute: typeof SiteIndexRoute
+  SiteBlogSlugRoute: typeof SiteBlogSlugRoute
+  SiteChangelogSlugRoute: typeof SiteChangelogSlugRoute
+  SiteProjectsSlugRoute: typeof SiteProjectsSlugRoute
+  SiteBlogIndexRoute: typeof SiteBlogIndexRoute
+  SiteChangelogIndexRoute: typeof SiteChangelogIndexRoute
+  SiteProjectsIndexRoute: typeof SiteProjectsIndexRoute
+}
+
+const SiteRouteChildren: SiteRouteChildren = {
+  SiteAboutRoute: SiteAboutRoute,
+  SiteChatRoute: SiteChatRoute,
+  SiteContactRoute: SiteContactRoute,
+  SiteIndexRoute: SiteIndexRoute,
+  SiteBlogSlugRoute: SiteBlogSlugRoute,
+  SiteChangelogSlugRoute: SiteChangelogSlugRoute,
+  SiteProjectsSlugRoute: SiteProjectsSlugRoute,
+  SiteBlogIndexRoute: SiteBlogIndexRoute,
+  SiteChangelogIndexRoute: SiteChangelogIndexRoute,
+  SiteProjectsIndexRoute: SiteProjectsIndexRoute,
+}
+
+const SiteRouteWithChildren = SiteRoute._addFileChildren(SiteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   PayloadRoute: PayloadRouteWithChildren,
-  DemoFormRoute: DemoFormRoute,
-  DemoQueryRoute: DemoQueryRoute,
-  DemoThemeRoute: DemoThemeRoute,
+  SiteRoute: SiteRouteWithChildren,
   ApiSplatRoute: ApiSplatRoute,
+  ApiSiteChatRoute: ApiSiteChatRoute,
+  ApiSiteContactRoute: ApiSiteContactRoute,
+  ApiSiteHealthRoute: ApiSiteHealthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
