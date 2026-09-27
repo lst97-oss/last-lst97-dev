@@ -61,15 +61,17 @@ interface PgPool {
   query(text: string, params?: unknown[]): Promise<{ rows: unknown[] }>
 }
 
-const summaryRowSchema = z.object({
-  total_seconds: z.coerce.number(),
-  active_days: z.coerce.number(),
-  heartbeat_count: z.coerce.number(),
-}).transform((row) => ({
-  totalSeconds: row.total_seconds,
-  activeDays: row.active_days,
-  heartbeatCount: row.heartbeat_count,
-}))
+const summaryRowSchema = z
+  .object({
+    total_seconds: z.coerce.number(),
+    active_days: z.coerce.number(),
+    heartbeat_count: z.coerce.number(),
+  })
+  .transform((row) => ({
+    totalSeconds: row.total_seconds,
+    activeDays: row.active_days,
+    heartbeatCount: row.heartbeat_count,
+  }))
 
 const topRowSchema = z.object({
   name: z.string(),
@@ -78,14 +80,18 @@ const topRowSchema = z.object({
 })
 
 const dayRowSchema = z.object({
-  date: z.union([z.string(), z.date()]).transform((value) => typeof value === 'string' ? value : value.toISOString().slice(0, 10)),
+  date: z
+    .union([z.string(), z.date()])
+    .transform((value) => (typeof value === 'string' ? value : value.toISOString().slice(0, 10))),
   seconds: z.coerce.number(),
 })
 
 const coverageRowSchema = z.object({ through: z.string().nullable() })
 
 const activeDayRowSchema = z.object({
-  day: z.union([z.string(), z.date()]).transform((value) => typeof value === 'string' ? value : value.toISOString().slice(0, 10)),
+  day: z
+    .union([z.string(), z.date()])
+    .transform((value) => (typeof value === 'string' ? value : value.toISOString().slice(0, 10))),
 })
 
 function boundLimit(limit: number): number {
@@ -100,11 +106,17 @@ interface RollupSupport {
 async function rollupsAvailable(pool: PgPool, cache: RollupSupport): Promise<boolean> {
   if (cache.supported !== null) return cache.supported
   try {
-    const result = await pool.query(`SELECT to_regclass('wakatime_daily_summary') AS summary, to_regclass('wakatime_daily_projects') AS projects, to_regclass('wakatime_daily_languages') AS languages`)
+    const result = await pool.query(
+      `SELECT to_regclass('wakatime_daily_summary') AS summary, to_regclass('wakatime_daily_projects') AS projects, to_regclass('wakatime_daily_languages') AS languages`,
+    )
     const [row] = result.rows as Array<{ summary: string | null; projects: string | null; languages: string | null }>
-    cache.supported = row?.summary !== null && row?.summary !== undefined
-      && row?.projects !== null && row?.projects !== undefined
-      && row?.languages !== null && row?.languages !== undefined
+    cache.supported =
+      row?.summary !== null &&
+      row?.summary !== undefined &&
+      row?.projects !== null &&
+      row?.projects !== undefined &&
+      row?.languages !== null &&
+      row?.languages !== undefined
   } catch {
     cache.supported = false
   }
@@ -219,7 +231,6 @@ export function createCodingHistoryRepository(pool: PgPool): CodingHistoryReposi
       return row ?? { totalSeconds: 0, activeDays: 0, heartbeatCount: 0 }
     },
 
-
     async dailySeries(range) {
       assertHistoryRange(range)
       if (await rollupsAvailable(pool, support)) {
@@ -243,15 +254,15 @@ export function createCodingHistoryRepository(pool: PgPool): CodingHistoryReposi
     async streaks(today: string = new Date().toISOString().slice(0, 10)) {
       const days = (await rollupsAvailable(pool, support))
         ? await rows(
-          `SELECT to_char("day", 'YYYY-MM-DD') AS "day" FROM "wakatime_daily_summary" ORDER BY 1 ASC`,
-          [],
-          activeDayRowSchema,
-        )
+            `SELECT to_char("day", 'YYYY-MM-DD') AS "day" FROM "wakatime_daily_summary" ORDER BY 1 ASC`,
+            [],
+            activeDayRowSchema,
+          )
         : await rows(
-          `SELECT DISTINCT to_char("day", 'YYYY-MM-DD') AS "day" FROM "wakatime_heartbeats" ORDER BY 1 ASC`,
-          [],
-          activeDayRowSchema,
-        )
+            `SELECT DISTINCT to_char("day", 'YYYY-MM-DD') AS "day" FROM "wakatime_heartbeats" ORDER BY 1 ASC`,
+            [],
+            activeDayRowSchema,
+          )
       let longest = 0
       let run = 0
       let previous: string | null = null
@@ -261,7 +272,7 @@ export function createCodingHistoryRepository(pool: PgPool): CodingHistoryReposi
         previous = day
       }
       const seen = new Set(days.map((entry) => entry.day))
-      const latest = days.length > 0 ? days[days.length - 1]!.day : null
+      const latest = days.at(-1)?.day ?? null
       let current = 0
       if (latest !== null && (latest === today || latest === previousDay(today))) {
         let cursor: string | null = latest

@@ -1,5 +1,6 @@
-import { createHash } from 'node:crypto'
 import { z } from 'zod'
+
+export { formatHours } from '../format'
 
 // Pure helpers for the WakaTime heartbeat-dump import. Raw file paths are
 // hashed at the boundary: only `entity_hash` reaches the database, never the
@@ -9,23 +10,27 @@ import { z } from 'zod'
 export const HEARTBEAT_TIMEOUT_SECONDS = 900
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-const rawHeartbeatSchema = z.object({
-  id: z.string(),
-  time: z.number().finite(),
-  project: z.string().optional().nullable(),
-  language: z.string().optional().nullable(),
-  category: z.string().optional().nullable(),
-  type: z.string().optional().nullable(),
-  branch: z.string().optional().nullable(),
-  entity: z.string().optional().nullable(),
-  is_write: z.boolean().optional().nullable(),
-  dependencies: z.array(z.unknown()).optional().nullable(),
-}).passthrough()
+const rawHeartbeatSchema = z
+  .object({
+    id: z.string(),
+    time: z.number().finite(),
+    project: z.string().optional().nullable(),
+    language: z.string().optional().nullable(),
+    category: z.string().optional().nullable(),
+    type: z.string().optional().nullable(),
+    branch: z.string().optional().nullable(),
+    entity: z.string().optional().nullable(),
+    is_write: z.boolean().optional().nullable(),
+    dependencies: z.array(z.unknown()).optional().nullable(),
+  })
+  .passthrough()
 
-const dumpDaySchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  heartbeats: z.array(z.unknown()),
-}).passthrough()
+const dumpDaySchema = z
+  .object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    heartbeats: z.array(z.unknown()),
+  })
+  .passthrough()
 
 export interface PreparedHeartbeatRow {
   wakaId: string
@@ -44,7 +49,7 @@ export interface PreparedHeartbeatRow {
 }
 
 export function sha256Hex(value: string): string {
-  return createHash('sha256').update(value, 'utf8').digest('hex')
+  return new Bun.CryptoHasher('sha256').update(value).digest('hex')
 }
 
 export function computeDurations(sortedTimes: number[]): number[] {
@@ -79,11 +84,13 @@ export function prepareHeartbeatRows(day: string, heartbeats: unknown[]): Prepar
     .flatMap((result) => (result.success && UUID_PATTERN.test(result.data.id) ? [result.data] : []))
 
   let ordered = true
-  for (let index = 1; index < parsed.length; index += 1) {
-    if (parsed[index]!.time < parsed[index - 1]!.time) {
+  let previousTime: number | undefined
+  for (const heartbeat of parsed) {
+    if (previousTime !== undefined && heartbeat.time < previousTime) {
       ordered = false
       break
     }
+    previousTime = heartbeat.time
   }
   if (!ordered) parsed.sort((a, b) => a.time - b.time)
 
@@ -116,13 +123,4 @@ export function parseDumpDay(value: unknown): { date: string; heartbeats: unknow
   const parsed = dumpDaySchema.safeParse(value)
   if (!parsed.success) return null
   return { date: parsed.data.date, heartbeats: parsed.data.heartbeats }
-}
-
-export function formatHours(totalSeconds: number): string {
-  if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return '0 mins'
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.round((totalSeconds % 3600) / 60)
-  if (hours === 0) return `${minutes} mins`
-  if (minutes === 0) return `${hours} hrs`
-  return `${hours} hrs ${minutes} mins`
 }

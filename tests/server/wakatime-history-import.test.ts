@@ -6,7 +6,7 @@ import {
   parseDumpDay,
   prepareHeartbeatRows,
   sha256Hex,
-} from '../../src/server/wakatime/history-import'
+} from '../../src/server/wakatime/history/import'
 
 describe('computeDurations', () => {
   it('caps gaps at the keystroke timeout and gives the trailing heartbeat zero', () => {

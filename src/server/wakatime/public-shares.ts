@@ -1,8 +1,6 @@
 import { z } from 'zod'
-
-import { formatHours } from './history-import'
-import { parseCodingStatsArguments } from './stats'
 import type { Logger } from '../observability/logger'
+import { formatHours } from './format'
 import type {
   CodingActivityStats,
   CodingBreakdownStats,
@@ -16,6 +14,7 @@ import type {
   CodingStatsResult,
   WakaTimeStatsClient,
 } from './stats'
+import { parseCodingStatsArguments } from './stats'
 
 export interface WakaTimeShareClientConfig {
   fetcher?: (input: string, init?: RequestInit) => Promise<Response>
@@ -83,41 +82,58 @@ const PERIOD_LABELS: Record<CodingStatsRange, string> = {
 const MAX_RESPONSE_CHARACTERS = 1_000_000
 const MAX_RESULT_ITEMS = 10
 
-const shareItemSchema = z.object({
-  name: z.string().min(1),
-  percent: z.number().finite().min(0).max(100),
-}).passthrough()
+const shareItemSchema = z
+  .object({
+    name: z.string().min(1),
+    percent: z.number().finite().min(0).max(100),
+  })
+  .passthrough()
 
 const shareItemResponseSchema = z.object({ data: z.array(shareItemSchema).max(200) }).passthrough()
 
-const activityDaySchema = z.object({
-  range: z.object({
-    start: z.string().min(1),
-    end: z.string().min(1),
-  }).passthrough(),
-  grand_total: z.object({
-    total_seconds: z.number().finite().min(0),
-  }).passthrough(),
-}).passthrough()
+const activityDaySchema = z
+  .object({
+    range: z
+      .object({
+        start: z.string().min(1),
+        end: z.string().min(1),
+      })
+      .passthrough(),
+    grand_total: z
+      .object({
+        total_seconds: z.number().finite().min(0),
+      })
+      .passthrough(),
+  })
+  .passthrough()
 
-const activityRangeSchema = z.object({
-  range: z.object({
-    start: z.string().min(1),
-    end: z.string().min(1),
-    days_including_holidays: z.number().int().nonnegative(),
-  }).passthrough(),
-  grand_total: z.object({
-    total_seconds: z.number().finite().min(0),
-    human_readable_total: z.string().min(1),
-    human_readable_total_including_other_language: z.string().min(1).optional(),
-    total_seconds_including_other_language: z.number().finite().min(0).optional(),
-  }).passthrough(),
-  best_day: z.object({
-    date: z.string().min(1),
-    total_seconds: z.number().finite().min(0),
-    text: z.string().min(1),
-  }).passthrough().optional(),
-}).passthrough()
+const activityRangeSchema = z
+  .object({
+    range: z
+      .object({
+        start: z.string().min(1),
+        end: z.string().min(1),
+        days_including_holidays: z.number().int().nonnegative(),
+      })
+      .passthrough(),
+    grand_total: z
+      .object({
+        total_seconds: z.number().finite().min(0),
+        human_readable_total: z.string().min(1),
+        human_readable_total_including_other_language: z.string().min(1).optional(),
+        total_seconds_including_other_language: z.number().finite().min(0).optional(),
+      })
+      .passthrough(),
+    best_day: z
+      .object({
+        date: z.string().min(1),
+        total_seconds: z.number().finite().min(0),
+        text: z.string().min(1),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough()
 
 const activityDailyResponseSchema = z.object({ data: z.array(activityDaySchema).min(1).max(400) }).passthrough()
 const activitySummaryResponseSchema = z.object({ data: activityRangeSchema }).passthrough()
@@ -138,11 +154,14 @@ function parseActivitySnapshot(body: unknown, range: CodingStatsRange): WakaTime
   if (daily.success) {
     const days = daily.data.data
     const totalSeconds = days.reduce((sum, day) => sum + day.grand_total.total_seconds, 0)
-    const best = days.reduce<typeof days[number] | null>((current, day) => (
-      !current || day.grand_total.total_seconds > current.grand_total.total_seconds ? day : current
-    ), null)
-    let periodStart = days[0]!.range.start
-    let periodEnd = days[0]!.range.end
+    const best = days.reduce<(typeof days)[number] | null>(
+      (current, day) => (!current || day.grand_total.total_seconds > current.grand_total.total_seconds ? day : current),
+      null,
+    )
+    const firstDay = days.at(0)
+    if (!firstDay) throw new Error('WakaTime activity share has no daily entries')
+    let periodStart = firstDay.range.start
+    let periodEnd = firstDay.range.end
     for (const day of days) {
       if (day.range.start < periodStart) periodStart = day.range.start
       if (day.range.end > periodEnd) periodEnd = day.range.end
@@ -153,7 +172,15 @@ function parseActivitySnapshot(body: unknown, range: CodingStatsRange): WakaTime
       breakdownSeconds: totalSeconds,
       daysInPeriod: days.length,
       humanReadableTotal: formatHours(totalSeconds),
-      ...(best ? { bestDay: { date: best.range.start.slice(0, 10), totalSeconds: best.grand_total.total_seconds, humanReadableTotal: formatHours(best.grand_total.total_seconds) } } : {}),
+      ...(best
+        ? {
+            bestDay: {
+              date: best.range.start.slice(0, 10),
+              totalSeconds: best.grand_total.total_seconds,
+              humanReadableTotal: formatHours(best.grand_total.total_seconds),
+            },
+          }
+        : {}),
     }
   }
 
@@ -167,8 +194,17 @@ function parseActivitySnapshot(body: unknown, range: CodingStatsRange): WakaTime
     totalSeconds: breakdownSeconds,
     breakdownSeconds,
     daysInPeriod: data.range.days_including_holidays,
-    humanReadableTotal: data.grand_total.human_readable_total_including_other_language ?? data.grand_total.human_readable_total,
-    ...(data.best_day ? { bestDay: { date: data.best_day.date, totalSeconds: data.best_day.total_seconds, humanReadableTotal: data.best_day.text } } : {}),
+    humanReadableTotal:
+      data.grand_total.human_readable_total_including_other_language ?? data.grand_total.human_readable_total,
+    ...(data.best_day
+      ? {
+          bestDay: {
+            date: data.best_day.date,
+            totalSeconds: data.best_day.total_seconds,
+            humanReadableTotal: data.best_day.text,
+          },
+        }
+      : {}),
   }
 }
 
@@ -187,12 +223,23 @@ export function formatWakaTimeShareSummary(result: CodingStatsResult): string {
     return parts.join('; ').slice(0, 600)
   }
   if (result.category === 'categories') {
-    const items = result.items.map(({ name, percent, humanReadableEstimate }) => `${name} ${percent.toFixed(2)}% (estimated ${humanReadableEstimate})`).join('; ')
-    return `WakaTime public share categories (${periodDescription(result.period)}, fetched ${result.retrievedAtUtc}): ${items}`.slice(0, 600)
+    const items = result.items
+      .map(
+        ({ name, percent, humanReadableEstimate }) =>
+          `${name} ${percent.toFixed(2)}% (estimated ${humanReadableEstimate})`,
+      )
+      .join('; ')
+    return `WakaTime public share categories (${periodDescription(result.period)}, fetched ${result.retrievedAtUtc}): ${items}`.slice(
+      0,
+      600,
+    )
   }
   const label = result.category.replace('_', ' ')
   const items = result.items.map(({ name, percent }) => `${name} ${percent.toFixed(2)}%`).join('; ')
-  return `WakaTime public share ${label} (${periodDescription(result.period)}, fetched ${result.retrievedAtUtc}): ${items}`.slice(0, 600)
+  return `WakaTime public share ${label} (${periodDescription(result.period)}, fetched ${result.retrievedAtUtc}): ${items}`.slice(
+    0,
+    600,
+  )
 }
 
 export function createWakaTimeStatsClient(dependencies: WakaTimeShareClientConfig): WakaTimeStatsClient {
@@ -236,7 +283,8 @@ export function createWakaTimeStatsClient(dependencies: WakaTimeShareClientConfi
       if (!request) return null
       const url = wakaTimeShareUrl(request.category, request.range)
       const cached = cache.get(url)
-      if (cached && Date.now() - cached.at < (cached.result === null ? failureCacheTtlMs : cacheTtlMs)) return cached.result
+      if (cached && Date.now() - cached.at < (cached.result === null ? failureCacheTtlMs : cacheTtlMs))
+        return cached.result
 
       let result: CodingStatsResult | null = null
       try {
@@ -253,7 +301,7 @@ export function createWakaTimeStatsClient(dependencies: WakaTimeShareClientConfi
           if (!parsed.success) throw new Error('WakaTime share response is invalid')
           const activity = parseActivitySnapshot(activityPayload, request.range)
           const items: CodingStatsCategoryItem[] = normalizeItems(parsed.data.data).map((item) => {
-            const estimatedSeconds = Math.round(activity.breakdownSeconds * item.percent / 100)
+            const estimatedSeconds = Math.round((activity.breakdownSeconds * item.percent) / 100)
             return { ...item, estimatedSeconds, humanReadableEstimate: formatHours(estimatedSeconds) }
           })
           const categoryResult: CodingCategoryStats = {

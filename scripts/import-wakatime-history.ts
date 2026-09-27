@@ -3,7 +3,7 @@ import { Pool } from 'pg'
 import { getServerEnv } from '../src/server/env'
 import { requireIntegrationEnv } from '../src/server/env-schema'
 import { migrateKnowledgeDatabase } from '../src/server/knowledge/database-migration'
-import { parseDumpDay, prepareHeartbeatRows, type PreparedHeartbeatRow } from '../src/server/wakatime/history-import'
+import { parseDumpDay, prepareHeartbeatRows, type PreparedHeartbeatRow } from '../src/server/wakatime/history/import'
 
 function fail(message: string): never {
   console.error(JSON.stringify({ event: 'wakatime.history.import.failed', reason: message }))

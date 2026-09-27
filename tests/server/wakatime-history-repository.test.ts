@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { Pool } from 'pg'
 
 import { migrateKnowledgeDatabase } from '../../src/server/knowledge/database-migration'
-import { createCodingHistoryRepository } from '../../src/server/wakatime/history-repository'
+import { createCodingHistoryRepository } from '../../src/server/wakatime/history/repository'
 
 const testDatabaseUrl = Bun.env.KNOWLEDGE_TEST_DATABASE_URL
 

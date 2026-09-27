@@ -2,13 +2,19 @@ import { z } from 'zod'
 
 import type { Logger } from '../observability/logger'
 
-const allTimeSnapshotSchema = z.object({
-  data: z.object({
-    grand_total: z.object({
-      human_readable_total_including_other_language: z.string().min(1),
-    }).passthrough(),
-  }).passthrough(),
-}).passthrough()
+const allTimeSnapshotSchema = z
+  .object({
+    data: z
+      .object({
+        grand_total: z
+          .object({
+            human_readable_total_including_other_language: z.string().min(1),
+          })
+          .passthrough(),
+      })
+      .passthrough(),
+  })
+  .passthrough()
 
 export type WakaTimeSnapshot = z.infer<typeof allTimeSnapshotSchema>
 

@@ -1,8 +1,8 @@
 import { Pool } from 'pg'
 
-import { getServerEnv } from '../env'
-import { requireIntegrationEnv } from '../env-schema'
-import { createCodingHistoryRepository, type CodingHistoryRepository } from './history-repository'
+import { getServerEnv } from '../../env'
+import { requireIntegrationEnv } from '../../env-schema'
+import { type CodingHistoryRepository, createCodingHistoryRepository } from './repository'
 
 let pool: Pool | undefined
 let repository: CodingHistoryRepository | undefined

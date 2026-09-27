@@ -54,14 +54,17 @@ export interface WakaTimeStatsClient {
   fetchSummary(query: CodingStatsRequest): Promise<CodingStatsResult | null>
 }
 
-const codingStatsQuerySchema = z.object({
-  category: z.enum(['activity', 'languages', 'editors', 'operating_systems', 'categories']),
-  range: z.enum(['last_7_days', 'last_30_days', 'last_year', 'all_time']),
-}).strict().superRefine((query, context) => {
-  if (query.category === 'operating_systems' && query.range !== 'all_time') {
-    context.addIssue({ code: 'custom', message: 'operating_systems supports all_time only', path: ['range'] })
-  }
-})
+const codingStatsQuerySchema = z
+  .object({
+    category: z.enum(['activity', 'languages', 'editors', 'operating_systems', 'categories']),
+    range: z.enum(['last_7_days', 'last_30_days', 'last_year', 'all_time']),
+  })
+  .strict()
+  .superRefine((query, context) => {
+    if (query.category === 'operating_systems' && query.range !== 'all_time') {
+      context.addIssue({ code: 'custom', message: 'operating_systems supports all_time only', path: ['range'] })
+    }
+  })
 
 export function parseCodingStatsArguments(value: unknown): CodingStatsRequest | null {
   const parsed = codingStatsQuerySchema.safeParse(value)

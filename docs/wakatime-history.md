@@ -42,7 +42,7 @@ per day (plus per-day breakdown rows) — 815 summary rows instead of 1.1M
 heartbeat rows for an all-time scan. The importer recomputes each touched
 day from the heartbeat table (`ON CONFLICT ... DO UPDATE`, never deltas, so
 re-imports are safe) and finishes with `VACUUM ANALYZE`. Repository reads
-(`src/server/wakatime/history-repository.ts`) hit the rollups first and fall
+(`src/server/wakatime/history/repository.ts`) hit the rollups first and fall
 back to the heartbeat queries only when the rollup tables are absent, so
 existing heartbeat-only test fixtures keep passing unchanged.
 
@@ -69,7 +69,7 @@ matches the repo's evidence-only discipline for the browser/LLM boundary.
 ## Chat wiring
 
 `coding_history` is the imported-warehouse tool behind the chat tool-runner seam
-(`src/server/chat/coding-history-tool.ts`). It owns per-project breakdowns,
+(`src/server/chat/tools/coding-history-tool.ts`). It owns per-project breakdowns,
 named-project time, daily series, trends, streaks, and arbitrary historical
 dates. Both per-project breakdowns and named-project totals accept the explicit
 `all_time`, `last_year`, `last_30_days`, and `last_7_days` presets; `last_year`
