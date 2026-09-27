@@ -1,54 +1,56 @@
 import { createEnv } from '@t3-oss/env-core'
 import { z } from 'zod'
 
-export type ServerEnvSource = Partial<Record<
-  | 'CONTACT_TO'
-  | 'CHAT_CONTEXT_SIGNING_SECRET'
-  | 'CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL'
-  | 'CLOUDFLARE_ORIGIN_VERIFY_SECRET'
-  | 'CHAT_STREAM_MAX_MS'
-  | 'CHAT_TOOL_TIMEOUT_MS'
-  | 'DATABASE_URL'
-  | 'EMAIL_FROM'
-  | 'EMAIL_FROM_NAME'
-  | 'LOG_LEVEL'
-  | 'KNOWLEDGE_DATABASE_URL'
-  | 'KNOWLEDGE_EMBEDDING_API_KEY'
-  | 'KNOWLEDGE_EMBEDDING_HOST'
-  | 'KNOWLEDGE_EMBEDDING_MODEL'
-  | 'KNOWLEDGE_EMBEDDING_PORT'
-  | 'KNOWLEDGE_EMBEDDING_SERVER_PATH'
-  | 'KNOWLEDGE_EMBEDDING_TIMEOUT_MS'
-  | 'KNOWLEDGE_EMBEDDING_URL'
-  | 'KNOWLEDGE_QUERY_EMBEDDING_URL'
-  | 'KNOWLEDGE_RAG_ENABLED'
-  | 'MODERATION_MIN_CONFIDENCE'
-  | 'NODE_ENV'
-  | 'OPENROUTER_API_KEY'
-  | 'OPENROUTER_APP_TITLE'
-  | 'OPENROUTER_MODEL'
-  | 'OPENROUTER_PLANNER_MODEL'
-  | 'OPENROUTER_SYSTEM_PROMPT'
-  | 'OPENROUTER_TIMEOUT_MS'
-  | 'PAYLOAD_PUBLIC_SERVER_URL'
-  | 'PAYLOAD_SECRET'
-  | 'PUBLIC_SITE_URL'
-  | 'R2_ACCESS_KEY_ID'
-  | 'R2_BUCKET'
-  | 'R2_ENDPOINT'
-  | 'R2_PUBLIC_URL'
-  | 'R2_REGION'
-  | 'R2_SECRET_ACCESS_KEY'
-  | 'SMTP_APP_PASSWORD'
-  | 'SMTP_USER'
-  | 'TURNSTILE_SITE_KEY'
-  | 'TURNSTILE_SECRET_KEY'
-  | 'TYPESAFE_API_KEY'
-  | 'RATE_LIMIT_HASH_SECRET'
-  | 'SILICONFLOW_API_KEY'
-  | 'UNSLOTH_EMBEDDING_MODEL_PATH',
-  string | undefined
->>
+export type ServerEnvSource = Partial<
+  Record<
+    | 'CONTACT_TO'
+    | 'CHAT_CONTEXT_SIGNING_SECRET'
+    | 'CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL'
+    | 'CLOUDFLARE_ORIGIN_VERIFY_SECRET'
+    | 'CHAT_STREAM_MAX_MS'
+    | 'CHAT_TOOL_TIMEOUT_MS'
+    | 'DATABASE_URL'
+    | 'EMAIL_FROM'
+    | 'EMAIL_FROM_NAME'
+    | 'LOG_LEVEL'
+    | 'KNOWLEDGE_DATABASE_URL'
+    | 'KNOWLEDGE_EMBEDDING_API_KEY'
+    | 'KNOWLEDGE_EMBEDDING_HOST'
+    | 'KNOWLEDGE_EMBEDDING_MODEL'
+    | 'KNOWLEDGE_EMBEDDING_PORT'
+    | 'KNOWLEDGE_EMBEDDING_SERVER_PATH'
+    | 'KNOWLEDGE_EMBEDDING_TIMEOUT_MS'
+    | 'KNOWLEDGE_EMBEDDING_URL'
+    | 'KNOWLEDGE_QUERY_EMBEDDING_URL'
+    | 'KNOWLEDGE_RAG_ENABLED'
+    | 'MODERATION_MIN_CONFIDENCE'
+    | 'NODE_ENV'
+    | 'OPENROUTER_API_KEY'
+    | 'OPENROUTER_APP_TITLE'
+    | 'OPENROUTER_MODEL'
+    | 'OPENROUTER_PLANNER_MODEL'
+    | 'OPENROUTER_SYSTEM_PROMPT'
+    | 'OPENROUTER_TIMEOUT_MS'
+    | 'PAYLOAD_PUBLIC_SERVER_URL'
+    | 'PAYLOAD_SECRET'
+    | 'PUBLIC_SITE_URL'
+    | 'R2_ACCESS_KEY_ID'
+    | 'R2_BUCKET'
+    | 'R2_ENDPOINT'
+    | 'R2_PUBLIC_URL'
+    | 'R2_REGION'
+    | 'R2_SECRET_ACCESS_KEY'
+    | 'SMTP_APP_PASSWORD'
+    | 'SMTP_USER'
+    | 'TURNSTILE_SITE_KEY'
+    | 'TURNSTILE_SECRET_KEY'
+    | 'TYPESAFE_API_KEY'
+    | 'RATE_LIMIT_HASH_SECRET'
+    | 'SILICONFLOW_API_KEY'
+    | 'UNSLOTH_EMBEDDING_MODEL_PATH',
+    string | undefined
+  >
+>
 
 export type IntegrationEnvKey =
   | 'CONTACT_TO'
@@ -77,31 +79,40 @@ export function createServerEnv(source: ServerEnvSource) {
     server: {
       CONTACT_TO: z.email().optional(),
       CHAT_CONTEXT_SIGNING_SECRET: z.string().min(32).optional(),
-      CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: z.url().refine((value) => {
-        const url = new URL(value)
-        return url.protocol === 'https:'
-          && ['discord.com', 'discordapp.com'].includes(url.hostname)
-          && /^\/api\/webhooks\/\d+\/[A-Za-z0-9._-]+\/?$/.test(url.pathname)
-          && !url.port
-          && !url.username
-          && !url.password
-          && !url.search
-          && !url.hash
-      }, { message: 'must be an HTTPS Discord webhook URL' }).optional(),
+      CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: z
+        .url()
+        .refine(
+          (value) => {
+            const url = new URL(value)
+            return (
+              url.protocol === 'https:' &&
+              ['discord.com', 'discordapp.com'].includes(url.hostname) &&
+              /^\/api\/webhooks\/\d+\/[A-Za-z0-9._-]+\/?$/.test(url.pathname) &&
+              !url.port &&
+              !url.username &&
+              !url.password &&
+              !url.search &&
+              !url.hash
+            )
+          },
+          { message: 'must be an HTTPS Discord webhook URL' },
+        )
+        .optional(),
       CLOUDFLARE_ORIGIN_VERIFY_SECRET: z.string().min(32).optional(),
       CHAT_STREAM_MAX_MS: z.coerce.number().int().positive().default(90_000),
       CHAT_TOOL_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
-      DATABASE_URL: z
-        .url()
-        .refine((value) => ['postgres:', 'postgresql:'].includes(new URL(value).protocol), {
-          message: 'must use the postgres or postgresql protocol',
-        }),
+      DATABASE_URL: z.url().refine((value) => ['postgres:', 'postgresql:'].includes(new URL(value).protocol), {
+        message: 'must use the postgres or postgresql protocol',
+      }),
       EMAIL_FROM: z.email().optional(),
       EMAIL_FROM_NAME: z.string().default('LAST//OS'),
       LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
-      KNOWLEDGE_DATABASE_URL: z.url().refine((value) => ['postgres:', 'postgresql:'].includes(new URL(value).protocol), {
-        message: 'must use the postgres or postgresql protocol',
-      }).optional(),
+      KNOWLEDGE_DATABASE_URL: z
+        .url()
+        .refine((value) => ['postgres:', 'postgresql:'].includes(new URL(value).protocol), {
+          message: 'must use the postgres or postgresql protocol',
+        })
+        .optional(),
       KNOWLEDGE_EMBEDDING_API_KEY: z.string().min(1).optional(),
       KNOWLEDGE_EMBEDDING_HOST: z.string().min(1).default('127.0.0.1'),
       KNOWLEDGE_EMBEDDING_MODEL: z.string().min(1).default('Qwen/Qwen3-Embedding-0.6B'),
@@ -110,7 +121,10 @@ export function createServerEnv(source: ServerEnvSource) {
       KNOWLEDGE_EMBEDDING_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
       KNOWLEDGE_EMBEDDING_URL: z.url().default('http://127.0.0.1:8787/v1'),
       KNOWLEDGE_QUERY_EMBEDDING_URL: z.url().default('https://api.siliconflow.com/v1'),
-      KNOWLEDGE_RAG_ENABLED: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
+      KNOWLEDGE_RAG_ENABLED: z
+        .enum(['true', 'false'])
+        .default('false')
+        .transform((value) => value === 'true'),
       MODERATION_MIN_CONFIDENCE: z.coerce.number().min(0).max(1).default(0.75),
       NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
       OPENROUTER_API_KEY: z.string().min(1).optional(),

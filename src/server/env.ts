@@ -1,16 +1,12 @@
-import { createServerEnv, requireIntegrationEnv } from './env-schema'
 import type { IntegrationEnvKey, ServerEnvSource } from './env-schema'
+import { createServerEnv, requireIntegrationEnv } from './env-schema'
 
 type ServerEnv = ReturnType<typeof createServerEnv>
 
 let serverEnv: ServerEnv | undefined
 
 function readRuntimeEnv(): ServerEnvSource {
-  const source = typeof Bun !== 'undefined'
-    ? Bun.env
-    : typeof process !== 'undefined'
-      ? process.env
-      : undefined
+  const source = typeof Bun !== 'undefined' ? Bun.env : typeof process !== 'undefined' ? process.env : undefined
 
   // Payload's CLI currently runs through Node/tsx under `bunx payload`.
   // Keep this fallback isolated here; Bun remains the normal app runtime.
