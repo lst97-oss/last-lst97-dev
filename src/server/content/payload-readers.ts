@@ -1,12 +1,6 @@
 import configPromise from '@payload-config'
-import { getPayload } from 'payload'
 import type { Where } from 'payload'
-
-import type {
-  BlogReader,
-  ChangelogReader,
-  ProjectReader,
-} from './types'
+import { getPayload } from 'payload'
 import {
   mapChangelog,
   mapChangelogSummary,
@@ -16,12 +10,22 @@ import {
   mapProjectSummary,
   type PayloadDocument,
 } from './payload-mappers'
+import type { BlogReader, ChangelogReader, ProjectReader } from './types'
 
 type PayloadResult = {
   docs: PayloadDocument[]
   page?: number
   totalPages?: number
   totalDocs?: number
+}
+
+type PayloadCollection = 'posts' | 'projects' | 'changelogs'
+
+interface PublishedQuery {
+  limit: number
+  page?: number
+  sort?: string
+  slug?: string
 }
 
 let payloadPromise: ReturnType<typeof getPayload> | undefined
@@ -33,25 +37,32 @@ async function getPayloadInstance() {
 
 function publishedWhere(): Where {
   return {
-    and: [
-      { status: { equals: 'published' } },
-      { publishedAt: { less_than_equal: new Date().toISOString() } },
-    ],
+    and: [{ status: { equals: 'published' } }, { publishedAt: { less_than_equal: new Date().toISOString() } }],
   }
+}
+
+async function findPublishedDocuments(collection: PayloadCollection, query: PublishedQuery): Promise<PayloadResult> {
+  const payload = await getPayloadInstance()
+  const where: Where =
+    query.slug !== undefined ? { and: [publishedWhere(), { slug: { equals: query.slug } }] } : publishedWhere()
+  return (await payload.find({
+    collection,
+    where,
+    limit: query.limit,
+    ...(query.page !== undefined ? { page: query.page } : {}),
+    ...(query.sort ? { sort: query.sort } : {}),
+    depth: 1,
+  })) as unknown as PayloadResult
 }
 
 export function createPayloadReaders(): { blogs: BlogReader; projects: ProjectReader; changelogs: ChangelogReader } {
   const blogs: BlogReader = {
     async listPublished(input) {
-      const payload = await getPayloadInstance()
-      const result = (await payload.find({
-        collection: 'posts',
-        where: publishedWhere(),
+      const result = await findPublishedDocuments('posts', {
         limit: Math.min(Math.max(input.limit, 1), 50),
         page: Math.max(input.page, 1),
         sort: '-publishedAt',
-        depth: 1,
-      })) as unknown as PayloadResult
+      })
 
       return {
         items: result.docs.map(mapPostSummary),
@@ -61,15 +72,10 @@ export function createPayloadReaders(): { blogs: BlogReader; projects: ProjectRe
       }
     },
     async getPublishedBySlug(slug) {
-      const payload = await getPayloadInstance()
-      const result = (await payload.find({
-        collection: 'posts',
-        where: {
-          and: [publishedWhere(), { slug: { equals: slug } }],
-        },
+      const result = await findPublishedDocuments('posts', {
         limit: 1,
-        depth: 1,
-      })) as unknown as PayloadResult
+        slug,
+      })
       const document = result.docs[0]
       return document ? mapPost(document) : null
     },
@@ -77,26 +83,17 @@ export function createPayloadReaders(): { blogs: BlogReader; projects: ProjectRe
 
   const projects: ProjectReader = {
     async listPublished() {
-      const payload = await getPayloadInstance()
-      const result = (await payload.find({
-        collection: 'projects',
-        where: publishedWhere(),
+      const result = await findPublishedDocuments('projects', {
         limit: 50,
         sort: 'sortOrder',
-        depth: 1,
-      })) as unknown as PayloadResult
+      })
       return result.docs.map(mapProjectSummary)
     },
     async getPublishedBySlug(slug) {
-      const payload = await getPayloadInstance()
-      const result = (await payload.find({
-        collection: 'projects',
-        where: {
-          and: [publishedWhere(), { slug: { equals: slug } }],
-        },
+      const result = await findPublishedDocuments('projects', {
         limit: 1,
-        depth: 1,
-      })) as unknown as PayloadResult
+        slug,
+      })
       const document = result.docs[0]
       return document ? mapProject(document) : null
     },
@@ -104,15 +101,11 @@ export function createPayloadReaders(): { blogs: BlogReader; projects: ProjectRe
 
   const changelogs: ChangelogReader = {
     async listPublished(input) {
-      const payload = await getPayloadInstance()
-      const result = (await payload.find({
-        collection: 'changelogs',
-        where: publishedWhere(),
+      const result = await findPublishedDocuments('changelogs', {
         limit: Math.min(Math.max(input.limit, 1), 50),
         page: Math.max(input.page, 1),
         sort: '-publishedAt',
-        depth: 1,
-      })) as unknown as PayloadResult
+      })
 
       return {
         items: result.docs.map(mapChangelogSummary),
@@ -122,15 +115,10 @@ export function createPayloadReaders(): { blogs: BlogReader; projects: ProjectRe
       }
     },
     async getPublishedBySlug(slug) {
-      const payload = await getPayloadInstance()
-      const result = (await payload.find({
-        collection: 'changelogs',
-        where: {
-          and: [publishedWhere(), { slug: { equals: slug } }],
-        },
+      const result = await findPublishedDocuments('changelogs', {
         limit: 1,
-        depth: 1,
-      })) as unknown as PayloadResult
+        slug,
+      })
       const document = result.docs[0]
       return document ? mapChangelog(document) : null
     },

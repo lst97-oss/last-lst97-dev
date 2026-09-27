@@ -11,7 +11,7 @@ import { handleServerFunctions, toSerializable } from '@payloadcms/tanstack-star
 export const payloadServerFn = createServerFn({ method: 'POST', strict: false })
   .validator((input: { name: string; args: Record<string, unknown> }) => input)
   .handler(async ({ data }): Promise<unknown> => {
-    const { getPayloadImportMap } = await import('./payload-import-map')
+    const { getPayloadImportMap } = await import('./import-map')
     const result = await handleServerFunctions({
       args: data.args,
       config: configPromise,
@@ -24,7 +24,7 @@ export const payloadServerFn = createServerFn({ method: 'POST', strict: false })
 // Root admin layout data — clientConfig, translations, theme, user,
 // permissions. Called from the _payload layout loader.
 export const payloadLayoutServerFn = createServerFn({ method: 'GET', strict: false }).handler(async (): Promise<unknown> => {
-  const { getPayloadImportMap } = await import('./payload-import-map')
+  const { getPayloadImportMap } = await import('./import-map')
   const data = await getLayoutData({ configPromise, importMap: getPayloadImportMap() })
   return toSerializable(data)
 })

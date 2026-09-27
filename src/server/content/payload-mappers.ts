@@ -1,8 +1,8 @@
 import { projectPublicLexicalContent } from './public-lexical'
 import type {
-  CoverImage,
   Changelog,
   ChangelogSummary,
+  CoverImage,
   Post,
   PostSummary,
   Project,

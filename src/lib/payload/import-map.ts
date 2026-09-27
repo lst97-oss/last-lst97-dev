@@ -1,4 +1,4 @@
-import { importMap } from '../payload-import-map'
+import { importMap } from '../../payload-import-map'
 
 /**
  * Payload does not expose the generated import map on the Payload instance.

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createSiteDataLoaders } from '../src/lib/site-data'
+import { createSiteDataLoaders } from '../src/lib/content/data-loaders'
 
 const emptyPostPage = { items: [], page: 1, totalPages: 1, totalDocs: 0 }
 const emptyChangelogPage = { items: [], page: 1, totalPages: 1, totalDocs: 0 }

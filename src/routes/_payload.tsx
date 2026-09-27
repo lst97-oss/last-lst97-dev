@@ -1,10 +1,10 @@
+import { RootProvider } from '@payloadcms/ui'
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import type React from 'react'
-import { RootProvider } from '@payloadcms/ui'
 import '@payloadcms/ui/css/app.css'
 import { TanStackRouterAdapter } from '@payloadcms/tanstack-start/client'
-import { toRootProviderProps, type PayloadLayoutData } from '../lib/payload-layout'
-import { payloadLayoutServerFn, payloadServerFn } from '../lib/payload-server-fns'
+import { type PayloadLayoutData, toRootProviderProps } from '../lib/payload/layout'
+import { payloadLayoutServerFn, payloadServerFn } from '../lib/payload/server-fns'
 
 export const Route = createFileRoute('/_payload')({
   loader: async () => {

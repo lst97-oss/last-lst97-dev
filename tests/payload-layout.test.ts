@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { toRootProviderProps } from '../src/lib/payload-layout'
+import { toRootProviderProps } from '../src/lib/payload/layout'
 
 describe('Payload layout provider props', () => {
   test('maps getLayoutData clientConfig to RootProvider config', () => {

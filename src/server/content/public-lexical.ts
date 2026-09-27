@@ -1,6 +1,6 @@
 import { safeAssetHref, safeContentHref } from '../../lib/content-url'
-import { parseLexicalContent } from './types'
 import type { LexicalContent } from './types'
+import { parseLexicalContent } from './types'
 
 type RecordValue = Record<string, unknown>
 
@@ -56,8 +56,19 @@ function sanitizeUpload(value: unknown): RecordValue | null {
 function sanitizeNode(node: RecordValue, now: Date): RecordValue | null {
   const sanitized: RecordValue = { type: node.type }
   for (const key of [
-    'version', 'direction', 'format', 'indent', 'tag', 'listType', 'start',
-    'value', 'checked', 'detail', 'mode', 'style', 'text',
+    'version',
+    'direction',
+    'format',
+    'indent',
+    'tag',
+    'listType',
+    'start',
+    'value',
+    'checked',
+    'detail',
+    'mode',
+    'style',
+    'text',
   ]) {
     if (key in node) sanitized[key] = node[key]
   }
@@ -85,9 +96,7 @@ function sanitizeNode(node: RecordValue, now: Date): RecordValue | null {
     if (linkType === 'internal') {
       const doc = isRecord(fields.doc) ? fields.doc : null
       const related = doc ? publicRelatedRecord(doc.relationTo, doc.value, now) : null
-      projectedFields.doc = related && doc
-        ? { relationTo: doc.relationTo, value: related }
-        : null
+      projectedFields.doc = related && doc ? { relationTo: doc.relationTo, value: related } : null
     } else {
       const href = safeContentHref(fields.url)
       if (href) projectedFields.url = href

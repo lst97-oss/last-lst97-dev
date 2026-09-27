@@ -1,4 +1,4 @@
-import type { CoverImage, SEOOverrides } from '../server/content/types'
+import type { CoverImage, SEOOverrides } from '../../server/content/types'
 
 interface ContentMetaInput {
   description: string

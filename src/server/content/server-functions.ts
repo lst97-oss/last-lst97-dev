@@ -13,7 +13,9 @@ export const getPostServerFn = createServerFn({ method: 'GET', strict: false })
   .validator((input: { slug: string }) => input)
   .handler(({ data }) => contentReader.getPost(data.slug))
 
-export const listProjectsServerFn = createServerFn({ method: 'GET', strict: false }).handler(() => contentReader.listProjects())
+export const listProjectsServerFn = createServerFn({ method: 'GET', strict: false }).handler(() =>
+  contentReader.listProjects(),
+)
 
 export const getProjectServerFn = createServerFn({ method: 'GET', strict: false })
   .validator((input: { slug: string }) => input)

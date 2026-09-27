@@ -48,16 +48,23 @@ function isSerializedNode(value: unknown): boolean {
     case 'autolink': {
       if (!hasValidChildren(value) || !isRecord(value.fields)) return false
       const { fields } = value
-      return (fields.linkType === 'custom' || fields.linkType === 'internal') &&
+      return (
+        (fields.linkType === 'custom' || fields.linkType === 'internal') &&
         (fields.newTab === undefined || typeof fields.newTab === 'boolean') &&
         (fields.url === undefined || typeof fields.url === 'string')
+      )
     }
     case 'relationship':
-      return typeof value.relationTo === 'string' &&
+      return (
+        typeof value.relationTo === 'string' &&
         (typeof value.value === 'string' || typeof value.value === 'number' || isRecord(value.value))
+      )
     case 'upload':
-      return typeof value.relationTo === 'string' && isRecord(value.fields) &&
+      return (
+        typeof value.relationTo === 'string' &&
+        isRecord(value.fields) &&
         (typeof value.value === 'string' || typeof value.value === 'number' || isRecord(value.value))
+      )
     default:
       return false
   }

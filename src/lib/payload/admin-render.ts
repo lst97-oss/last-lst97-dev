@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import configPromise from '@payload-config'
-import { buildAdminRenderParams } from './payload-admin-route'
+import { buildAdminRenderParams } from './admin-route'
 
 // Bun-native: Web APIs only. Renders an /admin subpath to HTML on the server
 // via Payload's shared renderRoot (defaultAdminViews + initReq), then the
@@ -13,7 +13,7 @@ export const adminRenderServerFn = createServerFn({ method: 'GET', strict: false
     // RSC client build must not evaluate Payload's server-only imports.
     const [{ loadAdminPage }, { getPayloadImportMap }] = await Promise.all([
       import('@payloadcms/tanstack-start/server'),
-      import('./payload-import-map'),
+      import('./import-map'),
     ])
     const result = await loadAdminPage({
       config: await configPromise,

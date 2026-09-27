@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createContentMeta } from '../src/lib/content-meta'
-import { formatPublishedDate } from '../src/lib/content-date'
-import { formatProjectTimeframe, getProjectLifecycleLabel } from '../src/lib/project-display'
+import { createContentMeta } from '../src/lib/content/meta'
+import { formatPublishedDate } from '../src/lib/content/date'
+import { formatProjectTimeframe, getProjectLifecycleLabel } from '../src/lib/content/project-display'
 
 describe('content presentation helpers', () => {
   test('prefers SEO overrides and falls back to editorial content and cover image', () => {
