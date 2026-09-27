@@ -22,12 +22,16 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
   { id: 'knowledge-you', category: 'positive', message: 'What is your professional experience and what skills do you have?', expected: ['search_knowledge'] },
   { id: 'knowledge-contributions', category: 'positive', message: 'Which repositories have you contributed to?', expected: ['search_knowledge'] },
   { id: 'knowledge-unknown-project', category: 'positive', message: 'What does TPWFC do?', expected: ['search_knowledge'] },
+  { id: 'knowledge-owner-project-demos', category: 'positive', message: 'Do you have some live demo about your project?', expected: ['search_knowledge'] },
+  { id: 'knowledge-project-demo-and-publication', category: 'positive', message: 'What demo URL do you have for GNAF Autocomplete, and is it published on your portfolio?', expected: ['search_knowledge', 'site_content'] },
   { id: 'knowledge-current-project', category: 'positive', message: 'What project are you currently working on?', expected: ['coding_history', 'search_knowledge'] },
   { id: 'knowledge-current-project-today', category: 'positive', message: 'What project are you working on today?', expected: ['coding_history', 'search_knowledge'] },
   { id: 'knowledge-typo-project', category: 'positive', message: 'Can you explain the project called TPFWC?', expected: ['search_knowledge'] },
   { id: 'knowledge-combined-facts', category: 'positive', message: 'Tell me about your education, work history, and coding skills.', expected: ['search_knowledge'] },
   { id: 'knowledge-currently-building', category: 'positive', message: 'What are you working on right now?', expected: ['coding_history', 'search_knowledge'] },
   { id: 'knowledge-repos-owned', category: 'positive', message: 'Which of your repositories do you own versus contribute to?', expected: ['search_knowledge'] },
+  { id: 'projects-next-batch', category: 'positive', message: 'Show me more', expected: ['list_owned_projects'], history: [{ role: 'assistant', content: 'Here are some recent projects: GNAF Autocomplete, TicketQueue.' }] },
+  { id: 'projects-all-owned-inventory', category: 'positive', message: 'Can you show me all your projects?', expected: ['list_owned_projects'] },
   { id: 'knowledge-portfolio-role', category: 'positive', message: 'What was your role on the TPWFC project?', expected: ['search_knowledge'] },
 
   // coding_stats: current/recent aggregate activity
@@ -41,7 +45,20 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
   // coding_history: explicit historical ranges and breakdowns
   { id: 'history-last-month', category: 'positive', message: 'How many hours did you code last month?', expected: ['coding_history'] },
   { id: 'history-last-year-languages', category: 'positive', message: 'Break down your coding by language for last year.', expected: ['coding_history'] },
+  { id: 'history-all-projects-all-time', category: 'positive', message: 'How about the all time status for all the projects?', expected: ['coding_history'] },
   { id: 'history-project-daily', category: 'positive', message: 'How many hours did you spend coding on TPWFC last July, and what is TPWFC?', expected: ['coding_history', 'search_knowledge'] },
+  {
+    id: 'history-project-all-time-followup', category: 'positive', message: 'How about the all time status?',
+    expected: ['coding_history'],
+    history: [
+      { role: 'user', content: 'What project did I spend most of my time on?' },
+      { role: 'assistant', content: 'You spent the most time on canton-101-server: 33 hours and 4 minutes in the recent activity window.' },
+      { role: 'user', content: 'What is the total coding time for that project?' },
+      { role: 'assistant', content: 'The total was 33 hours and 4 minutes in the recent activity window.' },
+    ],
+    topicAnchors: [{ question: 'What is the total coding time for canton-101-server?', observedAtUtc: '2026-09-25T00:00:00.000Z', tools: [{ name: 'coding_history', arguments: { op: 'project_time', project: 'canton-101-server', from: '2026-08-27', to: '2026-09-25' }, status: 'completed' }] }],
+    toolOutputs: 'coding_history: canton-101-server — 33 hours and 4 minutes (2026-08-27 → 2026-09-25).',
+  },
   { id: 'history-streak', category: 'positive', message: 'What was your longest coding streak this year?', expected: ['coding_history'] },
   { id: 'history-calendar-month', category: 'positive', message: 'How many hours did you code during March 2025?', expected: ['coding_history'] },
   { id: 'history-daily-series', category: 'positive', message: 'Show the day-by-day coding totals for August 2024.', expected: ['coding_history'] },
@@ -67,7 +84,7 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
     id: 'context-stats-already-answered', category: 'context', message: 'Repeat that total, please.',
     expected: [], history: [{ role: 'assistant', content: 'Your all-time total is 1,234 hours.' }],
     toolOutputs: 'coding_stats: all-time total is 1,234 hours.',
-    topicAnchors: [{ question: 'What is Nelson’s all-time coding total?', observedAtUtc: '2026-09-24T00:00:00.000Z', tools: [{ name: 'coding_stats', arguments: { range: 'all_time' }, status: 'completed' }] }],
+    topicAnchors: [{ question: 'What is Nelson’s all-time coding total?', observedAtUtc: '2026-09-24T00:00:00.000Z', tools: [{ name: 'coding_stats', arguments: { category: 'activity', range: 'all_time' }, status: 'completed' }] }],
   },
   { id: 'context-latest-still-live', category: 'positive', message: 'Which posts are the latest now?', expected: ['site_content'], history: [{ role: 'assistant', content: 'Last month the latest post was “Example”.' }] },
   {
@@ -104,8 +121,8 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
     }],
   },
   {
-    id: 'followup-exact-education-answer-retained', category: 'context', message: 'Can you repeat that education detail?',
-    expected: [],
+    id: 'followup-partial-education-answer-requeries', category: 'positive', message: 'Can you give me your full education history?',
+    expected: ['search_knowledge'],
     history: [{ role: 'assistant', content: 'Nelson completed a Certificate IV at TAFE.' }],
     topicAnchors: [{
       question: 'How about Nelson’s education?', observedAtUtc: '2026-09-24T00:00:00.000Z',
@@ -121,6 +138,20 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
     }],
   },
   {
+    id: 'followup-accepts-offered-coding-tools', category: 'positive', message: 'yes please', expected: ['coding_stats', 'coding_history'],
+    history: [
+      { role: 'user', content: 'How about the coding hours?' },
+      { role: 'assistant', content: 'I do not have public-share or coding-history data available. Want me to try pulling that data?' },
+    ],
+  },
+  {
+    id: 'followup-refuses-offered-coding-tools', category: 'negative', message: 'no thanks', expected: [],
+    history: [
+      { role: 'user', content: 'How about the coding hours?' },
+      { role: 'assistant', content: 'I do not have public-share or coding-history data available. Want me to try pulling that data?' },
+    ],
+  },
+  {
     id: 'followup-current-project-requeries-fresh-wakatime', category: 'positive', message: 'What project are you working on now?',
     expected: ['coding_history', 'search_knowledge'],
     topicAnchors: [{
@@ -134,7 +165,7 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
   {
     id: 'context-live-stats-already-answered', category: 'context', message: 'What was the live all-time total you just found?',
     expected: [], toolOutputs: 'coding_stats: current all-time total is 1,234 hours.',
-    topicAnchors: [{ question: 'What is the live all-time coding total?', observedAtUtc: '2026-09-24T00:00:00.000Z', tools: [{ name: 'coding_stats', arguments: { range: 'all_time' }, status: 'completed' }] }],
+    topicAnchors: [{ question: 'What is the live all-time coding total?', observedAtUtc: '2026-09-24T00:00:00.000Z', tools: [{ name: 'coding_stats', arguments: { category: 'activity', range: 'all_time' }, status: 'completed' }] }],
   },
 
   // False-positive guards: assistant-directed “you”, general facts, and tasks
@@ -163,5 +194,5 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
   { id: 'negative-you-general-advice', category: 'negative', message: 'What should you consider when choosing a database?', expected: [] },
   { id: 'negative-you-chat-feature', category: 'negative', message: 'Can you explain how your chat interface works?', expected: [] },
   { id: 'positive-you-personal-skill', category: 'positive', message: 'Which programming languages do you know?', expected: ['search_knowledge'] },
-  { id: 'positive-you-projects', category: 'positive', message: 'What projects have you built?', expected: ['search_knowledge'] },
+  { id: 'positive-you-projects', category: 'positive', message: 'What projects have you built?', expected: ['list_owned_projects'] },
 ]

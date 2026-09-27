@@ -1,4 +1,4 @@
-import type { ChatConversationContext, ChatInput, ChatMessage, ChatResponder, ChatStreamingResponder, ChatTopicAnchor, ChatToolObservation } from './types'
+import { EMPTY_VERIFIED_REPLY, type ChatConversationContext, type ChatInput, type ChatMessage, type ChatProjectListState, type ChatResponder, type ChatStreamingResponder, type ChatTopicAnchor, type ChatToolObservation } from './types'
 import type { ChatStreamEvent } from './events'
 import type { ChatContextSigner } from './context-signer'
 import type { ModerationService } from '../moderation/service'
@@ -9,18 +9,26 @@ import type { WakaTimeStatsClient } from '../wakatime/stats'
 import { matchCodingStatsRequest } from './coding-stats-tool'
 import { type CodingHistorySource, matchCodingHistoryRequest } from './coding-history-tool'
 import type { AgentPlanner, AgentToolCall, AgentToolName, AgentToolUseDecisions, AgentToolResult } from './agent-tools'
+import type { ProjectCatalogFilters } from '../knowledge/project-catalog'
 import type { ContentReader } from '../content/service'
 import { MAX_AGENT_STEPS } from './agent-tools'
 import { runAgentTool } from './agent-tool-runner'
 import { chatModerationRejectionMessage } from './moderation-rejection'
 import type { ChatModerationRejectionReason } from '../moderation/types'
+import { resolveKnowledgeQuery } from '../knowledge/query-resolution'
+import { CHAT_TURN_LIMIT_MESSAGE, MAX_CHAT_CONTEXT_MESSAGES } from '../../lib/chat-limits'
+import { createChatDiagnosticsCapture } from '../observability/chat-diagnostics'
+import type { ChatDiagnosticsCapture, ChatDiagnosticsOutcome, ChatDiagnosticsSink } from '../observability/chat-diagnostics'
 
 const MAX_MESSAGE_LENGTH = 2_000
-const MAX_HISTORY_ITEMS = 12
+const MAX_HISTORY_ITEMS = MAX_CHAT_CONTEXT_MESSAGES
 
 const UNAVAILABLE_MESSAGE = 'Message screening is temporarily unavailable.'
 const EXPIRED_MESSAGE = 'This conversation has expired. Please start a new conversation.'
 const OFFLINE_MESSAGE = 'The assistant is offline right now.'
+const CONTACT_CONFIRMATION_TEXT = 'It sounds like you want to send a message or report to Nelson by email. Starting a contact session clears this conversation, and none of its earlier messages will be included in your email. Would you like to continue?'
+const PERSONAL_KNOWLEDGE_FACT = /\b(?:nelson|lst97|handle|username|profile|education|educational|degree|qualification|study|school|experience|employment|career|professional|skills?|background|contributions?|contact|email|linkedin|repositories|repository|repos?|projects?|website|codebase|technology|tech stack)\b/i
+const ASSISTANT_USAGE_REQUEST = /\b(?:chat assistant|portfolio assistant|what can you help|your capabilities|how do you (?:decide|work|process|handle|choose)|how does (?:this|your) chat|what services do you provide)\b/i
 
 type ReplyFailure = {
   category: string
@@ -63,12 +71,14 @@ function describeReplyFailure(error: unknown): ReplyFailure {
 type PreparedTurn =
   | { ok: false; status: 'blocked'; reason: ChatModerationRejectionReason }
   | { ok: false; status: 'unavailable' | 'invalid_context' }
-  | { ok: true; message: string; verifiedHistory: ChatMessage[]; topicAnchors: ChatTopicAnchor[]; currentDateTimeUtc: string; today: string; toolDecisions?: AgentToolUseDecisions }
+  | { ok: false; status: 'contact_confirmation'; text: string; contextToken: string }
+  | { ok: false; status: 'turn_limit' }
+  | { ok: true; message: string; verifiedHistory: ChatMessage[]; topicAnchors: ChatTopicAnchor[]; projectListState: ChatProjectListState; currentDateTimeUtc: string; today: string; toolDecisions?: AgentToolUseDecisions }
 
 export function createChatService(responder: ChatResponder, dependencies: {
   moderation: ModerationService
   contextSigner: ChatContextSigner
-  knowledge?: Pick<RetrieveKnowledge, 'execute'>
+  knowledge?: Pick<RetrieveKnowledge, 'execute'> & Partial<Pick<RetrieveKnowledge, 'listOwnedProjects'>>
   knowledgeEnabled?: boolean
   codingStats?: Pick<WakaTimeStatsClient, 'fetchSummary'>
   codingStatsEnabled?: boolean
@@ -80,6 +90,7 @@ export function createChatService(responder: ChatResponder, dependencies: {
   toolTimeoutMs?: number
   maxAgentSteps?: number
   logger?: Pick<Logger, 'warn' | 'error'>
+  diagnosticsSink?: ChatDiagnosticsSink
 }) {
   const toolTimeoutMs = dependencies.toolTimeoutMs ?? 15_000
   const maxAgentSteps = Math.max(1, Math.min(8, Math.floor(dependencies.maxAgentSteps ?? MAX_AGENT_STEPS)))
@@ -93,13 +104,49 @@ export function createChatService(responder: ChatResponder, dependencies: {
   function availableToolNames(): AgentToolName[] {
     return [
       ...(dependencies.knowledgeEnabled === true && dependencies.knowledge ? ['search_knowledge' as const] : []),
+      ...(dependencies.knowledgeEnabled === true && typeof dependencies.knowledge?.listOwnedProjects === 'function' ? ['list_owned_projects' as const] : []),
       ...(dependencies.codingStatsEnabled === true && dependencies.codingStats ? ['coding_stats' as const] : []),
       ...(dependencies.codingHistoryEnabled === true && dependencies.codingHistory ? ['coding_history' as const] : []),
       ...(dependencies.siteContent ? ['site_content' as const] : []),
     ]
   }
 
-  async function prepareTurn(input: ChatInput): Promise<PreparedTurn> {
+  function requiredKnowledgeQuery(message: string, history: ChatMessage[], topicAnchors: ChatTopicAnchor[]): string | undefined {
+    const query = resolveKnowledgeQuery(message, history, topicAnchors)
+    if (ASSISTANT_USAGE_REQUEST.test(message) && !/\b(?:nelson|lst97|his|him)\b/i.test(message)) return undefined
+    if (!PERSONAL_KNOWLEDGE_FACT.test(query)) return undefined
+
+    if (/\b(?:demo|demos|live[- ]?site|live[- ]?url|deployment|deployed)\b/i.test(query)) {
+      return `Nelson's projects, live demo URLs, deployed websites, and project links. Original question: ${query}`.slice(0, 1_000)
+    }
+
+    const namedProject = query.match(/\b[a-z0-9]+(?:[-_.][a-z0-9]+)+\b/i)?.[0]
+    if (namedProject && /\b(?:project|repository|repo|codebase)\b/i.test(query)) {
+      return `Nelson's exact repository record for ${namedProject}: ownership, project purpose, visibility, technologies, files, and source evidence. Original question: ${query}`.slice(0, 1_000)
+    }
+    return query
+  }
+
+  function createDiagnosticsCapture(): ChatDiagnosticsCapture | undefined {
+    if (!dependencies.diagnosticsSink) return undefined
+    return createChatDiagnosticsCapture({
+      traceId: crypto.randomUUID(),
+      message: '',
+    }, dependencies.diagnosticsSink)
+  }
+
+  function finishDiagnostics(capture: ChatDiagnosticsCapture | undefined, outcome: ChatDiagnosticsOutcome, response?: string): void {
+    capture?.finish({ outcome, ...(response !== undefined ? { response } : {}) })
+  }
+
+  function diagnosticsObserver(capture: ChatDiagnosticsCapture | undefined) {
+    return capture ? {
+      onModelCall: capture.addModelCall,
+      onJevDecision: capture.addJevDecision,
+    } : undefined
+  }
+
+  async function prepareTurn(input: ChatInput, capture?: ChatDiagnosticsCapture): Promise<PreparedTurn> {
     const clock = getCurrentClock()
     const message = input.message.trim().slice(0, MAX_MESSAGE_LENGTH)
     if (!message) {
@@ -108,16 +155,41 @@ export function createChatService(responder: ChatResponder, dependencies: {
 
     const conversation = await dependencies.contextSigner.verify(input.contextToken)
     if (input.contextToken && !conversation) return { ok: false, status: 'invalid_context' }
+    const workflow = conversation?.workflow ?? { mode: 'normal' as const, phase: 'conversation' as const }
+    if (workflow.mode !== 'normal' || workflow.phase !== 'conversation') return { ok: false, status: 'invalid_context' }
+    if ((conversation?.messages.length ?? 0) >= MAX_CHAT_CONTEXT_MESSAGES) return { ok: false, status: 'turn_limit' }
     const verifiedHistory = (conversation?.messages ?? []).slice(-MAX_HISTORY_ITEMS).map((item) => ({
       role: item.role,
       content: item.content.trim().slice(0, MAX_MESSAGE_LENGTH),
     }))
     const topicAnchors = conversation?.topicAnchors ?? []
-    const moderation = await dependencies.moderation.checkChat({ message, context: verifiedHistory, topicAnchors, availableTools: availableToolNames(), currentDateTimeUtc: clock.currentDateTimeUtc })
+    const projectListState = conversation?.projectListState ?? { clarificationAsked: false, shownProjectIds: [] }
+    const moderation = await dependencies.moderation.checkChat({ message, context: verifiedHistory, topicAnchors, projectListState, availableTools: availableToolNames(), currentDateTimeUtc: clock.currentDateTimeUtc }, diagnosticsObserver(capture))
     if ('unavailable' in moderation) return { ok: false, status: 'unavailable' }
     if (!moderation.allowed) return { ok: false, status: 'blocked', reason: moderation.reason ?? 'uncertain' }
 
-    return { ok: true, message, verifiedHistory, topicAnchors, ...clock, toolDecisions: moderation.toolDecisions }
+    if (moderation.contactIntent === 'contact') {
+      const contextToken = await dependencies.contextSigner.sign({
+        messages: verifiedHistory,
+        topicAnchors,
+        projectListState,
+        workflow: { mode: 'normal', phase: 'contact_confirmation' },
+      })
+      return { ok: false, status: 'contact_confirmation', text: CONTACT_CONFIRMATION_TEXT, contextToken }
+    }
+
+    capture?.setContext(message, verifiedHistory)
+    capture?.setMetadata(input.diagnosticsMetadata)
+
+    return {
+      ok: true,
+      message,
+      verifiedHistory,
+      topicAnchors,
+      projectListState,
+      ...clock,
+      toolDecisions: moderation.toolDecisions,
+    }
   }
 
   interface AgentTurnState {
@@ -131,6 +203,12 @@ export function createChatService(responder: ChatResponder, dependencies: {
     knowledgeEvidence?: KnowledgeEvidence[]
     knowledgeUnavailable: boolean
     toolRoutingUnavailable: boolean
+    projectSourceIds: string[]
+    shortlistStarted: boolean
+    trackProjectSources: boolean
+    activeProjectFilters?: ProjectCatalogFilters
+    catalogueToolExecutedThisStep: boolean
+    catalogueFallback?: string
   }
 
   function buildNextConversationContext(turn: Extract<PreparedTurn, { ok: true }>, agent: AgentTurnState, assistantText: string): ChatConversationContext {
@@ -144,6 +222,12 @@ export function createChatService(responder: ChatResponder, dependencies: {
         { role: 'assistant', content: assistantText },
       ],
       topicAnchors: [...turn.topicAnchors, ...currentAnchor],
+      projectListState: {
+        ...turn.projectListState,
+        shownProjectIds: [...new Set([...turn.projectListState.shownProjectIds, ...agent.projectSourceIds])].slice(0, 200),
+        shortlistStarted: turn.projectListState.shortlistStarted === true || agent.shortlistStarted,
+        ...(agent.activeProjectFilters ? { activeFilters: agent.activeProjectFilters } : turn.projectListState.activeFilters ? { activeFilters: turn.projectListState.activeFilters } : {}),
+      },
     }
   }
 
@@ -158,10 +242,43 @@ export function createChatService(responder: ChatResponder, dependencies: {
     return { id: 'rag-fallback', name: 'search_knowledge', arguments: { query: message } }
   }
 
+  function isAffirmativeToolAcceptance(message: string): boolean {
+    return /^(?:yes(?:,? please)?|please|sure|go ahead|try it|do it|that works)[.!]?$/i.test(message.trim())
+  }
+
+  function acceptedToolCalls(
+    message: string,
+    history: ChatMessage[],
+    tools: AgentToolName[],
+    today: string,
+  ): AgentToolCall[] {
+    if (!isAffirmativeToolAcceptance(message) || history.at(-1)?.role !== 'assistant') return []
+    const offer = history.at(-1)?.content ?? ''
+    if (!/\b(?:want me|would you like me|shall i|can i|try pulling|try to pull|look up|check|fetch|connect)\b/i.test(offer)) return []
+    const selected = new Set(tools)
+    const calls: AgentToolCall[] = []
+    if (selected.has('coding_stats') && /\b(?:operating system|os)\b/i.test(offer)) {
+      calls.push({ id: 'stats-os-accepted', name: 'coding_stats', arguments: { category: 'operating_systems', range: 'all_time' } })
+    } else if (selected.has('coding_stats') && /\b(?:wakatime|public[- ]share|coding activity|coding hours?|total hours)\b/i.test(offer)) {
+      calls.push({ id: 'stats-accepted', name: 'coding_stats', arguments: { category: 'activity', range: 'all_time' } })
+    }
+    if (selected.has('coding_history') && /\b(?:coding-history|coding history|warehouse|per-project|language breakdown|daily series|streak)\b/i.test(offer)) {
+      calls.push({ id: 'history-accepted', name: 'coding_history', arguments: { op: 'summary', from: '2000-01-01', to: today } })
+    }
+    if (selected.has('search_knowledge') && /\b(?:knowledge|profile|repository|project details)\b/i.test(offer)) {
+      calls.push({ id: 'knowledge-accepted', name: 'search_knowledge', arguments: { query: 'the previously offered personal knowledge lookup' } })
+    }
+    if (selected.has('site_content') && /\b(?:published site|site content|blog post|showcase)\b/i.test(offer)) {
+      calls.push({ id: 'site-accepted', name: 'site_content', arguments: { op: 'list_projects' } })
+    }
+    return calls.slice(0, 4)
+  }
+
   function deterministicPlans(message: string, tools: AgentToolName[], today: string): AgentToolCall[] {
     if (tools.length === 0) return []
     const selected = new Set(tools)
     const calls: AgentToolCall[] = []
+    if (selected.has('list_owned_projects')) calls.push({ id: 'owned-projects', name: 'list_owned_projects', arguments: {} })
     if (selected.has('search_knowledge')) {
       const knowledge = matchKnowledgeRequest(message)
       if (knowledge) calls.push(knowledge)
@@ -180,36 +297,28 @@ export function createChatService(responder: ChatResponder, dependencies: {
     const historyQuery = dependencies.codingHistoryEnabled === true && dependencies.codingHistory
       ? matchCodingHistoryRequest(message, today)
       : null
-    // "total coding hours" with no explicit past range is a live-API question:
-    // the live endpoint stays current while the import is a point-in-time
-    // snapshot, so two different totals otherwise reach the model at once.
-    const asksLiveTotal = /\btotal\b|\ball[\s_-]?time\b|\bever\b|\bhow long\b/.test(lower)
-      && (historyQuery === null || historyQuery.op === 'summary')
-    // Total + breakdown ("most time on which project", "total and top
-    // projects") needs BOTH tools: live API for the current total, warehouse
-    // for the per-project split the live summary cannot provide.
-    const wantsBreakdown = /\bmost\b|\btop\b|\bbest\b|\bwhich project\b|\bbreakdown\b|\bdistribut|\bper[- ]project\b|\bby project\b|\beach project\b/.test(lower)
+    const shareQuery = dependencies.codingStatsEnabled === true && dependencies.codingStats
+      ? matchCodingStatsRequest(message)
+      : null
+    const asksProjectBreakdown = /\bmost\b|\btop\b|\bbest\b|\bwhich project\b|\bbreakdown\b|\bdistribut|\bper[- ]project\b|\bby project\b|\beach project\b/.test(lower)
+    const arbitraryHistoricalRange = Boolean(historyQuery && /\b20\d{2}\b|\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\b/.test(lower))
     const plans: AgentToolCall[] = []
     const historyPlan = (op: string, from: string, to: string, project?: string): AgentToolCall => ({
       id: `history-${op}`,
       name: 'coding_history',
       arguments: { op, from, to, ...(project ? { project } : {}) },
     })
-    if (wantsBreakdown && dependencies.codingHistory) {
+    if (asksProjectBreakdown && dependencies.codingHistory) {
       if (historyQuery && historyQuery.op !== 'summary') {
         plans.push(historyPlan(historyQuery.op, historyQuery.from, historyQuery.to, historyQuery.project))
       } else {
-        const range = historyQuery ?? { from: '2000-01-01', to: today }
-        plans.push(historyPlan('by_project', range.from, range.to))
+        plans.push(historyPlan('by_project', historyQuery?.from ?? '2000-01-01', historyQuery?.to ?? today))
       }
-    } else if (!asksLiveTotal && historyQuery) {
+    } else if (historyQuery && (arbitraryHistoricalRange || historyQuery.op === 'daily' || historyQuery.op === 'streaks' || historyQuery.project)) {
       plans.push(historyPlan(historyQuery.op, historyQuery.from, historyQuery.to, historyQuery.project))
     }
-    const range = dependencies.codingStatsEnabled === true && dependencies.codingStats
-      ? matchCodingStatsRequest(message)
-      : null
-    if (range && (asksLiveTotal || wantsBreakdown || plans.length === 0)) {
-      plans.push({ id: 'stats-1', name: 'coding_stats', arguments: { range: asksLiveTotal || wantsBreakdown ? 'all_time' : range } })
+    if (shareQuery && (!historyQuery || !arbitraryHistoricalRange)) {
+      plans.push({ id: 'stats-1', name: 'coding_stats', arguments: { category: shareQuery.category, range: shareQuery.range } })
     }
     if (plans.length === 0 && historyQuery) {
       plans.push(historyPlan(historyQuery.op, historyQuery.from, historyQuery.to, historyQuery.project))
@@ -244,10 +353,23 @@ export function createChatService(responder: ChatResponder, dependencies: {
       : [{ id: 'site-projects', name: 'site_content', arguments: { op: 'list_projects' } }]
   }
 
-  function runnerFor(verifiedHistory: ChatMessage[], topicAnchors: ChatTopicAnchor[], today: string): Parameters<typeof runAgentTool>[1] {
+  function runnerFor(verifiedHistory: ChatMessage[], topicAnchors: ChatTopicAnchor[], today: string, projectListState: ChatProjectListState, message: string, capture?: ChatDiagnosticsCapture): Parameters<typeof runAgentTool>[1] {
+    const baseKnowledge = dependencies.knowledge
+    const knowledge = baseKnowledge ? {
+      ...(typeof baseKnowledge.listOwnedProjects === 'function' ? { listOwnedProjects: baseKnowledge.listOwnedProjects.bind(baseKnowledge) } : {}),
+      execute: (input: Parameters<RetrieveKnowledge['execute']>[0]) => baseKnowledge.execute({
+        ...input,
+        diagnostics: {
+          onModelCall: capture?.addModelCall,
+          onRetrieval: capture?.addRagRetrieval,
+        },
+      }),
+    } : undefined
     return {
-      knowledge: dependencies.knowledge,
+      knowledge,
       knowledgeEnabled: dependencies.knowledgeEnabled === true,
+      projectListState,
+      message,
       codingStats: dependencies.codingStats,
       codingStatsEnabled: dependencies.codingStatsEnabled === true,
       codingHistory: dependencies.codingHistory,
@@ -273,6 +395,13 @@ export function createChatService(responder: ChatResponder, dependencies: {
         state.referenceEntityLabel = label
       }
     }
+    if (call.name === 'list_owned_projects' && result.status === 'completed' && result.retrieval) {
+      state.shortlistStarted = true
+      state.trackProjectSources = true
+      state.projectSourceIds = [...new Set([...state.projectSourceIds, ...(result.retrieval.projectSourceIds ?? [])])].slice(0, 200)
+      state.activeProjectFilters = result.retrieval.projectListFilters
+      state.catalogueToolExecutedThisStep = true
+    }
     if (result.validatedArguments) {
       const arguments_ = Object.fromEntries(Object.entries(result.validatedArguments).filter((entry): entry is [string, string | number | boolean] => {
         const value = entry[1]
@@ -280,8 +409,8 @@ export function createChatService(responder: ChatResponder, dependencies: {
       }))
       state.toolObservations.push({ name: call.name, arguments: arguments_, status: result.status })
     }
-    let text = result.output.slice(0, 600)
-    if (call.name === 'search_knowledge' && result.retrieval) {
+    let text = result.output.slice(0, result.retrieval?.projectSourceIds ? 6_000 : 600)
+    if ((call.name === 'search_knowledge' || call.name === 'list_owned_projects') && result.retrieval) {
       const citationIdMap = new Map<string, string>()
       let nextCitationNumber = state.citations.reduce((max, citation) => {
         const match = citation.id.match(/^K(\d+)$/)
@@ -310,17 +439,28 @@ export function createChatService(responder: ChatResponder, dependencies: {
         if (!existing) state.citations.push({ ...citation, id: citationId })
       }
       state.knowledgeEvidence = [...(state.knowledgeEvidence ?? []), ...remappedEvidence]
+      if (state.trackProjectSources) {
+        const ownedEvidenceIds = result.retrieval.evidence
+          .filter(({ source }) => source.type === 'github' || source.type === 'github-private')
+          .map(({ source }) => source.sourceId)
+        state.projectSourceIds = [...new Set([
+          ...state.projectSourceIds,
+          ...ownedEvidenceIds,
+          ...(result.retrieval.projectSourceIds ?? []),
+        ])].slice(0, 200)
+      }
       text = text.replace(/\[(K\d+)\]/g, (reference) => {
         const id = reference.slice(1, -1)
         return `[${citationIdMap.get(id) ?? id}]`
       })
     }
     state.toolOutputs = state.toolOutputs ? `${state.toolOutputs}\n${call.name}: ${text}` : `${call.name}: ${text}`
-    state.toolSummaries.push(`${call.name}: ${text}`)
+    if (call.name === 'list_owned_projects' && result.status === 'completed') state.catalogueFallback = text
+    if (call.name !== 'list_owned_projects') state.toolSummaries.push(`${call.name}: ${text}`)
     if (call.name === 'search_knowledge') {
       state.evidence = state.evidence ? `${state.evidence}\n${text}` : text
     } else if (call.name === 'coding_stats') {
-      state.evidence = state.evidence ? `${state.evidence}\nLive coding activity: ${text}` : `Live coding activity: ${text}`
+      state.evidence = state.evidence ? `${state.evidence}\nLive WakaTime public share: ${text}` : `Live WakaTime public share: ${text}`
     } else if (call.name === 'coding_history' || call.name === 'site_content') {
       state.evidence = state.evidence ? `${state.evidence}\n${text}` : text
     }
@@ -328,7 +468,7 @@ export function createChatService(responder: ChatResponder, dependencies: {
 
   function pushToolCitation(state: AgentTurnState, call: AgentToolCall): void {
     const citation = call.name === 'coding_stats'
-      ? { id: 'W1', title: 'WakaTime — live coding activity', url: 'https://wakatime.com/@lst97', isPublic: true }
+      ? { id: 'W1', title: 'WakaTime — public-share coding activity', url: 'https://wakatime.com/@lst97', isPublic: true }
       : call.name === 'coding_history'
         ? { id: 'W2', title: 'WakaTime — coding history warehouse', url: 'https://wakatime.com/@lst97', isPublic: true }
         : null
@@ -345,10 +485,12 @@ export function createChatService(responder: ChatResponder, dependencies: {
     today: string
     initialDecisions?: AgentToolUseDecisions
     jevRoutingRequired: boolean
+    diagnostics?: ChatDiagnosticsCapture
   }, onArgumentsStart?: () => void): Promise<{ calls: AgentToolCall[]; unavailable: boolean; argumentsUnavailable: boolean }> {
     const availableTools = availableToolNames()
     const hasInitialDecisions = input.initialDecisions !== undefined
     const routeTools = dependencies.moderation.routeTools
+    const acceptedCalls = acceptedToolCalls(input.message, input.history, availableTools, input.today)
 
     // Keep the injected planner seam usable in isolated consumers that do not
     // have the production Jev classifier. The production runtime always routes
@@ -365,6 +507,7 @@ export function createChatService(responder: ChatResponder, dependencies: {
             evidence: input.state.evidence,
             toolOutputs: input.state.toolOutputs,
             stepsUsed: input.stepsUsed,
+            onModelCall: input.diagnostics?.addModelCall,
           })
           return { calls: plan?.kind === 'tool_calls' ? plan.calls.filter((call) => availableTools.includes(call.name)).slice(0, 4) : [], unavailable: false, argumentsUnavailable: false }
         } catch (error) {
@@ -383,10 +526,11 @@ export function createChatService(responder: ChatResponder, dependencies: {
           currentDateTimeUtc: input.currentDateTimeUtc,
           history: input.history,
           topicAnchors: input.topicAnchors,
+          projectListState: input.state.activeProjectFilters ? { clarificationAsked: false, shownProjectIds: input.state.projectSourceIds, shortlistStarted: input.state.shortlistStarted, activeFilters: input.state.activeProjectFilters } : undefined,
           evidence: input.state.evidence,
           toolOutputs: input.state.toolOutputs,
           availableTools,
-        })
+        }, diagnosticsObserver(input.diagnostics))
       } catch (error) {
         dependencies.logger?.warn('chat.agent_route.unavailable', { error })
         return { calls: [], unavailable: true, argumentsUnavailable: false }
@@ -394,9 +538,19 @@ export function createChatService(responder: ChatResponder, dependencies: {
     }
     if (!decisions) return { calls: [], unavailable: true, argumentsUnavailable: false }
 
+    const projectInventoryRequest = /\b(?:list|show|browse|see|more|all|available)\b/i.test(input.message)
+      && /\b(?:projects?|repositories|repos)\b/i.test(input.message)
+    const projectDetailsRequested = /\b(?:describe|details?|purpose|how (?:does|do)|what (?:is|does|are))\b/i.test(input.message)
+    const requiredQuery = availableTools.includes('search_knowledge') && !(projectInventoryRequest && !projectDetailsRequested)
+      ? requiredKnowledgeQuery(input.message, input.history, input.topicAnchors)
+      : undefined
     // Explicit Jev labels win even when confidence is low. Only the literal
-    // uncertain label delegates that tool's routing decision to regex.
-    const jevApprovedTools = availableTools.filter((tool) => decisions?.[tool]?.label === 'use')
+    // uncertain label delegates that tool's routing decision to regex. For
+    // owner knowledge, however, chat history cannot establish completeness:
+    // every new factual request requires a fresh source lookup.
+    let jevApprovedTools = availableTools.filter((tool) => decisions?.[tool]?.label === 'use')
+    if (requiredQuery && !jevApprovedTools.includes('search_knowledge')) jevApprovedTools.push('search_knowledge')
+    if (jevApprovedTools.includes('list_owned_projects') && jevApprovedTools.includes('search_knowledge')) jevApprovedTools = ['list_owned_projects']
     const uncertainTools = availableTools.filter((tool) => decisions?.[tool]?.label === 'uncertain')
     const regexCalls = deterministicPlans(input.message, uncertainTools, input.today)
     let plannerCalls: AgentToolCall[] = []
@@ -413,6 +567,7 @@ export function createChatService(responder: ChatResponder, dependencies: {
           toolOutputs: input.state.toolOutputs,
           stepsUsed: input.stepsUsed,
           allowedTools: jevApprovedTools,
+          onModelCall: input.diagnostics?.addModelCall,
         })
         if (plan?.kind === 'tool_calls') {
           const approved = new Set(jevApprovedTools)
@@ -428,7 +583,9 @@ export function createChatService(responder: ChatResponder, dependencies: {
         const plannedTools = new Set(plannerCalls.map((call) => call.name))
         const missingApprovedTools = jevApprovedTools.filter((tool) => !plannedTools.has(tool))
         if (missingApprovedTools.length > 0) {
-          const fallbackCalls = deterministicPlans(input.message, missingApprovedTools, input.today)
+          const fallbackCalls = acceptedCalls.length > 0
+            ? acceptedCalls.filter((call) => missingApprovedTools.includes(call.name))
+            : deterministicPlans(input.message, missingApprovedTools, input.today)
           for (const call of fallbackCalls) {
             if (!plannerCalls.some((planned) => planned.name === call.name) && plannerCalls.length < 4) plannerCalls.push(call)
           }
@@ -440,25 +597,90 @@ export function createChatService(responder: ChatResponder, dependencies: {
         // Jev remains the authority on whether a source is needed. If the
         // argument model is unavailable, deterministic parsing may still
         // prepare calls for those already approved tools.
-        plannerCalls = deterministicPlans(input.message, jevApprovedTools, input.today)
+        plannerCalls = acceptedCalls.length > 0
+          ? acceptedCalls.filter((call) => jevApprovedTools.includes(call.name))
+          : deterministicPlans(input.message, jevApprovedTools, input.today)
         const preparedTools = new Set(plannerCalls.map((call) => call.name))
         argumentsUnavailable = jevApprovedTools.some((tool) => !preparedTools.has(tool))
       }
     } else if (jevApprovedTools.length > 0) {
       // Without an argument planner, use deterministic argument extraction
       // for Jev-approved tools; it cannot add or veto a tool name.
-      plannerCalls = deterministicPlans(input.message, jevApprovedTools, input.today)
+      plannerCalls = acceptedCalls.length > 0
+        ? acceptedCalls.filter((call) => jevApprovedTools.includes(call.name))
+        : deterministicPlans(input.message, jevApprovedTools, input.today)
       const preparedTools = new Set(plannerCalls.map((call) => call.name))
       argumentsUnavailable = jevApprovedTools.some((tool) => !preparedTools.has(tool))
     }
 
-    const calls = [...plannerCalls, ...regexCalls].slice(0, 4)
+    if (requiredQuery) {
+      let replacedQuery = false
+      plannerCalls = plannerCalls.map((call) => {
+        if (call.name !== 'search_knowledge') return call
+        replacedQuery = true
+        return { ...call, arguments: { ...call.arguments, query: requiredQuery } }
+      })
+      if (!replacedQuery) {
+        plannerCalls.unshift({
+          id: 'required-owner-knowledge',
+          name: 'search_knowledge',
+          arguments: { query: requiredQuery },
+        })
+      }
+    }
+    let calls = [...plannerCalls, ...regexCalls].slice(0, 4)
+    if (calls.some((call) => call.name === 'list_owned_projects') && calls.some((call) => call.name === 'search_knowledge')) {
+      calls = calls.filter((call) => call.name === 'list_owned_projects')
+    }
     const scheduledJeVTools = new Set(calls.map((call) => call.name))
-    argumentsUnavailable ||= jevApprovedTools.some((tool) => !scheduledJeVTools.has(tool))
+    const catalogueFirst = scheduledJeVTools.has('list_owned_projects') && jevApprovedTools.includes('search_knowledge')
+    if (requiredQuery) {
+      argumentsUnavailable = jevApprovedTools.some((tool) => !scheduledJeVTools.has(tool) && !(catalogueFirst && tool === 'search_knowledge'))
+    } else {
+      argumentsUnavailable ||= jevApprovedTools.some((tool) => !scheduledJeVTools.has(tool) && !(catalogueFirst && tool === 'search_knowledge'))
+    }
     return { calls, unavailable: false, argumentsUnavailable }
   }
 
-  async function runAgentLoop(message: string, history: ChatMessage[], topicAnchors: ChatTopicAnchor[], currentDateTimeUtc: string, today: string, initialDecisions?: AgentToolUseDecisions): Promise<AgentTurnState> {
+  async function repairRejectedToolCall(input: {
+    message: string
+    history: ChatMessage[]
+    topicAnchors: ChatTopicAnchor[]
+    state: AgentTurnState
+    stepsUsed: number
+    currentDateTimeUtc: string
+    call: AgentToolCall
+    rejection: string
+    diagnostics?: ChatDiagnosticsCapture
+  }): Promise<AgentToolCall | null> {
+    if (!dependencies.planner) return null
+    try {
+      const plan = await dependencies.planner.planNextStep({
+        message: input.message,
+        currentDateTimeUtc: input.currentDateTimeUtc,
+        history: input.history,
+        topicAnchors: input.topicAnchors,
+        evidence: input.state.evidence,
+        toolOutputs: input.state.toolOutputs,
+        stepsUsed: input.stepsUsed,
+        allowedTools: [input.call.name],
+        repair: { call: input.call, rejection: input.rejection.slice(0, 500) },
+        onModelCall: input.diagnostics?.addModelCall,
+      })
+      if (plan?.kind !== 'tool_calls') return null
+      return plan.calls.find((candidate) => candidate.id === input.call.id && candidate.name === input.call.name) ?? null
+    } catch (error) {
+      dependencies.logger?.warn('chat.agent_arguments.repair_unavailable', { error })
+      return null
+    }
+  }
+
+  function isRepairableArgumentRejection(result: AgentToolResult): boolean {
+    return result.status === 'rejected'
+      && /^Tool [a-z_]+ rejected: (?:expected \{|[a-z_]+ requires \{)/.test(result.output)
+  }
+
+  async function runAgentLoop(message: string, history: ChatMessage[], topicAnchors: ChatTopicAnchor[], projectListState: ChatProjectListState, currentDateTimeUtc: string, today: string, initialDecisions?: AgentToolUseDecisions, diagnostics?: ChatDiagnosticsCapture): Promise<AgentTurnState> {
     const state: AgentTurnState = {
       evidence: '',
       toolOutputs: '',
@@ -468,12 +690,20 @@ export function createChatService(responder: ChatResponder, dependencies: {
       citations: [],
       knowledgeUnavailable: false,
       toolRoutingUnavailable: false,
+      projectSourceIds: [],
+      shortlistStarted: false,
+      trackProjectSources: false,
+      catalogueToolExecutedThisStep: false,
     }
-    const runner = runnerFor(history, topicAnchors, today)
+    state.shortlistStarted = projectListState.shortlistStarted === true
+    state.projectSourceIds = projectListState.shownProjectIds
+    state.activeProjectFilters = projectListState.activeFilters
+    const runner = runnerFor(history, topicAnchors, today, projectListState, message, diagnostics)
     const jevRoutingRequired = initialDecisions !== undefined || typeof dependencies.moderation.routeTools === 'function'
     let stepsUsed = 0
+    let argumentRepairUsed = false
     for (let step = 0; step < maxAgentSteps; step += 1) {
-      const selection = await selectToolCalls({ message, history, topicAnchors, state, stepsUsed, currentDateTimeUtc, today, jevRoutingRequired, ...(step === 0 && initialDecisions !== undefined ? { initialDecisions } : {}) })
+      const selection = await selectToolCalls({ message, history, topicAnchors, state, stepsUsed, currentDateTimeUtc, today, jevRoutingRequired, diagnostics, ...(step === 0 && initialDecisions !== undefined ? { initialDecisions } : {}) })
       if (selection.unavailable) {
         state.toolRoutingUnavailable = true
         break
@@ -485,8 +715,19 @@ export function createChatService(responder: ChatResponder, dependencies: {
         const key = toolKey(call)
         if (state.usedTools.has(key)) continue
         state.usedTools.add(key)
-        const result = await runAgentTool(call, runner)
-        if (jevRoutingRequired && result.output.startsWith(`Tool ${call.name} rejected:`)) {
+        let result = await runAgentTool(call, runner)
+        if (isRepairableArgumentRejection(result) && !argumentRepairUsed) {
+          argumentRepairUsed = true
+          const repairedCall = await repairRejectedToolCall({
+            message, history, topicAnchors, state, stepsUsed, currentDateTimeUtc,
+            call, rejection: result.output, diagnostics,
+          })
+          if (repairedCall) {
+            state.usedTools.add(toolKey(repairedCall))
+            result = await runAgentTool(repairedCall, runner)
+          }
+        }
+        if (result.status === 'rejected') {
           state.toolRoutingUnavailable = true
         }
         if (call.name === 'search_knowledge' && result.output.startsWith('Knowledge lookup timed out')) {
@@ -498,15 +739,14 @@ export function createChatService(responder: ChatResponder, dependencies: {
       }
       if (!executed) break
       stepsUsed += 1
-      // Jev gets one routing decision per submitted turn. Once its approved
-      // calls have run, do not spend a second routing pass expanding the turn.
-      if (jevRoutingRequired) break
+      if (!state.catalogueToolExecutedThisStep) break
+      state.catalogueToolExecutedThisStep = false
       if (selection.argumentsUnavailable || state.toolRoutingUnavailable) break
     }
     return state
   }
 
-  async function *runAgentLoopStream(message: string, history: ChatMessage[], topicAnchors: ChatTopicAnchor[], currentDateTimeUtc: string, today: string, initialDecisions?: AgentToolUseDecisions): AsyncGenerator<ChatStreamEvent, AgentTurnState, void> {
+  async function *runAgentLoopStream(message: string, history: ChatMessage[], topicAnchors: ChatTopicAnchor[], projectListState: ChatProjectListState, currentDateTimeUtc: string, today: string, initialDecisions?: AgentToolUseDecisions, diagnostics?: ChatDiagnosticsCapture): AsyncGenerator<ChatStreamEvent, AgentTurnState, void> {
     const state: AgentTurnState = {
       evidence: '',
       toolOutputs: '',
@@ -516,15 +756,23 @@ export function createChatService(responder: ChatResponder, dependencies: {
       citations: [],
       knowledgeUnavailable: false,
       toolRoutingUnavailable: false,
+      projectSourceIds: [],
+      shortlistStarted: false,
+      trackProjectSources: false,
+      catalogueToolExecutedThisStep: false,
     }
-    const runner = runnerFor(history, topicAnchors, today)
+    state.shortlistStarted = projectListState.shortlistStarted === true
+    state.projectSourceIds = projectListState.shownProjectIds
+    state.activeProjectFilters = projectListState.activeFilters
+    const runner = runnerFor(history, topicAnchors, today, projectListState, message, diagnostics)
     const jevRoutingRequired = initialDecisions !== undefined || typeof dependencies.moderation.routeTools === 'function'
     let stepsUsed = 0
+    let argumentRepairUsed = false
     for (let step = 0; step < maxAgentSteps; step += 1) {
       let signalArgumentsStarted!: () => void
       const argumentPreparationStarted = new Promise<void>((resolve) => { signalArgumentsStarted = resolve })
       const selectionPromise = selectToolCalls(
-        { message, history, topicAnchors, state, stepsUsed, currentDateTimeUtc, today, jevRoutingRequired, ...(step === 0 && initialDecisions !== undefined ? { initialDecisions } : {}) },
+        { message, history, topicAnchors, state, stepsUsed, currentDateTimeUtc, today, jevRoutingRequired, diagnostics, ...(step === 0 && initialDecisions !== undefined ? { initialDecisions } : {}) },
         signalArgumentsStarted,
       )
       const first = await Promise.race([
@@ -544,17 +792,44 @@ export function createChatService(responder: ChatResponder, dependencies: {
         const key = toolKey(call)
         if (state.usedTools.has(key)) continue
         state.usedTools.add(key)
-        const label = call.name === 'search_knowledge'
+        const label = call.name === 'list_owned_projects'
+          ? 'QUERYING PROJECT CATALOGUE…'
+          : call.name === 'search_knowledge'
           ? 'SEARCHING MY NOTES…'
           : call.name === 'coding_stats'
-            ? 'CHECKING CODING STATS…'
+            ? 'CHECKING WAKATIME PUBLIC SHARE…'
             : call.name === 'site_content'
               ? 'BROWSING SITE CONTENT…'
               : 'SEARCHING CODING HISTORY…'
-        const name = call.name === 'search_knowledge' ? 'knowledge' : call.name
+        let name: AgentToolResult['sseName'] = call.name === 'search_knowledge' ? 'knowledge' : call.name
         yield { type: 'tool_start', name, label }
-        const result = await runAgentTool(call, runner)
-        if (jevRoutingRequired && result.output.startsWith(`Tool ${call.name} rejected:`)) {
+        let result = await runAgentTool(call, runner)
+        if (isRepairableArgumentRejection(result) && !argumentRepairUsed) {
+          argumentRepairUsed = true
+          yield { type: 'tool_result', name, summary: `${result.output} Retrying argument preparation once.` }
+          yield { type: 'status', status: 'preparing_arguments' }
+          const repairedCall = await repairRejectedToolCall({
+            message, history, topicAnchors, state, stepsUsed, currentDateTimeUtc,
+            call, rejection: result.output, diagnostics,
+          })
+          if (repairedCall) {
+            const repairedLabel = repairedCall.name === 'list_owned_projects'
+              ? 'QUERYING PROJECT CATALOGUE…'
+              : repairedCall.name === 'search_knowledge'
+              ? 'SEARCHING MY NOTES…'
+              : repairedCall.name === 'coding_stats'
+                ? 'CHECKING WAKATIME PUBLIC SHARE…'
+                : repairedCall.name === 'site_content'
+                  ? 'BROWSING SITE CONTENT…'
+                  : 'SEARCHING CODING HISTORY…'
+            const repairedName = repairedCall.name === 'search_knowledge' ? 'knowledge' : repairedCall.name
+            yield { type: 'tool_start', name: repairedName, label: repairedLabel }
+            state.usedTools.add(toolKey(repairedCall))
+            result = await runAgentTool(repairedCall, runner)
+            name = repairedName
+          }
+        }
+        if (result.status === 'rejected') {
           state.toolRoutingUnavailable = true
         }
         if (call.name === 'search_knowledge' && result.output.startsWith('Knowledge lookup timed out')) {
@@ -567,7 +842,8 @@ export function createChatService(responder: ChatResponder, dependencies: {
       }
       if (!executed) break
       stepsUsed += 1
-      if (jevRoutingRequired) break
+      if (!state.catalogueToolExecutedThisStep) break
+      state.catalogueToolExecutedThisStep = false
       if (selection.argumentsUnavailable || state.toolRoutingUnavailable) break
     }
     return state
@@ -575,48 +851,90 @@ export function createChatService(responder: ChatResponder, dependencies: {
 
   return {
     async send(input: ChatInput) {
-      const turn = await prepareTurn(input)
+      const diagnostics = createDiagnosticsCapture()
+      let turn: PreparedTurn
+      try {
+        turn = await prepareTurn(input, diagnostics)
+      } catch (error) {
+        finishDiagnostics(diagnostics, 'unavailable', OFFLINE_MESSAGE)
+        throw error
+      }
       if (!turn.ok) {
+        if (turn.status === 'contact_confirmation') {
+          finishDiagnostics(diagnostics, 'complete', turn.text)
+          return { status: 'contact_confirmation' as const, text: turn.text, contextToken: turn.contextToken }
+        }
+        const response = turn.status === 'blocked'
+          ? chatModerationRejectionMessage(turn.reason)
+          : turn.status === 'turn_limit' ? CHAT_TURN_LIMIT_MESSAGE
+            : turn.status === 'unavailable' ? UNAVAILABLE_MESSAGE : EXPIRED_MESSAGE
+        finishDiagnostics(diagnostics, turn.status === 'blocked' ? 'blocked' : turn.status, response)
         return turn.status === 'blocked'
           ? { status: 'blocked' as const, reason: turn.reason }
           : { status: turn.status }
       }
-      const agent = await runAgentLoop(turn.message, turn.verifiedHistory, turn.topicAnchors, turn.currentDateTimeUtc, turn.today, turn.toolDecisions)
-      const extraContext = agent.toolSummaries.length > 0 ? agent.toolSummaries.join('\n') : undefined
-      const reply = await responder.respond({
-        message: turn.message,
-        currentDateTimeUtc: turn.currentDateTimeUtc,
-        history: turn.verifiedHistory,
-        ...(agent.knowledgeUnavailable ? { evidence: agent.knowledgeEvidence ?? [] } : agent.knowledgeEvidence !== undefined ? { evidence: agent.knowledgeEvidence } : {}),
-        ...(agent.knowledgeUnavailable ? { knowledgeUnavailable: true as const } : {}),
-        ...(agent.toolRoutingUnavailable ? { toolRoutingUnavailable: true as const } : {}),
-        ...(extraContext ? { extraContext } : {}),
-      })
-      const contextToken = await dependencies.contextSigner.sign(buildNextConversationContext(turn, agent, reply.text))
-      const knowledgeEnabled = dependencies.knowledgeEnabled === true
-      return {
-        status: 'replied' as const,
-        ...reply,
-        contextToken,
-        ...(knowledgeEnabled ? { citations: agent.citations, ...(agent.knowledgeUnavailable ? { knowledgeUnavailable: true as const } : {}) } : {}),
+      try {
+        const agent = await runAgentLoop(turn.message, turn.verifiedHistory, turn.topicAnchors, turn.projectListState, turn.currentDateTimeUtc, turn.today, turn.toolDecisions, diagnostics)
+        const extraContext = agent.toolSummaries.length > 0 ? agent.toolSummaries.join('\n') : undefined
+        const reply = await responder.respond({
+          message: turn.message,
+          currentDateTimeUtc: turn.currentDateTimeUtc,
+          history: turn.verifiedHistory,
+          ...(agent.knowledgeUnavailable ? { evidence: agent.knowledgeEvidence ?? [] } : agent.knowledgeEvidence !== undefined ? { evidence: agent.knowledgeEvidence } : {}),
+          ...(agent.knowledgeUnavailable ? { knowledgeUnavailable: true as const } : {}),
+          ...(agent.toolRoutingUnavailable ? { toolRoutingUnavailable: true as const } : {}),
+          ...(extraContext ? { extraContext } : {}),
+          ...(agent.catalogueFallback ? { catalogueFallback: agent.catalogueFallback } : {}),
+          onModelCall: diagnostics?.addModelCall,
+        })
+        const replyText = reply.text.trim()
+        const finalReply = agent.catalogueFallback && (!replyText || replyText === EMPTY_VERIFIED_REPLY)
+          ? { ...reply, text: agent.catalogueFallback }
+          : reply
+        const contextToken = await dependencies.contextSigner.sign(buildNextConversationContext(turn, agent, finalReply.text))
+        const knowledgeEnabled = dependencies.knowledgeEnabled === true
+        finishDiagnostics(diagnostics, 'complete', finalReply.text)
+        return {
+          status: 'replied' as const,
+          ...finalReply,
+          contextToken,
+          ...(knowledgeEnabled ? { citations: agent.citations, ...(agent.knowledgeUnavailable ? { knowledgeUnavailable: true as const } : {}) } : {}),
+        }
+      } catch (error) {
+        finishDiagnostics(diagnostics, 'provider_error')
+        throw error
       }
     },
 
     async *sendStream(input: ChatInput, signal?: AbortSignal): AsyncGenerator<ChatStreamEvent> {
-      const streaming = responder as Partial<ChatStreamingResponder>
-      if (!streaming.stream) {
-        yield { type: 'error', message: OFFLINE_MESSAGE }
-        return
-      }
+      if (signal?.aborted) return
+      const diagnostics = createDiagnosticsCapture()
+      yield { type: 'status', status: 'thinking' }
 
       let turn: PreparedTurn
       try {
-        turn = await prepareTurn(input)
+        turn = await prepareTurn(input, diagnostics)
       } catch {
+        finishDiagnostics(diagnostics, 'unavailable', OFFLINE_MESSAGE)
         yield { type: 'error', message: OFFLINE_MESSAGE }
         return
       }
       if (!turn.ok) {
+        if (turn.status === 'contact_confirmation') {
+          finishDiagnostics(diagnostics, 'complete', turn.text)
+          yield { type: 'contact_confirmation', text: turn.text, contextToken: turn.contextToken }
+          return
+        }
+        const response = turn.status === 'turn_limit'
+          ? CHAT_TURN_LIMIT_MESSAGE
+          : turn.status === 'blocked'
+            ? chatModerationRejectionMessage(turn.reason)
+            : turn.status === 'unavailable' ? UNAVAILABLE_MESSAGE : EXPIRED_MESSAGE
+        finishDiagnostics(diagnostics, turn.status === 'blocked' ? 'blocked' : turn.status, response)
+        if (turn.status === 'turn_limit') {
+          yield { type: 'error', code: 'turn_limit', message: CHAT_TURN_LIMIT_MESSAGE }
+          return
+        }
         yield {
           type: 'error',
           message: turn.status === 'blocked'
@@ -625,9 +943,19 @@ export function createChatService(responder: ChatResponder, dependencies: {
         }
         return
       }
-      if (signal?.aborted) return
+      if (signal?.aborted) {
+        finishDiagnostics(diagnostics, 'aborted')
+        return
+      }
 
-      const agentStream = runAgentLoopStream(turn.message, turn.verifiedHistory, turn.topicAnchors, turn.currentDateTimeUtc, turn.today, turn.toolDecisions)
+      const streaming = responder as Partial<ChatStreamingResponder>
+      if (!streaming.stream) {
+        finishDiagnostics(diagnostics, 'provider_error', OFFLINE_MESSAGE)
+        yield { type: 'error', message: OFFLINE_MESSAGE }
+        return
+      }
+
+      const agentStream = runAgentLoopStream(turn.message, turn.verifiedHistory, turn.topicAnchors, turn.projectListState, turn.currentDateTimeUtc, turn.today, turn.toolDecisions, diagnostics)
       let agent: AgentTurnState | undefined
       for (;;) {
         const step = await agentStream.next()
@@ -637,10 +965,13 @@ export function createChatService(responder: ChatResponder, dependencies: {
         }
         yield step.value
       }
-      const state = agent ?? { evidence: '', toolOutputs: '', toolSummaries: [], toolObservations: [], usedTools: new Set<string>(), citations: [], knowledgeUnavailable: false, toolRoutingUnavailable: false }
+      const state = agent ?? { evidence: '', toolOutputs: '', toolSummaries: [], toolObservations: [], usedTools: new Set<string>(), citations: [], knowledgeUnavailable: false, toolRoutingUnavailable: false, projectSourceIds: [], shortlistStarted: false, trackProjectSources: false }
       const extraContext = state.toolSummaries.length > 0 ? state.toolSummaries.join('\n') : undefined
 
-      if (signal?.aborted) return
+      if (signal?.aborted) {
+        finishDiagnostics(diagnostics, 'aborted')
+        return
+      }
       yield { type: 'status', status: 'composing_reply' }
 
       let fullText = ''
@@ -654,6 +985,8 @@ export function createChatService(responder: ChatResponder, dependencies: {
           ...(state.knowledgeUnavailable ? { knowledgeUnavailable: true as const } : {}),
           ...(state.toolRoutingUnavailable ? { toolRoutingUnavailable: true as const } : {}),
           ...(extraContext ? { extraContext } : {}),
+          ...(state.catalogueFallback ? { catalogueFallback: state.catalogueFallback } : {}),
+          onModelCall: diagnostics?.addModelCall,
         }, signal)) {
           if ('done' in chunk) {
             fullText = chunk.text
@@ -670,11 +1003,15 @@ export function createChatService(responder: ChatResponder, dependencies: {
           failureCategory: failure.category,
           ...(failure.providerStatusCode ? { providerStatusCode: failure.providerStatusCode } : {}),
         })
+        finishDiagnostics(diagnostics, 'provider_error', fullText || failure.message)
         yield { type: 'error', message: failure.message }
         return
       }
 
-      if (signal?.aborted) return
+      if (signal?.aborted) {
+        finishDiagnostics(diagnostics, 'aborted', fullText)
+        return
+      }
       const citations = state.citations
       if (citations.length > 0) {
         yield { type: 'citations', citations }
@@ -683,6 +1020,7 @@ export function createChatService(responder: ChatResponder, dependencies: {
         yield { type: 'knowledge_note' }
       }
       const contextToken = await dependencies.contextSigner.sign(buildNextConversationContext(turn, state, fullText))
+      finishDiagnostics(diagnostics, 'complete', fullText)
       yield { type: 'done', contextToken, ...(model ? { model } : {}) }
     },
   }

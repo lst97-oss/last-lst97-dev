@@ -4,6 +4,9 @@ import type { KnowledgeEvidence, PublicCitation, RetrieveKnowledge } from '../kn
 import type { ContentReader } from '../content/service'
 import type { Logger } from '../observability/logger'
 import type { ChatMessage, ChatToolName, ChatTopicAnchor } from './types'
+import type { ChatProjectListState } from './types'
+import type { ProjectCatalogFilters } from '../knowledge/project-catalog'
+import type { ChatModelCallDiagnostic } from '../observability/chat-diagnostics'
 
 // Jev authoritatively selects tools at each step. The planner only prepares
 // arguments for Jev-approved tools; every call still passes the fixed,
@@ -25,6 +28,7 @@ export interface AgentToolRoutingInput {
   currentDateTimeUtc?: string
   history: ChatMessage[]
   topicAnchors?: ChatTopicAnchor[]
+  projectListState?: ChatProjectListState
   evidence: string
   toolOutputs: string
   availableTools: AgentToolName[]
@@ -51,12 +55,17 @@ export interface AgentPlanner {
     stepsUsed: number
     /** When present, Jev has already selected the tools; generate arguments only for these names. */
     allowedTools?: AgentToolName[]
+    /** Repair one rejected call without changing its tool or call id. */
+    repair?: { call: AgentToolCall; rejection: string }
+    onModelCall?: (call: ChatModelCallDiagnostic) => void
   }): Promise<AgentPlan | null>
 }
 
 export interface AgentToolRunner {
-  knowledge?: Pick<RetrieveKnowledge, 'execute'>
+  knowledge?: Pick<RetrieveKnowledge, 'execute'> & Partial<Pick<RetrieveKnowledge, 'listOwnedProjects'>>
   knowledgeEnabled: boolean
+  projectListState?: ChatProjectListState
+  message?: string
   codingStats?: Pick<WakaTimeStatsClient, 'fetchSummary'>
   codingStatsEnabled: boolean
   codingHistory?: CodingHistorySource
@@ -76,10 +85,12 @@ export interface AgentToolResult {
   validatedArguments?: Record<string, string | number | boolean | undefined>
   referenceEntityLabel?: string
   sseLabel: string
-  sseName: 'coding_stats' | 'coding_history' | 'knowledge' | 'site_content'
+  sseName: 'coding_stats' | 'coding_history' | 'knowledge' | 'list_owned_projects' | 'site_content'
   retrieval?: {
     evidence: KnowledgeEvidence[]
     citations: PublicCitation[]
+    projectSourceIds?: string[]
+    projectListFilters?: ProjectCatalogFilters
   }
 }
 

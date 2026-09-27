@@ -1,11 +1,15 @@
 import type {
   ChatConversationContext,
   ChatMessage,
+  ChatProjectListState,
   ChatToolName,
   ChatTopicAnchor,
+  ChatWorkflowContext,
 } from './types'
+import { MAX_CHAT_CONTEXT_MESSAGES, MAX_CHAT_CONTEXT_TOKEN_CHARS } from '../../lib/chat-limits'
+import { CHAT_CONTACT_TEMPLATES, type ChatContactFieldValues, type ChatContactTemplate } from '../../lib/chat-contact'
+import { projectCatalogFiltersSchema } from '../knowledge/project-catalog'
 
-const MAX_CONTEXT_MESSAGES = 12
 const MAX_MESSAGE_LENGTH = 2_000
 const MAX_TOPIC_ANCHORS = 8
 const MAX_ANCHOR_QUESTION_LENGTH = 500
@@ -16,22 +20,21 @@ const MAX_TOOL_ARGUMENTS = 12
 const MAX_TOOL_ARGUMENT_KEY_LENGTH = 80
 const MAX_TOOL_ARGUMENT_STRING_LENGTH = 2_000
 const TOKEN_LIFETIME_MS = 24 * 60 * 60 * 1_000
-const MAX_CONTEXT_TOKEN_LENGTH = 60_000
-const CONTEXT_VERSION = 2
+const MAX_CONTEXT_TOKEN_LENGTH = MAX_CHAT_CONTEXT_TOKEN_CHARS
+const CONTEXT_VERSION = 5
+const MAX_SHOWN_PROJECT_IDS = 200
+const OWNED_PROJECT_ID = /^lst97\/[A-Za-z0-9_.-]{1,100}$/
 
-const TOOL_NAMES = new Set<ChatToolName>(['search_knowledge', 'coding_stats', 'coding_history', 'site_content'])
+const TOOL_NAMES = new Set<ChatToolName>(['search_knowledge', 'list_owned_projects', 'coding_stats', 'coding_history', 'site_content'])
 const TOOL_STATUSES = new Set(['completed', 'unavailable', 'rejected'])
 
-interface SignedContextV2 {
-  version: typeof CONTEXT_VERSION
+interface SignedContextV5 {
+  version: 5
   expiresAt: number
   messages: ChatMessage[]
   topicAnchors: ChatTopicAnchor[]
-}
-
-interface SignedContextLegacy {
-  expiresAt: number
-  messages: ChatMessage[]
+  projectListState: ChatProjectListState
+  workflow: ChatWorkflowContext
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -94,7 +97,7 @@ function boundedMessages(messages: ChatMessage[]): ChatMessage[] {
     .filter((item) => isRecord(item)
       && (item.role === 'user' || item.role === 'assistant')
       && typeof item.content === 'string')
-    .slice(-MAX_CONTEXT_MESSAGES)
+    .slice(-MAX_CHAT_CONTEXT_MESSAGES)
     .map((item) => ({ role: item.role, content: item.content.trim().slice(0, MAX_MESSAGE_LENGTH) }))
     .filter((item) => item.content.length > 0)
 }
@@ -119,12 +122,81 @@ function boundedAnchors(anchors: ChatTopicAnchor[]): ChatTopicAnchor[] {
     .filter(isAnchor)
 }
 
+function boundedProjectListState(value: unknown): ChatProjectListState {
+  const state = isRecord(value) ? value : {}
+  const seen = new Set<string>()
+  const shownProjectIds = Array.isArray(state.shownProjectIds)
+    ? state.shownProjectIds.filter((id): id is string => {
+      if (typeof id !== 'string' || !OWNED_PROJECT_ID.test(id) || seen.has(id) || seen.size >= MAX_SHOWN_PROJECT_IDS) return false
+      seen.add(id)
+      return true
+    })
+    : []
+
+  const activeFilters = projectCatalogFiltersSchema.safeParse(state.activeFilters)
+  return {
+    clarificationAsked: state.clarificationAsked === true,
+    shownProjectIds,
+    shortlistStarted: state.shortlistStarted === true,
+    ...(activeFilters.success ? { activeFilters: activeFilters.data } : {}),
+  }
+}
+
+function isContactTemplate(value: unknown): value is ChatContactTemplate {
+  return typeof value === 'string' && Object.hasOwn(CHAT_CONTACT_TEMPLATES, value)
+}
+
+function isWorkflow(value: unknown): value is ChatWorkflowContext {
+  if (!isRecord(value)) return false
+  if (value.mode === 'normal') {
+    return Object.keys(value).length === 2
+      && (value.phase === 'conversation' || value.phase === 'contact_confirmation')
+  }
+  if (value.mode !== 'contact') return false
+  if (value.phase === 'template_selection') return Object.keys(value).length === 2
+  if (!isContactTemplate(value.template)) return false
+  if (value.phase === 'filling' || value.phase === 'delivered') return Object.keys(value).length === 3
+  if (value.phase !== 'review' || Object.keys(value).length !== 4 || !isRecord(value.reviewApproval)) return false
+  return Object.keys(value.reviewApproval).length === 2
+    && typeof value.reviewApproval.id === 'string'
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.reviewApproval.id)
+    && typeof value.reviewApproval.draftProof === 'string'
+    && /^[A-Za-z0-9_-]{43}$/.test(value.reviewApproval.draftProof)
+}
+
+function emptyProjectListState(): ChatProjectListState {
+  return { clarificationAsked: false, shownProjectIds: [], shortlistStarted: false }
+}
+
+function hasProjectState(value: unknown): boolean {
+  const state = boundedProjectListState(value)
+  return state.clarificationAsked || state.shownProjectIds.length > 0 || state.shortlistStarted || state.activeFilters !== undefined
+}
+
+function sortedContactFields(fields: ChatContactFieldValues) {
+  return Object.fromEntries(Object.entries(fields).sort(([left], [right]) => left.localeCompare(right)))
+}
+
+function contactReviewPayload(template: ChatContactTemplate, fields: ChatContactFieldValues, originalFields: ChatContactFieldValues = fields): string {
+  return JSON.stringify({
+    template,
+    refinedFields: sortedContactFields(fields),
+    originalFields: sortedContactFields(originalFields),
+  })
+}
+
 export function createChatContextSigner(secret: string, now: () => number = Date.now) {
   if (secret.trim().length < 32) throw new Error('Chat context signing secret must be at least 32 characters')
 
   const encoder = new TextEncoder()
   const keyPromise = crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify'])
-  const encode = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')
+  const encode = (bytes: Uint8Array) => {
+    const chunks: string[] = []
+    for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+      chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + 0x8000)))
+    }
+    return btoa(chunks.join('')).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')
+  }
   const decode = (value: string) => {
     const normalized = value.replaceAll('-', '+').replaceAll('_', '/')
     const binary = atob(normalized + '='.repeat((4 - normalized.length % 4) % 4))
@@ -133,10 +205,20 @@ export function createChatContextSigner(secret: string, now: () => number = Date
 
   return {
     async sign(context: ChatConversationContext | ChatMessage[]): Promise<string> {
+      const workflow = Array.isArray(context)
+        ? { mode: 'normal' as const, phase: 'conversation' as const }
+        : context.workflow ?? { mode: 'normal' as const, phase: 'conversation' as const }
+      if (!isWorkflow(workflow)) throw new Error('Invalid chat workflow context')
+      const contactMode = workflow.mode === 'contact'
       const normalized = Array.isArray(context)
-        ? { messages: boundedMessages(context), topicAnchors: [] }
-        : { messages: boundedMessages(context.messages), topicAnchors: boundedAnchors(context.topicAnchors) }
-      let envelope: SignedContextV2 = {
+        ? { messages: boundedMessages(context), topicAnchors: [], projectListState: emptyProjectListState(), workflow }
+        : {
+          messages: contactMode ? [] : boundedMessages(context.messages),
+          topicAnchors: contactMode ? [] : boundedAnchors(context.topicAnchors),
+          projectListState: contactMode ? emptyProjectListState() : boundedProjectListState(context.projectListState),
+          workflow,
+        }
+      let envelope: SignedContextV5 = {
         version: CONTEXT_VERSION,
         expiresAt: now() + TOKEN_LIFETIME_MS,
         ...normalized,
@@ -158,6 +240,26 @@ export function createChatContextSigner(secret: string, now: () => number = Date
       return token
     },
 
+    async createContactReviewProof(template: ChatContactTemplate, fields: ChatContactFieldValues, originalFields?: ChatContactFieldValues): Promise<string> {
+      const payload = contactReviewPayload(template, fields, originalFields)
+      const signature = new Uint8Array(await crypto.subtle.sign('HMAC', await keyPromise, encoder.encode(`contact-review\u0000${payload}`)))
+      return encode(signature)
+    },
+
+    async verifyContactReviewProof(template: ChatContactTemplate, fields: ChatContactFieldValues, proof: string, originalFields?: ChatContactFieldValues): Promise<boolean> {
+      try {
+        if (!/^[A-Za-z0-9_-]{43}$/.test(proof)) return false
+        return await crypto.subtle.verify(
+          'HMAC',
+          await keyPromise,
+          decode(proof),
+          encoder.encode(`contact-review\u0000${contactReviewPayload(template, fields, originalFields)}`),
+        )
+      } catch {
+        return false
+      }
+    },
+
     async verify(token: string | undefined): Promise<ChatConversationContext | null> {
       try {
         if (!token || token.length > MAX_CONTEXT_TOKEN_LENGTH) return null
@@ -166,19 +268,48 @@ export function createChatContextSigner(secret: string, now: () => number = Date
         const valid = await crypto.subtle.verify('HMAC', await keyPromise, decode(signature), encoder.encode(payload))
         if (!valid) return null
 
-        const parsed = JSON.parse(new TextDecoder().decode(decode(payload))) as Partial<SignedContextV2 & SignedContextLegacy>
+        const parsed = JSON.parse(new TextDecoder().decode(decode(payload))) as {
+          version?: number
+          expiresAt?: number
+          messages?: unknown
+          topicAnchors?: unknown
+          projectListState?: unknown
+          workflow?: unknown
+        }
         if (!Number.isFinite(parsed.expiresAt) || (parsed.expiresAt ?? 0) <= now()) return null
-        if (!Array.isArray(parsed.messages) || parsed.messages.length > MAX_CONTEXT_MESSAGES || !parsed.messages.every(isMessage)) return null
+        if (!Array.isArray(parsed.messages) || parsed.messages.length > MAX_CHAT_CONTEXT_MESSAGES || !parsed.messages.every(isMessage)) return null
 
         if (parsed.version === undefined && parsed.topicAnchors === undefined) {
-          return { messages: parsed.messages, topicAnchors: [] }
+          return {
+            messages: parsed.messages,
+            topicAnchors: [],
+            projectListState: emptyProjectListState(),
+            workflow: { mode: 'normal', phase: 'conversation' },
+          }
         }
-        if (parsed.version !== CONTEXT_VERSION
+        if ((parsed.version !== 2 && parsed.version !== 3 && parsed.version !== 4 && parsed.version !== CONTEXT_VERSION)
           || !Array.isArray(parsed.topicAnchors)
           || parsed.topicAnchors.length > MAX_TOPIC_ANCHORS
           || !parsed.topicAnchors.every(isAnchor)) return null
 
-        return { messages: parsed.messages, topicAnchors: parsed.topicAnchors }
+        if (parsed.version === CONTEXT_VERSION) {
+          if (!isWorkflow(parsed.workflow)) return null
+          if (parsed.workflow.mode === 'contact'
+            && (parsed.messages.length > 0 || parsed.topicAnchors.length > 0 || hasProjectState(parsed.projectListState))) return null
+          return {
+            messages: parsed.messages,
+            topicAnchors: parsed.topicAnchors,
+            projectListState: boundedProjectListState(parsed.projectListState),
+            workflow: parsed.workflow,
+          }
+        }
+
+        return {
+          messages: parsed.messages,
+          topicAnchors: parsed.topicAnchors,
+          projectListState: boundedProjectListState(parsed.version === 3 || parsed.version === 4 ? parsed.projectListState : undefined),
+          workflow: { mode: 'normal', phase: 'conversation' },
+        }
       } catch {
         return null
       }
@@ -186,4 +317,8 @@ export function createChatContextSigner(secret: string, now: () => number = Date
   }
 }
 
-export type ChatContextSigner = ReturnType<typeof createChatContextSigner>
+type FullChatContextSigner = ReturnType<typeof createChatContextSigner>
+export type ChatContextSigner = Omit<FullChatContextSigner, 'createContactReviewProof' | 'verifyContactReviewProof'> & {
+  createContactReviewProof?: FullChatContextSigner['createContactReviewProof']
+  verifyContactReviewProof?: FullChatContextSigner['verifyContactReviewProof']
+}

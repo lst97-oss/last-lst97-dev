@@ -9,8 +9,222 @@ import type { ModerationService } from '../../src/server/moderation/service'
 import { createModerationService } from '../../src/server/moderation/service'
 import type { ModerationClassifier } from '../../src/server/moderation/types'
 import type { KnowledgeEvidence, PublicCitation } from '../../src/server/knowledge/retrieve'
+import type { CodingStatsRequest, CodingStatsResult } from '../../src/server/wakatime/stats'
+
+const codingActivityResult = (range: CodingStatsRequest['range']): CodingStatsResult => ({
+  category: 'activity',
+  period: { range, start: '2026-09-17T14:00:00Z', end: '2026-09-24T13:59:59Z' },
+  retrievedAtUtc: '2026-09-24T13:00:00.000Z',
+  totalSeconds: range === 'all_time' ? 11_744_496 : 129_600,
+  daysInPeriod: range === 'all_time' ? 960 : 7,
+  humanReadableTotal: range === 'all_time' ? '3,262 hrs 21 mins' : '36 hrs',
+})
 
 describe('createChatService', () => {
+  it('asks for confirmation when the user asks how to report a bug and excludes the triggering text from contact context', async () => {
+    const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
+    const records: Array<Record<string, unknown>> = []
+    let responderCalls = 0
+    const previous = [{ role: 'user' as const, content: 'Earlier normal chat detail' }]
+    const priorToken = await signer.sign({ messages: previous, topicAnchors: [] })
+    const service = createChatService({
+      respond: async () => { responderCalls += 1; return { text: 'unexpected' } },
+    }, {
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async () => ({ allowed: true, contactIntent: 'contact' }),
+      } as ModerationService,
+      contextSigner: signer,
+      diagnosticsSink: { enqueue: (record) => records.push(record as unknown as Record<string, unknown>) },
+    })
+
+    const result = await service.send({
+      message: 'I have a bug I want to report, what can I do?',
+      contextToken: priorToken,
+      diagnosticsMetadata: { ipAddress: '203.0.113.8' },
+    })
+
+    expect(result.status).toBe('contact_confirmation')
+    expect(responderCalls).toBe(0)
+    if (result.status !== 'contact_confirmation') return
+    expect(result.text).toContain('send a message or report to Nelson by email')
+    expect(result.text).toContain('clears this conversation')
+    const context = await signer.verify(result.contextToken)
+    expect(context?.messages).toEqual(previous)
+    expect(context?.workflow).toEqual({ mode: 'normal', phase: 'contact_confirmation' })
+    expect(JSON.stringify(context)).not.toContain('I have a bug')
+    expect(records[0]).toMatchObject({ query: '', history: [], outcome: 'complete' })
+    expect(records[0]).not.toHaveProperty('metadata')
+    expect(JSON.stringify(records[0])).not.toContain('I have a bug')
+  })
+
+  it('runs the direct project catalogue when Jev selects it', async () => {
+    const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
+    let catalogueCalls = 0
+    let knowledgeCalls = 0
+    let received: unknown
+    let catalogueFallback = ''
+    const project = {
+      sourceType: 'github' as const, sourceId: 'lst97/python-cli', title: 'python-cli',
+      url: 'https://github.com/lst97/python-cli', isPublic: true, summary: 'A Python command line tool.',
+      createdAt: null, updatedAt: '2026-09-20T00:00:00.000Z', stars: 5, forks: 1,
+      primaryLanguage: 'Python', languages: ['Python'], kinds: ['cli_tool' as const],
+      githubTopics: [], curatedTopics: [], timeSpentSeconds: null, mostStarred: true,
+    }
+    const service = createChatService({ respond: async ({ evidence, catalogueFallback: fallback }) => {
+      catalogueFallback = fallback ?? ''
+      expect(evidence?.[0]?.text).toContain('python-cli')
+      return { text: 'I couldn’t form a verified answer from the available information.' }
+    } }, {
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async () => ({ allowed: true, toolDecisions: { list_owned_projects: { label: 'use', confidence: 0.99 }, search_knowledge: { label: 'skip', confidence: 0.99 } } }),
+      } as ModerationService,
+      contextSigner: signer,
+      knowledgeEnabled: true,
+      knowledge: {
+        execute: async () => { knowledgeCalls += 1; return { evidence: [], citations: [], degraded: false } },
+        listOwnedProjects: async (query) => { catalogueCalls += 1; received = query; return { projects: [project], hasMore: false } },
+      },
+      planner: { planNextStep: async () => ({ kind: 'tool_calls', calls: [{ id: 'python-projects', name: 'list_owned_projects', arguments: { languages: ['Python'] } }] }) },
+    })
+
+    const result = await service.send({ message: 'Show me Python projects.' })
+    expect(result.status).toBe('replied')
+    expect(catalogueCalls).toBe(1)
+    expect(knowledgeCalls).toBe(0)
+    expect(received).toMatchObject({ languages: ['Python'], first_batch: true, exclude_source_ids: [] })
+    expect(catalogueFallback).toContain('python-cli')
+    expect(result.status === 'replied' ? result.text : '').toContain('python-cli')
+  })
+
+  it('asks Jev for a fresh RAG decision after a catalogue result when details are requested', async () => {
+    const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
+    let routeCount = 0
+    const toolOrder: string[] = []
+    const project = {
+      sourceType: 'github' as const, sourceId: 'lst97/python-cli', title: 'python-cli',
+      url: 'https://github.com/lst97/python-cli', isPublic: true, summary: 'A Python command line tool.',
+      createdAt: null, updatedAt: null, stars: 1, forks: 0, primaryLanguage: 'Python', languages: ['Python'],
+      kinds: ['cli_tool' as const], githubTopics: [], curatedTopics: [], timeSpentSeconds: null, mostStarred: true,
+    }
+    const service = createChatService({ respond: async () => ({ text: 'Details found.' }) }, {
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async () => ({ allowed: true, toolDecisions: { list_owned_projects: { label: 'use', confidence: 0.99 }, search_knowledge: { label: 'use', confidence: 0.99 } } }),
+        routeTools: async () => {
+          routeCount += 1
+          return { list_owned_projects: { label: 'skip', confidence: 0.99 }, search_knowledge: { label: 'use', confidence: 0.99 } }
+        },
+      } as ModerationService,
+      contextSigner: signer, knowledgeEnabled: true,
+      knowledge: {
+        listOwnedProjects: async () => { toolOrder.push('catalogue'); return { projects: [project], hasMore: false } },
+        execute: async () => { toolOrder.push('rag'); return { evidence: [], citations: [], degraded: false } },
+      },
+      planner: { planNextStep: async ({ allowedTools }) => ({ kind: 'tool_calls', calls: allowedTools?.includes('list_owned_projects')
+        ? [{ id: 'catalogue', name: 'list_owned_projects', arguments: {} }]
+        : [{ id: 'details', name: 'search_knowledge', arguments: { query: 'python-cli details' } }] }) },
+    })
+
+    const result = await service.send({ message: 'List my Python projects and describe them.' })
+    expect(result.status).toBe('replied')
+    expect(toolOrder).toEqual(['catalogue', 'rag'])
+    expect(routeCount).toBe(1)
+  })
+
+  it('repairs invalid tool arguments once before executing the approved tool', async () => {
+    const plannerInputs: Array<{ allowedTools?: string[]; repair?: { call: { id: string; name: string; arguments: Record<string, unknown> }; rejection: string } }> = []
+    let fetchedStats = 0
+    let replyContext = ''
+    const service = createChatService({
+      respond: async (input) => {
+        replyContext = input.extraContext ?? ''
+        return { text: 'Here are the activity results.' }
+      },
+    }, {
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async () => ({ allowed: true }),
+        routeTools: async ({ availableTools }) => Object.fromEntries(availableTools.map((tool) => [tool, {
+          label: tool === 'coding_stats' ? 'use' : 'skip',
+          confidence: 0.99,
+        }])),
+      } as ModerationService,
+      contextSigner: {
+        verify: async () => ({ messages: [], topicAnchors: [] }),
+        sign: async () => 'signed',
+      } as ChatContextSigner,
+      codingStatsEnabled: true,
+      codingStats: { fetchSummary: async () => { fetchedStats += 1; return codingActivityResult('last_7_days') } },
+      planner: {
+        planNextStep: async (input) => {
+          plannerInputs.push(input)
+          if (plannerInputs.length === 1) {
+            return { kind: 'tool_calls', calls: [{ id: 'bad', name: 'coding_stats', arguments: { range: 'last_7_days' } }] }
+          }
+          return { kind: 'tool_calls', calls: [{ id: 'bad', name: 'coding_stats', arguments: { category: 'activity', range: 'last_7_days' } }] }
+        },
+      },
+    })
+
+    const result = await service.send({ message: 'Show my WakaTime activity for the last week.' })
+
+    expect(result.status).toBe('replied')
+    expect(plannerInputs).toHaveLength(2)
+    expect(plannerInputs[1]?.allowedTools).toEqual(['coding_stats'])
+    expect(plannerInputs[1]?.repair).toMatchObject({
+      call: { id: 'bad', name: 'coding_stats', arguments: { range: 'last_7_days' } },
+      rejection: expect.stringContaining('expected'),
+    })
+    expect(fetchedStats).toBe(1)
+    expect(replyContext).toContain('36 hrs total')
+  })
+
+  it('does not execute or retry again when repaired arguments remain invalid', async () => {
+    let plannerCalls = 0
+    let fetchedStats = 0
+    let routingUnavailable = false
+    const service = createChatService({
+      respond: async (input) => {
+        routingUnavailable = input.toolRoutingUnavailable === true
+        return { text: 'I cannot verify that right now.' }
+      },
+    }, {
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async () => ({ allowed: true }),
+        routeTools: async ({ availableTools }) => Object.fromEntries(availableTools.map((tool) => [tool, {
+          label: tool === 'coding_stats' ? 'use' : 'skip',
+          confidence: 0.99,
+        }])),
+      } as ModerationService,
+      contextSigner: {
+        verify: async () => ({ messages: [], topicAnchors: [] }),
+        sign: async () => 'signed',
+      } as ChatContextSigner,
+      codingStatsEnabled: true,
+      codingStats: { fetchSummary: async () => { fetchedStats += 1; return codingActivityResult('last_7_days') } },
+      planner: {
+        planNextStep: async () => {
+          plannerCalls += 1
+          return { kind: 'tool_calls', calls: [{
+            id: 'bad',
+            name: 'coding_stats',
+            arguments: { range: 'last_7_days' },
+          }] }
+        },
+      },
+    })
+
+    const result = await service.send({ message: 'Show my WakaTime activity for the last week.' })
+
+    expect(result.status).toBe('replied')
+    expect(plannerCalls).toBe(2)
+    expect(fetchedStats).toBe(0)
+    expect(routingUnavailable).toBe(true)
+  })
+
   it('retains bounded tool topic anchors for Jev after transcript truncation', async () => {
     const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
     const observedAnchors: ChatTopicAnchor[][] = []
@@ -130,13 +344,62 @@ describe('createChatService', () => {
     const education = await send('How about the education?')
 
     expect(education.status).toBe('replied')
-    expect(educationRouting[0]?.historyLength).toBe(12)
+    expect(educationRouting[0]?.historyLength).toBe(14)
     expect(educationRouting[0]?.anchorQuestions).toContain('What is your experience?')
     expect(educationPlannerAnchors[0]).toContain('What is your experience?')
     expect(knowledgeQueries).toEqual(['What is your experience?', "Tell me about Nelson's education."])
 
     await send('How about the education?')
-    expect(knowledgeQueries).toHaveLength(2)
+    expect(knowledgeQueries).toHaveLength(3)
+  })
+
+  it('retrieves education again when the previous experience answer mentioned one credential', async () => {
+    const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
+    const knowledgeQueries: string[] = []
+    const classifier: ModerationClassifier = {
+      classify: async () => ({ channel: 'chat', scope: { label: 'owner_context', confidence: 0.99 }, safety: { label: 'safe', confidence: 0.99 } }),
+      classifyChatWithTools: async (input) => {
+        const educationMentioned = input.context.some(({ role, content }) => role === 'assistant' && content.includes('Certificate IV'))
+        const useKnowledge = /experience/i.test(input.message) || (/education/i.test(input.message) && !educationMentioned)
+        return {
+          finding: { channel: 'chat', scope: { label: 'owner_context', confidence: 0.99 }, safety: { label: 'safe', confidence: 0.99 } },
+          toolDecisions: Object.fromEntries(input.availableTools.map((tool) => [tool, {
+            label: useKnowledge && tool === 'search_knowledge' ? 'use' : 'skip',
+            confidence: 0.99,
+          }])),
+        }
+      },
+      routeTools: async ({ availableTools }) => Object.fromEntries(availableTools.map((tool) => [tool, { label: 'skip', confidence: 0.99 }])),
+    }
+    const service = createChatService({
+      respond: async ({ message }) => ({
+        text: /experience/i.test(message)
+          ? 'Nelson has customer-service and automotive experience. He also completed a Certificate IV.'
+          : 'Nelson completed a Diploma and Bachelor degree at Deakin University, plus automotive qualifications.',
+      }),
+    }, {
+      moderation: createModerationService(classifier, 0.75),
+      contextSigner: signer,
+      today: '2026-09-24',
+      knowledgeEnabled: true,
+      knowledge: { execute: async ({ message }) => {
+        knowledgeQueries.push(message)
+        return { evidence: [], citations: [], degraded: false }
+      } },
+      planner: {
+        planNextStep: async ({ message, stepsUsed, allowedTools }) => {
+          if (stepsUsed > 0 || !allowedTools?.includes('search_knowledge')) return null
+          return { kind: 'tool_calls', calls: [{ id: 'profile', name: 'search_knowledge', arguments: { query: message } }] }
+        },
+      },
+    })
+
+    const first = await service.send({ message: 'What is your experience?' })
+    if (first.status !== 'replied') throw new Error('Expected the experience answer')
+    const education = await service.send({ message: 'How about the education?', contextToken: first.contextToken })
+
+    expect(education.status).toBe('replied')
+    expect(knowledgeQueries).toEqual(['What is your experience?', "Tell me about Nelson's education."])
   })
 
   it('refreshes WakaTime data for a current-project follow-up to an old anchor', async () => {
@@ -301,7 +564,7 @@ describe('createChatService', () => {
         message: 'Hello',
         contextToken: undefined,
       }),
-    ).resolves.toEqual({ status: 'replied', text: 'Hello from the assistant.', model: 'test/model', contextToken: '{"messages":[{"role":"user","content":"Hello"},{"role":"assistant","content":"Hello from the assistant."}],"topicAnchors":[]}' })
+    ).resolves.toEqual({ status: 'replied', text: 'Hello from the assistant.', model: 'test/model', contextToken: '{"messages":[{"role":"user","content":"Hello"},{"role":"assistant","content":"Hello from the assistant."}],"topicAnchors":[],"projectListState":{"clarificationAsked":false,"shownProjectIds":[],"shortlistStarted":false}}' })
   })
 
   it('never calls the responder for a rejected message and does not trust browser history', async () => {
@@ -324,6 +587,31 @@ describe('createChatService', () => {
     expect(result).toEqual({ status: 'blocked', reason: 'uncertain' })
     expect(responderCalled).toBe(false)
     expect(moderatedContext).toEqual([{ role: 'assistant', content: 'server-signed' }])
+  })
+
+  it('locks a signed forty-message conversation before moderation or tools run', async () => {
+    let moderationCalled = false
+    let responderCalled = false
+    const messages = Array.from({ length: 40 }, (_, index) => ({
+      role: index % 2 === 0 ? 'user' as const : 'assistant' as const,
+      content: `turn ${index}`,
+    }))
+    const service = createChatService({ respond: async () => { responderCalled = true; return { text: 'answer' } } }, {
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async () => { moderationCalled = true; return { allowed: true } },
+      } as ModerationService,
+      contextSigner: {
+        verify: async () => ({ messages, topicAnchors: [] }),
+        sign: async () => 'unused',
+      } as ChatContextSigner,
+      knowledgeEnabled: true,
+      knowledge: { execute: async () => { throw new Error('should not retrieve') } },
+    })
+
+    await expect(service.send({ message: 'one more', contextToken: 'valid' })).resolves.toEqual({ status: 'turn_limit' })
+    expect(moderationCalled).toBe(false)
+    expect(responderCalled).toBe(false)
   })
 
   it('retrieves only after moderation and passes bounded evidence and public citations through', async () => {
@@ -515,10 +803,124 @@ describe('createChatService.sendStream', () => {
     return events
   }
 
+  it('emits thinking before chat screening starts', async () => {
+    let moderationCalled = false
+    const service = createChatService(streamingResponder(['ok']), {
+      ...baseDependencies,
+      moderation: {
+        ...baseDependencies.moderation,
+        checkChat: async () => { moderationCalled = true; return { allowed: true } },
+      } as ModerationService,
+    })
+    const stream = service.sendStream({ message: 'Hello' })
+
+    expect(await stream.next()).toEqual({
+      done: false,
+      value: { type: 'status', status: 'thinking' },
+    })
+    expect(moderationCalled).toBe(false)
+    await stream.return(undefined)
+  })
+
+  it('returns a typed turn-limit error without running moderation or the responder', async () => {
+    let moderationCalled = false
+    let responderCalled = false
+    const messages = Array.from({ length: 40 }, (_, index) => ({
+      role: index % 2 === 0 ? 'user' as const : 'assistant' as const,
+      content: `turn ${index}`,
+    }))
+    const service = createChatService({
+      respond: async () => { responderCalled = true; return { text: 'should not appear' } },
+      stream: async function *() { responderCalled = true; yield { delta: 'should not appear' } },
+    } as ChatStreamingResponder, {
+      ...baseDependencies,
+      moderation: {
+        ...baseDependencies.moderation,
+        checkChat: async () => { moderationCalled = true; return { allowed: true } },
+      } as ModerationService,
+      contextSigner: { verify: async () => ({ messages, topicAnchors: [] }), sign: async () => 'unused' } as ChatContextSigner,
+    })
+    const events: unknown[] = []
+    for await (const event of service.sendStream({ message: 'one more', contextToken: 'valid' })) events.push(event)
+    expect(events).toEqual([{
+      type: 'status',
+      status: 'thinking',
+    }, {
+      type: 'error',
+      code: 'turn_limit',
+      message: 'This chat has reached its 20-turn limit. Clear the chat to start a new conversation.',
+    }])
+    expect(moderationCalled).toBe(false)
+    expect(responderCalled).toBe(false)
+  })
+
+  it('streams a broad project request normally when Jev does not select inventory', async () => {
+    const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
+    let responderCalled = false
+    const service = createChatService({
+      respond: async () => { responderCalled = true; return { text: 'Here are the projects I built.' } },
+      stream: async function *() { responderCalled = true; yield { delta: 'Here are the projects I built.' }; yield { done: true as const, text: 'Here are the projects I built.', model: 'test/model' } },
+    } as ChatStreamingResponder, {
+      ...baseDependencies,
+      moderation: {
+        ...baseDependencies.moderation,
+        checkChat: async () => ({ allowed: true }),
+      } as ModerationService,
+      contextSigner: signer,
+    })
+    const events = await collect(service, 'What projects have you built?')
+
+    expect(events).toHaveLength(5)
+    expect(events[0]).toEqual({ type: 'status', status: 'thinking' })
+    expect(events[2]).toEqual({ type: 'status', status: 'composing_reply' })
+    expect(events[3]).toEqual({ type: 'token', delta: 'Here are the projects I built.' })
+    expect(events[4]).toMatchObject({ type: 'done' })
+    expect(responderCalled).toBe(true)
+    expect(JSON.stringify(events)).not.toContain('What kind of projects')
+  })
+
+  it('repairs invalid streamed tool arguments once before running the source call', async () => {
+    let plannerCalls = 0
+    let fetchedStats = 0
+    const service = createChatService(streamingResponder(['checked']), {
+      ...baseDependencies,
+      moderation: {
+        ...baseDependencies.moderation,
+        routeTools: async ({ availableTools }) => Object.fromEntries(availableTools.map((tool) => [tool, {
+          label: tool === 'coding_stats' ? 'use' : 'skip',
+          confidence: 0.99,
+        }])),
+      } as ModerationService,
+      planner: {
+        planNextStep: async () => {
+          plannerCalls += 1
+          return { kind: 'tool_calls', calls: [{
+            id: 'activity',
+            name: 'coding_stats',
+            arguments: plannerCalls === 1
+              ? { range: 'last_7_days' }
+              : { category: 'activity', range: 'last_7_days' },
+          }] }
+        },
+      },
+      codingStatsEnabled: true,
+      codingStats: { fetchSummary: async () => { fetchedStats += 1; return codingActivityResult('last_7_days') } },
+    })
+
+    const events = await collect(service, 'Show my WakaTime activity for the last week.')
+
+    expect(plannerCalls).toBe(2)
+    expect(fetchedStats).toBe(1)
+    expect(events.filter((event) => (event as { type?: string }).type === 'tool_start')).toHaveLength(2)
+    expect(events.some((event) => (event as { type?: string; status?: string }).type === 'status' && (event as { status?: string }).status === 'preparing_arguments')).toBe(true)
+    expect(events[events.length - 1]).toMatchObject({ type: 'done' })
+  })
+
   it('streams tokens and finishes with a signed context token', async () => {
     const service = createChatService(streamingResponder(['Hel', 'lo']), baseDependencies)
 
     expect(await collect(service, 'Hello')).toEqual([
+      { type: 'status', status: 'thinking' },
       { type: 'status', status: 'preparing_arguments' },
       { type: 'status', status: 'composing_reply' },
       { type: 'token', delta: 'Hel' },
@@ -527,22 +929,21 @@ describe('createChatService.sendStream', () => {
     ])
   })
 
-  it('emits tool events around coding stats for coding-time questions', async () => {
-    let fetchedRange: string | undefined
+  it('emits typed public-share tool events for weekly coding activity', async () => {
+    let fetchedQuery: CodingStatsRequest | undefined
     const service = createChatService(streamingResponder(['ok']), {
       ...baseDependencies,
-      planner: scriptedPlanner([{ kind: 'tool_calls', calls: [{ id: '1', name: 'coding_stats', arguments: { range: 'last_7_days' } }] }, null]),
-      codingStats: { fetchSummary: async (range: 'last_7_days' | 'all_time') => { fetchedRange = range; return 'Coding activity (last 7 days): 32 hrs total' } },
+      planner: scriptedPlanner([{ kind: 'tool_calls', calls: [{ id: '1', name: 'coding_stats', arguments: { category: 'activity', range: 'last_7_days' } }] }, null]),
+      codingStats: { fetchSummary: async (query) => { fetchedQuery = query; return codingActivityResult(query.range) } },
       codingStatsEnabled: true,
     })
 
-
     const events = await collect(service, 'How much did you code this week?')
 
-    expect(fetchedRange).toBe('last_7_days')
-    expect(events.some((event) => (event as { status?: string }).status === 'preparing_arguments')).toBe(true)
+    expect(fetchedQuery).toEqual({ category: 'activity', range: 'last_7_days' })
     expect(events.find((event) => (event as { type?: string }).type === 'tool_start')).toMatchObject({ type: 'tool_start', name: 'coding_stats' })
     expect(events.find((event) => (event as { type?: string }).type === 'tool_result')).toMatchObject({ type: 'tool_result', name: 'coding_stats' })
+    expect(JSON.stringify(events)).toContain('WakaTime public share activity')
     expect(events.find((event) => (event as { status?: string }).status === 'composing_reply')).toEqual({ type: 'status', status: 'composing_reply' })
     expect(events[events.length - 1]).toMatchObject({ type: 'done' })
   })
@@ -591,6 +992,7 @@ describe('createChatService.sendStream', () => {
     const events = await collect(service, 'What work have I done?')
 
     expect(events).toEqual([
+      { type: 'status', status: 'thinking' },
       { type: 'status', status: 'preparing_arguments' },
       { type: 'status', status: 'composing_reply' },
       { type: 'error', message: 'The AI reply provider is rate-limited right now. Please try again in a moment.' },
@@ -611,6 +1013,7 @@ describe('createChatService.sendStream', () => {
     const service = createChatService(responder, baseDependencies)
 
     expect(await collect(service, 'What work have I done?')).toEqual([
+      { type: 'status', status: 'thinking' },
       { type: 'status', status: 'preparing_arguments' },
       { type: 'status', status: 'composing_reply' },
       { type: 'error', message: 'The configured AI model has no available OpenRouter provider right now. Please select another model or try again later.' },
@@ -632,22 +1035,26 @@ describe('createChatService.sendStream', () => {
     expect(events[events.length - 1]).toMatchObject({ type: 'done' })
   })
 
-  it('yields a single error event for blocked messages without touching tools or the responder', async () => {
+  it('yields thinking then blocks messages without touching tools or the responder', async () => {
     let toolCalls = 0
     const service = createChatService(streamingResponder(['never']), {
       moderation: { checkContact: async () => ({ allowed: true }), checkChat: async () => ({ allowed: false }) } as ModerationService,
       contextSigner: { verify: async () => ({ messages: [], topicAnchors: [] }), sign: async () => 'unused' } as ChatContextSigner,
-      codingStats: { fetchSummary: async () => { toolCalls += 1; return 'stats' } },
+      codingStats: { fetchSummary: async () => { toolCalls += 1; return codingActivityResult('last_7_days') } },
       codingStatsEnabled: true,
     })
 
     const events = await collect(service, 'How much did you code this week?')
 
-    expect(events).toEqual([{ type: 'error', message: 'I couldn’t confidently classify your request. Please rephrase it as a question about Nelson or this site’s assistant.' }])
+    expect(events).toEqual([
+      { type: 'status', status: 'thinking' },
+      { type: 'error', message: 'I couldn’t confidently classify your request. Please rephrase it as a question about Nelson or this site’s assistant.' },
+    ])
     expect(toolCalls).toBe(0)
   })
 
-  it('answers history questions from the warehouse and skips the live API tool', async () => {
+  it('answers history questions from the warehouse and skips the public-share tool', async () => {
+
     let apiCalls = 0
     const service = createChatService(streamingResponder(['ok']), {
       ...baseDependencies,
@@ -662,7 +1069,7 @@ describe('createChatService.sendStream', () => {
         streaks: async () => ({ longestDays: 4, currentDays: 0 }),
       },
       codingHistoryEnabled: true,
-      codingStats: { fetchSummary: async () => { apiCalls += 1; return 'live stats' } },
+      codingStats: { fetchSummary: async (query) => { apiCalls += 1; return codingActivityResult(query.range) } },
       codingStatsEnabled: true,
     })
 
@@ -676,10 +1083,10 @@ describe('createChatService.sendStream', () => {
     expect(events[events.length - 1]).toMatchObject({ type: 'done' })
   })
 
-  it('falls back to the live API tool when the warehouse has no match', async () => {
+  it('uses the public share when a recent range-less question is approved', async () => {
     const service = createChatService(streamingResponder(['ok']), {
       ...baseDependencies,
-      planner: scriptedPlanner([{ kind: 'tool_calls', calls: [{ id: '1', name: 'coding_stats', arguments: { range: 'last_7_days' } }] }, null]),
+      planner: scriptedPlanner([{ kind: 'tool_calls', calls: [{ id: '1', name: 'coding_stats', arguments: { category: 'activity', range: 'last_7_days' } }] }, null]),
       today: '2026-09-23',
       codingHistory: {
         summary: async () => ({ totalSeconds: 0, activeDays: 0, heartbeatCount: 0 }),
@@ -690,7 +1097,7 @@ describe('createChatService.sendStream', () => {
         streaks: async () => ({ longestDays: 0, currentDays: 0 }),
       },
       codingHistoryEnabled: true,
-      codingStats: { fetchSummary: async () => 'live stats' },
+      codingStats: { fetchSummary: async (query) => codingActivityResult(query.range) },
       codingStatsEnabled: true,
     })
 
@@ -704,11 +1111,11 @@ describe('createChatService.sendStream', () => {
     expect(events[events.length - 1]).toMatchObject({ type: 'done' })
   })
 
-  it('answers range-less total-hours questions from the live API, not the import snapshot', async () => {
+  it('answers range-less total-hours questions from the public share, not the import snapshot', async () => {
     let historyCalls = 0
     const service = createChatService(streamingResponder(['ok']), {
       ...baseDependencies,
-      planner: scriptedPlanner([{ kind: 'tool_calls', calls: [{ id: '1', name: 'coding_stats', arguments: { range: 'all_time' } }] }, null]),
+      planner: scriptedPlanner([{ kind: 'tool_calls', calls: [{ id: '1', name: 'coding_stats', arguments: { category: 'activity', range: 'all_time' } }] }, null]),
       today: '2026-09-23',
       codingHistory: {
         summary: async () => { historyCalls += 1; return { totalSeconds: 7200, activeDays: 4, heartbeatCount: 100 } },
@@ -719,7 +1126,7 @@ describe('createChatService.sendStream', () => {
         streaks: async () => ({ longestDays: 4, currentDays: 0 }),
       },
       codingHistoryEnabled: true,
-      codingStats: { fetchSummary: async () => 'Coding activity (all time): 3,943 hrs total' },
+      codingStats: { fetchSummary: async (query) => codingActivityResult(query.range) },
       codingStatsEnabled: true,
     })
 
@@ -748,7 +1155,7 @@ describe('createChatService.sendStream', () => {
         streaks: async () => ({ longestDays: 4, currentDays: 0 }),
       },
       codingHistoryEnabled: true,
-      codingStats: { fetchSummary: async () => 'live stats' },
+      codingStats: { fetchSummary: async (query) => codingActivityResult(query.range) },
       codingStatsEnabled: true,
     })
 
@@ -777,7 +1184,7 @@ describe('createChatService.sendStream', () => {
         streaks: async () => ({ longestDays: 0, currentDays: 0 }),
       },
       codingHistoryEnabled: true,
-      codingStats: { fetchSummary: async () => 'Coding activity (all time): 3,943 hrs total' },
+      codingStats: { fetchSummary: async (query) => codingActivityResult(query.range) },
       codingStatsEnabled: true,
       siteContent: {
         listProjects: async () => [],
@@ -797,6 +1204,37 @@ describe('createChatService.sendStream', () => {
     expect(JSON.stringify(starts.map((event) => (event as { name: string }).name).sort())).toContain('coding_stats')
   })
 
+  it('uses all-time per-project history for an all-project range follow-up', async () => {
+    let historyRange: { from: string; to: string } | undefined
+    let publicShareCalls = 0
+    const service = createChatService({ respond: async () => ({ text: 'Project activity loaded.' }) }, {
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async () => ({ allowed: true, toolDecisions: {
+          coding_stats: { label: 'uncertain', confidence: 0.5 },
+          coding_history: { label: 'uncertain', confidence: 0.5 },
+        } }),
+      } as ModerationService,
+      contextSigner: { verify: async () => ({ messages: [], topicAnchors: [] }), sign: async () => 'signed' } as ChatContextSigner,
+      today: '2026-09-25',
+      codingStatsEnabled: true,
+      codingStats: { fetchSummary: async () => { publicShareCalls += 1; return null } },
+      codingHistoryEnabled: true,
+      codingHistory: {
+        summary: async () => ({ totalSeconds: 0, activeDays: 0, heartbeatCount: 0 }),
+        byProject: async (range) => { historyRange = range; return [{ name: 'project-a', seconds: 3600, heartbeats: 10 }] },
+        byLanguage: async () => [], projectTime: async () => ({ totalSeconds: 0, activeDays: 0, heartbeatCount: 0 }),
+        dailySeries: async () => [], streaks: async () => ({ longestDays: 0, currentDays: 0 }),
+      },
+    })
+
+    const result = await service.send({ message: 'How about the all time status for all the projects?' })
+
+    expect(historyRange).toMatchObject({ from: '2000-01-01', to: '2026-09-25' })
+    expect(publicShareCalls).toBe(0)
+    expect(result.status).toBe('replied')
+  })
+
   it('routes showcase questions to live site content with SSE events', async () => {
     const { planner: _skipped, ...deps } = baseDependencies
     void _skipped
@@ -812,8 +1250,103 @@ describe('createChatService.sendStream', () => {
 
     const events = await collect(service, 'Does he have some project demo showcase?')
 
-    expect(events[0]).toMatchObject({ type: 'tool_start', name: 'site_content', label: 'BROWSING SITE CONTENT…' })
-    expect(events[1]).toMatchObject({ type: 'tool_result', name: 'site_content' })
-    expect(JSON.stringify(events[1])).toContain('Demo App')
+    expect(events[1]).toMatchObject({ type: 'tool_start', name: 'site_content', label: 'BROWSING SITE CONTENT…' })
+    expect(events[2]).toMatchObject({ type: 'tool_result', name: 'site_content' })
+    expect(JSON.stringify(events[2])).toContain('Demo App')
+  })
+
+  it('records a redacted non-streamed query, Jev decision, RAG candidates, and reported usage', async () => {
+    const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
+    const records: Array<Record<string, unknown>> = []
+    const service = createChatService({
+      respond: async (input) => {
+        input.onModelCall?.({ provider: 'openrouter', operation: 'response', model: 'test/responder', status: 'succeeded', inputTokens: 40, outputTokens: 8, totalTokens: 48, costUsd: 0.001 })
+        return { text: 'SIT320-Project-MD5 is a verified project.' }
+      },
+    }, {
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async (_input, observer) => {
+          observer?.onModelCall({ provider: 'jev', operation: 'moderation', model: 'jev-latest', status: 'succeeded', inputTokens: 15, outputTokens: 2 })
+          observer?.onJevDecision({ stage: 'moderation', decisions: {
+            scope: { label: 'owner_projects', confidence: 0.98 },
+            safety: { label: 'safe', confidence: 0.99 },
+            search_knowledge: { label: 'use', confidence: 0.97 },
+          } })
+          return { allowed: true, toolDecisions: { search_knowledge: { label: 'use', confidence: 0.97 } } }
+        },
+      } as ModerationService,
+      contextSigner: signer,
+      knowledgeEnabled: true,
+      knowledge: {
+        execute: async (input) => {
+          input.diagnostics?.onModelCall?.({ provider: 'siliconflow', operation: 'query_embedding', status: 'succeeded', inputTokens: 20, totalTokens: 20 })
+          input.diagnostics?.onRetrieval?.({ query: input.message, degraded: false, candidates: [{
+            id: 'doc-1', sourceId: 'lst97/SIT320-Project-MD5', sourceType: 'github', title: 'SIT320-Project-MD5', isPublic: true,
+            excerpt: 'Verified project evidence', retrievedRank: 1, rerankScore: 0.9, relevanceProbability: 0.95,
+            answerEvidenceProbability: 0.91, outcome: 'accepted', finalSelected: true,
+          }] })
+          return { evidence: [], citations: [], degraded: false }
+        },
+      },
+      planner: { planNextStep: async (input) => {
+        input.onModelCall?.({ provider: 'openrouter', operation: 'planner', model: 'test/planner', status: 'succeeded', inputTokens: 30, outputTokens: 5, totalTokens: 35 })
+        return { kind: 'tool_calls', calls: [{ id: 'search', name: 'search_knowledge', arguments: { query: input.message } }] }
+      } },
+      diagnosticsSink: { enqueue: (record) => records.push(record as unknown as Record<string, unknown>) },
+    })
+
+    const result = await service.send({
+      message: 'What is SIT320-Project-MD5?',
+      diagnosticsMetadata: { ipAddress: '203.0.113.8', browser: { name: 'Chrome', operatingSystem: 'macOS', device: 'desktop' } },
+    })
+    const record = records[0]
+
+    expect(result.status).toBe('replied')
+    expect(record).toMatchObject({
+      query: 'What is SIT320-Project-MD5?',
+      response: 'SIT320-Project-MD5 is a verified project.',
+      outcome: 'complete',
+      metadata: { ipAddress: '203.0.113.8', browser: { name: 'Chrome', operatingSystem: 'macOS', device: 'desktop' } },
+    })
+    expect(record?.jevDecisions).toHaveLength(1)
+    expect(record?.ragRetrievals).toMatchObject([{ candidates: [{ sourceId: 'lst97/SIT320-Project-MD5', finalSelected: true }] }])
+    expect(record?.modelCalls).toMatchObject([
+      { provider: 'jev', operation: 'moderation', inputTokens: 15, outputTokens: 2 },
+      { provider: 'openrouter', operation: 'planner', inputTokens: 30, outputTokens: 5 },
+      { provider: 'siliconflow', operation: 'query_embedding', inputTokens: 20 },
+      { provider: 'openrouter', operation: 'response', inputTokens: 40, outputTokens: 8, totalTokens: 48, costUsd: 0.001 },
+    ])
+    expect(record).not.toHaveProperty('contextToken')
+  })
+
+  it('records the final streamed assistant response without adding diagnostics to SSE events', async () => {
+    const records: Array<Record<string, unknown>> = []
+    const responder: ChatStreamingResponder = {
+      respond: async () => ({ text: 'unused' }),
+      async *stream(input) {
+        input.onModelCall?.({ provider: 'openrouter', operation: 'response', status: 'succeeded', inputTokens: 12, outputTokens: 3, totalTokens: 15 })
+        yield { delta: 'Streamed answer' }
+        yield { done: true, text: 'Streamed answer' }
+      },
+    }
+    const service = createChatService(responder, {
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async (_input, observer) => {
+          observer?.onJevDecision({ stage: 'moderation', decisions: { scope: { label: 'owner_context', confidence: 0.9 } } })
+          return { allowed: true }
+        },
+      } as ModerationService,
+      contextSigner: createChatContextSigner('a-secret-key-with-at-least-32-characters'),
+      diagnosticsSink: { enqueue: (record) => records.push(record as unknown as Record<string, unknown>) },
+    })
+
+    const events = []
+    for await (const event of service.sendStream({ message: 'Tell me about Nelson’s work.' })) events.push(event)
+
+    expect(records[0]).toMatchObject({ outcome: 'complete', response: 'Streamed answer' })
+    expect(JSON.stringify(events)).not.toContain('inputTokens')
+    expect(JSON.stringify(events)).not.toContain('traceId')
   })
 })

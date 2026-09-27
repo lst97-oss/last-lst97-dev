@@ -3,7 +3,7 @@ import { describe, expect, it } from 'bun:test'
 import { jevToolRoutingCases } from './jev-tool-routing-cases'
 import type { AgentToolName } from '../../src/server/chat/agent-tools'
 
-const tools: AgentToolName[] = ['search_knowledge', 'coding_stats', 'coding_history', 'site_content']
+const tools: AgentToolName[] = ['search_knowledge', 'list_owned_projects', 'coding_stats', 'coding_history', 'site_content']
 
 describe('Jev tool-routing baseline', () => {
   it('contains unique, categorized, per-tool positive and negative cases', () => {
@@ -33,12 +33,29 @@ describe('Jev tool-routing baseline', () => {
     const byId = new Map(jevToolRoutingCases.map((testCase) => [testCase.id, testCase]))
     expect(byId.get('followup-education-after-experience')?.expected).toEqual(['search_knowledge'])
     expect(byId.get('followup-project-after-unrelated-turns')?.expected).toEqual(['search_knowledge'])
-    expect(byId.get('followup-exact-education-answer-retained')?.expected).toEqual([])
+    expect(byId.get('followup-partial-education-answer-requeries')?.expected).toEqual(['search_knowledge'])
     expect(byId.get('followup-thanks-skips-tools')?.expected).toEqual([])
     expect(byId.get('followup-current-project-requeries-fresh-wakatime')?.expected).toEqual(['coding_history', 'search_knowledge'])
+    expect(byId.get('history-project-all-time-followup')?.expected).toEqual(['coding_history'])
+    expect(byId.get('history-project-all-time-followup')?.history?.at(-1)?.content).toBe('The total was 33 hours and 4 minutes in the recent activity window.')
 
-    for (const testCase of jevToolRoutingCases.filter(({ id }) => id.startsWith('followup-'))) {
+    for (const testCase of jevToolRoutingCases.filter(({ id }) => id.startsWith('followup-') && id !== 'followup-accepts-offered-coding-tools' && id !== 'followup-refuses-offered-coding-tools')) {
       expect(testCase.topicAnchors?.length).toBeGreaterThan(0)
     }
+    expect(byId.get('followup-accepts-offered-coding-tools')?.expected).toEqual(['coding_stats', 'coding_history'])
+    expect(byId.get('followup-refuses-offered-coding-tools')?.expected).toEqual([])
+  })
+
+  it('covers repeat owned-project discovery separately from the published showcase', () => {
+    const byId = new Map(jevToolRoutingCases.map((testCase) => [testCase.id, testCase]))
+    expect(byId.get('projects-next-batch')?.expected).toEqual(['list_owned_projects'])
+    expect(byId.get('projects-all-owned-inventory')?.expected).toEqual(['list_owned_projects'])
+    expect(byId.get('positive-you-projects')?.expected).toEqual(['list_owned_projects'])
+    expect(byId.get('site-latest-projects')?.expected).toEqual(['site_content'])
+  })
+
+  it('routes an all-project coding-time follow-up to historical per-project data', () => {
+    const byId = new Map(jevToolRoutingCases.map((testCase) => [testCase.id, testCase]))
+    expect(byId.get('history-all-projects-all-time')?.expected).toEqual(['coding_history'])
   })
 })
