@@ -24,6 +24,11 @@
     "generate:importmap": "bunx payload generate:importmap",
     "db:up": "docker compose up -d db",
     "db:migrate": "bunx payload migrate",
+    "check:server": "biome check src/server",
+    "format:server": "biome format --write src/server",
+    "imports:check": "biome check --formatter-enabled=false --linter-enabled=false --assist-enabled=true src/server src/components src/routes",
+    "imports:organize": "biome check --formatter-enabled=false --linter-enabled=false --assist-enabled=true --write src/server src/components src/routes",
+    "lint:server": "biome lint src/server",
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit",
     "knowledge:github:catalog": "bun run scripts/sync-project-catalog.ts"
@@ -88,6 +93,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.14",
     "@tanstack/devtools-event-client": "latest",
     "@tanstack/devtools-vite": "latest",
     "@tanstack/router-cli": "^1.132.0",
