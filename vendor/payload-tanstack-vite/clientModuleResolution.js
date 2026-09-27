@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
 /**
  * Client-side module resolution:
  * 1. Stubs RSC modules (`@payloadcms/.../rsc`) with no-op components so the
@@ -78,14 +76,15 @@ import path from 'node:path';
                     skipSelf: true
                 });
                 if (pkgResolved) {
-                    const pkgDir = path.dirname(pkgResolved.id);
+                    const resolvedPackageFile = pkgResolved.id.split(/[?#]/, 1)[0];
+                    const packageDirectory = new URL('.', Bun.pathToFileURL(resolvedPackageFile));
                     const candidates = [
-                        path.resolve(pkgDir, 'src', 'exports', 'client.ts'),
-                        path.resolve(pkgDir, 'src', 'exports', 'client.js'),
-                        path.resolve(pkgDir, 'dist', 'exports', 'client.js')
-                    ];
+                        'src/exports/client.ts',
+                        'src/exports/client.js',
+                        'dist/exports/client.js'
+                    ].map((relativePath)=>Bun.fileURLToPath(new URL(relativePath, packageDirectory)));
                     for (const candidate of candidates){
-                        if (fs.existsSync(candidate)) {
+                        if (await Bun.file(candidate).exists()) {
                             return candidate;
                         }
                     }

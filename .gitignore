@@ -19,3 +19,12 @@ payload-types.ts
 src/payload-import-map.ts
 # Docker / local data
 pgdata
+ragdata
+# Python (embedding service)
+__pycache__/
+*.pyc
+*.pyo
+# NOTE: `src/data/github/private/` holds sanitized (secret-free) summaries of the
+# owner's private repositories. They are intentionally tracked: `knowledge:github:sync`
+# never stages or commits, and `assertSafeGithubMarkdown` blocks secrets, credential
+# assignments, PEM blocks, and emails before a report is written. Review before publishing.

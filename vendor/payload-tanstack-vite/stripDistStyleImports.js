@@ -15,6 +15,12 @@ const STYLE_EXTENSION_RE = /\.(?:s?css|less)$/i;
  * their `.css` side-effect imports survive into the SSR/RSC graph.
  */ const PAYLOAD_PKG_SRC_RE = /\/packages\/[^/]+\/src\//;
 /**
+ * The version-diff component trees render some CSS-importing components through
+ * synchronous `renderToStaticMarkup`. Keep stripping only those imports in the
+ * RSC environment; the rest of Payload's server components must keep their CSS
+ * imports so the default admin shell can collect them for the client.
+ */ const DIFF_VIEW_COMPONENT_RE = /@payloadcms\/ui\/(?:dist|src)\/(?:icons|graphics|views\/Version|elements\/(?:HTMLDiff|FieldDiffContainer|FieldDiffLabel))\/|@payloadcms\/richtext-lexical\/(?:dist|src)\/field\/Diff\//;
+/**
  * Stops Vite (and the underlying Node ESM loader) from trying to load
  * SCSS/CSS/LESS during SSR/RSC when the importer lives inside a built
  * `dist/` directory or when the specifier is a bare package name.
@@ -41,8 +47,14 @@ const STYLE_EXTENSION_RE = /\.(?:s?css|less)$/i;
             }
         },
         resolveId (id, importer, options) {
-            const isServerEnv = options?.ssr || this.environment && this.environment.name !== 'client';
+            const envName = this.environment?.name;
+            const isServerEnv = options?.ssr || envName && envName !== 'client';
             if (!isServerEnv) {
+                return;
+            }
+            // RSC CSS imports are collected into the client stylesheet graph. A
+            // broad strip here leaves the Payload navigation and page shell plain.
+            if (envName === 'rsc') {
                 return;
             }
             if (!STYLE_EXTENSION_RE.test(id)) {
@@ -56,8 +68,14 @@ const STYLE_EXTENSION_RE = /\.(?:s?css|less)$/i;
             }
         },
         transform (code, id) {
-            const isServerEnv = this.environment && this.environment.name !== 'client';
+            const envName = this.environment?.name;
+            const isServerEnv = envName && envName !== 'client';
             if (!isServerEnv) {
+                return;
+            }
+            // Keep admin RSC styles; only the synchronous version-diff tree needs
+            // its imports removed to avoid suspending static markup rendering.
+            if (envName === 'rsc' && !DIFF_VIEW_COMPONENT_RE.test(id)) {
                 return;
             }
             // Only touch Payload dependency files: published `node_modules/.../dist/`
@@ -69,7 +87,7 @@ const STYLE_EXTENSION_RE = /\.(?:s?css|less)$/i;
             if (!isPayloadDistFile && !isPayloadSrcFile) {
                 return;
             }
-            if (!/\.[mc]?[jt]sx?$/.test(id)) {
+            if (!/\.[mc]?[jt]sx?(?:$|\?)/.test(id)) {
                 return;
             }
             if (!STATIC_STYLE_IMPORT_RE.test(code)) {

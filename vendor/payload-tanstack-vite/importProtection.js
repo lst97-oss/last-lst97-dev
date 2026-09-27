@@ -1,3 +1,5 @@
+// node:module is retained here because Bun has no native API exposing Node's
+// complete builtin module specifier list for Vite's client-import guard.
 import { builtinModules } from 'node:module';
 /**
  * Specifiers that must never appear in the client module graph. These are the

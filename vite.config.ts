@@ -6,10 +6,7 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { devtools } from '@tanstack/devtools-vite'
-import path from 'node:path'
 import { defineConfig } from 'vite'
-// NOTE(payload-bun): node:path kept — Vite config-file resolution requires Node
-// specifier semantics. All app/routes/lib code uses Bun.env + Web APIs.
 import { clientModuleResolution } from './vendor/payload-tanstack-vite/clientModuleResolution.js'
 import { wrapCjsForClient } from './vendor/payload-tanstack-vite/wrapCjsForClient.js'
 import { ssrStripDistStyleImports } from './vendor/payload-tanstack-vite/stripDistStyleImports.js'
@@ -29,12 +26,19 @@ import {
   ssrExternalPackages,
 } from './vendor/payload-tanstack-vite/constants.js'
 
+const projectPath = (relativePath: string) => {
+  const resolvedPath = relativePath.replace(/^\.\//, '')
+  return typeof Bun !== 'undefined'
+    ? Bun.resolveSync(`./${resolvedPath}`, process.cwd())
+    : `${process.cwd()}/${resolvedPath}`
+}
+
 const config = defineConfig({
   resolve: {
     alias: [
       {
         find: '@payload-config',
-        replacement: path.resolve('./payload.config.ts'),
+        replacement: projectPath('./payload.config.ts'),
       },
       // @payloadcms/ui@4.0.0-canary.35 ships dist/css/app.css but the adapter's
       // RootLayout imports the unpublished `@payloadcms/ui/scss/app.scss`
@@ -43,7 +47,19 @@ const config = defineConfig({
       // server-env style imports; prod client build needs a real file).
       {
         find: '@payloadcms/ui/scss/app.scss',
-        replacement: path.resolve('./node_modules/@payloadcms/ui/dist/css/app.css'),
+        replacement: projectPath('./node_modules/@payloadcms/ui/dist/css/app.css'),
+      },
+      {
+        // Payload UI's compiled client files import the named `c` compiler-runtime export.
+        // Vite's raw CJS fallback exposes only a default export for React's entrypoint.
+        find: 'react/compiler-runtime',
+        replacement: projectPath('./vendor/react-compiler-runtime.ts'),
+      },
+      {
+        // Payload's browser shared graph reaches sanitize-filename through an excluded
+        // CommonJS package, so Vite cannot apply the package's browser dependency path.
+        find: 'sanitize-filename',
+        replacement: projectPath('./vendor/sanitize-filename.ts'),
       },
     ],
     dedupe: ['react', 'react-dom', 'scheduler', '@payloadcms/ui'],
@@ -60,11 +76,11 @@ const config = defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: optimizeDepsExcludeDefaults,
+    exclude: [...optimizeDepsExcludeDefaults, '@openrouter/sdk'],
     include: [...optimizeDepsIncludeDefaults],
   },
   ssr: {
-    external: [...ssrExternalPackages],
+    external: [...ssrExternalPackages, '@openrouter/sdk'],
     noExternal: payloadNoExternalPatterns,
   },
   plugins: [
