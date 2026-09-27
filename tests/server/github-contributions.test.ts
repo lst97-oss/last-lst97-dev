@@ -4,7 +4,7 @@ import {
   aggregateGithubContributions,
   createGithubContributionsGateway,
   discoverGithubContributions,
-} from '../../src/server/knowledge/github-contributions'
+} from '../../src/server/knowledge/github/contributions'
 
 describe('GitHub contribution inventory', () => {
   it('merges contribution kinds across years and excludes repositories owned by lst97', () => {

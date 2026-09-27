@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { removeSupersededGithubReports } from '../../src/server/knowledge/github-legacy-reports'
+import { removeSupersededGithubReports } from '../../src/server/knowledge/github/legacy-reports'
 
 describe('superseded GitHub reports', () => {
   it('removes only a safe legacy duplicate after its canonical report has been written', async () => {

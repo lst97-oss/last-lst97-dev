@@ -7,13 +7,13 @@ type QueryEmbeddingEnvironment = Pick<
 >
 type IndexEmbeddingEnvironment = Pick<
   ReturnType<typeof createServerEnv>,
-  'KNOWLEDGE_EMBEDDING_URL' | 'KNOWLEDGE_EMBEDDING_API_KEY' | 'KNOWLEDGE_EMBEDDING_MODEL' | 'KNOWLEDGE_EMBEDDING_TIMEOUT_MS'
+  | 'KNOWLEDGE_EMBEDDING_URL'
+  | 'KNOWLEDGE_EMBEDDING_API_KEY'
+  | 'KNOWLEDGE_EMBEDDING_MODEL'
+  | 'KNOWLEDGE_EMBEDDING_TIMEOUT_MS'
 >
 
-export function createQueryEmbeddingConfig(
-  env: QueryEmbeddingEnvironment,
-  apiKey: string,
-): EmbeddingClientConfig {
+export function createQueryEmbeddingConfig(env: QueryEmbeddingEnvironment, apiKey: string): EmbeddingClientConfig {
   return {
     baseUrl: env.KNOWLEDGE_QUERY_EMBEDDING_URL,
     model: env.KNOWLEDGE_EMBEDDING_MODEL,

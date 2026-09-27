@@ -21,7 +21,9 @@ export interface PayloadKnowledgeSourceConfig {
   now?: () => Date
 }
 
-export function createPayloadKnowledgeSource(config: PayloadKnowledgeSourceConfig): KnowledgeSource & { listDocuments(): Promise<KnowledgeDocument[]> } {
+export function createPayloadKnowledgeSource(
+  config: PayloadKnowledgeSourceConfig,
+): KnowledgeSource & { listDocuments(): Promise<KnowledgeDocument[]> } {
   const collectionPath = config.type === 'post' ? 'blog' : 'projects'
   const publicBaseUrl = config.publicSiteUrl.replace(/\/+$/, '')
   const now = config.now ?? (() => new Date())
@@ -36,11 +38,12 @@ export function createPayloadKnowledgeSource(config: PayloadKnowledgeSourceConfi
       const slug = typeof record.slug === 'string' ? record.slug.trim() : ''
       const publishedAt = typeof record.publishedAt === 'string' ? new Date(record.publishedAt) : null
       const currentTime = now()
-      const isPublic = record.status === 'published'
-        && Boolean(title && slug)
-        && publishedAt !== null
-        && Number.isFinite(publishedAt.valueOf())
-        && publishedAt <= currentTime
+      const isPublic =
+        record.status === 'published' &&
+        Boolean(title && slug) &&
+        publishedAt !== null &&
+        Number.isFinite(publishedAt.valueOf()) &&
+        publishedAt <= currentTime
 
       const descriptionValue = config.type === 'post' ? record.excerpt : record.summary
       const description = typeof descriptionValue === 'string' ? descriptionValue.trim() : ''
@@ -64,10 +67,12 @@ export function createPayloadKnowledgeSource(config: PayloadKnowledgeSourceConfi
       }
     },
   }
-  return Object.assign(source, { listDocuments: async () => {
-    if (!config.findAll) throw new Error('Payload knowledge source list is not configured')
-    const records = await config.findAll()
-    const documents = await Promise.all(records.map((record) => source.fetch(String(record.id))))
-    return documents.filter((document): document is KnowledgeDocument => document !== null)
-  } })
+  return Object.assign(source, {
+    listDocuments: async () => {
+      if (!config.findAll) throw new Error('Payload knowledge source list is not configured')
+      const records = await config.findAll()
+      const documents = await Promise.all(records.map((record) => source.fetch(String(record.id))))
+      return documents.filter((document): document is KnowledgeDocument => document !== null)
+    },
+  })
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { inspectGithubRepository, type GithubCommandRunner } from '../../src/server/knowledge/github-repository-inspector'
+import { inspectGithubRepository, type GithubCommandRunner } from '../../src/server/knowledge/github/repository-inspector'
 
 describe('GitHub repository inspector', () => {
   it('uses a temporary shallow clone, reads only allowlisted files, and cleans up', async () => {

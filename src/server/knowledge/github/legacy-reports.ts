@@ -1,4 +1,4 @@
-import { assertSafeGithubMarkdown } from './github-content-safety'
+import { assertSafeGithubMarkdown } from './content-safety'
 
 export interface RemoveSupersededGithubReportsDependencies {
   candidates: string[]
@@ -15,10 +15,7 @@ export async function removeSupersededGithubReports(
     if (!legacyPath.endsWith('.md.md')) continue
     const canonicalPath = legacyPath.slice(0, -3)
     try {
-      const [legacy, canonical] = await Promise.all([
-        dependencies.read(legacyPath),
-        dependencies.read(canonicalPath),
-      ])
+      const [legacy, canonical] = await Promise.all([dependencies.read(legacyPath), dependencies.read(canonicalPath)])
       if (!legacy.trim() || !canonical.trim()) throw new Error('A report is empty')
       assertSafeGithubMarkdown(legacy)
       assertSafeGithubMarkdown(canonical)

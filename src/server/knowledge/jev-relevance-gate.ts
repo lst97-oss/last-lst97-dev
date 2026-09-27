@@ -10,18 +10,17 @@ const MAX_DOCUMENT_TEXT_LENGTH = 6_000
 const DECISION_ERROR = 'Jev knowledge relevance decision failed'
 
 const RELEVANCE_QUESTIONS = {
-  is_relevant: noul(
-    'Does this document directly support a fact or answer requested by the current question?',
-    {
-      true: 'The document directly answers the current question or supplies a concrete fact that supports the requested answer. For a named project, a document identifying that exact repository is relevant even when its report says the purpose is unknown; use its supported metadata and limitations. The same broad topic, keyword, or source type alone is not enough.',
-      false: 'The document only shares a broad topic or keyword, or unrelated repository metadata, and neither identifies the exact named project nor provides a fact relevant to the request.',
-    },
-  ),
+  is_relevant: noul('Does this document directly support a fact or answer requested by the current question?', {
+    true: 'The document directly answers the current question or supplies a concrete fact that supports the requested answer. For a named project, a document identifying that exact repository is relevant even when its report says the purpose is unknown; use its supported metadata and limitations. The same broad topic, keyword, or source type alone is not enough.',
+    false:
+      'The document only shares a broad topic or keyword, or unrelated repository metadata, and neither identifies the exact named project nor provides a fact relevant to the request.',
+  }),
   contains_answer_evidence: noul(
     'Does this document contain usable evidence for a direct answer to the current question?',
     {
       true: 'The document states a concrete relevant fact, description, comparison, or limitation that can support a direct or partial answer. For an exact named repository, ownership, visibility, technologies, file names, and an explicit unknown-purpose finding are usable evidence.',
-      false: 'The document contains no concrete material that can support any part of the answer, including no exact named-project identity or relevant metadata.',
+      false:
+        'The document contains no concrete material that can support any part of the answer, including no exact named-project identity or relevant metadata.',
     },
   ),
 } as const
@@ -51,7 +50,8 @@ export function createJevKnowledgeRelevanceGate(
   if (!apiKey) throw new Error('Missing required server environment variable: TYPESAFE_API_KEY')
 
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS
-  if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) throw new Error('Jev knowledge relevance configuration is invalid')
+  if (!Number.isInteger(timeoutMs) || timeoutMs <= 0)
+    throw new Error('Jev knowledge relevance configuration is invalid')
 
   const client = new TypeSafeClient({
     apiKey,

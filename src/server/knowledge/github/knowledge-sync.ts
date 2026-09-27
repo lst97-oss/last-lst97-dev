@@ -1,11 +1,11 @@
-import type { Logger } from '../observability/logger'
-import type { KnowledgeDocument } from './source-types'
-import type { GithubContributionRepository } from './github-contributions'
-import type { GithubRepositoryAnalysis } from './github-repository-analysis'
-import type { GithubRepositorySnapshot } from './github-repository-inspector'
-import type { ProjectSoftwareKind } from './project-catalog'
-import { assertSafeGithubMarkdown } from './github-content-safety'
-import { GithubRepositoryInspectionError } from './github-repository-inspector'
+import type { Logger } from '../../observability/logger'
+import type { ProjectSoftwareKind } from '../project-catalog'
+import type { KnowledgeDocument } from '../source-types'
+import { assertSafeGithubMarkdown } from './content-safety'
+import type { GithubContributionRepository } from './contributions'
+import type { GithubRepositoryAnalysis } from './repository-analysis'
+import type { GithubRepositorySnapshot } from './repository-inspector'
+import { GithubRepositoryInspectionError } from './repository-inspector'
 
 export interface GithubSyncRepository {
   fullName: string
@@ -62,7 +62,8 @@ export interface GithubKnowledgeSyncResult {
 }
 
 function safeFilename(name: string): string {
-  if (!/^[A-Za-z0-9_.-]{1,150}$/.test(name) || name === '.' || name === '..') throw new Error('Repository name is invalid')
+  if (!/^[A-Za-z0-9_.-]{1,150}$/.test(name) || name === '.' || name === '..')
+    throw new Error('Repository name is invalid')
   return `${name}.md`
 }
 
@@ -99,59 +100,66 @@ export async function syncGithubRepositoryReports(
 
   let nextRepository = 0
   const workerCount = Math.min(3, dependencies.repositories.length)
-  await Promise.all(Array.from({ length: workerCount }, async () => {
-    while (true) {
-      const index = nextRepository++
-      const repository = dependencies.repositories[index]
-      if (!repository) return
-      let stage: keyof GithubKnowledgeSyncResult['failedByStage'] = 'inspection'
-      try {
-        const snapshot = await dependencies.inspect(repository)
-        stage = 'analysis'
-        const analysis = dependencies.analyze(snapshot, repository)
-        stage = 'render'
-        const rendered = dependencies.render({
-          analysis,
-          ...(repository.contribution ? { contribution: repository.contribution } : {}),
-          ...(repository.contributionCoverage ? { contributionCoverage: repository.contributionCoverage } : {}),
-          sourceKind: repository.sourceKind,
-        })
-        assertSafeGithubMarkdown(rendered.markdown)
-        stage = 'metadata'
-        const expectedType = reportType(repository)
-        if (
-          rendered.document.source.type !== expectedType
-          || rendered.document.source.sourceId !== repository.fullName
-          || rendered.document.isPublic === repository.isPrivate
-        ) throw new Error('Repository report metadata is invalid')
-        const reportName = repository.sourceKind === 'contribution'
-          ? repository.fullName.replace('/', '__')
-          : repository.name
-        const path = `${dependencies.rootDirectory}${reportDirectory(repository)}/${safeFilename(reportName)}`
-        stage = 'index'
-        await dependencies.index(rendered.document)
-        result.indexedCount += 1
-        stage = 'write'
-        await dependencies.writeAtomically(path, rendered.markdown)
-        result.writtenCount += 1
-      } catch (error) {
-        result.failedCount += 1
-        result.failedByStage[stage] += 1
-        result.complete = false
-        const failureCategory = error instanceof GithubRepositoryInspectionError ? error.category : 'refresh_failed'
-        result.failedByCategory[failureCategory] = (result.failedByCategory[failureCategory] ?? 0) + 1
-        dependencies.logger.warn('knowledge.github.repository_refresh_failed', {
-          sourceKind: repository.sourceKind,
-          isPrivate: repository.isPrivate,
-          stage,
-          failureCategory,
-        })
+  await Promise.all(
+    Array.from({ length: workerCount }, async () => {
+      while (true) {
+        const index = nextRepository++
+        const repository = dependencies.repositories[index]
+        if (!repository) return
+        let stage: keyof GithubKnowledgeSyncResult['failedByStage'] = 'inspection'
+        try {
+          const snapshot = await dependencies.inspect(repository)
+          stage = 'analysis'
+          const analysis = dependencies.analyze(snapshot, repository)
+          stage = 'render'
+          const rendered = dependencies.render({
+            analysis,
+            ...(repository.contribution ? { contribution: repository.contribution } : {}),
+            ...(repository.contributionCoverage ? { contributionCoverage: repository.contributionCoverage } : {}),
+            sourceKind: repository.sourceKind,
+          })
+          assertSafeGithubMarkdown(rendered.markdown)
+          stage = 'metadata'
+          const expectedType = reportType(repository)
+          if (
+            rendered.document.source.type !== expectedType ||
+            rendered.document.source.sourceId !== repository.fullName ||
+            rendered.document.isPublic === repository.isPrivate
+          )
+            throw new Error('Repository report metadata is invalid')
+          const reportName =
+            repository.sourceKind === 'contribution' ? repository.fullName.replace('/', '__') : repository.name
+          const path = `${dependencies.rootDirectory}${reportDirectory(repository)}/${safeFilename(reportName)}`
+          stage = 'index'
+          await dependencies.index(rendered.document)
+          result.indexedCount += 1
+          stage = 'write'
+          await dependencies.writeAtomically(path, rendered.markdown)
+          result.writtenCount += 1
+        } catch (error) {
+          result.failedCount += 1
+          result.failedByStage[stage] += 1
+          result.complete = false
+          const failureCategory = error instanceof GithubRepositoryInspectionError ? error.category : 'refresh_failed'
+          result.failedByCategory[failureCategory] = (result.failedByCategory[failureCategory] ?? 0) + 1
+          dependencies.logger.warn('knowledge.github.repository_refresh_failed', {
+            sourceKind: repository.sourceKind,
+            isPrivate: repository.isPrivate,
+            stage,
+            failureCategory,
+          })
+        }
       }
-    }
-  }))
+    }),
+  )
 
   if (dependencies.inventoryComplete && dependencies.allowStaleCleanup !== false) {
-    const sourceTypes: KnowledgeDocument['source']['type'][] = ['github', 'github-private', 'github-contrib', 'github-contrib-private']
+    const sourceTypes: KnowledgeDocument['source']['type'][] = [
+      'github',
+      'github-private',
+      'github-contrib',
+      'github-contrib-private',
+    ]
     for (const sourceType of sourceTypes) {
       try {
         const storedIds = await dependencies.listSourceIds(sourceType)

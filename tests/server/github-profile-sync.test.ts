@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { syncGithubProfileDocument } from '../../src/server/knowledge/github-profile-sync'
+import { syncGithubProfileDocument } from '../../src/server/knowledge/github/profile-sync'
 import type { KnowledgeDocument } from '../../src/server/knowledge/source-types'
 
 function document(text: string): KnowledgeDocument {

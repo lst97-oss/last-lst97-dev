@@ -69,7 +69,9 @@ export function createKnowledgeSourceSynchronizer(dependencies: KnowledgeSourceS
           throw new Error('Knowledge source synchronization failed')
         }
 
-        const currentIds = new Set(documents.filter(({ isPublic }) => isPublic).map(({ source: item }) => item.sourceId))
+        const currentIds = new Set(
+          documents.filter(({ isPublic }) => isPublic).map(({ source: item }) => item.sourceId),
+        )
         try {
           for (const document of documents) {
             const result = await dependencies.indexer.executeDocument(document)

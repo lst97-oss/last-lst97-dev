@@ -82,7 +82,7 @@ describe('OpenRouter knowledge system prompt', () => {
 
     expect(prompt).toContain('portfolio assistant')
     expect(prompt).toContain('purpose and capabilities')
-    expect(prompt).toContain('or this site’s assistant')
+    expect(prompt).toContain('purpose and capabilities of this portfolio assistant')
     expect(prompt).toContain('Do not answer general-knowledge questions')
   })
 
@@ -112,7 +112,7 @@ describe('OpenRouter knowledge system prompt', () => {
   it('avoids unsolicited work offers and only shares contact email when asked', () => {
     const prompt = buildChatSystemPrompt('Base instructions.', { message: 'What is the latest blog post about?', currentDateTimeUtc: CURRENT_DATE_TIME_UTC, history: [] })
 
-    expect(prompt).toContain('Speak as Nelson’s representative')
+    expect(prompt).toContain('Speak on Nelson’s behalf')
     expect(prompt).toContain('Do not volunteer offers to draft, create, edit, set up, publish, or manage content')
     expect(prompt).toContain('When requested content is unavailable, state that plainly and stop')
     expect(prompt).toContain('Share Nelson’s contact email only when the user asks how to contact Nelson or directly asks for his email')
@@ -137,8 +137,8 @@ describe('OpenRouter knowledge system prompt', () => {
       message: 'How much time did you code?', currentDateTimeUtc: CURRENT_DATE_TIME_UTC, history: [],
     })
 
-    expect(prompt).toContain('never call them the visitor’s “your account” or “your data”')
-    expect(prompt).toContain('Say “my WakaTime account” or “Nelson’s WakaTime account”')
+    expect(prompt).toContain('Use first person for Nelson’s verified projects, accounts, coding history, and data')
+    expect(prompt).toContain('“my WakaTime account”')
   })
 
   it('preserves every selected project once and summarizes only the returned batch', () => {

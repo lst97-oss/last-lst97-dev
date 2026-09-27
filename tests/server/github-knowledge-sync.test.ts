@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 
-import { syncGithubRepositoryReports, type GithubKnowledgeSyncDependencies } from '../../src/server/knowledge/github-knowledge-sync'
+import { syncGithubRepositoryReports, type GithubKnowledgeSyncDependencies } from '../../src/server/knowledge/github/knowledge-sync'
 import type { KnowledgeDocument } from '../../src/server/knowledge/source-types'
-import type { GithubRepositoryAnalysis } from '../../src/server/knowledge/github-repository-analysis'
+import type { GithubRepositoryAnalysis } from '../../src/server/knowledge/github/repository-analysis'
 
 const analysis: GithubRepositoryAnalysis = {
   repository: { fullName: 'lst97/demo', url: 'https://github.com/lst97/demo', isPrivate: true },

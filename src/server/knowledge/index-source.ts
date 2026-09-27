@@ -1,8 +1,8 @@
 import type { Logger } from '../observability/logger'
-import type { EmbeddingPort } from './types'
+import { chunkKnowledgeDocument } from './chunking'
 import type { KnowledgeIndexRepository } from './repository'
 import type { KnowledgeDocument, KnowledgeSource } from './source-types'
-import { chunkKnowledgeDocument } from './chunking'
+import type { EmbeddingPort } from './types'
 
 export interface IndexKnowledgeSourceDependencies {
   source: KnowledgeSource
@@ -25,24 +25,40 @@ export interface IndexKnowledgeSource {
 export function createIndexKnowledgeSource(dependencies: IndexKnowledgeSourceDependencies): IndexKnowledgeSource {
   const now = dependencies.now ?? (() => performance.now())
 
-  const indexDocument = async (document: KnowledgeDocument, startedAt: number, allowPrivate: boolean): Promise<IndexKnowledgeSourceResult> => {
+  const indexDocument = async (
+    document: KnowledgeDocument,
+    startedAt: number,
+    allowPrivate: boolean,
+  ): Promise<IndexKnowledgeSourceResult> => {
     const { source } = document
     const loggedSourceId = document.isPublic ? source.sourceId : '[private]'
     if (source.type !== dependencies.source.type) throw new Error('Knowledge source type does not match indexer')
     if (!document.isPublic && !allowPrivate) {
       await dependencies.repository.removeSource(source.type, source.sourceId)
-      dependencies.logger.info('knowledge.index.deleted', { sourceType: source.type, sourceId: loggedSourceId, reason: 'not_public' })
+      dependencies.logger.info('knowledge.index.deleted', {
+        sourceType: source.type,
+        sourceId: loggedSourceId,
+        reason: 'not_public',
+      })
       return { status: 'removed', chunkCount: 0 }
     }
 
     const chunks = chunkKnowledgeDocument(document)
     if (chunks.length === 0) {
       await dependencies.repository.removeSource(source.type, source.sourceId)
-      dependencies.logger.info('knowledge.index.deleted', { sourceType: source.type, sourceId: loggedSourceId, reason: 'empty_content' })
+      dependencies.logger.info('knowledge.index.deleted', {
+        sourceType: source.type,
+        sourceId: loggedSourceId,
+        reason: 'empty_content',
+      })
       return { status: 'removed', chunkCount: 0 }
     }
 
-    dependencies.logger.info('knowledge.index.started', { sourceType: source.type, sourceId: loggedSourceId, chunkCount: chunks.length })
+    dependencies.logger.info('knowledge.index.started', {
+      sourceType: source.type,
+      sourceId: loggedSourceId,
+      chunkCount: chunks.length,
+    })
     let stage: 'embedding' | 'repository' = 'embedding'
     try {
       const embeddedChunks = []
@@ -78,12 +94,20 @@ export function createIndexKnowledgeSource(dependencies: IndexKnowledgeSourceDep
       try {
         document = await dependencies.source.fetch(sourceId)
       } catch {
-        dependencies.logger.error('knowledge.index.failed', { sourceType: dependencies.source.type, sourceId, stage: 'fetch' })
+        dependencies.logger.error('knowledge.index.failed', {
+          sourceType: dependencies.source.type,
+          sourceId,
+          stage: 'fetch',
+        })
         throw new Error('Knowledge source fetch failed')
       }
       if (!document) {
         await dependencies.repository.removeSource(dependencies.source.type, sourceId)
-        dependencies.logger.info('knowledge.index.deleted', { sourceType: dependencies.source.type, sourceId, reason: 'not_found' })
+        dependencies.logger.info('knowledge.index.deleted', {
+          sourceType: dependencies.source.type,
+          sourceId,
+          reason: 'not_found',
+        })
         return { status: 'removed', chunkCount: 0 }
       }
       if (document.source.sourceId !== sourceId) throw new Error('Knowledge source returned mismatched identity')

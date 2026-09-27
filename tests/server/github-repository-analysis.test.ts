@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
-import { analyzeGithubRepository } from '../../src/server/knowledge/github-repository-analysis'
-import type { GithubRepositorySnapshot } from '../../src/server/knowledge/github-repository-inspector'
+import { analyzeGithubRepository } from '../../src/server/knowledge/github/repository-analysis'
+import type { GithubRepositorySnapshot } from '../../src/server/knowledge/github/repository-inspector'
 
 const metadata = { fullName: 'lst97/demo', url: 'https://github.com/lst97/demo', isPrivate: false, description: 'A demo tool' }
 

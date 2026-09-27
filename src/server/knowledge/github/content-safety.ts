@@ -1,4 +1,10 @@
-export type GithubContentFinding = 'credential_assignment' | 'github_token' | 'cloud_access_key' | 'private_key_block' | 'high_entropy_value' | 'email_address'
+export type GithubContentFinding =
+  | 'credential_assignment'
+  | 'github_token'
+  | 'cloud_access_key'
+  | 'private_key_block'
+  | 'high_entropy_value'
+  | 'email_address'
 
 export interface SanitizationResult {
   text: string
@@ -12,7 +18,8 @@ const sensitivePathPatterns = [
   /(?:^|\/)[^/]*(?:secret|credential|token|dump|backup|\.log$)[^/]*$/i,
 ]
 
-const credentialAssignment = /\b(?:api[_-]?key|access[_-]?key|secret[_-]?key|client[_-]?secret|password|passwd|token|authorization|auth)\b\s*[:=]\s*\S+/i
+const credentialAssignment =
+  /\b(?:api[_-]?key|access[_-]?key|secret[_-]?key|client[_-]?secret|password|passwd|token|authorization|auth)\b\s*[:=]\s*\S+/i
 const githubToken = /\b(?:gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/
 const cloudKey = /\b(?:AKIA[0-9A-Z]{16}|(?:cfat_|sk-or-v1-|sk-[A-Za-z0-9_-]{20,})[A-Za-z0-9_-]{12,})\b/
 const pemMarker = /-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/
@@ -21,7 +28,10 @@ const emailAddress = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i
 
 export function inspectSensitivePath(path: string): boolean {
   const normalized = path.replaceAll('\\', '/').replace(/^\.\//, '')
-  return normalized.split('/').some((part) => part === '..') || sensitivePathPatterns.some((pattern) => pattern.test(normalized))
+  return (
+    normalized.split('/').some((part) => part === '..') ||
+    sensitivePathPatterns.some((pattern) => pattern.test(normalized))
+  )
 }
 
 export function sanitizeEvidenceText(input: string): SanitizationResult {

@@ -1,6 +1,6 @@
-import type { KnowledgeDocument } from './source-types'
-import type { KnowledgeSourceType } from './types'
-import { projectSoftwareKindSchema } from './project-catalog'
+import { projectSoftwareKindSchema } from '../project-catalog'
+import type { KnowledgeDocument } from '../source-types'
+import type { KnowledgeSourceType } from '../types'
 
 const repositoryIdentityPattern = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/
 
@@ -21,15 +21,22 @@ function parseCountPair(text: string): { stars: number | null; forks: number | n
 
 function parseTagLine(value: string | null): string[] {
   if (!value || /^(?:no |none|unknown)/i.test(value)) return []
-  return value.split(',').map((entry) => entry.trim().replace(/^`|`$/g, '')).filter(Boolean)
+  return value
+    .split(',')
+    .map((entry) => entry.trim().replace(/^`|`$/g, ''))
+    .filter(Boolean)
 }
 
 function parseProjectCatalog(text: string) {
   const retrievalSummary = text.match(/^## Retrieval summary\s*\n([\s\S]*?)(?=^## |\s*$)/m)?.[1] ?? ''
   const purpose = retrievalSummary.match(/^- \*\*(?:Purpose|Owner-provided purpose):\*\*\s*(.+)$/m)?.[1]?.trim()
-  const summary = purpose
-    ?? retrievalSummary.split('\n').map((line) => line.replace(/^- /, '').trim()).find((line) => line && !/^(?:Relationship:|Repository:|Project demo:)/.test(line))
-    ?? 'Purpose not recorded in the indexed evidence.'
+  const summary =
+    purpose ??
+    retrievalSummary
+      .split('\n')
+      .map((line) => line.replace(/^- /, '').trim())
+      .find((line) => line && !/^(?:Relationship:|Repository:|Project demo:)/.test(line)) ??
+    'Purpose not recorded in the indexed evidence.'
   const kinds = parseTagLine(metadataValue(text, 'Software kinds')).flatMap((value) => {
     const parsed = projectSoftwareKindSchema.safeParse(value)
     return parsed.success ? [parsed.data] : []
@@ -49,7 +56,8 @@ function parseProjectCatalog(text: string) {
     createdAt: parseDate(metadataValue(text, 'Created')),
     updatedAt: parseDate(metadataValue(text, 'Last updated')),
     ...counts,
-    primaryLanguage: primaryLanguage && !/^(?:none|unknown|not specified)$/i.test(primaryLanguage) ? primaryLanguage : null,
+    primaryLanguage:
+      primaryLanguage && !/^(?:none|unknown|not specified)$/i.test(primaryLanguage) ? primaryLanguage : null,
     languages: [...languages],
     kinds,
     githubTopics: parseTagLine(metadataValue(text, 'Topics')),
@@ -69,24 +77,35 @@ export function parseGithubReportDocument(path: string, text: string): Knowledge
   const sourceId = text.match(/^- \*\*Repository:\*\*\s+([^\n]+)$/m)?.[1]?.trim()
   const declaredVisibility = text.match(/^- \*\*Visibility:\*\*\s+(public|private)\s*$/m)?.[1]
   const urlText = text.match(/^- \*\*URL:\*\*\s+(https:\/\/[^\s]+)\s*$/m)?.[1]
-  if (!title || !sourceId || !repositoryIdentityPattern.test(sourceId) || declaredVisibility !== visibility || !urlText || !URL.canParse(urlText)) {
+  if (
+    !title ||
+    !sourceId ||
+    !repositoryIdentityPattern.test(sourceId) ||
+    declaredVisibility !== visibility ||
+    !urlText ||
+    !URL.canParse(urlText)
+  ) {
     return null
   }
 
   const url = new URL(urlText)
-  const name = sourceId.split('/').at(-1)!
+  const name = sourceId.split('/').at(-1) ?? ''
   if (
-    url.protocol !== 'https:'
-    || url.hostname !== 'github.com'
-    || url.pathname.replace(/\/$/, '') !== `/${sourceId}`
-    || segments.at(-1) !== `${isContribution ? sourceId.replace('/', '__') : name}.md`
+    url.protocol !== 'https:' ||
+    url.hostname !== 'github.com' ||
+    url.pathname.replace(/\/$/, '') !== `/${sourceId}` ||
+    segments.at(-1) !== `${isContribution ? sourceId.replace('/', '__') : name}.md`
   ) {
     return null
   }
 
   const sourceType: KnowledgeSourceType = isContribution
-    ? (visibility === 'private' ? 'github-contrib-private' : 'github-contrib')
-    : (visibility === 'private' ? 'github-private' : 'github')
+    ? visibility === 'private'
+      ? 'github-contrib-private'
+      : 'github-contrib'
+    : visibility === 'private'
+      ? 'github-private'
+      : 'github'
 
   return {
     source: { type: sourceType, sourceId, title, url: url.href },

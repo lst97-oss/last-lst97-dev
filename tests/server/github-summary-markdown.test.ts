@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 
-import type { GithubContributionRepository } from '../../src/server/knowledge/github-contributions'
-import type { GithubRepositoryAnalysis } from '../../src/server/knowledge/github-repository-analysis'
-import { renderGithubRepositorySummary } from '../../src/server/knowledge/github-summary-markdown'
+import type { GithubContributionRepository } from '../../src/server/knowledge/github/contributions'
+import type { GithubRepositoryAnalysis } from '../../src/server/knowledge/github/repository-analysis'
+import { renderGithubRepositorySummary } from '../../src/server/knowledge/github/summary-markdown'
 
 const analysis: GithubRepositoryAnalysis = {
   repository: { fullName: 'lst97/demo', url: 'https://github.com/lst97/demo', isPrivate: false, description: 'Useful app' },

@@ -1,6 +1,15 @@
 import type { ChatModelCallDiagnostic } from '../observability/chat-diagnostics'
 
-export type KnowledgeSourceType = 'post' | 'project' | 'profile' | 'github' | 'github-private' | 'github-profile' | 'github-contrib' | 'github-contrib-private' | 'wakatime'
+export type KnowledgeSourceType =
+  | 'post'
+  | 'project'
+  | 'profile'
+  | 'github'
+  | 'github-private'
+  | 'github-profile'
+  | 'github-contrib'
+  | 'github-contrib-private'
+  | 'wakatime'
 
 export interface KnowledgeSourceReference {
   type: KnowledgeSourceType
@@ -27,11 +36,19 @@ export interface KnowledgeRelevanceScores {
 }
 
 export interface KnowledgeRelevancePort {
-  assess(input: { query: string; candidate: KnowledgeCandidate; onModelCall?: (call: ChatModelCallDiagnostic) => void }): Promise<KnowledgeRelevanceScores>
+  assess(input: {
+    query: string
+    candidate: KnowledgeCandidate
+    onModelCall?: (call: ChatModelCallDiagnostic) => void
+  }): Promise<KnowledgeRelevanceScores>
 }
 
 export interface EmbeddingPort {
-  embed(input: { text: string; kind: 'query' | 'document'; onModelCall?: (call: ChatModelCallDiagnostic) => void }): Promise<number[]>
+  embed(input: {
+    text: string
+    kind: 'query' | 'document'
+    onModelCall?: (call: ChatModelCallDiagnostic) => void
+  }): Promise<number[]>
 }
 
 export interface RerankerPort {

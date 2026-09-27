@@ -9,15 +9,19 @@ type FetchFunction = (input: RequestInfo | URL, init?: RequestInit) => Promise<R
 
 const embeddingResponseSchema = z.object({
   model: z.string().optional(),
-  usage: z.object({
-    prompt_tokens: z.number().finite().nonnegative().optional(),
-    completion_tokens: z.number().finite().nonnegative().optional(),
-    total_tokens: z.number().finite().nonnegative().optional(),
-  }).optional(),
-  data: z.array(z.object({
-    index: z.number().int().nonnegative(),
-    embedding: z.array(z.number().finite()),
-  })),
+  usage: z
+    .object({
+      prompt_tokens: z.number().finite().nonnegative().optional(),
+      completion_tokens: z.number().finite().nonnegative().optional(),
+      total_tokens: z.number().finite().nonnegative().optional(),
+    })
+    .optional(),
+  data: z.array(
+    z.object({
+      index: z.number().int().nonnegative(),
+      embedding: z.array(z.number().finite()),
+    }),
+  ),
 })
 
 export interface EmbeddingClientConfig {
@@ -27,10 +31,7 @@ export interface EmbeddingClientConfig {
   timeoutMs: number
 }
 
-export function createEmbeddingClient(
-  config: EmbeddingClientConfig,
-  fetcher: FetchFunction = fetch,
-): EmbeddingPort {
+export function createEmbeddingClient(config: EmbeddingClientConfig, fetcher: FetchFunction = fetch): EmbeddingPort {
   const baseUrl = config.baseUrl.replace(/\/+$/, '')
   return {
     async embed(input) {
@@ -74,7 +75,7 @@ export function createEmbeddingClient(
       const result = embeddingResponseSchema.safeParse(parsed)
       const data = result.success ? result.data : undefined
       const item = data?.data[0]
-      if (!item || item.index !== 0 || item.embedding.length !== EMBEDDING_DIMENSIONS) {
+      if (item?.index !== 0 || item.embedding.length !== EMBEDDING_DIMENSIONS) {
         input.onModelCall?.({ provider: 'siliconflow', operation, model: config.model, status: 'failed' })
         throw new Error('Embedding provider returned an invalid response')
       }

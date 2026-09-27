@@ -1,5 +1,5 @@
-import type { KnowledgeSourceReference, KnowledgeSourceType } from './types'
 import type { ProjectSoftwareKind } from './project-catalog'
+import type { KnowledgeSourceReference, KnowledgeSourceType } from './types'
 
 export interface KnowledgeProjectCatalogMetadata {
   summary: string

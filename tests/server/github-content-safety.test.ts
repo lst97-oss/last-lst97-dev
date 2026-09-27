@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { assertSafeGithubMarkdown, inspectSensitivePath, sanitizeEvidenceText } from '../../src/server/knowledge/github-content-safety'
+import { assertSafeGithubMarkdown, inspectSensitivePath, sanitizeEvidenceText } from '../../src/server/knowledge/github/content-safety'
 
 describe('GitHub Markdown content safety', () => {
   it('blocks sensitive paths and sanitizes credential-bearing lines without returning secret values', () => {

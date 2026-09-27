@@ -7,23 +7,23 @@ import {
   githubProfileSchema,
   normalizeGithubRepositoryCliRecord,
   renderPersonalGithubProfileMarkdown,
-} from '../src/server/knowledge/github-markdown'
+} from '../src/server/knowledge/github/markdown'
 import {
   GithubCommandOutputTooLargeError,
   inspectGithubRepository,
   type GithubCommandRunner,
-} from '../src/server/knowledge/github-repository-inspector'
-import { analyzeGithubRepository } from '../src/server/knowledge/github-repository-analysis'
-import { renderGithubRepositorySummary } from '../src/server/knowledge/github-summary-markdown'
+} from '../src/server/knowledge/github/repository-inspector'
+import { analyzeGithubRepository } from '../src/server/knowledge/github/repository-analysis'
+import { renderGithubRepositorySummary } from '../src/server/knowledge/github/summary-markdown'
 import { getCuratedProjectClassification } from '../src/server/knowledge/project-curation'
-import { syncGithubRepositoryReports, type GithubSyncRepository } from '../src/server/knowledge/github-knowledge-sync'
-import { assertSafeGithubMarkdown, sanitizeEvidenceText } from '../src/server/knowledge/github-content-safety'
+import { syncGithubRepositoryReports, type GithubSyncRepository } from '../src/server/knowledge/github/knowledge-sync'
+import { assertSafeGithubMarkdown, sanitizeEvidenceText } from '../src/server/knowledge/github/content-safety'
 import { createProfileKnowledgeSource } from '../src/server/knowledge/profile-source'
 import { createWakaTimeKnowledgeSource } from '../src/server/knowledge/wakatime-source'
-import { createGithubContributionsGateway, discoverGithubContributions } from '../src/server/knowledge/github-contributions'
-import { removeSupersededGithubReports } from '../src/server/knowledge/github-legacy-reports'
-import { renderGithubProfileMarkdown } from '../src/server/knowledge/github-profile-markdown'
-import { syncGithubProfileDocument } from '../src/server/knowledge/github-profile-sync'
+import { createGithubContributionsGateway, discoverGithubContributions } from '../src/server/knowledge/github/contributions'
+import { removeSupersededGithubReports } from '../src/server/knowledge/github/legacy-reports'
+import { renderGithubProfileMarkdown } from '../src/server/knowledge/github/profile-markdown'
+import { syncGithubProfileDocument } from '../src/server/knowledge/github/profile-sync'
 import { logger } from '../src/server/observability/logger'
 import type { KnowledgeDocument, KnowledgeSource } from '../src/server/knowledge/source-types'
 import type { KnowledgeSourceType } from '../src/server/knowledge/types'

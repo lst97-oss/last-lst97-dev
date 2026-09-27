@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { parseGithubReportDocument } from '../../src/server/knowledge/github-report-document'
+import { parseGithubReportDocument } from '../../src/server/knowledge/github/report-document'
 
 describe('GitHub report Markdown document parser', () => {
   const report = [

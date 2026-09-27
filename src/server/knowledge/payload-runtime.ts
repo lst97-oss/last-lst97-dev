@@ -2,18 +2,18 @@ import type { Payload } from 'payload'
 
 import { getServerEnv } from '../env'
 import { logger } from '../observability/logger'
-import { createIndexKnowledgeSource } from './index-source'
-import { createPayloadKnowledgeSource } from './payload-source'
-import { createProfileKnowledgeSource } from './profile-source'
-import { createWakaTimeKnowledgeSource } from './wakatime-source'
-import { createKnowledgeSourceSynchronizer } from './jobs'
-import type { KnowledgeDocument, KnowledgeSource } from './source-types'
-import type { KnowledgeSourceType } from './types'
+import { getKnowledgeIndexRepository } from './database'
 import { createEmbeddingClient } from './embedding-client'
 import { createIndexEmbeddingConfig } from './embedding-provider-config'
-import type { PayloadKnowledgeRecord } from './payload-source'
-import { getKnowledgeIndexRepository } from './database'
+import { createIndexKnowledgeSource } from './index-source'
 import type { KnowledgeListSource } from './jobs'
+import { createKnowledgeSourceSynchronizer } from './jobs'
+import type { PayloadKnowledgeRecord } from './payload-source'
+import { createPayloadKnowledgeSource } from './payload-source'
+import { createProfileKnowledgeSource } from './profile-source'
+import type { KnowledgeDocument, KnowledgeSource } from './source-types'
+import type { KnowledgeSourceType } from './types'
+import { createWakaTimeKnowledgeSource } from './wakatime-source'
 
 const WAKATIME_SHARE_URL = 'https://wakatime.com/share/@lst97/93993eb7-ae0d-41d1-b44d-6bcf2f02ceb0.json'
 
@@ -78,7 +78,9 @@ export function createPayloadKnowledgeSourceList(sources: {
   return [sources.post, sources.project, sources.profile, sources.wakatime]
 }
 
-export async function runPayloadKnowledgeSyncTask(payload: Payload): Promise<{ indexedCount: number; removedCount: number }> {
+export async function runPayloadKnowledgeSyncTask(
+  payload: Payload,
+): Promise<{ indexedCount: number; removedCount: number }> {
   const postSource = createPayloadContentSource(payload, 'post')
   const projectSource = createPayloadContentSource(payload, 'project')
   const profileSource = createProfileKnowledgeSource()
@@ -99,9 +101,8 @@ export async function runPayloadKnowledgeSyncTask(payload: Payload): Promise<{ i
 
   const sourceLister = sources.map((source) => ({
     type: source.type,
-    listDocuments: () => 'listDocuments' in source
-      ? source.listDocuments()
-      : Promise.resolve([] as KnowledgeDocument[]),
+    listDocuments: () =>
+      'listDocuments' in source ? source.listDocuments() : Promise.resolve([] as KnowledgeDocument[]),
   }))
   const synchronizer = createKnowledgeSourceSynchronizer({
     sources: sourceLister,

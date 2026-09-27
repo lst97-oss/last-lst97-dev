@@ -3,8 +3,8 @@ import { Pool } from 'pg'
 
 import { getServerEnv } from '../env'
 import { requireIntegrationEnv } from '../env-schema'
-import { createKnowledgeIndexRepository } from './repository'
 import type { KnowledgeDatabase } from './repository'
+import { createKnowledgeIndexRepository } from './repository'
 
 let pool: Pool | undefined
 let repository: ReturnType<typeof createKnowledgeIndexRepository> | undefined

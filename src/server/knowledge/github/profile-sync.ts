@@ -1,5 +1,5 @@
-import type { KnowledgeDocument } from './source-types'
-import { assertSafeGithubMarkdown } from './github-content-safety'
+import type { KnowledgeDocument } from '../source-types'
+import { assertSafeGithubMarkdown } from './content-safety'
 
 export interface SyncGithubProfileDocumentInput {
   document: KnowledgeDocument

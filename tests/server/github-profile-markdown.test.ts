@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { renderGithubProfileMarkdown } from '../../src/server/knowledge/github-profile-markdown'
+import { renderGithubProfileMarkdown } from '../../src/server/knowledge/github/profile-markdown'
 
 describe('GitHub profile Markdown', () => {
   it('combines GitHub, curated profile, and public WakaTime sections', () => {

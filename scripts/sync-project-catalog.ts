@@ -1,7 +1,7 @@
 import { getServerEnv } from '../src/server/env'
 import { requireIntegrationEnv } from '../src/server/env-schema'
 import { closeKnowledgeDatabase, getKnowledgeIndexRepository } from '../src/server/knowledge/database'
-import { normalizeGithubRepositoryCliRecord } from '../src/server/knowledge/github-markdown'
+import { normalizeGithubRepositoryCliRecord } from '../src/server/knowledge/github/markdown'
 import { getCuratedProjectClassification } from '../src/server/knowledge/project-curation'
 
 const OWNER = 'lst97'

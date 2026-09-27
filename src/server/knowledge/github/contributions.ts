@@ -13,16 +13,23 @@ const contributionReferenceSchema = z.object({
   state: z.string().max(40),
 })
 
-const repositoryIdentitySchema = z.object({
-  fullName: z.string().regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/),
-  url: z.url(),
-  isPrivate: z.boolean(),
-}).refine(({ fullName, url }) => {
-  const parsed = new URL(url)
-  return parsed.protocol === 'https:'
-    && parsed.hostname === 'github.com'
-    && parsed.pathname.toLowerCase() === `/${fullName.toLowerCase()}`
-}, { message: 'GitHub contribution repository identity is invalid' })
+const repositoryIdentitySchema = z
+  .object({
+    fullName: z.string().regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/),
+    url: z.url(),
+    isPrivate: z.boolean(),
+  })
+  .refine(
+    ({ fullName, url }) => {
+      const parsed = new URL(url)
+      return (
+        parsed.protocol === 'https:' &&
+        parsed.hostname === 'github.com' &&
+        parsed.pathname.toLowerCase() === `/${fullName.toLowerCase()}`
+      )
+    },
+    { message: 'GitHub contribution repository identity is invalid' },
+  )
 
 const yearRepositorySchema = repositoryIdentitySchema.extend({
   counts: contributionKindCountsSchema,
@@ -33,7 +40,12 @@ const yearRepositorySchema = repositoryIdentitySchema.extend({
 export const githubContributionYearResultSchema = z.object({
   year: z.number().int().min(2007).max(2200),
   complete: z.boolean(),
-  incompleteReasons: z.array(z.string().regex(/^[a-z0-9_]+$/).max(80)),
+  incompleteReasons: z.array(
+    z
+      .string()
+      .regex(/^[a-z0-9_]+$/)
+      .max(80),
+  ),
   repositories: z.array(yearRepositorySchema).max(500),
 })
 
@@ -108,12 +120,16 @@ const repositoryContributionGroupSchema = z.object({
   }),
   contributions: z.object({
     totalCount: z.number().int().nonnegative(),
-    nodes: z.array(z.object({
-      isRestricted: z.boolean().optional(),
-      commitCount: z.number().int().nonnegative().optional(),
-      pullRequest: contributionReferenceSchema.optional(),
-      issue: contributionReferenceSchema.optional(),
-    })).max(MAX_CONTRIBUTIONS_PER_REPOSITORY),
+    nodes: z
+      .array(
+        z.object({
+          isRestricted: z.boolean().optional(),
+          commitCount: z.number().int().nonnegative().optional(),
+          pullRequest: contributionReferenceSchema.optional(),
+          issue: contributionReferenceSchema.optional(),
+        }),
+      )
+      .max(MAX_CONTRIBUTIONS_PER_REPOSITORY),
   }),
 })
 
@@ -121,23 +137,31 @@ const contributionCollectionSchema = z.object({
   commitContributionsByRepository: z.array(repositoryContributionGroupSchema).max(MAX_REPOSITORIES_PER_CATEGORY),
   pullRequestContributionsByRepository: z.array(repositoryContributionGroupSchema).max(MAX_REPOSITORIES_PER_CATEGORY),
   issueContributionsByRepository: z.array(repositoryContributionGroupSchema).max(MAX_REPOSITORIES_PER_CATEGORY),
-  pullRequestReviewContributionsByRepository: z.array(repositoryContributionGroupSchema).max(MAX_REPOSITORIES_PER_CATEGORY),
+  pullRequestReviewContributionsByRepository: z
+    .array(repositoryContributionGroupSchema)
+    .max(MAX_REPOSITORIES_PER_CATEGORY),
 })
 
 const graphqlResponseSchema = z.object({
   data: z.object({
-    user: z.object({
-      contributionsCollection: contributionCollectionSchema,
-    }).nullable(),
+    user: z
+      .object({
+        contributionsCollection: contributionCollectionSchema,
+      })
+      .nullable(),
   }),
   errors: z.array(z.unknown()).optional(),
 })
 
 const yearResponseSchema = z.object({
   data: z.object({
-    user: z.object({
-      contributionsCollection: z.object({ contributionYears: z.array(z.number().int().min(2007).max(2200)) }).nullable(),
-    }).nullable(),
+    user: z
+      .object({
+        contributionsCollection: z
+          .object({ contributionYears: z.array(z.number().int().min(2007).max(2200)) })
+          .nullable(),
+      })
+      .nullable(),
   }),
   errors: z.array(z.unknown()).optional(),
 })
@@ -243,7 +267,9 @@ export function createGithubContributionsGateway(client: GithubGraphqlClient): G
   }
 }
 
-export async function discoverGithubContributions(gateway: GithubContributionsGateway): Promise<GithubContributionInventory> {
+export async function discoverGithubContributions(
+  gateway: GithubContributionsGateway,
+): Promise<GithubContributionInventory> {
   let years: number[]
   try {
     years = await gateway.getContributionYears()
@@ -262,7 +288,9 @@ export async function discoverGithubContributions(gateway: GithubContributionsGa
   return aggregateGithubContributions(responses)
 }
 
-export function aggregateGithubContributions(yearResponses: readonly GithubContributionYearResult[]): GithubContributionInventory {
+export function aggregateGithubContributions(
+  yearResponses: readonly GithubContributionYearResult[],
+): GithubContributionInventory {
   const repositories = new Map<string, GithubContributionRepository>()
   const incompleteReasons = new Set<string>()
 
@@ -277,7 +305,7 @@ export function aggregateGithubContributions(yearResponses: readonly GithubContr
     }
 
     for (const item of response.data.repositories) {
-      const owner = item.fullName.split('/')[0]!
+      const owner = item.fullName.split('/').at(0) ?? ''
       if (owner.toLowerCase() === 'lst97') continue
       let target = repositories.get(item.fullName)
       if (!target) {

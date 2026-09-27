@@ -1,16 +1,23 @@
 import type { ChatMessage, ChatTopicAnchor } from '../chat/types'
+import type { ChatModelCallDiagnostic, ChatRagRetrievalDiagnostic } from '../observability/chat-diagnostics'
 import type { Logger } from '../observability/logger'
-import type { EmbeddingPort, KnowledgeCandidate, KnowledgeRelevancePort, KnowledgeRelevanceScores, RankedKnowledgeCandidate, RerankerPort } from './types'
-import type { KnowledgeIndexRepository, KnowledgeProjectRecord } from './repository'
 import type { ProjectCatalogQuery } from './project-catalog'
 import { resolveKnowledgeQuery } from './query-resolution'
-import type { ChatModelCallDiagnostic, ChatRagRetrievalDiagnostic } from '../observability/chat-diagnostics'
+import type { KnowledgeIndexRepository, KnowledgeProjectRecord } from './repository'
+import type {
+  EmbeddingPort,
+  KnowledgeCandidate,
+  KnowledgeRelevancePort,
+  KnowledgeRelevanceScores,
+  RankedKnowledgeCandidate,
+  RerankerPort,
+} from './types'
 
 const VECTOR_CANDIDATE_LIMIT = 10
 const FINAL_CANDIDATE_LIMIT = 3
 const DEFAULT_EVIDENCE_BUDGET = 5_000
-const MIN_RELEVANCE_PROBABILITY = 0.60
-const MIN_ANSWER_EVIDENCE_PROBABILITY = 0.60
+const MIN_RELEVANCE_PROBABILITY = 0.6
+const MIN_ANSWER_EVIDENCE_PROBABILITY = 0.6
 
 export interface KnowledgeEvidence extends KnowledgeCandidate {
   citationId: string
@@ -46,7 +53,10 @@ export interface RetrieveKnowledge {
 
 export interface RetrieveKnowledgeDependencies {
   embedding: EmbeddingPort
-  repository: Pick<KnowledgeIndexRepository, 'search' | 'searchExactProjectName' | 'searchByKeyword' | 'listOwnedProjects'>
+  repository: Pick<
+    KnowledgeIndexRepository,
+    'search' | 'searchExactProjectName' | 'searchByKeyword' | 'listOwnedProjects'
+  >
   reranker: RerankerPort
   relevanceGate: KnowledgeRelevancePort
   logger: Logger
@@ -86,7 +96,14 @@ function selectTrustedCandidates(
     // chunks from the same profile/post otherwise surface as K1/K2/K3 with
     // the identical title and URL.
     const identity = candidate ? `${candidate.source.type}:${candidate.source.sourceId}` : null
-    if (!candidate || !identity || seen.has(candidate.id) || seen.has(identity) || !isPublicCitationUrl(candidate.source.url)) continue
+    if (
+      !candidate ||
+      !identity ||
+      seen.has(candidate.id) ||
+      seen.has(identity) ||
+      !isPublicCitationUrl(candidate.source.url)
+    )
+      continue
     seen.add(candidate.id)
     seen.add(identity)
     selected.push(candidate)
@@ -104,8 +121,8 @@ type CandidateRelevanceAssessment = {
 function isValidRelevanceScores(value: unknown): value is KnowledgeRelevanceScores {
   if (!value || typeof value !== 'object') return false
   const scores = value as Partial<KnowledgeRelevanceScores>
-  return [scores.isRelevantProbability, scores.answerEvidenceProbability].every((score) =>
-    typeof score === 'number' && Number.isFinite(score) && score >= 0 && score <= 1,
+  return [scores.isRelevantProbability, scores.answerEvidenceProbability].every(
+    (score) => typeof score === 'number' && Number.isFinite(score) && score >= 0 && score <= 1,
   )
 }
 
@@ -115,17 +132,20 @@ async function assessRelevantCandidates(
   relevanceGate: KnowledgeRelevancePort,
   onModelCall?: (call: ChatModelCallDiagnostic) => void,
 ): Promise<{ candidates: KnowledgeCandidate[]; fallbackCount: number; assessments: CandidateRelevanceAssessment[] }> {
-  const assessments = await Promise.all(candidates.map(async (candidate): Promise<CandidateRelevanceAssessment> => {
-    try {
-      const scores = await relevanceGate.assess({ query, candidate, onModelCall })
-      if (!isValidRelevanceScores(scores)) return { candidate, status: 'fallback' }
-      const accepted = scores.isRelevantProbability >= MIN_RELEVANCE_PROBABILITY
-        && scores.answerEvidenceProbability >= MIN_ANSWER_EVIDENCE_PROBABILITY
-      return { candidate, status: accepted ? 'accepted' : 'rejected', scores }
-    } catch {
-      return { candidate, status: 'fallback' }
-    }
-  }))
+  const assessments = await Promise.all(
+    candidates.map(async (candidate): Promise<CandidateRelevanceAssessment> => {
+      try {
+        const scores = await relevanceGate.assess({ query, candidate, onModelCall })
+        if (!isValidRelevanceScores(scores)) return { candidate, status: 'fallback' }
+        const accepted =
+          scores.isRelevantProbability >= MIN_RELEVANCE_PROBABILITY &&
+          scores.answerEvidenceProbability >= MIN_ANSWER_EVIDENCE_PROBABILITY
+        return { candidate, status: accepted ? 'accepted' : 'rejected', scores }
+      } catch {
+        return { candidate, status: 'fallback' }
+      }
+    }),
+  )
   return {
     candidates: assessments
       .filter(({ status }) => status === 'accepted' || status === 'fallback')
@@ -137,7 +157,10 @@ async function assessRelevantCandidates(
 
 export function createRetrieveKnowledge(dependencies: RetrieveKnowledgeDependencies): RetrieveKnowledge {
   const now = dependencies.now ?? (() => performance.now())
-  const evidenceBudget = Math.max(1, Math.min(20_000, Math.floor(dependencies.evidenceBudget ?? DEFAULT_EVIDENCE_BUDGET)))
+  const evidenceBudget = Math.max(
+    1,
+    Math.min(20_000, Math.floor(dependencies.evidenceBudget ?? DEFAULT_EVIDENCE_BUDGET)),
+  )
 
   return {
     async listOwnedProjects(input) {
@@ -150,7 +173,11 @@ export function createRetrieveKnowledge(dependencies: RetrieveKnowledgeDependenc
       const startedAt = now()
       const query = resolveKnowledgeQuery(message, input.verifiedHistory, input.topicAnchors)
       const projectIdentifier = exactProjectIdentifier(query)
-      const vector = await dependencies.embedding.embed({ text: query, kind: 'query', onModelCall: input.diagnostics?.onModelCall })
+      const vector = await dependencies.embedding.embed({
+        text: query,
+        kind: 'query',
+        onModelCall: input.diagnostics?.onModelCall,
+      })
       const [semanticCandidates, exactCandidates, demoCandidates] = await Promise.all([
         dependencies.repository.search(vector, VECTOR_CANDIDATE_LIMIT),
         projectIdentifier && dependencies.repository.searchExactProjectName
@@ -194,12 +221,14 @@ export function createRetrieveKnowledge(dependencies: RetrieveKnowledgeDependenc
       } catch {
         degraded = true
         const seenSources = new Set<string>()
-        selected = candidates.filter((candidate) => {
-          const identity = `${candidate.source.type}:${candidate.source.sourceId}`
-          if (!isPublicCitationUrl(candidate.source.url) || seenSources.has(identity)) return false
-          seenSources.add(identity)
-          return true
-        }).slice(0, FINAL_CANDIDATE_LIMIT)
+        selected = candidates
+          .filter((candidate) => {
+            const identity = `${candidate.source.type}:${candidate.source.sourceId}`
+            if (!isPublicCitationUrl(candidate.source.url) || seenSources.has(identity)) return false
+            seenSources.add(identity)
+            return true
+          })
+          .slice(0, FINAL_CANDIDATE_LIMIT)
         dependencies.logger.warn('knowledge.rerank.fallback', { reason: 'provider_failure' })
       }
 
@@ -207,7 +236,12 @@ export function createRetrieveKnowledge(dependencies: RetrieveKnowledgeDependenc
       const relevanceById = new Map<string, CandidateRelevanceAssessment>()
       if (selected.length > 0) {
         const candidateCount = selected.length
-        const relevance = await assessRelevantCandidates(query, selected, dependencies.relevanceGate, input.diagnostics?.onModelCall)
+        const relevance = await assessRelevantCandidates(
+          query,
+          selected,
+          dependencies.relevanceGate,
+          input.diagnostics?.onModelCall,
+        )
         for (const assessment of relevance.assessments) relevanceById.set(assessment.candidate.id, assessment)
         selected = relevance.candidates
         if (relevance.fallbackCount > 0) {
@@ -225,8 +259,10 @@ export function createRetrieveKnowledge(dependencies: RetrieveKnowledgeDependenc
       // supported metadata and explicitly unknown project details.
       if (exactCandidate) {
         const exactIdentity = sourceIdentity(exactCandidate)
-        selected = [exactCandidate, ...selected.filter((candidate) => sourceIdentity(candidate) !== exactIdentity)]
-          .slice(0, FINAL_CANDIDATE_LIMIT)
+        selected = [
+          exactCandidate,
+          ...selected.filter((candidate) => sourceIdentity(candidate) !== exactIdentity),
+        ].slice(0, FINAL_CANDIDATE_LIMIT)
       }
 
       let remaining = evidenceBudget
@@ -261,10 +297,12 @@ export function createRetrieveKnowledge(dependencies: RetrieveKnowledgeDependenc
             excerpt: candidate.text.slice(0, 300),
             retrievedRank: index + 1,
             ...(rerankScores.has(candidate.id) ? { rerankScore: rerankScores.get(candidate.id) } : {}),
-            ...(assessment?.scores ? {
-              relevanceProbability: assessment.scores.isRelevantProbability,
-              answerEvidenceProbability: assessment.scores.answerEvidenceProbability,
-            } : {}),
+            ...(assessment?.scores
+              ? {
+                  relevanceProbability: assessment.scores.isRelevantProbability,
+                  answerEvidenceProbability: assessment.scores.answerEvidenceProbability,
+                }
+              : {}),
             outcome: assessment?.status ?? 'not_ranked',
             finalSelected: finalSelectedIds.has(candidate.id),
           }

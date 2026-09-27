@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { createGithubKnowledgeSource } from '../../src/server/knowledge/github-source'
+import { createGithubKnowledgeSource } from '../../src/server/knowledge/github/source'
 import { createWakaTimeKnowledgeSource } from '../../src/server/knowledge/wakatime-source'
 
 function json(value: unknown, status = 200): Response {

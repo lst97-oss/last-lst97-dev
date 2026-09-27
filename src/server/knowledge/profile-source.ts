@@ -8,7 +8,7 @@ const profile = {
   linkedIn: 'https://www.linkedin.com/in/lst97/',
   biography: [
     'Nelson is a junior software developer from Hong Kong and a Deakin University Computer Science graduate. His online name LST97 comes from the initials of his Chinese name, Lai Sio Tou, and 97 refers to his birth year, 1997.',
-    'His current focus is web development with Next.js, React, and TypeScript, with backend experience in C# and database technologies. His GitHub includes open-source tools and projects such as GNAF Autocomplete and SPHKOSS. SplitTab is Nelson\'s expense-management app for splitting shared costs. GNAF Autocomplete demo: https://gnaf.lst97.dev. Smartplay HK OSS demo: https://sphkoss.lst97.dev. Nelson has also built an e-commerce site for Best Maker Pty Ltd. Best Maker website: https://www.bestmaker.com.au.',
+    "His current focus is web development with Next.js, React, and TypeScript, with backend experience in C# and database technologies. His GitHub includes open-source tools and projects such as GNAF Autocomplete and SPHKOSS. SplitTab is Nelson's expense-management app for splitting shared costs. GNAF Autocomplete demo: https://gnaf.lst97.dev. Smartplay HK OSS demo: https://sphkoss.lst97.dev. Nelson has also built an e-commerce site for Best Maker Pty Ltd. Best Maker website: https://www.bestmaker.com.au.",
   ],
   education: [
     'Diploma of Information Technology — Deakin College, completed 2021.',
@@ -24,7 +24,8 @@ const profile = {
     'Automotive Mechanic placement, Kmart Tyre & Auto Services (Jul 2019–Jan 2020): assisted with general vehicle servicing and repair work as part of a team.',
     'Nelson has also worked in cabinetmaking and Uber delivery driving. He reports 200+ kitchen-hand hours, 50+ cabinetmaking hours, thousands of deliveries, and 13+ blood donations; these are self-reported approximate totals.',
   ],
-  interests: 'Nelson is interested in building practical, maintainable web applications, APIs, and useful tools. His work spans frontend development, full-stack application delivery, database design, authentication, and cloud deployment. He values learning, collaboration, clear customer communication, and careful project coordination.',
+  interests:
+    'Nelson is interested in building practical, maintainable web applications, APIs, and useful tools. His work spans frontend development, full-stack application delivery, database design, authentication, and cloud deployment. He values learning, collaboration, clear customer communication, and careful project coordination.',
 } as const
 
 export function createProfileKnowledgeSource(): KnowledgeSource & { listDocuments(): Promise<KnowledgeDocument[]> } {
@@ -56,8 +57,10 @@ export function createProfileKnowledgeSource(): KnowledgeSource & { listDocument
       }
     },
   }
-  return Object.assign(source, { listDocuments: async () => {
-    const document = await source.fetch('operator-profile')
-    return document ? [document] : []
-  } })
+  return Object.assign(source, {
+    listDocuments: async () => {
+      const document = await source.fetch('operator-profile')
+      return document ? [document] : []
+    },
+  })
 }

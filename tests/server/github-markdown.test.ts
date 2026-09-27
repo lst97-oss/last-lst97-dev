@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { githubRepositoryDocument, normalizeGithubRepositoryCliRecord, renderGithubRepositoryMarkdown, renderPersonalGithubProfileMarkdown } from '../../src/server/knowledge/github-markdown'
+import { githubRepositoryDocument, normalizeGithubRepositoryCliRecord, renderGithubRepositoryMarkdown, renderPersonalGithubProfileMarkdown } from '../../src/server/knowledge/github/markdown'
 
 const repository = {
   nameWithOwner: 'lst97/example-tool',

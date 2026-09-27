@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { KnowledgeDocument, KnowledgeSource } from './source-types'
+import type { KnowledgeDocument, KnowledgeSource } from '../source-types'
 
 const MAX_PAGES = 2
 const MAX_REPOSITORIES = 150
@@ -38,9 +38,14 @@ function decodeBase64(value: string): string {
   return new TextDecoder().decode(bytes)
 }
 
-export function createGithubKnowledgeSource(config: GithubKnowledgeSourceConfig): KnowledgeSource & { listDocuments(): Promise<KnowledgeDocument[]> } {
+export function createGithubKnowledgeSource(
+  config: GithubKnowledgeSourceConfig,
+): KnowledgeSource & { listDocuments(): Promise<KnowledgeDocument[]> } {
   const fetcher = config.fetcher ?? fetch
-  const maxRepositories = Math.max(1, Math.min(MAX_REPOSITORIES, Math.floor(config.maxRepositories ?? MAX_REPOSITORIES)))
+  const maxRepositories = Math.max(
+    1,
+    Math.min(MAX_REPOSITORIES, Math.floor(config.maxRepositories ?? MAX_REPOSITORIES)),
+  )
   const timeoutMs = config.timeoutMs ?? 8_000
   const documentCache = new Map<string, KnowledgeDocument>()
 
@@ -89,10 +94,10 @@ export function createGithubKnowledgeSource(config: GithubKnowledgeSourceConfig)
         for (const repo of parsed.data) {
           const canonicalURL = new URL(repo.html_url)
           if (
-            canonicalURL.protocol !== 'https:'
-            || canonicalURL.hostname !== 'github.com'
-            || canonicalURL.pathname.replace(/\/$/, '') !== `/${repo.full_name}`
-            || repo.full_name.split('/')[0]?.toLowerCase() !== config.username.toLowerCase()
+            canonicalURL.protocol !== 'https:' ||
+            canonicalURL.hostname !== 'github.com' ||
+            canonicalURL.pathname.replace(/\/$/, '') !== `/${repo.full_name}` ||
+            repo.full_name.split('/')[0]?.toLowerCase() !== config.username.toLowerCase()
           ) {
             throw new Error('GitHub source returned invalid data')
           }
@@ -123,18 +128,20 @@ export function createGithubKnowledgeSource(config: GithubKnowledgeSourceConfig)
           `Public GitHub repository: ${repo.full_name}`,
           repo.description ? `Description: ${repo.description}` : '',
           readme ? `README excerpt:\n${readme}` : '',
-        ].filter(Boolean).join('\n\n')
+        ]
+          .filter(Boolean)
+          .join('\n\n')
         const updatedAt = repo.updated_at ? new Date(repo.updated_at) : null
         return {
           source: { type: 'github', sourceId: repo.full_name, title: repo.name, url: repo.html_url },
           text: metadata.slice(0, MAX_README_CHARS),
           isPublic: true,
-          sourceUpdatedAt: updatedAt && Number.isFinite(updatedAt.valueOf()) ? updatedAt : config.now?.() ?? null,
+          sourceUpdatedAt: updatedAt && Number.isFinite(updatedAt.valueOf()) ? updatedAt : (config.now?.() ?? null),
         }
       }
       const documents: KnowledgeDocument[] = []
       for (let offset = 0; offset < eligible.length; offset += 5) {
-        documents.push(...await Promise.all(eligible.slice(offset, offset + 5).map(toDocument)))
+        documents.push(...(await Promise.all(eligible.slice(offset, offset + 5).map(toDocument))))
       }
       documentCache.clear()
       for (const document of documents) documentCache.set(document.source.sourceId, document)

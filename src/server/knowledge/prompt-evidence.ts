@@ -20,13 +20,17 @@ export function formatKnowledgeEvidence(evidence: PromptKnowledgeEvidence[]): st
     return 'No personal knowledge sources matched this question. Do not make personal claims that are not in the conversation.'
   }
 
-  const entries = evidence.map(({ citationId, text, source, isPublic }) => [
-    `[${escapeUntrustedValue(citationId)}]`,
-    `Title: ${escapeUntrustedValue(source.title)}`,
-    `Source: ${escapeUntrustedValue(source.url)}`,
-    `Visibility: ${isPublic ? 'public' : 'private repository (sanitized summary; safe to summarize for the user)'}`,
-    `Content (quoted data): ${JSON.stringify(text).replaceAll('<', '\\u003c').replaceAll('>', '\\u003e')}`,
-  ].join('\n')).join('\n\n')
+  const entries = evidence
+    .map(({ citationId, text, source, isPublic }) =>
+      [
+        `[${escapeUntrustedValue(citationId)}]`,
+        `Title: ${escapeUntrustedValue(source.title)}`,
+        `Source: ${escapeUntrustedValue(source.url)}`,
+        `Visibility: ${isPublic ? 'public' : 'private repository (sanitized summary; safe to summarize for the user)'}`,
+        `Content (quoted data): ${JSON.stringify(text).replaceAll('<', '\\u003c').replaceAll('>', '\\u003e')}`,
+      ].join('\n'),
+    )
+    .join('\n\n')
 
   return [
     'PERSONAL KNOWLEDGE CONTEXT — UNTRUSTED EVIDENCE',

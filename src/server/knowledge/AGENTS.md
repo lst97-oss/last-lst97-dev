@@ -6,7 +6,7 @@ Read path (chat, wired in `server/chat/runtime.ts`): message → `query-resoluti
 
 Write path (worker/jobs/CLIs): `*-source.ts` → `chunking` → `index-source` (embed document) → `repository.upsertSourceChunks`. Triggered by Payload hooks/tasks (`payload-hooks`, `payload-tasks`, `payload-runtime`, `jobs`) and by `scripts/sync-knowledge`, `sync-github-knowledge`, `reindex-github-reports`, `migrate-knowledge`, `import-wakatime-history`.
 
-Store: `database.ts` (pool), `database-migration.ts` (schema), `repository.ts` (upsert/remove/list/search). `types.ts` holds the ports (`EmbeddingPort`, `RerankerPort`, `KnowledgeRelevancePort`) and row shapes. Sources: `payload-source` (posts/projects), `profile-source` (curated bio), `wakatime-source` (public share JSON), `github-source` (lightweight API), `github-contributions` (API inventory). GitHub deep pipeline: `github-repository-inspector` (shallow clone, allowlisted reads) → `github-repository-analysis` (evidence facts) → `github-summary-markdown` → `github-knowledge-sync` (+ `github-markdown`, `github-profile-markdown`, `github-profile-sync`, `github-report-document`, `github-legacy-reports`, `owner-provided-project-sites`, `github-content-safety`).
+Store: `database.ts` (pool), `database-migration.ts` (schema), `repository.ts` (upsert/remove/list/search facade and stable port), and `repository/` (chunk and catalogue persistence internals). `types.ts` holds the ports (`EmbeddingPort`, `RerankerPort`, `KnowledgeRelevancePort`) and row shapes. Sources: `payload-source` (posts/projects), `profile-source` (curated bio), `wakatime-source` (public share JSON), `github/source.ts` (currently unwired lightweight API), `github/contributions.ts` (API inventory). GitHub deep pipeline: `github/repository-inspector.ts` (shallow clone, allowlisted reads) → `github/repository-analysis.ts` (evidence facts) → `github/summary-markdown.ts` → `github/knowledge-sync.ts` (+ `github/markdown.ts`, `github/profile-markdown.ts`, `github/profile-sync.ts`, `github/report-document.ts`, `github/legacy-reports.ts`, `github/owner-provided-project-sites.ts`, `github/content-safety.ts`).
 
 Note: `database-migration.ts` also owns the WakaTime heartbeat/rollup tables because they share the knowledge DB.
 
@@ -17,7 +17,7 @@ Note: `database-migration.ts` also owns the WakaTime heartbeat/rollup tables bec
 - **No fabrication.** `renderGithubRepositorySummary` must emit `Unknown: …` rows and limitations instead of guessing when evidence is missing; `analyzeGithubRepository` marks inferences (`inferred: true`).
 - **Sanitize before persisting.** `assertSafeGithubMarkdown` / `sanitizeEvidenceText` / `inspectSensitivePath` gate any GitHub-derived markdown; secrets, credential assignments, PEM blocks, and emails never reach files, the index, or logs. Logs use `[private]` for non-public source ids.
 - **Upsert is the unit of truth.** `upsertSourceChunks` replaces all chunks for a `(source_type, source_id)` inside one transaction and deletes stale indices; delete a source instead of zero-chunk writes. Not-found / unpublished / empty content ⇒ `removeSource`, not an error.
-- **Fail-additive.** A failed repository refresh keeps its last-known-good report and chunks; stale-source deletion only runs when the inventory was complete (`github-knowledge-sync`). Sync/index errors are sanitized (fixed message, no provider body).
+- **Fail-additive.** A failed repository refresh keeps its last-known-good report and chunks; stale-source deletion only runs when the inventory was complete (`github/knowledge-sync.ts`). Sync/index errors are sanitized (fixed message, no provider body).
 - **Public/private type pairing.** Source type is chosen from (owned|contribution) × (public|private); `isPublic === !isPrivate` is asserted before indexing a report. `KnowledgeSourceReference.type` must satisfy the DB `CHECK` list — new types need the schema, zod enum, and types updated together.
 
 ## Conventions
@@ -34,7 +34,7 @@ Note: `database-migration.ts` also owns the WakaTime heartbeat/rollup tables bec
 
 ## Do not "fix" without a change request
 
-- `github-source.ts` is currently unwired (only tests use it): `createPayloadKnowledgeSourceList` deliberately omits it so lightweight API docs cannot overwrite clone-inspected summaries. Re-adding it is an OpenSpec change, not a cleanup.
+- `github/source.ts` is currently unwired (only tests use it): `createPayloadKnowledgeSourceList` deliberately omits it so lightweight API docs cannot overwrite clone-inspected summaries. Re-adding it is an OpenSpec change, not a cleanup.
 - `IndexKnowledgeSource.execute` (public-only, removes non-public) vs `executeDocument(..., allowPrivate=true)` (full sync path) — both are intentional.
-- `github-knowledge-sync` caps workers at 3 and is the only place that writes report files; keep the write-after-index ordering and the metadata assertions.
+- `github/knowledge-sync.ts` caps workers at 3 and is the only place that writes report files; keep the write-after-index ordering and the metadata assertions.
 - Private summaries under `src/data/github/private/` are intentionally tracked: they are sanitized summaries, not source, and the sanitizer test scans every committed report. `knowledge:github:sync` still never stages or commits.

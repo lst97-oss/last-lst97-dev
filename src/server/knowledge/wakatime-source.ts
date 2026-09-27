@@ -9,11 +9,16 @@ const shareSchema = z.object({
     grand_total: z.object({
       human_readable_total_including_other_language: z.string().min(1).max(100),
     }),
-    languages: z.array(z.object({
-      name: z.string().min(1).max(100),
-      percent: z.number().finite().min(0).max(100),
-      text: z.string().max(100).optional(),
-    })).max(100).optional(),
+    languages: z
+      .array(
+        z.object({
+          name: z.string().min(1).max(100),
+          percent: z.number().finite().min(0).max(100),
+          text: z.string().max(100).optional(),
+        }),
+      )
+      .max(100)
+      .optional(),
   }),
 })
 
@@ -24,7 +29,9 @@ export interface WakaTimeKnowledgeSourceConfig {
   timeoutMs?: number
 }
 
-export function createWakaTimeKnowledgeSource(config: WakaTimeKnowledgeSourceConfig): KnowledgeSource & { listDocuments(): Promise<KnowledgeDocument[]> } {
+export function createWakaTimeKnowledgeSource(
+  config: WakaTimeKnowledgeSourceConfig,
+): KnowledgeSource & { listDocuments(): Promise<KnowledgeDocument[]> } {
   const fetcher = config.fetcher ?? fetch
 
   const source: KnowledgeSource = {
@@ -72,8 +79,10 @@ export function createWakaTimeKnowledgeSource(config: WakaTimeKnowledgeSourceCon
       }
     },
   }
-  return Object.assign(source, { listDocuments: async () => {
-    const document = await source.fetch('wakatime-all-time')
-    return document ? [document] : []
-  } })
+  return Object.assign(source, {
+    listDocuments: async () => {
+      const document = await source.fetch('wakatime-all-time')
+      return document ? [document] : []
+    },
+  })
 }

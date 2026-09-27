@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { KnowledgeDocument } from './source-types'
+import type { KnowledgeDocument } from '../source-types'
 
 const languageSchema = z.object({ name: z.string().min(1).max(100), size: z.number().int().nonnegative() })
 const topicSchema = z.object({ name: z.string().min(1).max(100) })
@@ -25,32 +25,39 @@ const githubCliRepositorySchema = z.object({
   visibility: z.enum(['PUBLIC', 'PRIVATE', 'INTERNAL']),
 })
 
-export const githubRepositorySchema = z.object({
-  nameWithOwner: z.string().regex(/^lst97\/[A-Za-z0-9_.-]{1,100}$/),
-  name: z.string().min(1).max(100),
-  description: z.string().max(2_000).nullable(),
-  url: z.url(),
-  isPrivate: z.boolean(),
-  isFork: z.boolean(),
-  isArchived: z.boolean(),
-  createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime(),
-  primaryLanguage: z.object({ name: z.string().max(100) }).nullable(),
-  languages: z.array(languageSchema).max(100),
-  repositoryTopics: z.array(topicSchema).max(100),
-  homepageUrl: z.url().nullable(),
-  defaultBranchRef: z.object({ name: z.string().min(1).max(250) }).nullable(),
-  licenseInfo: z.object({ name: z.string().max(200) }).nullable(),
-  stargazerCount: z.number().int().nonnegative(),
-  forkCount: z.number().int().nonnegative(),
-  visibility: z.enum(['PUBLIC', 'PRIVATE', 'INTERNAL']),
-}).refine((repository) => {
-  const url = new URL(repository.url)
-  return url.protocol === 'https:'
-    && url.hostname === 'github.com'
-    && url.pathname.toLowerCase() === `/${repository.nameWithOwner.toLowerCase()}`
-    && repository.isPrivate === (repository.visibility !== 'PUBLIC')
-}, { message: 'GitHub repository identity or visibility is invalid' })
+export const githubRepositorySchema = z
+  .object({
+    nameWithOwner: z.string().regex(/^lst97\/[A-Za-z0-9_.-]{1,100}$/),
+    name: z.string().min(1).max(100),
+    description: z.string().max(2_000).nullable(),
+    url: z.url(),
+    isPrivate: z.boolean(),
+    isFork: z.boolean(),
+    isArchived: z.boolean(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+    primaryLanguage: z.object({ name: z.string().max(100) }).nullable(),
+    languages: z.array(languageSchema).max(100),
+    repositoryTopics: z.array(topicSchema).max(100),
+    homepageUrl: z.url().nullable(),
+    defaultBranchRef: z.object({ name: z.string().min(1).max(250) }).nullable(),
+    licenseInfo: z.object({ name: z.string().max(200) }).nullable(),
+    stargazerCount: z.number().int().nonnegative(),
+    forkCount: z.number().int().nonnegative(),
+    visibility: z.enum(['PUBLIC', 'PRIVATE', 'INTERNAL']),
+  })
+  .refine(
+    (repository) => {
+      const url = new URL(repository.url)
+      return (
+        url.protocol === 'https:' &&
+        url.hostname === 'github.com' &&
+        url.pathname.toLowerCase() === `/${repository.nameWithOwner.toLowerCase()}` &&
+        repository.isPrivate === (repository.visibility !== 'PUBLIC')
+      )
+    },
+    { message: 'GitHub repository identity or visibility is invalid' },
+  )
 
 export type GithubRepositoryRecord = z.infer<typeof githubRepositorySchema>
 
@@ -61,9 +68,7 @@ export function normalizeGithubRepositoryCliRecord(input: unknown): GithubReposi
     languages: repository.languages?.map(({ node, size }) => ({ name: node.name, size })) ?? [],
     repositoryTopics: repository.repositoryTopics ?? [],
     homepageUrl: repository.homepageUrl?.trim() || null,
-    defaultBranchRef: repository.defaultBranchRef?.name.trim()
-      ? repository.defaultBranchRef
-      : null,
+    defaultBranchRef: repository.defaultBranchRef?.name.trim() ? repository.defaultBranchRef : null,
   })
 }
 

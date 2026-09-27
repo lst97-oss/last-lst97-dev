@@ -28,7 +28,13 @@ export const knowledgePayloadTasks = [
       { name: 'status', type: 'text' as const },
       { name: 'chunkCount', type: 'number' as const },
     ],
-    handler: async ({ input, req }: { input: unknown; req: { payload: Parameters<typeof runPayloadKnowledgeIndexTask>[0] } }) => {
+    handler: async ({
+      input,
+      req,
+    }: {
+      input: unknown
+      req: { payload: Parameters<typeof runPayloadKnowledgeIndexTask>[0] }
+    }) => {
       const parsed = indexTaskInput.safeParse(input)
       if (!parsed.success) throw new Error('Knowledge index job input is invalid')
       const output = await runPayloadKnowledgeIndexTask(req.payload, parsed.data)

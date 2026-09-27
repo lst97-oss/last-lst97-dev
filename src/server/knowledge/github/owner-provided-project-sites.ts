@@ -8,7 +8,10 @@ export function getOwnerProvidedProjectDemoUrl(repositoryFullName: string): stri
   if (!demoUrl || !URL.canParse(demoUrl)) return undefined
 
   const parsed = new URL(demoUrl)
-  if (parsed.protocol !== 'https:' || parsed.hostname !== 'gnaf.lst97.dev' && parsed.hostname !== 'sphkoss.lst97.dev') {
+  if (
+    parsed.protocol !== 'https:' ||
+    (parsed.hostname !== 'gnaf.lst97.dev' && parsed.hostname !== 'sphkoss.lst97.dev')
+  ) {
     return undefined
   }
   return parsed.href
