@@ -52,8 +52,8 @@ Evidence: none
 - Defines the Communication Condition type or service — Evidence: `src/app/api/models/communication.ts` (**inferred**)
 
 ## Tracked files
-- **994 tracked files** in total
-- Source: 827; tests: 72; documentation: 5; configuration: 26; assets/other: 64
+- **996 tracked files** in total
+- Source: 828; tests: 73; documentation: 5; configuration: 26; assets/other: 64
 
 ## Repository structure
 - Inspected 99 source files from the cloned repository (bounded for safety).
@@ -64,7 +64,7 @@ Evidence: none
 - `docs/` (1 tracked files)
 - `karma/` (1 tracked files)
 - `scripts/` (2 tracked files)
-- `src/` (939 tracked files)
+- `src/` (941 tracked files)
 - `src/app/account/edit-profile/edit-profile.component.html`
 - `src/app/account/edit-profile/edit-profile.component.scss`
 - `src/app/account/edit-profile/edit-profile.component.spec.ts`

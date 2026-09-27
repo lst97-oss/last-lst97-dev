@@ -52,13 +52,13 @@ Evidence: none
 - Defines the System Kit type or service — Evidence: `Kit/plugins/SystemKit.swift` (**inferred**)
 
 ## Tracked files
-- **300 tracked files** in total
-- Source: 120; tests: 3; documentation: 3; configuration: 39; assets/other: 135
+- **301 tracked files** in total
+- Source: 120; tests: 3; documentation: 3; configuration: 39; assets/other: 136
 
 ## Repository structure
-- Inspected 48 source files from the cloned repository (bounded for safety).
+- Inspected 47 source files from the cloned repository (bounded for safety).
 - `.github/` (5 tracked files)
-- `Kit/` (60 tracked files)
+- `Kit/` (61 tracked files)
 - `LaunchAtLogin/` (3 tracked files)
 - `Modules/` (90 tracked files)
 - `SMC/` (8 tracked files)

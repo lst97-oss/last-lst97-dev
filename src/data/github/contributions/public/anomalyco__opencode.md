@@ -52,8 +52,8 @@ Evidence: none
 - Tested behavior: preserves an explicit shell state across virtualization — Evidence: `packages/app/e2e/performance/timeline-stability/adverse.spec.ts` (**inferred**)
 
 ## Tracked files
-- **6632 tracked files** in total
-- Source: 2657; tests: 962; documentation: 810; configuration: 374; assets/other: 1829
+- **6638 tracked files** in total
+- Source: 2659; tests: 966; documentation: 810; configuration: 374; assets/other: 1829
 
 ## Repository structure
 - Inspected 100 source files from the cloned repository (bounded for safety).
@@ -66,7 +66,7 @@ Evidence: none
 - `github/` (10 tracked files)
 - `infra/` (8 tracked files)
 - `nix/` (6 tracked files)
-- `packages/` (6394 tracked files)
+- `packages/` (6400 tracked files)
 - `patches/` (20 tracked files)
 - `perf/` (1 tracked files)
 - `script/` (18 tracked files)
