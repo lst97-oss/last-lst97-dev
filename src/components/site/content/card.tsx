@@ -1,10 +1,9 @@
 import { Link } from '@tanstack/react-router'
-
+import { formatPublishedDate } from '../../../lib/content/date'
+import { formatProjectTimeframe, getProjectLifecycleLabel } from '../../../lib/content/project-display'
 import type { ChangelogSummary, PostSummary, ProjectSummary } from '../../../server/content/types'
-import { formatPublishedDate } from '../../../lib/content-date'
-import { formatProjectTimeframe, getProjectLifecycleLabel } from '../../../lib/project-display'
-import { ContentCover } from './cover'
 import { PixelIcon } from '../pixel-icon'
+import { ContentCover } from './cover'
 
 export function PostCard({ post }: { post: PostSummary }) {
   return (

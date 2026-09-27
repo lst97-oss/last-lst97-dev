@@ -1,5 +1,5 @@
+import { safeAssetHref } from '../../../lib/content/url'
 import type { CoverImage } from '../../../server/content/types'
-import { safeAssetHref } from '../../../lib/content-url'
 
 export function ContentCover({ image, className = 'content-cover' }: { image: CoverImage; className?: string }) {
   const src = safeAssetHref(image.url)

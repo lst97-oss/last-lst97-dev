@@ -3,8 +3,8 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { ContentUnavailableRoute } from '../components/site/content/unavailable'
 import { PixelIcon } from '../components/site/pixel-icon'
 import { WindowFrame } from '../components/site/window-frame'
-import { formatPublishedDate } from '../lib/content-date'
-import { loadChangelogs } from '../lib/site-data'
+import { formatPublishedDate } from '../lib/content/date'
+import { loadChangelogs } from '../lib/content/site-data'
 
 export const Route = createFileRoute('/_site/changelog/')({
   loader: loadChangelogs,

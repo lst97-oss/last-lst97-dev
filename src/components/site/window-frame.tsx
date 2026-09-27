@@ -1,15 +1,12 @@
-import { Link } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import type { ReactNode } from 'react'
-
-import { closeWindow, focusWindow, osStore, toggleMaximizeWindow, toggleMinimizeWindow } from '../../lib/os-store'
+import { focusWindow, osStore } from '../../lib/os-store'
+import { useIsMobile } from '../hooks/use-mobile'
 import { PixelIcon } from './pixel-icon'
+import type { WindowFrameControls } from './window/window-controls'
+import { WindowControls } from './window/window-controls'
 
-export type WindowFrameControls = {
-  minimize?: boolean
-  maximize?: boolean
-  close?: boolean
-}
+export type { WindowFrameControls } from './window/window-controls'
 
 type WindowFrameProps = {
   title: string
@@ -32,15 +29,14 @@ export function WindowFrame({
 }: WindowFrameProps) {
   const windowMode = useStore(osStore, (state) => state.windowModes[windowId] ?? 'normal')
   const isActive = useStore(osStore, (state) => state.activeWindowId === windowId)
+  const isMobile = useIsMobile()
+  // Mobile never uses zoomed/minimized window states; render as a plain stacked card.
+  const effectiveMode = isMobile ? 'normal' : windowMode
   const activate = () => focusWindow(windowId)
-  const showMinimize = controls?.minimize !== false
-  const showMaximize = controls?.maximize !== false
-  const showClose = controls?.close !== false
-  const showControls = showMinimize || showMaximize || showClose
 
   return (
     <section
-      className={`window-frame ${isActive ? 'is-active' : ''} is-${windowMode} ${className}`.trim()}
+      className={`window-frame ${isActive && !isMobile ? 'is-active' : ''} is-${effectiveMode} ${className}`.trim()}
       data-window-id={windowId}
       onFocusCapture={(event) => {
         if (event.target instanceof Element && event.target.closest('.window-controls')) return
@@ -56,49 +52,15 @@ export function WindowFrame({
           <PixelIcon glyph={icon} />
           {title}
         </span>
-        {showControls ? (
-          <span className="window-controls" aria-label="Window controls">
-            {showMinimize ? (
-              <button
-                aria-label={`${windowMode === 'minimized' ? 'Restore' : 'Minimize'} ${title}`}
-                className="window-control"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  toggleMinimizeWindow(windowId)
-                }}
-                type="button"
-              >
-                {windowMode === 'minimized' ? '▣' : '_'}
-              </button>
-            ) : null}
-            {showMaximize ? (
-              <button
-                aria-label={`${windowMode === 'maximized' ? 'Restore' : 'Maximize'} ${title}`}
-                aria-pressed={windowMode === 'maximized'}
-                className="window-control"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  toggleMaximizeWindow(windowId)
-                }}
-                type="button"
-              >
-                {windowMode === 'maximized' ? '❐' : '□'}
-              </button>
-            ) : null}
-            {showClose ? (
-              <Link
-                aria-label={`Close ${title}`}
-                className="window-close"
-                onClick={() => closeWindow(windowId)}
-                to={closeHref}
-              >
-                ×
-              </Link>
-            ) : null}
-          </span>
-        ) : null}
+        <WindowControls
+          closeHref={closeHref}
+          controls={controls}
+          title={title}
+          windowId={windowId}
+          windowMode={effectiveMode}
+        />
       </div>
-      <div className="window-content" aria-hidden={windowMode === 'minimized'}>{children}</div>
+      <div className="window-content" aria-hidden={effectiveMode === 'minimized'}>{children}</div>
     </section>
   )
 }

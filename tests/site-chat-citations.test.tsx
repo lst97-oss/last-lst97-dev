@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 
-import { ChatCitations } from '../src/components/site/chat-citations'
-import { ChatMessageText } from '../src/components/site/chat-message-text'
+import { ChatCitations } from '../src/components/site/chat/chat-citations'
+import { ChatMessageText } from '../src/components/site/chat/chat-message-text'
 
 describe('ChatCitations', () => {
   it('renders safe source links without exposing evidence body or internal metadata', () => {

@@ -1,15 +1,22 @@
+import { ScrollArea as ScrollAreaPrimitive } from "radix-ui"
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { ScrollArea as ScrollAreaPrimitive } from "radix-ui"
 
 function ScrollArea({
   className,
   children,
   viewportProps,
+  scrollbars = "vertical",
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
   /** Props for the viewport, the element that actually scrolls and takes pan/keyboard handlers. */
   viewportProps?: React.ComponentProps<typeof ScrollAreaPrimitive.Viewport>
+  /**
+   * Which axes get a themed bar. Radix only scrolls an axis its bar is
+   * mounted for, so panes with unbreakable lines (e.g. code) need "both".
+   * Defaults to "vertical" so existing usages are unchanged.
+   */
+  scrollbars?: "vertical" | "both"
 }) {
   const { className: viewportClassName, ...restViewportProps } = viewportProps ?? {}
   return (
@@ -31,6 +38,7 @@ function ScrollArea({
         {children}
       </ScrollAreaPrimitive.Viewport>
       <ScrollBar />
+      {scrollbars === "both" ? <ScrollBar orientation="horizontal" /> : null}
       <ScrollAreaPrimitive.Corner />
     </ScrollAreaPrimitive.Root>
   )

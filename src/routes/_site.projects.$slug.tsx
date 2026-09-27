@@ -1,14 +1,13 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
-
-import { RichText } from '../components/site/content/rich-text'
 import { ContentCover } from '../components/site/content/cover'
+import { RichText } from '../components/site/content/rich-text'
 import { ContentUnavailableRoute } from '../components/site/content/unavailable'
 import { PixelIcon } from '../components/site/pixel-icon'
 import { WindowFrame } from '../components/site/window-frame'
-import { createContentMeta } from '../lib/content-meta'
-import { safeAssetHref } from '../lib/content-url'
-import { formatProjectTimeframe, getProjectLifecycleLabel } from '../lib/project-display'
-import { loadProject } from '../lib/site-data'
+import { createContentMeta } from '../lib/content/meta'
+import { formatProjectTimeframe, getProjectLifecycleLabel } from '../lib/content/project-display'
+import { loadProject } from '../lib/content/site-data'
+import { safeAssetHref } from '../lib/content/url'
 
 export const Route = createFileRoute('/_site/projects/$slug')({
   errorComponent: () => <ContentUnavailableRoute

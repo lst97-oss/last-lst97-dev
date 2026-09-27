@@ -32,8 +32,20 @@ function AboutPage() {
               </div>
             ) : null}
           </div>
-          <div className="fact-panel">
-            <p className="eyebrow">CURRENT FOCUS</p>
+          <div className={`fact-panel${isMaximized ? ' has-avatar' : ''}`}>
+            <div className={`fact-panel-heading${isMaximized ? ' has-avatar' : ''}`}>
+              {isMaximized ? (
+                <img
+                  alt="Pixel-art portrait of Nelson"
+                  className="fact-panel-avatar"
+                  decoding="async"
+                  height={640}
+                  src="/assets/me-pixel-art.webp"
+                  width={640}
+                />
+              ) : null}
+              <p className="eyebrow">CURRENT FOCUS</p>
+            </div>
             <ul className="pixel-list">
               <li><PixelIcon glyph="◆" /> React, TypeScript &amp; Next.js</li>
               <li><PixelIcon glyph="◆" /> Full-stack web apps</li>

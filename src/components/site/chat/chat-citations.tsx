@@ -1,4 +1,4 @@
-import type { PublicCitation } from '../../server/knowledge/retrieve'
+import type { PublicCitation } from '../../../server/knowledge/retrieve'
 
 function safeHttpHref(value: string): string | null {
   try {

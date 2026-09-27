@@ -1,11 +1,14 @@
+import { Menu } from '@base-ui/react/menu'
 import { Link, useLocation } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
-import { Menu } from '@base-ui/react/menu'
-import { useEffect, useState, type ReactNode } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 
 import { updateOpenHeaderMenu } from '../../lib/header-menu-state'
+import { formatMelbourneDate, formatMelbourneShortDate } from '../../lib/melbourne-date'
 import { osStore } from '../../lib/os-store'
 import { siteHealthLabel } from '../../lib/site-health'
+import { PixelBattleBackground } from './battle/pixel-battle-background'
+import { MobileNavDrawer } from './mobile-nav-drawer'
 import { PixelIcon } from './pixel-icon'
 import { useSiteHealthStatus } from './site-health-provider'
 
@@ -46,22 +49,6 @@ function isCurrent(pathname: string, href: string): boolean {
   return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`)
 }
 
-function formatMelbourneDate(date: Date): string {
-  return new Intl.DateTimeFormat('en-AU', {
-    timeZone: 'Australia/Melbourne',
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  })
-    .format(date)
-    .toUpperCase()
-}
-
 function MelbourneClock() {
   const [now, setNow] = useState<Date | null>(null)
 
@@ -74,7 +61,14 @@ function MelbourneClock() {
 
   return (
     <time className="system-clock" dateTime={now?.toISOString()} aria-label="Current Melbourne time and date">
-      {now ? `MEL · ${formatMelbourneDate(now)}` : 'MEL · SYNCING'}
+      {now ? (
+        <>
+          <span className="system-clock-full">{`MEL · ${formatMelbourneDate(now)}`}</span>
+          <span className="system-clock-short">{`MEL · ${formatMelbourneShortDate(now)}`}</span>
+        </>
+      ) : (
+        'MEL · SYNCING'
+      )}
     </time>
   )
 }
@@ -84,14 +78,25 @@ export function DesktopShell({ children }: { children: ReactNode }) {
   const activeWindowId = useStore(osStore, (state) => state.activeWindowId)
   const healthStatus = useSiteHealthStatus()
   const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   return (
     <div className="os-site">
+      <PixelBattleBackground />
       <header className="system-bar">
         <div className="system-menu-left">
           <Link className="system-brand" to="/" aria-label="Open home desktop">
             <PixelIcon glyph="◆" /> LAST//OS
           </Link>
+          <button
+            className="system-menu-button"
+            type="button"
+            aria-expanded={mobileNavOpen}
+            aria-controls="mobile-nav-drawer"
+            onClick={() => setMobileNavOpen((value) => !value)}
+          >
+            ☰ MENU
+          </button>
           <nav className="system-menu" aria-label="Site shortcuts">
             {headerMenus.map((menu) => (
               <Menu.Root
@@ -157,6 +162,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
         </aside>
         <main className="desktop-main">{children}</main>
       </div>
+      <MobileNavDrawer open={mobileNavOpen} onOpenChange={setMobileNavOpen} />
     </div>
   )
 }

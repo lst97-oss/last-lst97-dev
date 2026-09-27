@@ -1,9 +1,8 @@
-import { defaultJSXConverters, RichText as PayloadRichText } from '@payloadcms/richtext-lexical/react'
 import type { JSXConverterArgs, JSXConverters } from '@payloadcms/richtext-lexical/react'
-import { useId } from 'react'
-
+import { defaultJSXConverters, RichText as PayloadRichText } from '@payloadcms/richtext-lexical/react'
+import { safeAssetHref, safeContentHref } from '../../../lib/content/url'
 import { parseLexicalContent } from '../../../server/content/types'
-import { safeAssetHref, safeContentHref } from '../../../lib/content-url'
+import { ChecklistItem } from './checklist-item'
 
 type RecordValue = Record<string, unknown>
 type ConverterNode = { [key: string]: any; type?: string }
@@ -108,38 +107,17 @@ function renderSafeUpload({ node }: JSXConverterArgs<ConverterNode>) {
   )
 }
 
-function StableChecklistItem({ node, nodesToJSX }: { node: ConverterNode; nodesToJSX: NodesToJSX }) {
-  const id = useId()
-  const children = Array.isArray(node.children) ? node.children : []
-  const hasSubLists = children.some((child: ConverterNode) => child.type === 'list')
-  const renderedChildren = nodesToJSX({ nodes: children })
-  const checked = node.checked === true
-
-  return (
-    <li
-      aria-checked={checked ? 'true' : 'false'}
-      className={`list-item-checkbox${checked ? ' list-item-checkbox-checked' : ' list-item-checkbox-unchecked'}${hasSubLists ? ' nestedListItem' : ''}`}
-      role="checkbox"
-      style={{ listStyleType: 'none' }}
-      tabIndex={-1}
-      value={node.value}
-    >
-      {hasSubLists ? renderedChildren : <>
-        <input checked={checked} id={id} readOnly type="checkbox" />
-        <label htmlFor={id}>{renderedChildren}</label>
-        <br />
-      </>}
-    </li>
-  )
-}
-
 function renderListItem(args: JSXConverterArgs<ConverterNode>) {
   const { node, nodesToJSX, parent } = args
   const children = Array.isArray(node.children) ? node.children : []
   const hasSubLists = children.some((child: ConverterNode) => child.type === 'list')
 
   if ((parent as unknown as RecordValue).listType === 'check') {
-    return <StableChecklistItem key={args.childIndex} node={node} nodesToJSX={nodesToJSX} />
+    return (
+      <ChecklistItem checked={node.checked === true} hasSubLists={hasSubLists} key={args.childIndex} value={node.value}>
+        {nodesToJSX({ nodes: children })}
+      </ChecklistItem>
+    )
   }
 
   return (

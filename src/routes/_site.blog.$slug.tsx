@@ -1,13 +1,10 @@
-import { createFileRoute, Link, notFound } from '@tanstack/react-router'
-
+import { createFileRoute, notFound } from '@tanstack/react-router'
+import { ContentDetailLayout } from '../components/site/content/detail-layout'
 import { RichText } from '../components/site/content/rich-text'
-import { ContentCover } from '../components/site/content/cover'
 import { ContentUnavailableRoute } from '../components/site/content/unavailable'
-import { PixelIcon } from '../components/site/pixel-icon'
-import { WindowFrame } from '../components/site/window-frame'
-import { createContentMeta } from '../lib/content-meta'
-import { formatPublishedDate } from '../lib/content-date'
-import { loadPost } from '../lib/site-data'
+import { formatPublishedDate } from '../lib/content/date'
+import { createContentMeta } from '../lib/content/meta'
+import { loadPost } from '../lib/content/site-data'
 
 export const Route = createFileRoute('/_site/blog/$slug')({
   errorComponent: () => <ContentUnavailableRoute
@@ -37,16 +34,18 @@ export const Route = createFileRoute('/_site/blog/$slug')({
 function PostPage() {
   const post = Route.useLoaderData()
   return (
-    <div className="page-stack narrow-page">
-      <WindowFrame title={`note://${post.slug}`} icon="✎">
-        <Link className="back-link" to="/blog">← BACK TO NOTES</Link>
-        <ContentCover image={post.coverImage} className="content-cover content-detail-cover" />
-        <p className="eyebrow"><PixelIcon glyph="●" /> NOTE / {formatPublishedDate(post.publishedAt)}</p>
-        <h1>{post.title}</h1>
-        <p className="lead-copy">{post.excerpt}</p>
-        <div className="tag-row post-tags">{post.tags.map((tag) => <span className="tag" key={tag}>{tag}</span>)}</div>
-        <div className="article-body"><RichText value={post.content} /></div>
-      </WindowFrame>
-    </div>
+    <ContentDetailLayout
+      windowTitle={`note://${post.slug}`}
+      icon="✎"
+      backHref="/blog"
+      backLabel="← BACK TO NOTES"
+      eyebrow={`NOTE / ${formatPublishedDate(post.publishedAt)}`}
+      coverImage={post.coverImage}
+      title={post.title}
+      excerpt={post.excerpt}
+      tags={post.tags}
+    >
+      <RichText value={post.content} />
+    </ContentDetailLayout>
   )
 }

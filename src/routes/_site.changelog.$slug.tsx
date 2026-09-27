@@ -1,13 +1,10 @@
-import { createFileRoute, Link, notFound } from '@tanstack/react-router'
-
+import { createFileRoute, notFound } from '@tanstack/react-router'
+import { ContentDetailLayout } from '../components/site/content/detail-layout'
 import { RichText } from '../components/site/content/rich-text'
-import { ContentCover } from '../components/site/content/cover'
 import { ContentUnavailableRoute } from '../components/site/content/unavailable'
-import { PixelIcon } from '../components/site/pixel-icon'
-import { WindowFrame } from '../components/site/window-frame'
-import { createContentMeta } from '../lib/content-meta'
-import { formatPublishedDate } from '../lib/content-date'
-import { loadChangelog } from '../lib/site-data'
+import { formatPublishedDate } from '../lib/content/date'
+import { createContentMeta } from '../lib/content/meta'
+import { loadChangelog } from '../lib/content/site-data'
 
 export const Route = createFileRoute('/_site/changelog/$slug')({
   errorComponent: () => <ContentUnavailableRoute
@@ -37,19 +34,18 @@ export const Route = createFileRoute('/_site/changelog/$slug')({
 function ChangelogEntryPage() {
   const entry = Route.useLoaderData()
   return (
-    <div className="page-stack narrow-page">
-      <WindowFrame title={`changelog://${entry.slug}`} icon="↻">
-        <Link className="back-link" to="/changelog">← BACK TO CHANGELOG</Link>
-        <ContentCover image={entry.coverImage} className="content-cover content-detail-cover" />
-        <p className="eyebrow">
-          <PixelIcon glyph="●" /> CHANGELOG / {formatPublishedDate(entry.publishedAt)}
-          {entry.version ? ` / ${entry.version}` : null}
-        </p>
-        <h1>{entry.title}</h1>
-        <p className="lead-copy">{entry.excerpt}</p>
-        <div className="tag-row post-tags">{entry.tags.map((tag) => <span className="tag" key={tag}>{tag}</span>)}</div>
-        <div className="article-body"><RichText value={entry.content} /></div>
-      </WindowFrame>
-    </div>
+    <ContentDetailLayout
+      windowTitle={`changelog://${entry.slug}`}
+      icon="↻"
+      backHref="/changelog"
+      backLabel="← BACK TO CHANGELOG"
+      eyebrow={`CHANGELOG / ${formatPublishedDate(entry.publishedAt)}${entry.version ? ` / ${entry.version}` : ''}`}
+      coverImage={entry.coverImage}
+      title={entry.title}
+      excerpt={entry.excerpt}
+      tags={entry.tags}
+    >
+      <RichText value={entry.content} />
+    </ContentDetailLayout>
   )
 }

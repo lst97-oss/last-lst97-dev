@@ -1,5 +1,5 @@
-import { PixelIcon } from './pixel-icon'
-import { MAX_CHAT_CONTEXT_MESSAGES, MAX_CHAT_TURNS } from '../../lib/chat-limits'
+import { MAX_CHAT_CONTEXT_MESSAGES, MAX_CHAT_TURNS } from '../../../lib/chat-limits'
+import { PixelIcon } from '../pixel-icon'
 
 /**
  * The answer model never receives a bare question. `openrouter-responder.ts`

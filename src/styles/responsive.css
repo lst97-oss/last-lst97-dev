@@ -1,0 +1,212 @@
+@media (max-width: 900px) {
+  .system-active-window {
+    max-width: 120px;
+  }
+  .desktop-workspace {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+  .desktop-shortcuts {
+    width: 82px;
+  }
+  .desktop-shortcut {
+    width: 72px;
+    font-size: 9px;
+  }
+  .shortcut-art {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+  }
+  .hero-grid,
+  .dashboard-grid,
+  .about-layout {
+    grid-template-columns: 1fr;
+  }
+  .about-window.is-maximized .about-layout {
+    margin-top: 28px;
+  }
+  .about-window.is-maximized .fact-panel.has-avatar {
+    margin-top: 84px;
+  }
+  .about-expanded {
+    grid-template-columns: 1fr;
+  }
+  .about-detail-card-wide {
+    grid-column: auto;
+  }
+  .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .operator-profile-window.is-maximized .profile-panel {
+    grid-template-columns: minmax(180px, 0.9fr) minmax(0, 1.1fr);
+    gap: 20px;
+    padding: 22px;
+  }
+}
+
+@media (max-width: 650px) {
+  .system-bar {
+    padding: 8px 12px;
+    gap: 12px;
+  }
+  .system-menu,
+  .system-active-window,
+  .system-menu-right > span:not(.system-clock) {
+    display: none;
+  }
+  .system-menu-button {
+    display: inline-flex;
+  }
+  .system-menu-left {
+    gap: 12px;
+  }
+  .system-clock-full {
+    display: none;
+  }
+  .system-clock-short {
+    display: inline;
+  }
+  /* Mobile windows are plain stacked cards: no chrome, no zoom states. */
+  .window-controls {
+    display: none !important;
+  }
+  .window-frame {
+    box-shadow: 4px 4px 0 var(--os-ink);
+  }
+  .window-frame.is-active {
+    box-shadow: 4px 4px 0 var(--os-coral);
+  }
+  .window-frame.is-maximized {
+    position: static;
+    z-index: auto;
+    inset: auto;
+    display: block;
+    flex-direction: column;
+    box-shadow: 4px 4px 0 var(--os-ink);
+  }
+  .window-frame.is-maximized .window-content {
+    flex: none;
+    overflow: visible;
+  }
+  .window-titlebar {
+    justify-content: flex-start;
+    min-height: 44px;
+  }
+  .hero-window.is-maximized .welcome-expanded,
+  .welcome-context-grid {
+    grid-template-columns: 1fr;
+  }
+  .operator-profile-window.is-maximized .profile-panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  .operator-profile-window.is-maximized .profile-identity,
+  .operator-profile-window.is-maximized .profile-expanded-bio,
+  .operator-profile-window.is-maximized .profile-coding-details,
+  .operator-profile-window.is-maximized .profile-json-details,
+  .operator-profile-window.is-maximized .profile-read-link {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .desktop-workspace {
+    display: block;
+  }
+  .desktop-shortcuts {
+    display: none;
+  }
+  .desktop-main {
+    padding: 16px 12px calc(28px + env(safe-area-inset-bottom, 0px));
+  }
+  .window-content {
+    padding: 18px 14px;
+  }
+  .chat-window .window-content {
+    padding: 16px 12px;
+  }
+  .card-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .section-heading,
+  .page-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .section-heading .text-link,
+  .page-heading .count-badge {
+    margin-top: 0;
+  }
+  .chat-heading-tools {
+    flex-wrap: wrap;
+  }
+  .chat-form {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+  .os-chat-form {
+    align-items: stretch;
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+  .os-chat-scroller {
+    height: min(62dvh, 480px);
+    max-height: 62dvh;
+  }
+  .os-chat-content {
+    padding: 16px;
+  }
+  .os-chat-input-group {
+    min-height: 48px;
+    box-shadow: 3px 3px 0 var(--os-ink);
+  }
+  .os-chat-send {
+    width: 100%;
+    min-height: 44px;
+    margin-left: 0;
+  }
+  .chat-form input {
+    flex-basis: calc(100% - 32px);
+  }
+  .chat-form .pixel-button {
+    margin-left: auto;
+  }
+  .os-chat-turn-meta {
+    flex-wrap: wrap;
+  }
+  .os-chat-chat-turnstile,
+  .turnstile-challenge {
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .os-chat-contact-review-meta {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .os-chat-contact-template-grid,
+  .os-chat-contact-fields {
+    grid-template-columns: 1fr;
+  }
+  .os-chat-contact-card,
+  .os-chat-contact-panel-heading {
+    padding: 13px;
+  }
+  .os-chat-contact-actions {
+    align-items: stretch;
+  }
+  .os-chat-contact-actions .pixel-button {
+    flex: 1 1 100%;
+    min-height: 44px;
+  }
+  .os-mobile-dock-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

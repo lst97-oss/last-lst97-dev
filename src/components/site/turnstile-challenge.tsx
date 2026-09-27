@@ -61,7 +61,9 @@ export function TurnstileChallenge({
   const previousResetCountRef = useRef(resetCount)
   const [loadFailed, setLoadFailed] = useState(false)
 
-  onTokenRef.current = onToken
+  useEffect(() => {
+    onTokenRef.current = onToken
+  }, [onToken])
 
   useEffect(() => {
     let active = true

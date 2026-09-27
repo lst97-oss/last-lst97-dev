@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { type PointerEvent as ReactPointerEvent, useEffect, useId, useRef, useState } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 // A plain template literal, not String.raw: the diagram has no backslash
@@ -77,7 +77,7 @@ export const CHAT_CONTACT_FLOW_DIAGRAM = `flowchart TB
   send -->|Turnstile or rate limit failure| review
   send -->|Postgres claim unavailable or already used| claimStop["STOP · CLAIM NOT COMPLETED<br/>Review state is preserved · SMTP is not called"]
   send -->|Atomic Postgres claim succeeds| mail["OWNER EMAIL, THEN YOUR RECEIPT<br/>Bug / feature: refined fields + original report PDF<br/>Email: sent as written · no PDF attachment"]
-  mail -->|Owner email accepted| out["DELIVERED<br/>A new blank chat is the only way back to normal conversation"]
+  mail -->|Owner email accepted| out["DELIVERED<br/>A failed receipt never undoes delivery<br/>A new blank chat is the only way back to normal conversation"]
   mail -->|Owner email error| deliveryStop["DELIVERY ERROR<br/>Review remains · no automatic resend"]
   declined --> blank["SIGN BLANK NORMAL CHAT<br/>Jev screens the next turn from scratch"]
   stop["STOP · CONTACT REQUEST NOT ADVANCED<br/>Unsafe, out of scope, uncertain, or unavailable<br/>No email is sent and the signed state is unchanged"]`

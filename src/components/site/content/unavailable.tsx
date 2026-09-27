@@ -1,7 +1,6 @@
 import { useRouter } from '@tanstack/react-router'
-
-import { WindowFrame } from '../window-frame'
 import { PixelIcon } from '../pixel-icon'
+import { WindowFrame } from '../window-frame'
 
 export function ContentUnavailablePanel({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (

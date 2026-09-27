@@ -4,7 +4,7 @@ import { ProjectCard } from '../components/site/content/card'
 import { ContentUnavailableRoute } from '../components/site/content/unavailable'
 import { PixelIcon } from '../components/site/pixel-icon'
 import { WindowFrame } from '../components/site/window-frame'
-import { loadProjects } from '../lib/site-data'
+import { loadProjects } from '../lib/content/site-data'
 
 export const Route = createFileRoute('/_site/projects/')({
   loader: loadProjects,

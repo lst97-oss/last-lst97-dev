@@ -1,6 +1,6 @@
 import * as React from "react"
-import { cn } from "@/lib/utils"
 import { Drawer as DrawerPrimitive } from "vaul"
+import { cn } from "@/lib/utils"
 
 function Drawer({
   ...props
@@ -120,13 +120,13 @@ function DrawerDescription({
 
 export {
   Drawer,
-  DrawerPortal,
-  DrawerOverlay,
-  DrawerTrigger,
   DrawerClose,
   DrawerContent,
-  DrawerHeader,
-  DrawerFooter,
-  DrawerTitle,
   DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerOverlay,
+  DrawerPortal,
+  DrawerTitle,
+  DrawerTrigger,
 }

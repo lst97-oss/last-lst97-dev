@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { CHAT_CONTACT_FLOW_DIAGRAM, CHAT_PIPELINE_DIAGRAM } from '../src/components/site/chat-pipeline-diagram'
+import { CHAT_CONTACT_FLOW_DIAGRAM, CHAT_PIPELINE_DIAGRAM } from '../src/components/site/chat/chat-pipeline-diagram'
 
 describe('chat pipeline diagram', () => {
   it('gates reranked knowledge passages through Jev before including them in the answer evidence', () => {
