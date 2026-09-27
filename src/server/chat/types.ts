@@ -1,7 +1,7 @@
-import type { KnowledgeEvidence, PublicCitation } from '../knowledge/retrieve'
-import type { ProjectCatalogFilters } from '../knowledge/project-catalog'
-import type { ChatDiagnosticsMetadata, ChatModelCallDiagnostic } from '../observability/chat-diagnostics'
 import type { ChatContactTemplate } from '../../lib/chat-contact'
+import type { ProjectCatalogFilters } from '../knowledge/project-catalog'
+import type { KnowledgeEvidence, PublicCitation } from '../knowledge/retrieve'
+import type { ChatDiagnosticsMetadata, ChatModelCallDiagnostic } from '../observability/chat-diagnostics'
 
 export const EMPTY_VERIFIED_REPLY = 'I couldn’t form a verified answer from the available information.'
 
@@ -12,7 +12,16 @@ export interface ChatMessage {
   content: string
 }
 
-export type ChatToolName = 'search_knowledge' | 'list_owned_projects' | 'coding_stats' | 'coding_history' | 'site_content'
+export const CHAT_TOOL_NAMES = [
+  'search_knowledge',
+  'list_owned_projects',
+  'coding_stats',
+  'coding_history',
+  'site_content',
+] as const
+
+export type ChatToolName = (typeof CHAT_TOOL_NAMES)[number]
+export type ChatToolProgressName = Exclude<ChatToolName, 'search_knowledge'> | 'knowledge'
 
 export interface ChatToolObservation {
   name: ChatToolName
@@ -41,7 +50,12 @@ export type ChatWorkflowContext =
   | { mode: 'normal'; phase: 'conversation' | 'contact_confirmation' }
   | { mode: 'contact'; phase: 'template_selection' }
   | { mode: 'contact'; phase: 'filling'; template: ChatContactTemplate }
-  | { mode: 'contact'; phase: 'review'; template: ChatContactTemplate; reviewApproval: { id: string; draftProof: string } }
+  | {
+      mode: 'contact'
+      phase: 'review'
+      template: ChatContactTemplate
+      reviewApproval: { id: string; draftProof: string }
+    }
   | { mode: 'contact'; phase: 'delivered'; template: ChatContactTemplate }
 
 export interface ChatConversationContext {
@@ -82,9 +96,7 @@ export interface ChatResponder {
   respond(input: ChatResponderInput): Promise<ChatReply>
 }
 
-export type ResponderStreamEvent =
-  | { delta: string; model?: string }
-  | { done: true; text: string; model?: string }
+export type ResponderStreamEvent = { delta: string; model?: string } | { done: true; text: string; model?: string }
 
 export interface ChatStreamingResponder extends ChatResponder {
   stream(input: ChatResponderInput, signal?: AbortSignal): AsyncGenerator<ResponderStreamEvent>

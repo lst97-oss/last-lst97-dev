@@ -2,9 +2,9 @@ import { createFileRoute } from '@tanstack/react-router'
 import { createChatPostHandler } from '../server/chat/http-handler'
 import { getChatContactWorkflow, getChatService, verifyChatTurnstile } from '../server/chat/runtime'
 import { getServerEnv } from '../server/env'
-import { checkEndpointLimit } from '../server/security/rate-limit-runtime'
-import { logger } from '../server/observability/logger'
 import { chatRequestMetadataFromRequest } from '../server/observability/chat-request-metadata'
+import { logger } from '../server/observability/logger'
+import { checkEndpointLimit } from '../server/security/rate-limit-runtime'
 
 const POST = createChatPostHandler({
   send: (input) => getChatService().send(input),

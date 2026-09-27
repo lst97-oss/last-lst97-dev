@@ -1,6 +1,6 @@
 import { createTypeSafeClassifier } from '../src/server/moderation/typesafe-classifier'
 import { jevToolRoutingCases } from '../tests/server/jev-tool-routing-cases'
-import type { AgentToolName } from '../src/server/chat/agent-tools'
+import type { AgentToolName } from '../src/server/chat/tools/agent-tools'
 
 const apiKey = Bun.env.TYPESAFE_API_KEY
 if (!apiKey) throw new Error('TYPESAFE_API_KEY is required to run the live Jev routing evaluation.')

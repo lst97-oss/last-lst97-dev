@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { matchCodingHistoryRequest, runCodingHistoryTool } from '../../src/server/chat/coding-history-tool'
+import { matchCodingHistoryRequest, runCodingHistoryTool } from '../../src/server/chat/tools/coding-history-tool'
 
 const TODAY = '2026-09-23'
 

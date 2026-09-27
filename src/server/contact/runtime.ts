@@ -1,15 +1,15 @@
-import { createContactEmailService } from '../email/service'
-import { createGmailEmailSender } from '../email/nodemailer-sender'
 import type { ChatContactSubmission } from '../../lib/chat-contact'
+import { createGmailEmailSender } from '../email/nodemailer-sender'
+import { createContactEmailService } from '../email/service'
 import type { ChatContactEmailService, EmailSender } from '../email/types'
 import { requiredServerEnv } from '../env'
+import { getModerationService } from '../moderation/runtime'
 import { logger } from '../observability/logger'
+import { createChatContactApprovalStore } from './chat/approval-store'
+import { submitChatContactEmail as deliverChatContactEmail } from './chat/submission'
 import { submitContactMessage } from './service'
 import { createTurnstileVerifier } from './turnstile-verifier'
 import type { TurnstileVerifier } from './types'
-import { getModerationService } from '../moderation/runtime'
-import { submitChatContactEmail as deliverChatContactEmail } from './chat-submission'
-import { createChatContactApprovalStore } from './chat-approval-store'
 
 let emailSender: ReturnType<typeof createGmailEmailSender> | undefined
 let contactEmailService: ChatContactEmailService | undefined
@@ -28,6 +28,11 @@ function getContactEmailService(): ChatContactEmailService {
     contactRecipient: requiredServerEnv('CONTACT_TO'),
   })
   return contactEmailService
+}
+
+function getChatContactApprovalStore() {
+  contactApprovalStore ??= createChatContactApprovalStore()
+  return contactApprovalStore
 }
 
 const lazyContactEmailService: ChatContactEmailService = {
@@ -73,11 +78,11 @@ export function submitChatContact(input: {
   expectedHostname: string
   requestId: string
 }) {
-  contactApprovalStore ??= createChatContactApprovalStore()
+  const approvalStore = getChatContactApprovalStore()
   return deliverChatContactEmail(input.submission, input.turnstileToken, input.approvalId, {
     emailService: lazyContactEmailService,
     verifier: lazyTurnstileVerifier,
-    claimApproval: (approvalId) => contactApprovalStore!.claim(approvalId),
+    claimApproval: (approvalId) => approvalStore.claim(approvalId),
     expectedHostname: input.expectedHostname,
     requestId: input.requestId,
     logger,

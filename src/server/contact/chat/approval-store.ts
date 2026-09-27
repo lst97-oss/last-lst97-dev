@@ -23,15 +23,17 @@ export function createChatContactApprovalStore(): ChatContactApprovalStore {
       const payload = await getPayloadInstance()
       const drizzle = payload.db.drizzle
       if (Date.now() - lastCleanupAt > 60 * 60 * 1_000) {
-        await drizzle.execute(sql`DELETE FROM "chat_contact_approval_claims" WHERE "claimed_at" < now() - interval '48 hours'`)
+        await drizzle.execute(
+          sql`DELETE FROM "chat_contact_approval_claims" WHERE "claimed_at" < now() - interval '48 hours'`,
+        )
         lastCleanupAt = Date.now()
       }
-      const result = await drizzle.execute(sql`
+      const result = (await drizzle.execute(sql`
         INSERT INTO "chat_contact_approval_claims" ("approval_id")
         VALUES (${approvalId}::uuid)
         ON CONFLICT ("approval_id") DO NOTHING
         RETURNING "approval_id"
-      `) as { rows?: Array<{ approval_id: string }> }
+      `)) as { rows?: Array<{ approval_id: string }> }
       return Array.isArray(result.rows) && result.rows.length === 1
     },
   }

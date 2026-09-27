@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
 import { jevToolRoutingCases } from './jev-tool-routing-cases'
-import type { AgentToolName } from '../../src/server/chat/agent-tools'
+import type { AgentToolName } from '../../src/server/chat/tools/agent-tools'
 
 const tools: AgentToolName[] = ['search_knowledge', 'list_owned_projects', 'coding_stats', 'coding_history', 'site_content']
 

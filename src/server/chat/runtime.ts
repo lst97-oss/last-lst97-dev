@@ -1,29 +1,29 @@
-import { createChatService } from './service'
-import { createOpenRouterResponder } from './openrouter-responder'
-import { createChatContextSigner } from './context-signer'
-import { getModerationService } from '../moderation/runtime'
-import { getServerEnv, requiredServerEnv } from '../env'
-import { logger } from '../observability/logger'
-import { createDiscordDiagnosticsSink } from '../observability/chat-diagnostics'
-import { getKnowledgeIndexRepository } from '../knowledge/database'
-import { createEmbeddingClient } from '../knowledge/embedding-client'
-import { createQueryEmbeddingConfig } from '../knowledge/embedding-provider-config'
-import { createSiliconFlowReranker } from '../knowledge/siliconflow-reranker'
-import { createJevKnowledgeRelevanceGate } from '../knowledge/jev-relevance-gate'
-import { createRetrieveKnowledge } from '../knowledge/retrieve'
-import { createWakaTimeStatsClient } from '../wakatime/public-shares'
-import { getCodingHistoryRepository } from '../wakatime/history-database'
-import { contentReader } from '../content/runtime'
-import { createAgentPlanner } from './agent-planner'
-import { createChatContactWorkflow } from './contact-workflow'
-import { createOpenRouterChatContactRefiner } from '../contact/openrouter-refiner'
+import { TURNSTILE_ACTIONS } from '../../lib/turnstile'
+import { createOpenRouterChatContactRefiner } from '../contact/chat/openrouter-refiner'
+import { createChatContactWorkflow } from '../contact/chat/workflow'
 import { submitChatContact } from '../contact/runtime'
 import { createTurnstileVerifier } from '../contact/turnstile-verifier'
 import type { TurnstileVerifier } from '../contact/types'
-import { TURNSTILE_ACTIONS } from '../../lib/turnstile'
-import type { ChatDiagnosticsSink } from '../observability/chat-diagnostics'
+import { contentReader } from '../content/runtime'
+import { getServerEnv, requiredServerEnv } from '../env'
+import { getKnowledgeIndexRepository } from '../knowledge/database'
+import { createEmbeddingClient } from '../knowledge/embedding-client'
+import { createQueryEmbeddingConfig } from '../knowledge/embedding-provider-config'
+import { createJevKnowledgeRelevanceGate } from '../knowledge/jev-relevance-gate'
 import type { ProjectCatalogQuery } from '../knowledge/project-catalog'
+import { createRetrieveKnowledge } from '../knowledge/retrieve'
+import { createSiliconFlowReranker } from '../knowledge/siliconflow-reranker'
+import { getModerationService } from '../moderation/runtime'
+import type { ChatDiagnosticsSink } from '../observability/chat-diagnostics'
+import { createDiscordDiagnosticsSink } from '../observability/chat-diagnostics'
+import { logger } from '../observability/logger'
+import { getCodingHistoryRepository } from '../wakatime/history/database'
+import { createWakaTimeStatsClient } from '../wakatime/public-shares'
+import { createAgentPlanner } from './agent/agent-planner'
+import { createChatContextSigner } from './context-signer'
+import { createOpenRouterResponder } from './openrouter-responder'
 import type { ChatService } from './service'
+import { createChatService } from './service'
 
 let service: ChatService | undefined
 let contactWorkflow: ReturnType<typeof createChatContactWorkflow> | undefined
@@ -83,6 +83,7 @@ export function getChatService(): ChatService {
     const env = getServerEnv()
     const knowledgeEnabled = env.KNOWLEDGE_RAG_ENABLED
     const historyDatabaseUrl = env.KNOWLEDGE_DATABASE_URL
+    const chatDiagnosticsSink = getChatDiagnosticsSink()
     service = createChatService(createOpenRouterResponder(), {
       moderation: getModerationService(),
       contextSigner: createChatContextSigner(requiredServerEnv('CHAT_CONTEXT_SIGNING_SECRET')),
@@ -90,10 +91,12 @@ export function getChatService(): ChatService {
       knowledgeEnabled,
       codingStats: createWakaTimeStatsClient({ logger }),
       codingStatsEnabled: true as const,
-      ...(historyDatabaseUrl ? { codingHistory: getCodingHistoryRepository(), codingHistoryEnabled: true as const } : {}),
+      ...(historyDatabaseUrl
+        ? { codingHistory: getCodingHistoryRepository(), codingHistoryEnabled: true as const }
+        : {}),
       siteContent: contentReader,
       planner: createAgentPlanner({ ...(env.OPENROUTER_PLANNER_MODEL ? { model: env.OPENROUTER_PLANNER_MODEL } : {}) }),
-      ...(getChatDiagnosticsSink() ? { diagnosticsSink: getChatDiagnosticsSink() } : {}),
+      ...(chatDiagnosticsSink ? { diagnosticsSink: chatDiagnosticsSink } : {}),
       logger,
     })
   }

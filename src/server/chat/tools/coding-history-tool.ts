@@ -1,3 +1,5 @@
+import type { Logger } from '../../observability/logger'
+import { formatHours } from '../../wakatime/format'
 import type {
   HistoryCoverage,
   HistoryDayPoint,
@@ -5,17 +7,13 @@ import type {
   HistoryStreaks,
   HistorySummary,
   HistoryTopEntry,
-} from '../wakatime/history-repository'
-import { formatHours } from '../wakatime/history-import'
-import type { Logger } from '../observability/logger'
+} from '../../wakatime/history/repository'
+import { withTimeout } from '../timeout'
 
 // Second tool behind the chat tool-runner seam: the imported WakaTime heartbeat
 // warehouse (deep history: years, months, streaks, daily series, named-project
 // filters). Public-share ranges remain with coding_stats. Only formatted
 // aggregates reach the model.
-
-export const CODING_HISTORY_TOOL_NAME = 'coding_history' as const
-export const CODING_HISTORY_LABEL = 'SEARCHING CODING HISTORY…'
 
 export type HistoryOp = 'summary' | 'by_project' | 'by_language' | 'project_time' | 'daily' | 'streaks'
 export type CodingHistoryRangePreset = 'all_time' | 'last_year' | 'last_30_days' | 'last_7_days'
@@ -49,8 +47,18 @@ export interface CodingHistorySource {
 }
 
 const MONTHS: Record<string, number> = {
-  january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
-  july: 7, august: 8, september: 9, october: 10, november: 11, december: 12,
+  january: 1,
+  february: 2,
+  march: 3,
+  april: 4,
+  may: 5,
+  june: 6,
+  july: 7,
+  august: 8,
+  september: 9,
+  october: 10,
+  november: 11,
+  december: 12,
 }
 
 function pad(value: number): string {
@@ -58,7 +66,7 @@ function pad(value: number): string {
 }
 
 function shiftMonths(year: number, month: number, delta: number): { year: number; month: number } {
-  const total = (year * 12 + (month - 1)) + delta
+  const total = year * 12 + (month - 1) + delta
   return { year: Math.floor(total / 12), month: (total % 12) + 1 }
 }
 
@@ -118,8 +126,13 @@ function detectRange(text: string, today: string): HistoryRange | null {
 function detectProjectName(message: string): string | null {
   const quoted = message.match(/["“”'`「」『』]([^"“”'`「」『』]{2,120})["“”'`「」『』]/)
   if (quoted?.[1]) return quoted[1].trim()
-  const onPattern = message.match(/\bon\s+([A-Za-z0-9][\w+.#-]{1,120})(?:\s+(?:in|during|last|this|for|over|per|project|repo))?\b/i)
-  if (onPattern?.[1] && !/^(it|that|this|my|the|last|this|total|much|many|time|hours?|project|projects)$/i.test(onPattern[1])) {
+  const onPattern = message.match(
+    /\bon\s+([A-Za-z0-9][\w+.#-]{1,120})(?:\s+(?:in|during|last|this|for|over|per|project|repo))?\b/i,
+  )
+  if (
+    onPattern?.[1] &&
+    !/^(it|that|this|my|the|last|this|total|much|many|time|hours?|project|projects)$/i.test(onPattern[1])
+  ) {
     return onPattern[1].trim()
   }
   return null
@@ -135,7 +148,8 @@ function detectOp(text: string): HistoryOp {
 }
 
 const CODING_SIGNAL = /cod(e|ing|er)|program(ming|mer)?|develop(er|ing|ment)?|wakatime|language|project|streak|hour/
-const HISTORY_SIGNAL = /\bstreak\b|\bper day\b|\bdaily\b|\bover time\b|\btrend\b|\bchart\b|\btop\b|\b202\d\b|\blast (year|month|\d+ (day|week|month)s?)\b|\bthis (year|month)\b|all[\s_-]?time/
+const HISTORY_SIGNAL =
+  /\bstreak\b|\bper day\b|\bdaily\b|\bover time\b|\btrend\b|\bchart\b|\btop\b|\b202\d\b|\blast (year|month|\d+ (day|week|month)s?)\b|\bthis (year|month)\b|all[\s_-]?time/
 
 export function matchCodingHistoryRequest(message: string, today: string): HistoryQuery | null {
   const text = message.toLowerCase()
@@ -162,7 +176,10 @@ export function matchCodingHistoryRequest(message: string, today: string): Histo
 }
 
 function topLines(entries: HistoryTopEntry[]): string {
-  return entries.slice(0, 10).map((entry, index) => `${index + 1}. ${entry.name} — ${formatHours(entry.seconds)}`).join('; ')
+  return entries
+    .slice(0, 10)
+    .map((entry, index) => `${index + 1}. ${entry.name} — ${formatHours(entry.seconds)}`)
+    .join('; ')
 }
 
 async function coverageText(
@@ -212,31 +229,42 @@ export async function runCodingHistoryTool(
         return `Coding streaks: longest ${streaks.longestDays} days; current streak ${streaks.currentDays} days.`
       }
       case 'daily': {
-        const [summary, series] = await Promise.all([
-          source.summary(query),
-          source.dailySeries(query),
-        ])
-        const peak = series.reduce<HistoryDayPoint | null>((best, point) => (!best || point.seconds > best.seconds ? point : best), null)
-        const recent = series.slice(-7).map((point) => `${point.date.slice(5)} ${formatHours(point.seconds)}`).join(', ')
-        const parts = [`Coding history (${label}): ${formatHours(summary.totalSeconds)} total across ${summary.activeDays} active days`]
+        const [summary, series] = await Promise.all([source.summary(query), source.dailySeries(query)])
+        const peak = series.reduce<HistoryDayPoint | null>(
+          (best, point) => (!best || point.seconds > best.seconds ? point : best),
+          null,
+        )
+        const recent = series
+          .slice(-7)
+          .map((point) => `${point.date.slice(5)} ${formatHours(point.seconds)}`)
+          .join(', ')
+        const parts = [
+          `Coding history (${label}): ${formatHours(summary.totalSeconds)} total across ${summary.activeDays} active days`,
+        ]
         if (peak) parts.push(`peak ${peak.date} (${formatHours(peak.seconds)})`)
         if (recent) parts.push(`recent: ${recent}`)
         return parts.join('; ').slice(0, 600)
       }
       case 'by_project':
       case 'by_language': {
-        const entries = query.op === 'by_project'
-          ? await source.byProject(query, 10)
-          : await source.byLanguage(query, 5)
+        const entries =
+          query.op === 'by_project' ? await source.byProject(query, 10) : await source.byLanguage(query, 5)
         if (entries.length === 0) return `Coding history (${label}): no activity recorded.`
         const kind = query.op === 'by_project' ? 'Top projects' : 'Top languages'
-        return `Coding history (${label}). ${kind}: ${topLines(entries)}.`.slice(0, query.op === 'by_project' ? 1_100 : 600)
+        return `Coding history (${label}). ${kind}: ${topLines(entries)}.`.slice(
+          0,
+          query.op === 'by_project' ? 1_100 : 600,
+        )
       }
       case 'project_time': {
         if (!query.project) return `Coding history (${label}): no project named.`
         const spent = await source.projectTime(query, query.project)
-        if (spent.heartbeatCount === 0) return `Coding history (${label}): no activity recorded for project ${query.project}.`
-        return `Coding history (${label}): ${formatHours(spent.totalSeconds)} on project ${query.project} across ${spent.activeDays} active days (${spent.heartbeatCount} heartbeats).`.slice(0, 600)
+        if (spent.heartbeatCount === 0)
+          return `Coding history (${label}): no activity recorded for project ${query.project}.`
+        return `Coding history (${label}): ${formatHours(spent.totalSeconds)} on project ${query.project} across ${spent.activeDays} active days (${spent.heartbeatCount} heartbeats).`.slice(
+          0,
+          600,
+        )
       }
       case 'summary': {
         const [summary, projects, languages] = await Promise.all([
@@ -245,7 +273,9 @@ export async function runCodingHistoryTool(
           source.byLanguage(query, 1),
         ])
         if (summary.heartbeatCount === 0) return `Coding history (${label}): no activity recorded.`
-        const parts = [`Coding history (${label}): ${formatHours(summary.totalSeconds)} total across ${summary.activeDays} active days`]
+        const parts = [
+          `Coding history (${label}): ${formatHours(summary.totalSeconds)} total across ${summary.activeDays} active days`,
+        ]
         if (projects[0]) parts.push(`top project ${projects[0].name} (${formatHours(projects[0].seconds)})`)
         if (languages[0]) parts.push(`top language ${languages[0].name} (${formatHours(languages[0].seconds)})`)
         return parts.join('; ').slice(0, 600)
@@ -253,13 +283,12 @@ export async function runCodingHistoryTool(
     }
   })()
   try {
-    const summary = await Promise.race([
-      run,
-      new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Coding history request timed out')), dependencies.timeoutMs)
-      }),
-    ])
-    return withCoverage(summary, await coverageText(source, dependencies.timeoutMs, dependencies.logger), query.op === 'by_project' ? 1_200 : 600)
+    const summary = await withTimeout(run, dependencies.timeoutMs, 'Coding history request timed out')
+    return withCoverage(
+      summary,
+      await coverageText(source, dependencies.timeoutMs, dependencies.logger),
+      query.op === 'by_project' ? 1_200 : 600,
+    )
   } catch (error) {
     dependencies.logger.warn('chat.coding_history.unavailable', { error })
     return null

@@ -1,10 +1,16 @@
+import type {
+  ChatContactField,
+  ChatContactFieldValues,
+  ChatContactSubmission,
+  ChatContactTemplate,
+} from '../../lib/chat-contact'
 import type { PublicCitation } from '../knowledge/retrieve'
-import type { ChatContactField, ChatContactFieldValues, ChatContactSubmission, ChatContactTemplate } from '../../lib/chat-contact'
+import type { ChatToolProgressName } from './types'
 
 // SSE event protocol for POST /api/site/chat when the client sends
 // `Accept: text/event-stream`. Framing is `event: <type>\ndata: <json>\n\n`.
-// This module is pure string shaping with no server imports, so the browser
-// chat client can share the frame splitter and parser.
+// This module is pure string shaping with no server runtime imports, so the
+// browser chat client can share the frame splitter and parser.
 
 export const CHAT_STATUS_LABELS = {
   thinking: 'THINKING…',
@@ -22,9 +28,9 @@ export function chatStatusLabel(status: unknown): string | null {
 
 export type ChatStreamEvent =
   | { type: 'status'; status: ChatStatus }
-  | { type: 'tool_start'; name: 'coding_stats' | 'coding_history' | 'knowledge' | 'list_owned_projects' | 'site_content'; label: string }
+  | { type: 'tool_start'; name: ChatToolProgressName; label: string }
   | { type: 'token'; delta: string }
-  | { type: 'tool_result'; name: 'coding_stats' | 'coding_history' | 'knowledge' | 'list_owned_projects' | 'site_content'; summary: string }
+  | { type: 'tool_result'; name: ChatToolProgressName; summary: string }
   | { type: 'citations'; citations: PublicCitation[] }
   | { type: 'knowledge_note' }
   | ChatContactEvent
@@ -36,13 +42,30 @@ export type ChatContactEvent =
   | { type: 'contact_declined'; text: string; contextToken: string }
   | { type: 'contact_started'; text: string; contextToken: string }
   | { type: 'contact_template_selected'; template: ChatContactTemplate; contextToken: string }
-  | { type: 'contact_form_incomplete'; template: ChatContactTemplate; missingFields: ChatContactField[]; invalidFields: ChatContactField[]; contextToken: string }
+  | {
+      type: 'contact_form_incomplete'
+      template: ChatContactTemplate
+      missingFields: ChatContactField[]
+      invalidFields: ChatContactField[]
+      contextToken: string
+    }
   | { type: 'contact_out_of_scope'; text: string; contextToken: string }
   | { type: 'contact_blocked'; text: string; contextToken: string }
   | { type: 'contact_unavailable'; text: string; contextToken?: string }
-  | { type: 'contact_review'; template: ChatContactTemplate; originalSubmission: ChatContactSubmission; refinedSubmission: ChatContactSubmission; contextToken: string }
+  | {
+      type: 'contact_review'
+      template: ChatContactTemplate
+      originalSubmission: ChatContactSubmission
+      refinedSubmission: ChatContactSubmission
+      contextToken: string
+    }
   | { type: 'contact_editing'; template: ChatContactTemplate; contextToken: string }
-  | { type: 'contact_send_error'; reason: 'turnstile' | 'turnstile_unavailable' | 'duplicate' | 'delivery'; text: string; contextToken: string }
+  | {
+      type: 'contact_send_error'
+      reason: 'turnstile' | 'turnstile_unavailable' | 'duplicate' | 'delivery'
+      text: string
+      contextToken: string
+    }
   | { type: 'contact_delivery'; template: ChatContactTemplate; receiptStatus: 'sent' | 'failed'; contextToken: string }
   | { type: 'contact_discarded'; text: string; contextToken: string }
   | { type: 'contact_new_chat'; text: string; contextToken: string }
@@ -53,7 +76,13 @@ export type ChatContactAction =
   | { action: 'select_template'; contextToken: string; template: ChatContactTemplate }
   | { action: 'submit_form'; contextToken: string; fields: ChatContactFieldValues }
   | { action: 'edit_form'; contextToken: string }
-  | { action: 'confirm_send'; contextToken: string; refinedSubmission: unknown; originalSubmission: unknown; turnstileToken: string }
+  | {
+      action: 'confirm_send'
+      contextToken: string
+      refinedSubmission: unknown
+      originalSubmission: unknown
+      turnstileToken: string
+    }
   | { action: 'discard_contact'; contextToken: string; confirmed: true }
   | { action: 'start_new_chat'; contextToken: string }
 

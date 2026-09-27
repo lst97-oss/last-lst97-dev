@@ -71,7 +71,8 @@ export class JsonLogger implements Logger {
     }
 
     const safeFields = sanitize(fields ?? {})
-    const fieldRecord = typeof safeFields === 'object' && safeFields !== null && !Array.isArray(safeFields) ? safeFields : {}
+    const fieldRecord =
+      typeof safeFields === 'object' && safeFields !== null && !Array.isArray(safeFields) ? safeFields : {}
     const line = JSON.stringify({
       timestamp: new Date().toISOString(),
       level,
@@ -89,9 +90,7 @@ export class JsonLogger implements Logger {
   }
 }
 
-export const logger: Logger = new JsonLogger(
-  readLogLevel(),
-)
+export const logger: Logger = new JsonLogger(readLogLevel())
 
 function readLogLevel(): LogLevel {
   return getServerEnv().LOG_LEVEL

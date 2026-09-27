@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
 import { createChatContextSigner } from '../../src/server/chat/context-signer'
-import { createChatContactWorkflow } from '../../src/server/chat/contact-workflow'
+import { createChatContactWorkflow } from '../../src/server/contact/chat/workflow'
 import type { ChatContactSubmission } from '../../src/lib/chat-contact'
 import type { ChatContactActionRequest } from '../../src/server/chat/events'
 

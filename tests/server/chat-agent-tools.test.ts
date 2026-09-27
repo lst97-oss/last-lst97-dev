@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 
-import { parseAgentPlan } from '../../src/server/chat/agent-planner'
-import { agentToolDefinitions, runAgentTool } from '../../src/server/chat/agent-tool-runner'
+import { parseAgentPlan } from '../../src/server/chat/agent/agent-planner'
+import { runAgentTool } from '../../src/server/chat/tools/agent-tool-runner'
+import { CHAT_TOOL_NAMES } from '../../src/server/chat/types'
 import type { CodingActivityStats, CodingStatsResult } from '../../src/server/wakatime/stats'
 
 const activityResult: CodingActivityStats = {
@@ -24,54 +25,22 @@ describe('agent planner', () => {
     expect(parseAgentPlan('{"action":"tool_calls","calls":[]}')).toBeNull()
   })
 
-  it('exposes fixed read-only tools including the bounded project catalogue query', () => {
-    const definitions = agentToolDefinitions()
-    const knowledge = definitions.find((tool) => tool.name === 'search_knowledge')
-    const siteContent = definitions.find((tool) => tool.name === 'site_content')
-    const codingHistory = definitions.find((tool) => tool.name === 'coding_history')
-    const codingStats = definitions.find((tool) => tool.name === 'coding_stats')
+  it('uses the canonical tool registry when parsing planner calls', () => {
+    expect(CHAT_TOOL_NAMES).toEqual([
+      'search_knowledge',
+      'list_owned_projects',
+      'coding_stats',
+      'coding_history',
+      'site_content',
+    ])
 
-    const projectList = definitions.find((tool) => tool.name === 'list_owned_projects')
-    expect(definitions.map((tool) => tool.name).sort()).toEqual(['coding_history', 'coding_stats', 'list_owned_projects', 'search_knowledge', 'site_content'])
-    expect(knowledge?.description).toContain('current website implementation')
-    expect(knowledge?.description).toContain('last-updated dates')
-    expect(knowledge?.parameters).toEqual({
-      type: 'object',
-      properties: { query: { type: 'string', description: 'Focused search query about Nelson or his work' } },
-      required: ['query'],
-      additionalProperties: false,
-    })
-    expect(codingHistory?.description).toContain('WakaTime heartbeat database')
-    expect(codingHistory?.description).toContain('last_7_days')
-    expect(codingHistory?.parameters).toMatchObject({
-      required: ['op'],
-      properties: {
-        range: { enum: ['all_time', 'last_year', 'last_30_days', 'last_7_days'] },
-        from: { type: 'string' },
-        to: { type: 'string' },
-      },
-    })
-    expect(codingStats?.description).toContain('public-share')
-    expect(codingStats?.parameters).toMatchObject({
-      required: ['category', 'range'],
-      properties: {
-        category: { enum: ['activity', 'languages', 'editors', 'operating_systems', 'categories'] },
-        range: { enum: ['last_7_days', 'last_30_days', 'last_year', 'all_time'] },
-      },
-    })
-    expect(siteContent?.description).toContain('Current published Payload CMS projects and blog posts')
-    expect(projectList?.description).toContain('software kind')
-    expect(projectList?.description).toContain('WakaTime')
-    expect(projectList?.parameters).toMatchObject({
-      type: 'object', additionalProperties: false,
-      properties: {
-        languages: { type: 'array' },
-        kinds: { type: 'array', items: { enum: ['web_app', 'mobile_app', 'desktop_app', 'api_backend', 'cli_tool', 'library_package', 'automation_devtool', 'data_ml', 'game', 'infrastructure_devops', 'plugin_extension', 'other'] } },
-        time_spent_range: { enum: ['all_time', 'last_year', 'last_30_days', 'last_7_days'] },
-        sort_by: { enum: ['relevance', 'stars', 'forks', 'created', 'updated', 'time_spent'] },
-        limit: { maximum: 10 },
-      },
-    })
+    for (const name of CHAT_TOOL_NAMES) {
+      expect(parseAgentPlan(JSON.stringify({
+        action: 'tool_calls',
+        calls: [{ id: 'registry-check', name, arguments: {} }],
+      }))?.kind).toBe('tool_calls')
+    }
+    expect(parseAgentPlan('{"action":"tool_calls","calls":[{"id":"bad","name":"unknown_tool","arguments":{}}]}')).toBeNull()
   })
 })
 
@@ -99,6 +68,14 @@ describe('agent tool runner', () => {
       getPost: async () => null,
     },
   }
+
+  it('rejects unexpected arguments at each tool boundary', async () => {
+    for (const name of CHAT_TOOL_NAMES) {
+      const result = await runAgentTool({ id: 'schema-check', name, arguments: { unexpected: true } }, runner)
+      expect(result.status).toBe('rejected')
+      expect(result.output).toContain(`Tool ${name} rejected:`)
+    }
+  })
 
   it('runs a filtered project catalogue query with server-owned exclusions and exposes concise evidence', async () => {
     let received: unknown

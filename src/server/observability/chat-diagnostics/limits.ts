@@ -1,0 +1,16 @@
+export const MAX_QUEUE_RECORDS = 100
+export const MAX_QUERY_LENGTH = 2_000
+export const MAX_CONTEXT_MESSAGES = 6
+export const MAX_CONTEXT_MESSAGE_LENGTH = 500
+export const MAX_RESPONSE_LENGTH = 4_000
+export const MAX_RAG_RETRIEVALS = 4
+export const MAX_RAG_CANDIDATES = 10
+export const MAX_CANDIDATE_EXCERPT = 300
+export const MAX_MODEL_CALLS = 50
+export const MAX_JEV_DECISIONS = 12
+export const DELIVERY_TIMEOUT_MS = 5_000
+export const MAX_RETRY_AFTER_MS = 5_000
+export const MAX_EMBED_DESCRIPTION = 4_096
+export const MAX_EMBED_FIELD_VALUE = 1_024
+export const MAX_EMBED_FIELDS = 20
+export const MAX_EMBED_TOTAL = 6_000

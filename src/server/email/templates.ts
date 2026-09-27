@@ -1,5 +1,5 @@
-import type { ContactMessage } from '../contact/types'
 import { CHAT_CONTACT_TEMPLATES, type ChatContactField, type ChatContactSubmission } from '../../lib/chat-contact'
+import type { ContactMessage } from '../contact/types'
 import type { EmailTemplate } from './types'
 
 const palette = {
@@ -70,11 +70,12 @@ export function renderChatContactNotification(contact: ChatContactSubmission): E
   const rows = definitions
     .filter((field) => field.key !== 'name' && field.key !== 'email')
     .filter((field) => Boolean(fieldValues[field.key]?.trim()))
-  const reportNotice = contact.template === 'email'
-    ? ''
-    : 'The report below was refined for clarity. Its original submitted wording is attached as original-report.pdf.'
+  const reportNotice =
+    contact.template === 'email'
+      ? ''
+      : 'The report below was refined for clarity. Its original submitted wording is attached as original-report.pdf.'
   const reportNoticeHtml = reportNotice
-    ? '<p style="margin:0 0 20px;border-left:4px solid ' + palette.coral + ';padding:12px;background-color:#fff4ba;font:13px/1.5 Arial,sans-serif;color:' + palette.ink + ';">' + escapeHtml(reportNotice) + '</p>'
+    ? `<p style="margin:0 0 20px;border-left:4px solid ${palette.coral};padding:12px;background-color:#fff4ba;font:13px/1.5 Arial,sans-serif;color:${palette.ink};">${escapeHtml(reportNotice)}</p>`
     : ''
   const plainText = [
     `${CHAT_CONTACT_TEMPLATES[contact.template].label.toUpperCase()} — LAST//OS`,
@@ -90,9 +91,12 @@ export function renderChatContactNotification(contact: ChatContactSubmission): E
       <tr><th align="left" style="padding:10px 12px;border:1px solid ${palette.line};font:600 13px Arial,sans-serif;color:${palette.muted};">Reply email</th><td style="padding:10px 12px;border:1px solid ${palette.line};font:16px Arial,sans-serif;color:${palette.ink};">${escapeHtml(contact.fields.email)}</td></tr>
     </table>
     ${rows.map((field) => `<h2 style="margin:24px 0 8px;font:700 16px Arial,sans-serif;color:${palette.ink};">${escapeHtml(field.label)}</h2><pre style="margin:0;padding:16px;background-color:${palette.paper};border:1px solid ${palette.ink};border-left:4px solid ${palette.coral};white-space:pre-wrap;overflow-wrap:anywhere;font:15px/1.6 Arial,sans-serif;color:${palette.ink};">${escapeHtml(fieldValues[field.key] ?? '')}</pre>`).join('')}`
-  const subject = contact.template === 'bug_report'
-    ? 'Bug report — LAST//OS'
-    : contact.template === 'feature_request' ? 'Feature request — LAST//OS' : 'New message — LAST//OS'
+  const subject =
+    contact.template === 'bug_report'
+      ? 'Bug report — LAST//OS'
+      : contact.template === 'feature_request'
+        ? 'Feature request — LAST//OS'
+        : 'New message — LAST//OS'
 
   return {
     templateId: 'chat-contact-notification',

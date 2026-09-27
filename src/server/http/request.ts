@@ -1,5 +1,3 @@
-import { logger } from '../observability/logger'
-
 export function requestIdFrom(request: Request): string {
   const supplied = request.headers.get('x-request-id')?.trim()
   if (supplied && /^[a-zA-Z0-9._:-]{1,100}$/.test(supplied)) {
@@ -22,14 +20,6 @@ export function jsonResponse(
       ...extraHeaders,
     },
   })
-}
-
-export async function parseJsonBody(request: Request): Promise<unknown> {
-  try {
-    return await request.json()
-  } catch {
-    return null
-  }
 }
 
 export type JsonBodyResult = { ok: true; value: unknown } | { ok: false; reason: 'too_large' | 'invalid_json' }
@@ -65,8 +55,4 @@ export async function readJsonBody(request: Request, maxBytes: number): Promise<
   } finally {
     reader.releaseLock()
   }
-}
-
-export function logRequestFailure(requestId: string, event: string, error: unknown): void {
-  logger.error(event, { requestId, error })
 }

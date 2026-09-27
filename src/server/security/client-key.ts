@@ -16,7 +16,9 @@ export async function clientKeyFromRequest(
   if (!address || address.length > 64 || /[\r\n,]/.test(address)) {
     throw new Error('Trusted client address is unavailable')
   }
-  const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, [
+    'sign',
+  ])
   const digest = new Uint8Array(await crypto.subtle.sign('HMAC', key, encoder.encode(address)))
   return Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('')
 }

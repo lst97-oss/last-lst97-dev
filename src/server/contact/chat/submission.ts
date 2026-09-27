@@ -1,7 +1,7 @@
-import type { ChatContactSubmission } from '../../lib/chat-contact'
-import type { ChatContactEmailService } from '../email/types'
-import type { Logger } from '../observability/logger'
-import type { TurnstileVerifier } from './types'
+import type { ChatContactSubmission } from '../../../lib/chat-contact'
+import type { ChatContactEmailService } from '../../email/types'
+import type { Logger } from '../../observability/logger'
+import type { TurnstileVerifier } from '../types'
 
 export interface ChatContactEmailSubmissionDependencies {
   emailService: ChatContactEmailService
@@ -25,7 +25,10 @@ function approvalClaimFailureCategory(error: unknown): string {
     if (typeof record.code === 'string') {
       if (record.code === '42P01') return 'approval_table_missing'
       if (record.code === '42501') return 'database_permission_denied'
-      if (record.code.startsWith('08') || ['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND'].includes(record.code)) {
+      if (
+        record.code.startsWith('08') ||
+        ['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND'].includes(record.code)
+      ) {
         return 'database_connection_failed'
       }
     }

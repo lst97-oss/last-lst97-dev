@@ -1,8 +1,11 @@
-import { isValidIpAddress, redactDiagnosticsText, type ChatDiagnosticsMetadata } from './chat-diagnostics'
 import { hasTrustedCloudflareOrigin } from '../security/cloudflare-origin'
+import { type ChatDiagnosticsMetadata, isValidIpAddress, redactDiagnosticsText } from './chat-diagnostics'
+
+// biome-ignore lint/suspicious/noControlCharactersInRegex: Remove control characters from untrusted headers.
+const HEADER_CONTROL_CHARACTERS = /[\r\n\u0000-\u001f\u007f]/g
 
 function safeHeader(request: Request, name: string, maxLength = 120, redact = true): string | undefined {
-  const value = request.headers.get(name)?.trim().replace(/[\r\n\u0000-\u001f\u007f]/g, ' ')
+  const value = request.headers.get(name)?.trim().replace(HEADER_CONTROL_CHARACTERS, ' ')
   if (!value) return undefined
   const redacted = (redact ? redactDiagnosticsText(value) : value).slice(0, maxLength).trim()
   return redacted || undefined
@@ -35,7 +38,9 @@ function browserFromUserAgent(userAgent: string | undefined): ChatDiagnosticsMet
     ['Chrome', /(?:Chrome|CriOS)\/([\d.]+)/i],
     ['Safari', /Version\/([\d.]+).*Safari/i],
   ] as const
-  const browserMatch = browser.map(([name, expression]) => ({ name, version: userAgent.match(expression)?.[1] })).find(({ version }) => version)
+  const browserMatch = browser
+    .map(([name, expression]) => ({ name, version: userAgent.match(expression)?.[1] }))
+    .find(({ version }) => version)
   const operatingSystem = /(?:iPhone|iPad|iPod).*OS ([\d_]+)/i.test(userAgent)
     ? 'iOS'
     : /Android(?:[ /-]([\d.]+))?/i.test(userAgent)
@@ -56,7 +61,9 @@ function browserFromUserAgent(userAgent: string | undefined): ChatDiagnosticsMet
       : 'desktop'
 
   return {
-    ...(browserMatch ? { name: browserMatch.name, ...(browserMatch.version ? { version: browserMatch.version } : {}) } : {}),
+    ...(browserMatch
+      ? { name: browserMatch.name, ...(browserMatch.version ? { version: browserMatch.version } : {}) }
+      : {}),
     ...(operatingSystem ? { operatingSystem } : {}),
     device,
   }

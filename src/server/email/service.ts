@@ -1,7 +1,12 @@
-import type { ContactMessage } from '../contact/types'
 import type { ChatContactSubmission } from '../../lib/chat-contact'
-import { renderChatContactNotification, renderChatContactReceipt, renderContactNotification, renderContactReceipt } from './templates'
+import type { ContactMessage } from '../contact/types'
 import { renderOriginalChatContactReportPdf } from './chat-contact-report-pdf'
+import {
+  renderChatContactNotification,
+  renderChatContactReceipt,
+  renderContactNotification,
+  renderContactReceipt,
+} from './templates'
 import type { ChatContactEmailService, EmailAttachment, EmailSender } from './types'
 
 export function createContactEmailService(
@@ -26,7 +31,10 @@ export function createContactEmailService(
       })
     },
 
-    async sendChatContactNotification(contact: ChatContactSubmission, originalReport?: ChatContactSubmission): Promise<void> {
+    async sendChatContactNotification(
+      contact: ChatContactSubmission,
+      originalReport?: ChatContactSubmission,
+    ): Promise<void> {
       const template = renderChatContactNotification(contact)
       const source = originalReport ?? contact
       let attachments: EmailAttachment[] | undefined
@@ -34,11 +42,13 @@ export function createContactEmailService(
         if (source.template !== contact.template) {
           throw new Error('Original report must match the refined report template')
         }
-        attachments = [{
-          filename: 'original-report.pdf',
-          content: await renderOriginalChatContactReportPdf(source),
-          contentType: 'application/pdf',
-        }]
+        attachments = [
+          {
+            filename: 'original-report.pdf',
+            content: await renderOriginalChatContactReportPdf(source),
+            contentType: 'application/pdf',
+          },
+        ]
       }
       await sender.send({
         ...template,

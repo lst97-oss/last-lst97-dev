@@ -1,7 +1,7 @@
-import type { ChatMessage, ChatProjectListState, ChatTopicAnchor } from '../chat/types'
-import type { AgentToolName, AgentToolRoutingInput, AgentToolUseDecisions } from '../chat/agent-tools'
-import type { ChatJevDecisionDiagnostic, ChatModelCallDiagnostic } from '../observability/chat-diagnostics'
 import type { ChatContactFieldValues, ChatContactTemplate } from '../../lib/chat-contact'
+import type { AgentToolName, AgentToolRoutingInput, AgentToolUseDecisions } from '../chat/tools/agent-tools'
+import type { ChatMessage, ChatProjectListState, ChatTopicAnchor } from '../chat/types'
+import type { ChatJevDecisionDiagnostic, ChatModelCallDiagnostic } from '../observability/chat-diagnostics'
 
 export type ModerationChannel = 'contact' | 'chat'
 
@@ -16,7 +16,12 @@ export type ContactWorkflowFinding =
 
 export type ModerationFinding =
   | { channel: 'contact'; intent: ClassificationDecision }
-  | { channel: 'chat'; scope: ClassificationDecision; safety: ClassificationDecision; contactIntent?: ClassificationDecision }
+  | {
+      channel: 'chat'
+      scope: ClassificationDecision
+      safety: ClassificationDecision
+      contactIntent?: ClassificationDecision
+    }
 
 export interface ModerationDiagnosticsObserver {
   onModelCall(call: ChatModelCallDiagnostic): void
@@ -24,12 +29,34 @@ export interface ModerationDiagnosticsObserver {
 }
 
 export interface ModerationClassifier {
-  classify(input: { channel: ModerationChannel; message: string; context?: ChatMessage[]; currentDateTimeUtc?: string }, observer?: ModerationDiagnosticsObserver): Promise<ModerationFinding>
-  classifyChatWithTools?(input: { message: string; context: ChatMessage[]; topicAnchors?: ChatTopicAnchor[]; projectListState?: ChatProjectListState; availableTools: AgentToolName[]; currentDateTimeUtc?: string }, observer?: ModerationDiagnosticsObserver): Promise<{
+  classify(
+    input: { channel: ModerationChannel; message: string; context?: ChatMessage[]; currentDateTimeUtc?: string },
+    observer?: ModerationDiagnosticsObserver,
+  ): Promise<ModerationFinding>
+  classifyChatWithTools?(
+    input: {
+      message: string
+      context: ChatMessage[]
+      topicAnchors?: ChatTopicAnchor[]
+      projectListState?: ChatProjectListState
+      availableTools: AgentToolName[]
+      currentDateTimeUtc?: string
+    },
+    observer?: ModerationDiagnosticsObserver,
+  ): Promise<{
     finding: Extract<ModerationFinding, { channel: 'chat' }>
     toolDecisions: AgentToolUseDecisions
   }>
-  classifyContactWorkflow?(input: { phase: 'template' | 'form'; template: ChatContactTemplate; message: string; fields: ChatContactFieldValues; context: [] }, observer?: ModerationDiagnosticsObserver): Promise<ContactWorkflowFinding>
+  classifyContactWorkflow?(
+    input: {
+      phase: 'template' | 'form'
+      template: ChatContactTemplate
+      message: string
+      fields: ChatContactFieldValues
+      context: []
+    },
+    observer?: ModerationDiagnosticsObserver,
+  ): Promise<ContactWorkflowFinding>
   routeTools?(input: AgentToolRoutingInput, observer?: ModerationDiagnosticsObserver): Promise<AgentToolUseDecisions>
 }
 

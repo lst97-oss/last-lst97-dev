@@ -1,5 +1,5 @@
+import type { SendMailOptions, SMTPSentMessageInfo, SMTPTransportOptions } from 'nodemailer'
 import nodemailer from 'nodemailer'
-import type { SendMailOptions, SMTPTransportOptions, SMTPSentMessageInfo } from 'nodemailer'
 
 import { getServerEnv, requiredServerEnv } from '../env'
 import type { EmailSender } from './types'
@@ -10,14 +10,16 @@ type MailTransport = {
 
 type MailTransportFactory = (options: SMTPTransportOptions) => MailTransport
 
-export function createGmailEmailSender(options: {
-  transport?: MailTransport
-  transportFactory?: MailTransportFactory
-  user?: string
-  password?: string
-  fromEmail?: string
-  fromName?: string
-} = {}): EmailSender {
+export function createGmailEmailSender(
+  options: {
+    transport?: MailTransport
+    transportFactory?: MailTransportFactory
+    user?: string
+    password?: string
+    fromEmail?: string
+    fromName?: string
+  } = {},
+): EmailSender {
   const user = options.user ?? requiredServerEnv('SMTP_USER')
   const password = options.password ?? requiredServerEnv('SMTP_APP_PASSWORD')
   const env = getServerEnv()
@@ -34,8 +36,9 @@ export function createGmailEmailSender(options: {
     socketTimeout: 15_000,
     auth: { user, pass: password },
   }
-  const transporter = options.transport
-    ?? (options.transportFactory
+  const transporter =
+    options.transport ??
+    (options.transportFactory
       ? options.transportFactory(transportOptions)
       : nodemailer.createTransport(transportOptions))
 
@@ -48,22 +51,20 @@ export function createGmailEmailSender(options: {
         subject: email.subject,
         text: email.text,
         html: email.html,
-        ...(email.attachments ? {
-          attachments: email.attachments.map((attachment) => ({
-            filename: attachment.filename,
-            content: Buffer.from(attachment.content),
-            contentType: attachment.contentType,
-          })),
-        } : {}),
+        ...(email.attachments
+          ? {
+              attachments: email.attachments.map((attachment) => ({
+                filename: attachment.filename,
+                content: Buffer.from(attachment.content),
+                contentType: attachment.contentType,
+              })),
+            }
+          : {}),
       })
 
       const expectedRecipient = email.to.trim().toLowerCase()
-      const recipientAccepted = result.accepted.some(
-        (recipient) => recipient.toLowerCase() === expectedRecipient,
-      )
-      const recipientRejected = result.rejected.some(
-        (recipient) => recipient.toLowerCase() === expectedRecipient,
-      )
+      const recipientAccepted = result.accepted.some((recipient) => recipient.toLowerCase() === expectedRecipient)
+      const recipientRejected = result.rejected.some((recipient) => recipient.toLowerCase() === expectedRecipient)
       if (!recipientAccepted || recipientRejected) {
         throw new Error('Email recipient was not accepted by the SMTP server')
       }

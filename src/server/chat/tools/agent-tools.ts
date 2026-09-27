@@ -1,12 +1,11 @@
+import type { ContentReader } from '../../content/service'
+import type { ProjectCatalogFilters } from '../../knowledge/project-catalog'
+import type { KnowledgeEvidence, PublicCitation, RetrieveKnowledge } from '../../knowledge/retrieve'
+import type { ChatModelCallDiagnostic } from '../../observability/chat-diagnostics'
+import type { Logger } from '../../observability/logger'
+import type { WakaTimeStatsClient } from '../../wakatime/stats'
+import type { ChatMessage, ChatProjectListState, ChatToolName, ChatToolProgressName, ChatTopicAnchor } from '../types'
 import type { CodingHistorySource } from './coding-history-tool'
-import type { WakaTimeStatsClient } from '../wakatime/stats'
-import type { KnowledgeEvidence, PublicCitation, RetrieveKnowledge } from '../knowledge/retrieve'
-import type { ContentReader } from '../content/service'
-import type { Logger } from '../observability/logger'
-import type { ChatMessage, ChatToolName, ChatTopicAnchor } from './types'
-import type { ChatProjectListState } from './types'
-import type { ProjectCatalogFilters } from '../knowledge/project-catalog'
-import type { ChatModelCallDiagnostic } from '../observability/chat-diagnostics'
 
 // Jev authoritatively selects tools at each step. The planner only prepares
 // arguments for Jev-approved tools; every call still passes the fixed,
@@ -40,9 +39,7 @@ export interface AgentToolCall {
   arguments: Record<string, unknown>
 }
 
-export type AgentPlan =
-  | { kind: 'tool_calls'; calls: AgentToolCall[] }
-  | { kind: 'final_answer'; text: string }
+export type AgentPlan = { kind: 'tool_calls'; calls: AgentToolCall[] } | { kind: 'final_answer'; text: string }
 
 export interface AgentPlanner {
   planNextStep(input: {
@@ -85,7 +82,7 @@ export interface AgentToolResult {
   validatedArguments?: Record<string, string | number | boolean | undefined>
   referenceEntityLabel?: string
   sseLabel: string
-  sseName: 'coding_stats' | 'coding_history' | 'knowledge' | 'list_owned_projects' | 'site_content'
+  sseName: ChatToolProgressName
   retrieval?: {
     evidence: KnowledgeEvidence[]
     citations: PublicCitation[]

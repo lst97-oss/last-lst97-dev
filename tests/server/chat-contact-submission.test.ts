@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { submitChatContactEmail } from '../../src/server/contact/chat-submission'
+import { submitChatContactEmail } from '../../src/server/contact/chat/submission'
 import type { ChatContactSubmission } from '../../src/lib/chat-contact'
 import type { ChatContactEmailService } from '../../src/server/email/types'
 import type { Logger, LogFields } from '../../src/server/observability/logger'

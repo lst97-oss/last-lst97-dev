@@ -1,8 +1,7 @@
 import { OpenRouter } from '@openrouter/sdk'
-
-import { getServerEnv, requiredServerEnv } from '../env'
-import { OPENROUTER_CHAT_REQUEST_OPTIONS } from '../chat/openrouter-retry-policy'
-import { createChatContactRefiner } from './chat-contact-refinement'
+import { OPENROUTER_CHAT_REQUEST_OPTIONS } from '../../chat/openrouter-retry-policy'
+import { getServerEnv, requiredServerEnv } from '../../env'
+import { createChatContactRefiner } from './refinement'
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -28,17 +27,23 @@ export function createOpenRouterChatContactRefiner() {
   return createChatContactRefiner({
     model,
     async complete(request) {
-      const response = await withTimeout(client.chat.send({
-        chatRequest: {
-          model: request.model,
-          messages: request.messages,
-          responseFormat: request.responseFormat,
-          stream: request.stream,
-          maxTokens: request.maxTokens,
-          temperature: request.temperature,
-          provider: { requireParameters: true },
-        },
-      }, OPENROUTER_CHAT_REQUEST_OPTIONS), env.OPENROUTER_TIMEOUT_MS)
+      const response = await withTimeout(
+        client.chat.send(
+          {
+            chatRequest: {
+              model: request.model,
+              messages: request.messages,
+              responseFormat: request.responseFormat,
+              stream: request.stream,
+              maxTokens: request.maxTokens,
+              temperature: request.temperature,
+              provider: { requireParameters: true },
+            },
+          },
+          OPENROUTER_CHAT_REQUEST_OPTIONS,
+        ),
+        env.OPENROUTER_TIMEOUT_MS,
+      )
 
       if (response instanceof ReadableStream) throw new Error('Unexpected streaming response from OpenRouter')
       return {

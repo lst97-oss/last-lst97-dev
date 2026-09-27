@@ -1,7 +1,11 @@
-import type { ContactMessage } from '../contact/types'
 import type { ChatContactSubmission } from '../../lib/chat-contact'
+import type { ContactMessage } from '../contact/types'
 
-export type EmailTemplateId = 'contact-notification' | 'contact-receipt' | 'chat-contact-notification' | 'chat-contact-receipt'
+export type EmailTemplateId =
+  | 'contact-notification'
+  | 'contact-receipt'
+  | 'chat-contact-notification'
+  | 'chat-contact-receipt'
 
 export interface EmailTemplate {
   templateId: EmailTemplateId

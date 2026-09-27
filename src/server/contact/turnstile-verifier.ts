@@ -1,5 +1,5 @@
-import type { TurnstileVerifier } from './types'
 import { TURNSTILE_ACTIONS, type TurnstileAction } from '../../lib/turnstile'
+import type { TurnstileVerifier } from './types'
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 const TOKEN_MAX_LENGTH = 2_048
@@ -63,16 +63,20 @@ export function createTurnstileVerifier(options: TurnstileVerifierOptions): Turn
       }
 
       const result = payload
-      return result.success === true
-        && result.action === action
-        && result.hostname?.toLowerCase() === expectedHostname.trim().toLowerCase()
+      return (
+        result.success === true &&
+        result.action === action &&
+        result.hostname?.toLowerCase() === expectedHostname.trim().toLowerCase()
+      )
     },
   }
 }
 
 function isSiteverifyResponse(value: unknown): value is SiteverifyResponse {
-  return typeof value === 'object'
-    && value !== null
-    && !Array.isArray(value)
-    && typeof (value as { success?: unknown }).success === 'boolean'
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    typeof (value as { success?: unknown }).success === 'boolean'
+  )
 }

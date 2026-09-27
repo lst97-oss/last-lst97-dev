@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { createChatContactRefiner, type ChatContactRefinementRequest } from '../../src/server/contact/chat-contact-refinement'
+import { createChatContactRefiner, type ChatContactRefinementRequest } from '../../src/server/contact/chat/refinement'
 import type { ChatContactSubmission } from '../../src/lib/chat-contact'
 
 const bug: ChatContactSubmission = {

@@ -1,7 +1,13 @@
-import type { ChatMessage, ChatProjectListState, ChatTopicAnchor } from '../chat/types'
-import type { AgentToolName, AgentToolRoutingInput } from '../chat/agent-tools'
-import type { ClassificationDecision, ContactWorkflowModerationResult, ModerationClassifier, ModerationDiagnosticsObserver, ModerationResult } from './types'
 import type { ChatContactFieldValues, ChatContactTemplate } from '../../lib/chat-contact'
+import type { AgentToolName, AgentToolRoutingInput } from '../chat/tools/agent-tools'
+import type { ChatMessage, ChatProjectListState, ChatTopicAnchor } from '../chat/types'
+import type {
+  ClassificationDecision,
+  ContactWorkflowModerationResult,
+  ModerationClassifier,
+  ModerationDiagnosticsObserver,
+  ModerationResult,
+} from './types'
 
 // Scope labels are trusted as returned: Jev's scope confidence produced too
 // many false "uncertain" rejections on genuine owner questions. Only safety
@@ -18,19 +24,23 @@ export function createModerationService(classifier: ModerationClassifier, minimu
     }
   }
 
-  const checkContactWorkflow = async (input: {
-    phase: 'template' | 'form'
-    template: ChatContactTemplate
-    message: string
-    fields: ChatContactFieldValues
-  }, observer?: ModerationDiagnosticsObserver): Promise<ContactWorkflowModerationResult> => {
+  const checkContactWorkflow = async (
+    input: {
+      phase: 'template' | 'form'
+      template: ChatContactTemplate
+      message: string
+      fields: ChatContactFieldValues
+    },
+    observer?: ModerationDiagnosticsObserver,
+  ): Promise<ContactWorkflowModerationResult> => {
     if (!classifier.classifyContactWorkflow) return { unavailable: true }
     try {
       const finding = await classifier.classifyContactWorkflow({ ...input, context: [] }, observer)
       if (finding.phase !== input.phase) return { allowed: false, reason: 'uncertain' }
-      const decisions: Record<string, ClassificationDecision> = finding.phase === 'template'
-        ? { safety: finding.safety, template_choice: finding.template }
-        : { safety: finding.safety, template_fit: finding.templateFit }
+      const decisions: Record<string, ClassificationDecision> =
+        finding.phase === 'template'
+          ? { safety: finding.safety, template_choice: finding.template }
+          : { safety: finding.safety, template_fit: finding.templateFit }
       observer?.onJevDecision({ stage: 'contact_workflow', decisions })
 
       if (finding.safety.label !== 'safe') return { allowed: false, reason: 'unsafe' }
@@ -47,12 +57,43 @@ export function createModerationService(classifier: ModerationClassifier, minimu
     }
   }
 
-  const checkChat = async (input: { message: string; context: ChatMessage[]; topicAnchors?: ChatTopicAnchor[]; projectListState?: ChatProjectListState; availableTools?: AgentToolName[]; currentDateTimeUtc?: string }, observer?: ModerationDiagnosticsObserver): Promise<ModerationResult> => {
+  const checkChat = async (
+    input: {
+      message: string
+      context: ChatMessage[]
+      topicAnchors?: ChatTopicAnchor[]
+      projectListState?: ChatProjectListState
+      availableTools?: AgentToolName[]
+      currentDateTimeUtc?: string
+    },
+    observer?: ModerationDiagnosticsObserver,
+  ): Promise<ModerationResult> => {
     try {
-      const combined = input.availableTools && classifier.classifyChatWithTools
-        ? await classifier.classifyChatWithTools({ message: input.message, context: input.context, topicAnchors: input.topicAnchors, projectListState: input.projectListState, availableTools: input.availableTools, currentDateTimeUtc: input.currentDateTimeUtc }, observer)
-        : undefined
-      const finding = combined?.finding ?? await classifier.classify({ channel: 'chat', message: input.message, context: input.context, currentDateTimeUtc: input.currentDateTimeUtc }, observer)
+      const combined =
+        input.availableTools && classifier.classifyChatWithTools
+          ? await classifier.classifyChatWithTools(
+              {
+                message: input.message,
+                context: input.context,
+                topicAnchors: input.topicAnchors,
+                projectListState: input.projectListState,
+                availableTools: input.availableTools,
+                currentDateTimeUtc: input.currentDateTimeUtc,
+              },
+              observer,
+            )
+          : undefined
+      const finding =
+        combined?.finding ??
+        (await classifier.classify(
+          {
+            channel: 'chat',
+            message: input.message,
+            context: input.context,
+            currentDateTimeUtc: input.currentDateTimeUtc,
+          },
+          observer,
+        ))
       if (finding.channel === 'chat') {
         observer?.onJevDecision({
           stage: 'moderation',
@@ -66,13 +107,21 @@ export function createModerationService(classifier: ModerationClassifier, minimu
       }
       if (finding.channel !== 'chat') return { allowed: false, reason: 'uncertain' }
 
-      const scopeAllowed = ['owner_context', 'owner_projects', 'site_content', 'owner_goals', 'on_behalf', 'assistant_usage'].includes(finding.scope.label)
+      const scopeAllowed = [
+        'owner_context',
+        'owner_projects',
+        'site_content',
+        'owner_goals',
+        'on_behalf',
+        'assistant_usage',
+      ].includes(finding.scope.label)
       const safetyAllowed = finding.safety.label === 'safe'
       const safetyConfidenceAllowed = isConfident(finding.safety.confidence, minimumConfidence)
       if (!safetyConfidenceAllowed) return { allowed: false, reason: 'uncertain' }
       if (!safetyAllowed) return { allowed: false, reason: 'unsafe' }
       if (finding.contactIntent?.label === 'contact') return { allowed: true, contactIntent: 'contact' }
-      if (finding.contactIntent && finding.contactIntent.label !== 'normal_chat') return { allowed: false, reason: 'uncertain' }
+      if (finding.contactIntent && finding.contactIntent.label !== 'normal_chat')
+        return { allowed: false, reason: 'uncertain' }
       if (finding.scope.label === 'uncertain') return { allowed: false, reason: 'uncertain' }
       if (!scopeAllowed) return { allowed: false, reason: 'out_of_scope' }
       return {

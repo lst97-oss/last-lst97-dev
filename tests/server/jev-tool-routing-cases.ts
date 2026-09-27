@@ -1,4 +1,4 @@
-import type { AgentToolName } from '../../src/server/chat/agent-tools'
+import type { AgentToolName } from '../../src/server/chat/tools/agent-tools'
 import type { ChatMessage, ChatTopicAnchor } from '../../src/server/chat/types'
 
 export interface JevToolRoutingCase {

@@ -21,6 +21,71 @@ const codingActivityResult = (range: CodingStatsRequest['range']): CodingStatsRe
 })
 
 describe('createChatService', () => {
+  it('passes the same approved tool result to send and sendStream responders', async () => {
+    const responderContexts: string[] = []
+    let fetchedStats = 0
+    const responder: ChatStreamingResponder = {
+      respond: async (input) => {
+        responderContexts.push(input.extraContext ?? '')
+        return { text: 'Here are the activity results.' }
+      },
+      stream: async function * (input) {
+        responderContexts.push(input.extraContext ?? '')
+        yield { done: true as const, text: 'Here are the activity results.', model: 'test/model' }
+      },
+    }
+    const service = createChatService(responder, {
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async () => ({ allowed: true }),
+        routeTools: async ({ availableTools }) => Object.fromEntries(availableTools.map((tool) => [tool, {
+          label: tool === 'coding_stats' ? 'use' : 'skip',
+          confidence: 0.99,
+        }])),
+      } as ModerationService,
+      contextSigner: { verify: async () => ({ messages: [], topicAnchors: [] }), sign: async () => 'signed' } as ChatContextSigner,
+      planner: {
+        planNextStep: async ({ allowedTools }) => {
+          expect(allowedTools).toEqual(['coding_stats'])
+          return { kind: 'tool_calls', calls: [{
+            id: 'activity',
+            name: 'coding_stats',
+            arguments: { category: 'activity', range: 'last_7_days' },
+          }] }
+        },
+      },
+      codingStatsEnabled: true,
+      codingStats: { fetchSummary: async () => { fetchedStats += 1; return codingActivityResult('last_7_days') } },
+    })
+
+    const sent = await service.send({ message: 'Show my WakaTime activity for the last week.' })
+    const streamed: unknown[] = []
+    for await (const event of service.sendStream({ message: 'Show my WakaTime activity for the last week.' })) streamed.push(event)
+
+    expect(sent.status).toBe('replied')
+    expect(fetchedStats).toBe(2)
+    expect(responderContexts).toHaveLength(2)
+    expect(responderContexts[0]).toContain('36 hrs total')
+    expect(responderContexts[1]).toBe(responderContexts[0])
+    expect(streamed.filter((event) => (event as { type?: string }).type === 'tool_start')).toHaveLength(1)
+    expect(streamed.filter((event) => (event as { type?: string }).type === 'tool_result')).toHaveLength(1)
+    expect(streamed.map((event) => {
+      const typed = event as { type: string; status?: string; name?: string }
+      if (typed.type === 'status') return `status:${typed.status}`
+      if (typed.type === 'tool_start' || typed.type === 'tool_result') return `${typed.type}:${typed.name}`
+      return typed.type
+    })).toEqual([
+      'status:thinking',
+      'status:preparing_arguments',
+      'tool_start:coding_stats',
+      'tool_result:coding_stats',
+      'status:composing_reply',
+      'citations',
+      'done',
+    ])
+    expect(streamed[streamed.length - 1]).toMatchObject({ type: 'done' })
+  })
+
   it('asks for confirmation when the user asks how to report a bug and excludes the triggering text from contact context', async () => {
     const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
     const records: Array<Record<string, unknown>> = []

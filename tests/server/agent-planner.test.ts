@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { createAgentPlanner } from '../../src/server/chat/agent-planner'
+import { createAgentPlanner } from '../../src/server/chat/agent/agent-planner'
 import type { ChatTopicAnchor } from '../../src/server/chat/types'
 
 describe('agent planner site-content routing guidance', () => {

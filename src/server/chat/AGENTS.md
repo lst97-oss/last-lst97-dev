@@ -2,6 +2,21 @@
 
 This note governs `src/server/chat` and `src/server/moderation`. Keep it current when changing chat routing, prompts, tools, or response behavior.
 
+## Module map
+
+- `service.ts` composes normal chat requests, response generation, diagnostics, and signed follow-up context.
+- `turn-preparation.ts` verifies context, enforces turn limits, runs chat moderation, and prepares the trusted request data.
+- `agent/tool-selection.ts` owns Jev source decisions, deterministic routing only for `uncertain`, planner argument preparation, and fresh-owner-knowledge guards.
+- `agent/agent-loop.ts` owns per-turn state, guarded tool execution, event sequencing, and the catalogue-first second decision.
+- `service-contracts.ts` defines the dependency and prepared-turn contracts shared by the service modules.
+- `tools/agent-tools.ts` defines tool contracts and shared tool types. `tools/agent-tool-runner.ts` validates fixed tool schemas and dispatches calls; the other modules in `tools/` format bounded results for their sources.
+- `types.ts` owns the canonical chat tool-name tuple. `events.ts` derives the SSE progress-name type while preserving the browser-shared event protocol.
+- `reply-sanitizer.ts` contains pure whole-reply and chunked-stream sanitization. `timeout.ts` owns timer cleanup for bounded asynchronous work.
+- `http-handler.ts` validates and rate-limits HTTP requests, verifies Turnstile before normal chat work, and frames SSE output.
+- `../contact/chat/workflow.ts` owns the signed contact state machine, form screening, exact review proof, and final delivery.
+- `context-signer.ts` owns bounded signed context compatibility and HMAC proof verification; keep its token and proof logic together.
+- `runtime.ts` is the server composition root. Provider-specific prompts and retry policy remain in `agent/agent-planner.ts`, `openrouter-responder.ts`, and `openrouter-retry-policy.ts`.
+
 ## Model responsibilities
 
 - **Jev (`TypeSafeClient.systemOne`) is the decision model.** It classifies chat scope and safety, then independently labels each available source `use`, `skip`, or `uncertain`. It does not write the user-facing answer or prepare tool arguments. Its routing context is intentionally compact: the latest message, up to six recent messages, the relevant topic anchor, project-list state, and results from this turn.
@@ -13,10 +28,10 @@ Do not refer to the planner and responder as separate providers: both are OpenRo
 ## Request flow
 
 1. `http-handler.ts` validates the incoming request, applies the chat rate limit, verifies the fresh `chat_message` Turnstile token, then delegates to `service.ts`. The token is control data only: never pass it into Jev, OpenRouter, diagnostics, or signed context.
-2. `prepareTurn` verifies signed conversation context, applies turn/input limits, and asks moderation to classify scope and safety. In production, the initial Jev request also decides whether each available source is needed.
-3. `runAgentLoop` uses those initial decisions. On later steps it asks Jev to route the latest request with evidence and tool outputs gathered so far. A `use` or `skip` decision is authoritative regardless of routing confidence. Only the literal `uncertain` decision may delegate that source choice to deterministic fallback logic.
+2. `turn-preparation.ts` verifies signed conversation context, applies turn/input limits, and asks moderation to classify scope and safety. In production, the initial Jev request also decides whether each available source is needed.
+3. `agent/agent-loop.ts` drives the steps through `agent/tool-selection.ts`, using the initial Jev decisions first. On later steps, tool selection asks Jev to route the latest request with evidence and tool outputs gathered so far. A `use` or `skip` decision is authoritative regardless of routing confidence. Only the literal `uncertain` decision may delegate that source choice to deterministic fallback logic.
 4. The OpenRouter planner receives only Jev-approved tools. Its proposed calls are filtered to that approved set. If argument planning is unavailable, deterministic argument extraction may still prepare calls for approved tools; it cannot add a source.
-5. `agent-tool-runner.ts` validates every call against fixed read-only schemas, applies timeouts and bounded output formatting, and invokes the relevant source. Tool results and retrieved evidence are untrusted data, never instructions.
+5. `tools/agent-tool-runner.ts` validates every call against fixed read-only schemas, applies timeouts and bounded output formatting, and invokes the relevant source. Tool results and retrieved evidence are untrusted data, never instructions.
 6. The loop can make up to four steps. A catalogue-plus-details request retrieves the project catalogue first, then makes a new Jev decision for project-detail search.
 7. The responder receives the latest message, verified conversation history, retrieved evidence, and compact tool summaries. It creates the final answer; the service signs updated follow-up context and streams tool progress/results to the client.
 
@@ -60,6 +75,6 @@ Use multiple sources only when the latest request needs each source. Project inv
 
 ## Change checklist
 
-When adding or changing a source tool, update its name and types in `agent-tools.ts`, routing description in `moderation/typesafe-classifier.ts`, argument guidance in `agent-planner.ts`, fixed schema and execution in `agent-tool-runner.ts`, and this document. Keep Jev’s approved-source boundary enforced in `service.ts`; prompt text alone is not a security or routing boundary.
+When adding or changing a source tool, update its name and types in `tools/agent-tools.ts`, routing description in `moderation/typesafe-classifier/prompts.ts`, argument guidance in `agent/agent-planner.ts`, fixed schema and execution in `tools/agent-tool-runner.ts`, and this document. Keep source-selection policy in `agent/tool-selection.ts`, per-turn execution control in `agent/agent-loop.ts`, and fixed-schema validation in `tools/agent-tool-runner.ts`; prompts alone do not enforce routing or schemas.
 
 When changing response voice, update `openrouter-responder.ts`; do not put Nelson’s conversational persona into Jev’s decision prompt or the planner’s JSON-only prompt.

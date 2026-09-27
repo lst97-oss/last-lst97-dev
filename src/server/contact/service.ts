@@ -1,8 +1,8 @@
-import { parseContactInput } from './validation'
-import type { TurnstileVerifier } from './types'
 import type { ContactEmailService } from '../email/types'
-import type { Logger } from '../observability/logger'
 import type { ModerationService } from '../moderation/service'
+import type { Logger } from '../observability/logger'
+import type { TurnstileVerifier } from './types'
+import { parseContactInput } from './validation'
 
 export interface ContactSubmissionDependencies {
   emailService: ContactEmailService

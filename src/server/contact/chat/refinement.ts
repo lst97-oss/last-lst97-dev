@@ -1,7 +1,12 @@
 import { z } from 'zod'
 
-import { CHAT_CONTACT_TEMPLATES, validateChatContactDraft, type ChatContactField, type ChatContactSubmission } from '../../lib/chat-contact'
-import type { ChatModelCallDiagnostic, ChatModelCallFailureCategory } from '../observability/chat-diagnostics'
+import {
+  CHAT_CONTACT_TEMPLATES,
+  type ChatContactField,
+  type ChatContactSubmission,
+  validateChatContactDraft,
+} from '../../../lib/chat-contact'
+import type { ChatModelCallDiagnostic, ChatModelCallFailureCategory } from '../../observability/chat-diagnostics'
 
 export interface ChatContactRefinementRequest {
   model: string
@@ -42,10 +47,19 @@ function providerFailureCategory(error: unknown): ChatModelCallFailureCategory {
   let current: unknown = error
   for (let depth = 0; depth < 4; depth += 1) {
     if (typeof current !== 'object' || current === null) break
-    const candidate = current as { cause?: unknown; code?: unknown; name?: unknown; status?: unknown; statusCode?: unknown }
+    const candidate = current as {
+      cause?: unknown
+      code?: unknown
+      name?: unknown
+      status?: unknown
+      statusCode?: unknown
+    }
     const code = typeof candidate.code === 'string' ? candidate.code : undefined
     if (code === 'ETIMEDOUT') return 'provider_timeout'
-    if (code && ['ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED', 'ECONNRESET', 'EHOSTUNREACH', 'ENETUNREACH'].includes(code)) {
+    if (
+      code &&
+      ['ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED', 'ECONNRESET', 'EHOSTUNREACH', 'ENETUNREACH'].includes(code)
+    ) {
       return 'provider_connection_failed'
     }
     if (candidate.name === 'RequestTimeoutError') return 'provider_timeout'
@@ -60,31 +74,39 @@ function providerFailureCategory(error: unknown): ChatModelCallFailureCategory {
   return 'provider_request_failed'
 }
 
-function responseContentText(content: unknown): { ok: true; text: string } | { ok: false; failureCategory: ChatModelCallFailureCategory } {
+function responseContentText(
+  content: unknown,
+): { ok: true; text: string } | { ok: false; failureCategory: ChatModelCallFailureCategory } {
   if (typeof content === 'string') {
-    return content.trim()
-      ? { ok: true, text: content }
-      : { ok: false, failureCategory: 'response_content_missing' }
+    return content.trim() ? { ok: true, text: content } : { ok: false, failureCategory: 'response_content_missing' }
   }
   if (Array.isArray(content)) {
     if (content.length === 0) return { ok: false, failureCategory: 'response_content_missing' }
     const textParts: string[] = []
     for (const part of content) {
-      if (typeof part !== 'object' || part === null || (part as { type?: unknown }).type !== 'text' || typeof (part as { text?: unknown }).text !== 'string') {
+      if (
+        typeof part !== 'object' ||
+        part === null ||
+        (part as { type?: unknown }).type !== 'text' ||
+        typeof (part as { text?: unknown }).text !== 'string'
+      ) {
         return { ok: false, failureCategory: 'response_content_unsupported' }
       }
       textParts.push((part as { text: string }).text)
     }
     const text = textParts.join('')
-    return text.trim()
-      ? { ok: true, text }
-      : { ok: false, failureCategory: 'response_content_missing' }
+    return text.trim() ? { ok: true, text } : { ok: false, failureCategory: 'response_content_missing' }
   }
   return { ok: false, failureCategory: content == null ? 'response_content_missing' : 'response_content_unsupported' }
 }
 
-function makeRequest(model: string, submission: Extract<ChatContactSubmission, { template: 'bug_report' | 'feature_request' }>): ChatContactRefinementRequest {
-  const fields = CHAT_CONTACT_TEMPLATES[submission.template].fields.filter((field) => field.key !== 'name' && field.key !== 'email')
+function makeRequest(
+  model: string,
+  submission: Extract<ChatContactSubmission, { template: 'bug_report' | 'feature_request' }>,
+): ChatContactRefinementRequest {
+  const fields = CHAT_CONTACT_TEMPLATES[submission.template].fields.filter(
+    (field) => field.key !== 'name' && field.key !== 'email',
+  )
   const keys = fields.map((field) => field.key)
   const submissionFields = submission.fields as Record<string, string>
   const values = Object.fromEntries(keys.map((key) => [key, submissionFields[key]]))
@@ -105,12 +127,15 @@ function makeRequest(model: string, submission: Extract<ChatContactSubmission, {
   }
 }
 
-function reportCall(observer: RefinerObserver | undefined, input: {
-  model: string
-  status: 'succeeded' | 'failed'
-  failureCategory?: ChatModelCallFailureCategory
-  usage?: ChatContactRefinementCompletion['usage']
-}): void {
+function reportCall(
+  observer: RefinerObserver | undefined,
+  input: {
+    model: string
+    status: 'succeeded' | 'failed'
+    failureCategory?: ChatModelCallFailureCategory
+    usage?: ChatContactRefinementCompletion['usage']
+  },
+): void {
   const usage = input.usage
   observer?.({
     provider: 'openrouter',
@@ -118,9 +143,15 @@ function reportCall(observer: RefinerObserver | undefined, input: {
     model: input.model,
     status: input.status,
     ...(input.failureCategory ? { failureCategory: input.failureCategory } : {}),
-    ...(usage && typeof usage.promptTokens === 'number' && Number.isFinite(usage.promptTokens) ? { inputTokens: usage.promptTokens } : {}),
-    ...(usage && typeof usage.completionTokens === 'number' && Number.isFinite(usage.completionTokens) ? { outputTokens: usage.completionTokens } : {}),
-    ...(usage && typeof usage.totalTokens === 'number' && Number.isFinite(usage.totalTokens) ? { totalTokens: usage.totalTokens } : {}),
+    ...(usage && typeof usage.promptTokens === 'number' && Number.isFinite(usage.promptTokens)
+      ? { inputTokens: usage.promptTokens }
+      : {}),
+    ...(usage && typeof usage.completionTokens === 'number' && Number.isFinite(usage.completionTokens)
+      ? { outputTokens: usage.completionTokens }
+      : {}),
+    ...(usage && typeof usage.totalTokens === 'number' && Number.isFinite(usage.totalTokens)
+      ? { totalTokens: usage.totalTokens }
+      : {}),
     ...(usage && typeof usage.cost === 'number' && Number.isFinite(usage.cost) ? { costUsd: usage.cost } : {}),
   })
 }
@@ -138,15 +169,23 @@ function parseRefinedFields(
   } catch {
     return { ok: false, failureCategory: 'response_invalid_json' }
   }
-  const fields = CHAT_CONTACT_TEMPLATES[template].fields.filter((field) => field.key !== 'name' && field.key !== 'email')
-  const schema = z.object({
-    fields: z.object(Object.fromEntries(fields.map((field) => [
-      field.key,
-      field.required
-        ? z.string().max(field.maxLength)
-        : z.string().max(field.maxLength).optional(),
-    ]))).strict(),
-  }).strict()
+  const fields = CHAT_CONTACT_TEMPLATES[template].fields.filter(
+    (field) => field.key !== 'name' && field.key !== 'email',
+  )
+  const schema = z
+    .object({
+      fields: z
+        .object(
+          Object.fromEntries(
+            fields.map((field) => [
+              field.key,
+              field.required ? z.string().max(field.maxLength) : z.string().max(field.maxLength).optional(),
+            ]),
+          ),
+        )
+        .strict(),
+    })
+    .strict()
   const parsed = schema.safeParse(value)
   if (!parsed.success) return { ok: false, failureCategory: 'response_invalid_shape' }
 
@@ -208,9 +247,7 @@ export function createChatContactRefiner(dependencies: {
         ...(!refined.ok ? { failureCategory: refined.failureCategory } : {}),
         usage: response.usage,
       })
-      return refined.ok
-        ? { ok: true, submission: refined.submission }
-        : { ok: false, reason: 'unavailable' }
+      return refined.ok ? { ok: true, submission: refined.submission } : { ok: false, reason: 'unavailable' }
     },
   }
 }

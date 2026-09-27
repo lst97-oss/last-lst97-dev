@@ -12,7 +12,9 @@ export function hasTrustedCloudflareOrigin(request: Request, sharedSecret: strin
 
   let difference = 0
   for (let index = 0; index < expectedBytes.length; index += 1) {
-    difference |= expectedBytes[index]! ^ providedBytes[index]!
+    const expectedByte = expectedBytes.at(index) ?? 0
+    const providedByte = providedBytes.at(index) ?? 0
+    difference |= expectedByte ^ providedByte
   }
   return difference === 0
 }

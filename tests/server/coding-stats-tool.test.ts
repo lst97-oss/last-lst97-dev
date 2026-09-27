@@ -4,7 +4,7 @@ import {
   matchCodingStatsRequest,
   parseCodingStatsToolArguments,
   runCodingStatsTool,
-} from '../../src/server/chat/coding-stats-tool'
+} from '../../src/server/chat/tools/coding-stats-tool'
 import type { CodingStatsRequest, CodingStatsResult } from '../../src/server/wakatime/stats'
 
 const RETRIEVED_AT = '2026-09-24T13:00:00.000Z'
