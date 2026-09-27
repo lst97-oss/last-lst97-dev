@@ -4,17 +4,22 @@
 
 - Relationship: Owned repository.
 - Repository: lst97/claude-code-sub-agents.
-- Related topics: ai-agents, claude-code, sub-agents, subagents, claudecode-config, claudecode-subagents
+- Software kinds: automation_devtool
+- GitHub topics: ai-agents, claude-code, sub-agents, subagents, claudecode-config, claudecode-subagents
+- Curated topics: ai-agents, claude-code, developer-tools
 
 ## Repository metadata
 - **Repository:** lst97/claude-code-sub-agents
 - **Visibility:** public
 - **URL:** https://github.com/lst97/claude-code-sub-agents
 - **Default branch:** main
-- **Last updated:** 2026-09-23T17:16:51Z
+- **Created:** 2025-07-28T13:04:48Z
+- **Last updated:** 2026-09-26T03:43:50Z
 - **License:** MIT License
 - **Stars / forks:** 1688 / 258
 - **Topics:** `ai-agents`, `claude-code`, `sub-agents`, `subagents`, `claudecode-config`, `claudecode-subagents`
+- **Software kinds:** `automation_devtool`
+- **Curated topics:** `ai-agents`, `claude-code`, `developer-tools`
 
 ### GitHub language breakdown
 - GitHub language breakdown is unavailable.

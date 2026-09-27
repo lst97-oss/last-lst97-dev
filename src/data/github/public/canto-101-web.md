@@ -7,18 +7,23 @@
 - Purpose: Source implementation indicates these responsibilities: validates structured input or configuration; persists or queries application data; renders a react user interface; filters multi select field; filters multi select field props.
 - Observed capabilities: Validates structured input or configuration; Persists or queries application data; Renders a React user interface
 - Technology: TypeScript, React, TanStack Router, Vite, Tailwind CSS
+- Software kinds: web_app
+- Curated topics: cantonese, language-learning
 
 ## Repository metadata
 - **Repository:** lst97/canto-101-web
 - **Visibility:** public
 - **URL:** https://github.com/lst97/canto-101-web
 - **Default branch:** dev
+- **Created:** 2025-09-17T15:04:15Z
 - **Last updated:** 2026-06-13T18:12:55Z
 - **Primary language:** TypeScript
 - **License:** Apache License 2.0
 - **Homepage:** https://www.canto101.com
 - **Stars / forks:** 1 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `web_app`
+- **Curated topics:** `cantonese`, `language-learning`
 
 ### GitHub language breakdown
 - TypeScript (518,450 bytes)

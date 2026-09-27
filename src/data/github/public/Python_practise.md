@@ -5,13 +5,14 @@
 - Relationship: Owned repository.
 - Repository: lst97/Python_practise.
 - Technology: Python
-- Related topics: python3
+- GitHub topics: python3
 
 ## Repository metadata
 - **Repository:** lst97/Python_practise
 - **Visibility:** public
 - **URL:** https://github.com/lst97/Python_practise
 - **Default branch:** master
+- **Created:** 2020-07-29T07:26:06Z
 - **Last updated:** 2024-03-19T07:19:16Z
 - **Primary language:** Python
 - **License:** GNU General Public License v3.0

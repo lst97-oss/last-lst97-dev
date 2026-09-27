@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; validates structured input or configuration; persists or queries application data; renders a react user interface; parses amount.
 - Observed capabilities: Reads runtime environment variables; Validates structured input or configuration; Persists or queries application data
 - Technology: TypeScript, React, TanStack Router, TanStack Start, Vite, Tailwind CSS
+- Software kinds: web_app
+- Curated topics: finance, expense-management
 
 ## Repository metadata
 - **Repository:** lst97/wwnz
 - **Visibility:** private
 - **URL:** https://github.com/lst97/wwnz
 - **Default branch:** main
+- **Created:** 2026-02-28T11:51:35Z
 - **Last updated:** 2026-03-04T05:52:43Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `web_app`
+- **Curated topics:** `finance`, `expense-management`
 
 ### GitHub language breakdown
 - TypeScript (1,088,139 bytes)

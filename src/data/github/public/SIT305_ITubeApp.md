@@ -5,16 +5,21 @@
 - Relationship: Owned repository.
 - Repository: lst97/SIT305_ITubeApp.
 - Technology: Java
+- Software kinds: mobile_app
+- Curated topics: coursework, android, video
 
 ## Repository metadata
 - **Repository:** lst97/SIT305_ITubeApp
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT305_ITubeApp
 - **Default branch:** main
+- **Created:** 2023-05-16T12:05:39Z
 - **Last updated:** 2024-03-08T06:31:46Z
 - **Primary language:** Java
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `mobile_app`
+- **Curated topics:** `coursework`, `android`, `video`
 
 ### GitHub language breakdown
 - Java (50,022 bytes)

@@ -7,17 +7,22 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; validates structured input or configuration; calls external http services; persists or queries application data; integrates a headless cms.
 - Observed capabilities: Reads runtime environment variables; Validates structured input or configuration; Calls external HTTP services
 - Technology: TypeScript, React, Next.js, PostgreSQL, Tailwind CSS, JavaScript
+- Software kinds: web_app
+- Curated topics: e-commerce, cabinetry
 
 ## Repository metadata
 - **Repository:** lst97/yoons-cabinetry-store-front
 - **Visibility:** private
 - **URL:** https://github.com/lst97/yoons-cabinetry-store-front
 - **Default branch:** dev
+- **Created:** 2025-03-02T05:25:42Z
 - **Last updated:** 2025-05-27T18:55:40Z
 - **Primary language:** TypeScript
 - **License:** Other
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `web_app`
+- **Curated topics:** `e-commerce`, `cabinetry`
 
 ### GitHub language breakdown
 - TypeScript (1,338,823 bytes)

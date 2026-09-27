@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: validates structured input or configuration; persists or queries application data; defines http request handlers; creates file metadata; updates file metadata.
 - Observed capabilities: Validates structured input or configuration; Persists or queries application data; Defines HTTP request handlers
 - Technology: TypeScript
+- Software kinds: api_backend
+- Curated topics: file-storage, microservice
 
 ## Repository metadata
 - **Repository:** lst97/FileStorageMicroService
 - **Visibility:** private
 - **URL:** https://github.com/lst97/FileStorageMicroService
 - **Default branch:** main
+- **Created:** 2025-01-10T06:11:06Z
 - **Last updated:** 2025-01-10T06:11:12Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `api_backend`
+- **Curated topics:** `file-storage`, `microservice`
 
 ### GitHub language breakdown
 - TypeScript (37,258 bytes)

@@ -7,18 +7,23 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; validates structured input or configuration; defines http request handlers; gets all group; gets group records.
 - Observed capabilities: Reads runtime environment variables; Validates structured input or configuration; Defines HTTP request handlers
 - Technology: JavaScript, Python
-- Related topics: flask, python3
+- Software kinds: api_backend
+- GitHub topics: flask, python3
+- Curated topics: receipt-management, flask
 
 ## Repository metadata
 - **Repository:** lst97/simple-receipt-manager-backend
 - **Visibility:** public
 - **URL:** https://github.com/lst97/simple-receipt-manager-backend
 - **Default branch:** development
+- **Created:** 2023-01-10T03:17:38Z
 - **Last updated:** 2023-01-28T12:29:51Z
 - **Primary language:** Python
 - **License:** Other
 - **Stars / forks:** 0 / 0
 - **Topics:** `flask`, `python3`
+- **Software kinds:** `api_backend`
+- **Curated topics:** `receipt-management`, `flask`
 
 ### GitHub language breakdown
 - Python (82,561 bytes)

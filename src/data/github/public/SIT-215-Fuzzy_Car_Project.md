@@ -6,17 +6,20 @@
 - Repository: lst97/SIT-215-Fuzzy_Car_Project.
 - Observed capabilities: Defines the Collision Avoid Sys type or service; Defines the Enviroment Simluator type or service; Defines the Vehicle type or service
 - Technology: Python
-- Related topics: computational-intelligence, python3
+- GitHub topics: computational-intelligence, python3
+- Curated topics: coursework, fuzzy-logic, vehicle-simulation
 
 ## Repository metadata
 - **Repository:** lst97/SIT-215-Fuzzy_Car_Project
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT-215-Fuzzy_Car_Project
 - **Default branch:** main
+- **Created:** 2022-04-09T05:18:47Z
 - **Last updated:** 2023-01-28T01:35:21Z
 - **Primary language:** Python
 - **Stars / forks:** 0 / 0
 - **Topics:** `computational-intelligence`, `python3`
+- **Curated topics:** `coursework`, `fuzzy-logic`, `vehicle-simulation`
 
 ### GitHub language breakdown
 - Python (12,397 bytes)

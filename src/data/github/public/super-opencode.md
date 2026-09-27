@@ -7,19 +7,24 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables.
 - Observed capabilities: Reads runtime environment variables
 - Technology: TypeScript
-- Related topics: agents, opencode, skills, typescript
+- Software kinds: automation_devtool
+- GitHub topics: agents, opencode, skills, typescript
+- Curated topics: opencode, ai-agents, developer-tools
 
 ## Repository metadata
 - **Repository:** lst97/super-opencode
 - **Visibility:** public
 - **URL:** https://github.com/lst97/super-opencode
 - **Default branch:** master
+- **Created:** 2026-01-26T15:52:57Z
 - **Last updated:** 2026-09-23T17:10:46Z
 - **Primary language:** Shell
 - **License:** MIT License
 - **Homepage:** https://www.npmjs.com/package/super-opencode
 - **Stars / forks:** 2 / 0
 - **Topics:** `agents`, `opencode`, `skills`, `typescript`
+- **Software kinds:** `automation_devtool`
+- **Curated topics:** `opencode`, `ai-agents`, `developer-tools`
 
 ### GitHub language breakdown
 - Shell (27,509 bytes)

@@ -4,13 +4,14 @@
 
 - Relationship: Owned repository.
 - Repository: lst97/DOS-ASSEMBLY_practise.
-- Related topics: assembly
+- GitHub topics: assembly
 
 ## Repository metadata
 - **Repository:** lst97/DOS-ASSEMBLY_practise
 - **Visibility:** public
 - **URL:** https://github.com/lst97/DOS-ASSEMBLY_practise
 - **Default branch:** master
+- **Created:** 2018-12-04T10:32:09Z
 - **Last updated:** 2023-01-28T12:17:55Z
 - **License:** GNU General Public License v3.0
 - **Stars / forks:** 0 / 0

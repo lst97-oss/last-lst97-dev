@@ -7,18 +7,23 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; validates structured input or configuration; implements ai or language-model features; implements command-line behavior; runs command.
 - Observed capabilities: Reads runtime environment variables; Validates structured input or configuration; Implements AI or language-model features
 - Technology: Python, Go, TypeScript, JavaScript
-- Related topics: cantonese, captions, electorn, hongkong, openai-whisper, subtitles, vite, hk
+- Software kinds: desktop_app
+- GitHub topics: cantonese, captions, electorn, hongkong, openai-whisper, subtitles, vite, hk
+- Curated topics: cantonese, speech-to-text, subtitles
 
 ## Repository metadata
 - **Repository:** lst97/CantoCap
 - **Visibility:** public
 - **URL:** https://github.com/lst97/CantoCap
 - **Default branch:** dev
+- **Created:** 2025-07-19T09:52:43Z
 - **Last updated:** 2026-06-22T20:53:03Z
 - **Primary language:** TypeScript
 - **License:** Apache License 2.0
 - **Stars / forks:** 1 / 0
 - **Topics:** `cantonese`, `captions`, `electorn`, `hongkong`, `openai-whisper`, `subtitles`, `vite`, `hk`, `hong-kong`
+- **Software kinds:** `desktop_app`
+- **Curated topics:** `cantonese`, `speech-to-text`, `subtitles`
 
 ### GitHub language breakdown
 - TypeScript (1,699,949 bytes)

@@ -7,18 +7,23 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; calls external http services; persists or queries application data; implements authentication; uses a distributed or explicit cache.
 - Observed capabilities: Reads runtime environment variables; Calls external HTTP services; Persists or queries application data
 - Technology: TypeScript, Vite, PostgreSQL, JavaScript, Python, Go, Java, C#
+- Software kinds: web_app, infrastructure_devops
+- Curated topics: monitoring, uptime
 
 ## Repository metadata
 - **Repository:** lst97/uptime-kuma
 - **Visibility:** public
 - **URL:** https://github.com/lst97/uptime-kuma
 - **Default branch:** master
+- **Created:** 2025-04-09T16:15:18Z
 - **Last updated:** 2025-05-29T13:30:35Z
 - **Primary language:** JavaScript
 - **License:** MIT License
 - **Homepage:** https://uptime.kuma.pet
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `web_app`, `infrastructure_devops`
+- **Curated topics:** `monitoring`, `uptime`
 
 ### GitHub language breakdown
 - JavaScript (937,920 bytes)

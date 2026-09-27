@@ -7,17 +7,22 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; persists or queries application data; integrates a headless cms; renders a react user interface; defines http request handlers.
 - Observed capabilities: Reads runtime environment variables; Persists or queries application data; Integrates a headless CMS
 - Technology: TypeScript, React, Next.js, PostgreSQL, Tailwind CSS, JavaScript
+- Software kinds: web_app
+- Curated topics: fire-documentary, media
 
 ## Repository metadata
 - **Repository:** lst97/TPWFC
 - **Visibility:** private
 - **URL:** https://github.com/lst97/TPWFC
 - **Default branch:** main
+- **Created:** 2025-12-06T15:30:10Z
 - **Last updated:** 2025-12-11T17:53:51Z
 - **Primary language:** TypeScript
 - **License:** MIT License
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `web_app`
+- **Curated topics:** `fire-documentary`, `media`
 
 ### GitHub language breakdown
 - TypeScript (614,990 bytes)

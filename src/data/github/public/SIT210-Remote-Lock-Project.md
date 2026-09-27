@@ -6,16 +6,21 @@
 - Repository: lst97/SIT210-Remote-Lock-Project.
 - Observed capabilities: Defines the Example Instrumented Test type or service; Defines the BLE Controller type or service; Defines the BLE Controller Listener type or service
 - Technology: Java
+- Software kinds: other
+- Curated topics: coursework, embedded-systems, bluetooth-low-energy
 
 ## Repository metadata
 - **Repository:** lst97/SIT210-Remote-Lock-Project
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT210-Remote-Lock-Project
 - **Default branch:** master
+- **Created:** 2022-06-05T09:54:49Z
 - **Last updated:** 2024-03-19T07:11:30Z
 - **Primary language:** C++
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `other`
+- **Curated topics:** `coursework`, `embedded-systems`, `bluetooth-low-energy`
 
 ### GitHub language breakdown
 - C++ (21,621 bytes)

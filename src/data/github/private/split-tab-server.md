@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: persists or queries application data; builds filtered expenses query.
 - Observed capabilities: Persists or queries application data; Defines the Expense Controller type or service; Defines the Household Controller type or service
 - Technology: TypeScript
+- Software kinds: api_backend
+- Curated topics: expense-management, shared-expenses
 
 ## Repository metadata
 - **Repository:** lst97/split-tab-server
 - **Visibility:** private
 - **URL:** https://github.com/lst97/split-tab-server
 - **Default branch:** main
+- **Created:** 2024-10-17T08:49:43Z
 - **Last updated:** 2025-01-10T06:09:44Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `api_backend`
+- **Curated topics:** `expense-management`, `shared-expenses`
 
 ### GitHub language breakdown
 - TypeScript (465,333 bytes)

@@ -4,13 +4,14 @@
 
 - Relationship: Owned repository.
 - Repository: lst97/HTML-Language_practise.
-- Related topics: html, css
+- GitHub topics: html, css
 
 ## Repository metadata
 - **Repository:** lst97/HTML-Language_practise
 - **Visibility:** public
 - **URL:** https://github.com/lst97/HTML-Language_practise
 - **Default branch:** master
+- **Created:** 2019-02-21T03:30:11Z
 - **Last updated:** 2023-01-28T12:17:56Z
 - **Primary language:** HTML
 - **Stars / forks:** 0 / 0

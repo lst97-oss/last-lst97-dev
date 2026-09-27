@@ -5,16 +5,21 @@
 - Relationship: Owned repository.
 - Repository: lst97/SIT305_QuizeApp.
 - Technology: Kotlin
+- Software kinds: mobile_app
+- Curated topics: coursework, android, quiz
 
 ## Repository metadata
 - **Repository:** lst97/SIT305_QuizeApp
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT305_QuizeApp
 - **Default branch:** main
+- **Created:** 2023-03-24T05:05:05Z
 - **Last updated:** 2024-03-19T07:10:04Z
 - **Primary language:** Kotlin
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `mobile_app`
+- **Curated topics:** `coursework`, `android`, `quiz`
 
 ### GitHub language breakdown
 - Kotlin (20,087 bytes)

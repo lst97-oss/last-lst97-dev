@@ -7,18 +7,23 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; validates structured input or configuration; persists or queries application data; implements authentication; defines http request handlers.
 - Observed capabilities: Reads runtime environment variables; Validates structured input or configuration; Persists or queries application data
 - Technology: TypeScript, JavaScript
-- Related topics: nodejs, typescript
+- Software kinds: api_backend
+- GitHub topics: nodejs, typescript
+- Curated topics: scheduling, management
 
 ## Repository metadata
 - **Repository:** lst97/project-st-zita-backend
 - **Visibility:** public
 - **URL:** https://github.com/lst97/project-st-zita-backend
 - **Default branch:** main
+- **Created:** 2024-01-27T06:03:44Z
 - **Last updated:** 2024-02-29T08:06:27Z
 - **Primary language:** TypeScript
 - **Homepage:** https://lst97.tplinkdns.com:1168
 - **Stars / forks:** 0 / 0
 - **Topics:** `nodejs`, `typescript`
+- **Software kinds:** `api_backend`
+- **Curated topics:** `scheduling`, `management`
 
 ### GitHub language breakdown
 - TypeScript (95,407 bytes)

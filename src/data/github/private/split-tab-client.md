@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: persists or queries application data; renders a react user interface; creates expense category dto; updates expense category dto; updates expense form.
 - Observed capabilities: Persists or queries application data; Renders a React user interface; Provides the Expense Management Page UI component
 - Technology: TypeScript, Next.js, Tailwind CSS, JavaScript
+- Software kinds: web_app
+- Curated topics: expense-management, shared-expenses
 
 ## Repository metadata
 - **Repository:** lst97/split-tab-client
 - **Visibility:** private
 - **URL:** https://github.com/lst97/split-tab-client
 - **Default branch:** main
+- **Created:** 2024-10-17T10:41:40Z
 - **Last updated:** 2025-01-10T06:09:58Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `web_app`
+- **Curated topics:** `expense-management`, `shared-expenses`
 
 ### GitHub language breakdown
 - TypeScript (731,645 bytes)

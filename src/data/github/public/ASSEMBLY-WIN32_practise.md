@@ -4,13 +4,14 @@
 
 - Relationship: Owned repository.
 - Repository: lst97/ASSEMBLY-WIN32_practise.
-- Related topics: assembly, c, asm
+- GitHub topics: assembly, c, asm
 
 ## Repository metadata
 - **Repository:** lst97/ASSEMBLY-WIN32_practise
 - **Visibility:** public
 - **URL:** https://github.com/lst97/ASSEMBLY-WIN32_practise
 - **Default branch:** master
+- **Created:** 2019-01-09T03:53:23Z
 - **Last updated:** 2024-03-19T07:19:26Z
 - **Primary language:** C
 - **License:** GNU General Public License v3.0

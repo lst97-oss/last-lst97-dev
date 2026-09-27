@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; calls external http services; renders a react user interface; gets persistent identity; updates display name.
 - Observed capabilities: Reads runtime environment variables; Calls external HTTP services; Renders a React user interface
 - Technology: TypeScript, React, Next.js, Tailwind CSS, JavaScript
+- Software kinds: web_app
+- Curated topics: pixel-art, media
 
 ## Repository metadata
 - **Repository:** lst97/pixel-cast-frontend
 - **Visibility:** public
 - **URL:** https://github.com/lst97/pixel-cast-frontend
 - **Default branch:** dev
+- **Created:** 2025-06-23T16:50:05Z
 - **Last updated:** 2025-08-23T17:51:18Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 1 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `web_app`
+- **Curated topics:** `pixel-art`, `media`
 
 ### GitHub language breakdown
 - TypeScript (246,397 bytes)

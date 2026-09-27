@@ -12,6 +12,7 @@
 - **Visibility:** public
 - **URL:** https://github.com/lst97/chinese-conv
 - **Default branch:** master
+- **Created:** 2025-10-29T14:49:09Z
 - **Last updated:** 2025-10-31T05:13:07Z
 - **Primary language:** TypeScript
 - **License:** MIT License

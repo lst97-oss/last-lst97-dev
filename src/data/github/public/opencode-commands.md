@@ -4,18 +4,23 @@
 
 - Relationship: Owned repository.
 - Repository: lst97/opencode-commands.
-- Related topics: opencode
+- Software kinds: automation_devtool
+- GitHub topics: opencode
+- Curated topics: opencode, developer-tools
 
 ## Repository metadata
 - **Repository:** lst97/opencode-commands
 - **Visibility:** public
 - **URL:** https://github.com/lst97/opencode-commands
 - **Default branch:** main
+- **Created:** 2025-11-04T05:39:19Z
 - **Last updated:** 2026-06-12T09:08:43Z
 - **License:** MIT License
 - **Homepage:** https://opencode.ai/
 - **Stars / forks:** 2 / 0
 - **Topics:** `opencode`
+- **Software kinds:** `automation_devtool`
+- **Curated topics:** `opencode`, `developer-tools`
 
 ### GitHub language breakdown
 - GitHub language breakdown is unavailable.

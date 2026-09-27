@@ -5,13 +5,14 @@
 - Relationship: Owned repository.
 - Repository: lst97/CSharp-Language_practise.
 - Technology: C#
-- Related topics: csharp
+- GitHub topics: csharp
 
 ## Repository metadata
 - **Repository:** lst97/CSharp-Language_practise
 - **Visibility:** public
 - **URL:** https://github.com/lst97/CSharp-Language_practise
 - **Default branch:** master
+- **Created:** 2019-02-21T00:01:25Z
 - **Last updated:** 2023-01-28T12:17:55Z
 - **Primary language:** C#
 - **Stars / forks:** 0 / 0

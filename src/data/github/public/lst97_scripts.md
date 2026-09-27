@@ -4,13 +4,14 @@
 
 - Relationship: Owned repository.
 - Repository: lst97/lst97_scripts.
-- Related topics: shell-script
+- GitHub topics: shell-script
 
 ## Repository metadata
 - **Repository:** lst97/lst97_scripts
 - **Visibility:** public
 - **URL:** https://github.com/lst97/lst97_scripts
 - **Default branch:** main
+- **Created:** 2024-03-21T01:56:46Z
 - **Last updated:** 2025-06-06T12:30:14Z
 - **Primary language:** Shell
 - **Stars / forks:** 0 / 0

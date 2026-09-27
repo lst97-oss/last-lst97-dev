@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; validates structured input or configuration; calls external http services; persists or queries application data; implements ai or language-model features.
 - Observed capabilities: Reads runtime environment variables; Validates structured input or configuration; Calls external HTTP services
 - Technology: TypeScript
+- Software kinds: api_backend
+- Curated topics: cantonese, lyrics
 
 ## Repository metadata
 - **Repository:** lst97/cantolyrics-server
 - **Visibility:** private
 - **URL:** https://github.com/lst97/cantolyrics-server
 - **Default branch:** main
+- **Created:** 2026-04-25T14:34:17Z
 - **Last updated:** 2026-04-26T14:40:34Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 0 / 1
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `api_backend`
+- **Curated topics:** `cantonese`, `lyrics`
 
 ### GitHub language breakdown
 - TypeScript (188,029 bytes)

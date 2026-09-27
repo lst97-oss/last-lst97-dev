@@ -7,18 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: validates move; gets degree; initializes neurons; gets solution.
 - Observed capabilities: Validates move; Gets degree; Initializes neurons
 - Technology: Python
-- Related topics: artificial-neural-networks, backtracking-algorithm, knight-tour, python3, warnsdorff-algorithm
+- GitHub topics: artificial-neural-networks, backtracking-algorithm, knight-tour, python3, warnsdorff-algorithm
+- Curated topics: coursework, algorithm, knight-tour
 
 ## Repository metadata
 - **Repository:** lst97/SIT215-KnightTour
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT215-KnightTour
 - **Default branch:** main
+- **Created:** 2022-04-15T06:12:36Z
 - **Last updated:** 2024-03-19T07:12:41Z
 - **Primary language:** Python
 - **License:** MIT License
 - **Stars / forks:** 0 / 0
 - **Topics:** `artificial-neural-networks`, `backtracking-algorithm`, `knight-tour`, `python3`, `warnsdorff-algorithm`
+- **Curated topics:** `coursework`, `algorithm`, `knight-tour`
 
 ### GitHub language breakdown
 - Python (31,374 bytes)

@@ -11,6 +11,7 @@
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT210_Task8.1D_RPi_I2C
 - **Default branch:** main
+- **Created:** 2022-05-15T03:27:50Z
 - **Last updated:** 2024-03-19T07:11:52Z
 - **Primary language:** Python
 - **Stars / forks:** 0 / 0

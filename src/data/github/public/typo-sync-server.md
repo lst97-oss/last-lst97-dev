@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; calls external http services; implements command-line behavior; defines http request handlers; creates error.
 - Observed capabilities: Reads runtime environment variables; Calls external HTTP services; Implements command-line behavior
 - Technology: TypeScript, Python
+- Software kinds: api_backend, automation_devtool
+- Curated topics: synchronization, developer-tools
 
 ## Repository metadata
 - **Repository:** lst97/typo-sync-server
 - **Visibility:** public
 - **URL:** https://github.com/lst97/typo-sync-server
 - **Default branch:** main
+- **Created:** 2025-07-15T06:29:56Z
 - **Last updated:** 2026-07-06T21:18:21Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 1 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `api_backend`, `automation_devtool`
+- **Curated topics:** `synchronization`, `developer-tools`
 
 ### GitHub language breakdown
 - TypeScript (67,572 bytes)

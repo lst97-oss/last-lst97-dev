@@ -7,13 +7,14 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; calls external http services; renders a react user interface; gets product id by name; gets products by price.
 - Observed capabilities: Reads runtime environment variables; Calls external HTTP services; Renders a React user interface
 - Technology: TypeScript, JavaScript, Python
-- Related topics: react
+- GitHub topics: react
 
 ## Repository metadata
 - **Repository:** lst97/PitchenOS
 - **Visibility:** public
 - **URL:** https://github.com/lst97/PitchenOS
 - **Default branch:** main
+- **Created:** 2022-08-06T10:36:54Z
 - **Last updated:** 2022-08-06T10:48:09Z
 - **Primary language:** Python
 - **Stars / forks:** 0 / 0

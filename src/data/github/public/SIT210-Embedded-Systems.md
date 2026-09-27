@@ -10,6 +10,7 @@
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT210-Embedded-Systems
 - **Default branch:** main
+- **Created:** 2022-03-21T06:11:11Z
 - **Last updated:** 2024-03-19T07:14:02Z
 - **Primary language:** C++
 - **Stars / forks:** 0 / 0

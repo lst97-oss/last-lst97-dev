@@ -4,13 +4,14 @@
 
 - Relationship: Owned repository.
 - Repository: lst97/DecimalToFloat.
-- Related topics: cpp
+- GitHub topics: cpp
 
 ## Repository metadata
 - **Repository:** lst97/DecimalToFloat
 - **Visibility:** public
 - **URL:** https://github.com/lst97/DecimalToFloat
 - **Default branch:** main
+- **Created:** 2022-07-17T00:26:32Z
 - **Last updated:** 2024-03-19T07:18:32Z
 - **Primary language:** HTML
 - **License:** MIT License

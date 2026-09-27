@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; generates selected company formula; creates title section; creates input section; creates single company section.
 - Observed capabilities: Reads runtime environment variables; Generates selected company formula; Creates title section
 - Technology: Python
+- Software kinds: desktop_app
+- Curated topics: accounting, employment
 
 ## Repository metadata
 - **Repository:** lst97/Betty-Employment-Accounting
 - **Visibility:** private
 - **URL:** https://github.com/lst97/Betty-Employment-Accounting
 - **Default branch:** master
+- **Created:** 2025-06-04T11:25:20Z
 - **Last updated:** 2025-06-04T11:27:09Z
 - **Primary language:** Python
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `desktop_app`
+- **Curated topics:** `accounting`, `employment`
 
 ### GitHub language breakdown
 - Python (118,653 bytes)

@@ -7,17 +7,22 @@
 - Purpose: Source implementation indicates these responsibilities: integrates a headless cms.
 - Observed capabilities: Integrates a headless CMS
 - Technology: TypeScript, React
+- Software kinds: api_backend
+- Curated topics: strapi, cms
 
 ## Repository metadata
 - **Repository:** lst97/lst97-strapi-cms
 - **Visibility:** private
 - **URL:** https://github.com/lst97/lst97-strapi-cms
 - **Default branch:** dev
+- **Created:** 2025-01-15T10:15:58Z
 - **Last updated:** 2025-01-15T11:11:13Z
 - **Primary language:** TypeScript
 - **Homepage:** https://lst97-strapi-cms.vercel.app
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `api_backend`
+- **Curated topics:** `strapi`, `cms`
 
 ### GitHub language breakdown
 - TypeScript (4,780 bytes)

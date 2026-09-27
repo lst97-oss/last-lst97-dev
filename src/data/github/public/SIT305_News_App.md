@@ -5,16 +5,21 @@
 - Relationship: Owned repository.
 - Repository: lst97/SIT305_News_App.
 - Technology: Java
+- Software kinds: mobile_app
+- Curated topics: coursework, android, news
 
 ## Repository metadata
 - **Repository:** lst97/SIT305_News_App
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT305_News_App
 - **Default branch:** main
+- **Created:** 2023-04-11T02:31:37Z
 - **Last updated:** 2024-03-19T07:09:29Z
 - **Primary language:** Java
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `mobile_app`
+- **Curated topics:** `coursework`, `android`, `news`
 
 ### GitHub language breakdown
 - Java (11,266 bytes)

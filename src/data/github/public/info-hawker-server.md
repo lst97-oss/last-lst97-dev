@@ -7,18 +7,23 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; persists or queries application data; creates http server.
 - Observed capabilities: Reads runtime environment variables; Persists or queries application data; Defines the Address Lookup Service type or service
 - Technology: PostgreSQL, TypeScript
-- Related topics: australia, deno, opendata, postgresql
+- Software kinds: api_backend
+- GitHub topics: australia, deno, opendata, postgresql
+- Curated topics: hong-kong, food
 
 ## Repository metadata
 - **Repository:** lst97/info-hawker-server
 - **Visibility:** public
 - **URL:** https://github.com/lst97/info-hawker-server
 - **Default branch:** dev
+- **Created:** 2025-10-07T17:33:03Z
 - **Last updated:** 2025-10-09T13:39:12Z
 - **Primary language:** TypeScript
 - **License:** Apache License 2.0
 - **Stars / forks:** 0 / 1
 - **Topics:** `australia`, `deno`, `opendata`, `postgresql`
+- **Software kinds:** `api_backend`
+- **Curated topics:** `hong-kong`, `food`
 
 ### GitHub language breakdown
 - TypeScript (14,329 bytes)

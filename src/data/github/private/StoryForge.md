@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; calls external http services; integrates a headless cms; renders a react user interface; defines http request handlers.
 - Observed capabilities: Reads runtime environment variables; Calls external HTTP services; Integrates a headless CMS
 - Technology: TypeScript, React, Next.js, PostgreSQL, Tailwind CSS, JavaScript
+- Software kinds: web_app
+- Curated topics: storytelling, content-management
 
 ## Repository metadata
 - **Repository:** lst97/StoryForge
 - **Visibility:** private
 - **URL:** https://github.com/lst97/StoryForge
 - **Default branch:** main
+- **Created:** 2025-03-25T06:14:44Z
 - **Last updated:** 2025-03-25T06:14:51Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `web_app`
+- **Curated topics:** `storytelling`, `content-management`
 
 ### GitHub language breakdown
 - TypeScript (157,288 bytes)

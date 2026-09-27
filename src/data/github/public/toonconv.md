@@ -7,19 +7,24 @@
 - Purpose: Source implementation indicates these responsibilities: validates structured input or configuration; implements command-line behavior; formats file size; formats duration; formats percentage.
 - Observed capabilities: Validates structured input or configuration; Implements command-line behavior; Formats file size
 - Technology: Rust, JavaScript
-- Related topics: cli, json, rust, toon
+- Software kinds: cli_tool
+- GitHub topics: cli, json, rust, toon
+- Curated topics: toon, json, conversion
 
 ## Repository metadata
 - **Repository:** lst97/toonconv
 - **Visibility:** public
 - **URL:** https://github.com/lst97/toonconv
 - **Default branch:** main
+- **Created:** 2025-11-24T11:16:08Z
 - **Last updated:** 2026-05-12T13:03:44Z
 - **Primary language:** Rust
 - **License:** MIT License
 - **Homepage:** https://crates.io/crates/toonconv
 - **Stars / forks:** 3 / 0
 - **Topics:** `cli`, `json`, `rust`, `toon`
+- **Software kinds:** `cli_tool`
+- **Curated topics:** `toon`, `json`, `conversion`
 
 ### GitHub language breakdown
 - Rust (444,677 bytes)

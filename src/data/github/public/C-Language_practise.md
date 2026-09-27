@@ -4,13 +4,14 @@
 
 - Relationship: Owned repository.
 - Repository: lst97/C-Language_practise.
-- Related topics: c, cpp
+- GitHub topics: c, cpp
 
 ## Repository metadata
 - **Repository:** lst97/C-Language_practise
 - **Visibility:** public
 - **URL:** https://github.com/lst97/C-Language_practise
 - **Default branch:** master
+- **Created:** 2018-12-10T12:27:10Z
 - **Last updated:** 2024-03-19T07:16:07Z
 - **Primary language:** C
 - **License:** GNU General Public License v3.0

@@ -4,13 +4,14 @@
 
 - Relationship: Owned repository.
 - Repository: lst97/CPP-Language_practise.
-- Related topics: cpp, dll
+- GitHub topics: cpp, dll
 
 ## Repository metadata
 - **Repository:** lst97/CPP-Language_practise
 - **Visibility:** public
 - **URL:** https://github.com/lst97/CPP-Language_practise
 - **Default branch:** master
+- **Created:** 2019-10-10T23:21:35Z
 - **Last updated:** 2024-03-19T07:19:05Z
 - **Primary language:** C++
 - **Stars / forks:** 0 / 0

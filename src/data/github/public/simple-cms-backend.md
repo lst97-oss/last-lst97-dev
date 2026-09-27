@@ -7,17 +7,22 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; implements authentication; defines http request handlers; authenticates controller.
 - Observed capabilities: Reads runtime environment variables; Implements authentication; Defines HTTP request handlers
 - Technology: TypeScript
-- Related topics: cms-backend
+- Software kinds: api_backend
+- GitHub topics: cms-backend
+- Curated topics: cms
 
 ## Repository metadata
 - **Repository:** lst97/simple-cms-backend
 - **Visibility:** public
 - **URL:** https://github.com/lst97/simple-cms-backend
 - **Default branch:** dev
+- **Created:** 2024-04-23T00:09:24Z
 - **Last updated:** 2025-05-30T11:08:31Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 0 / 0
 - **Topics:** `cms-backend`
+- **Software kinds:** `api_backend`
+- **Curated topics:** `cms`
 
 ### GitHub language breakdown
 - TypeScript (150,767 bytes)

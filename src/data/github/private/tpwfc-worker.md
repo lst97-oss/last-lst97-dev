@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: persists or queries application data; loads config; parses duration; formats markdown.
 - Observed capabilities: Persists or queries application data; Loads config; Defines the Config type or service
 - Technology: Go
+- Software kinds: automation_devtool
+- Curated topics: fire-documentary, media-processing
 
 ## Repository metadata
 - **Repository:** lst97/tpwfc-worker
 - **Visibility:** private
 - **URL:** https://github.com/lst97/tpwfc-worker
 - **Default branch:** main
+- **Created:** 2025-12-11T11:47:12Z
 - **Last updated:** 2025-12-11T12:02:20Z
 - **Primary language:** Go
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `automation_devtool`
+- **Curated topics:** `fire-documentary`, `media-processing`
 
 ### GitHub language breakdown
 - Go (208,728 bytes)

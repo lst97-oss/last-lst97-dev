@@ -7,17 +7,22 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; integrates a headless cms; renders a react user interface.
 - Observed capabilities: Reads runtime environment variables; Integrates a headless CMS; Renders a React user interface
 - Technology: TypeScript, React, Next.js, PostgreSQL, JavaScript
+- Software kinds: api_backend
+- Curated topics: cantonese, language-learning
 
 ## Repository metadata
 - **Repository:** lst97/canto-101-server
 - **Visibility:** public
 - **URL:** https://github.com/lst97/canto-101-server
 - **Default branch:** dev
+- **Created:** 2025-10-10T10:31:31Z
 - **Last updated:** 2026-06-13T18:12:16Z
 - **Primary language:** TypeScript
 - **License:** Apache License 2.0
 - **Stars / forks:** 1 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `api_backend`
+- **Curated topics:** `cantonese`, `language-learning`
 
 ### GitHub language breakdown
 - TypeScript (16,240 bytes)

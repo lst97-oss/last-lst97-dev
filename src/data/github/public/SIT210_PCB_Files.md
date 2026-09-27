@@ -10,6 +10,7 @@
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT210_PCB_Files
 - **Default branch:** main
+- **Created:** 2022-06-08T12:36:51Z
 - **Last updated:** 2024-03-19T07:11:19Z
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.

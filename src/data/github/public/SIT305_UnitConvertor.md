@@ -5,16 +5,21 @@
 - Relationship: Owned repository.
 - Repository: lst97/SIT305_UnitConvertor.
 - Technology: Kotlin
+- Software kinds: mobile_app
+- Curated topics: coursework, android, unit-conversion
 
 ## Repository metadata
 - **Repository:** lst97/SIT305_UnitConvertor
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT305_UnitConvertor
 - **Default branch:** main
+- **Created:** 2023-03-17T05:06:00Z
 - **Last updated:** 2024-03-19T07:10:17Z
 - **Primary language:** Kotlin
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `mobile_app`
+- **Curated topics:** `coursework`, `android`, `unit-conversion`
 
 ### GitHub language breakdown
 - Kotlin (10,075 bytes)

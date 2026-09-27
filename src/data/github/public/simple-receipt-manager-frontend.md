@@ -7,17 +7,22 @@
 - Purpose: Source implementation indicates these responsibilities: calls external http services; persists or queries application data; uploads progress element.
 - Observed capabilities: Calls external HTTP services; Persists or queries application data; Defines the File Service type or service
 - Technology: TypeScript
-- Related topics: angular, angularmaterial
+- Software kinds: web_app
+- GitHub topics: angular, angularmaterial
+- Curated topics: receipt-management
 
 ## Repository metadata
 - **Repository:** lst97/simple-receipt-manager-frontend
 - **Visibility:** public
 - **URL:** https://github.com/lst97/simple-receipt-manager-frontend
 - **Default branch:** development
+- **Created:** 2023-01-10T01:24:38Z
 - **Last updated:** 2023-02-01T10:58:10Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 0 / 0
 - **Topics:** `angular`, `angularmaterial`
+- **Software kinds:** `web_app`
+- **Curated topics:** `receipt-management`
 
 ### GitHub language breakdown
 - TypeScript (62,363 bytes)

@@ -10,6 +10,7 @@
 - **Visibility:** public
 - **URL:** https://github.com/lst97/e2ee-messaging-android-app
 - **Default branch:** main
+- **Created:** 2023-05-31T06:20:23Z
 - **Last updated:** 2023-09-08T08:50:12Z
 - **Stars / forks:** 1 / 0
 - **Topics:** No GitHub topics are set.

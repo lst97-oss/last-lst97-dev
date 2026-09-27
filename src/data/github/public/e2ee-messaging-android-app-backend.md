@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; defines http request handlers; gets client ip; gets all messages; gets message.
 - Observed capabilities: Reads runtime environment variables; Defines HTTP request handlers; Gets client ip
 - Technology: PostgreSQL, Python
+- Software kinds: api_backend
+- Curated topics: end-to-end-encryption, messaging
 
 ## Repository metadata
 - **Repository:** lst97/e2ee-messaging-android-app-backend
 - **Visibility:** public
 - **URL:** https://github.com/lst97/e2ee-messaging-android-app-backend
 - **Default branch:** main
+- **Created:** 2023-05-31T06:12:17Z
 - **Last updated:** 2024-03-19T07:06:50Z
 - **Primary language:** Python
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `api_backend`
+- **Curated topics:** `end-to-end-encryption`, `messaging`
 
 ### GitHub language breakdown
 - Python (15,759 bytes)

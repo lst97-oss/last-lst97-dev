@@ -10,6 +10,7 @@
 - **Visibility:** public
 - **URL:** https://github.com/lst97/CS_Foundation
 - **Default branch:** main
+- **Created:** 2020-10-18T06:34:40Z
 - **Last updated:** 2023-01-28T12:17:59Z
 - **License:** GNU General Public License v2.0
 - **Stars / forks:** 0 / 0

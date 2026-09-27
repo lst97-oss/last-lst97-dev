@@ -7,13 +7,14 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; calls external http services; integrates a headless cms; renders a react user interface; defines http request handlers.
 - Observed capabilities: Reads runtime environment variables; Calls external HTTP services; Integrates a headless CMS
 - Technology: TypeScript, React, Next.js, PostgreSQL, Tailwind CSS, JavaScript
-- Related topics: nextjs, personal-website, pixel-art, react, vercel-deployment
+- GitHub topics: nextjs, personal-website, pixel-art, react, vercel-deployment
 
 ## Repository metadata
 - **Repository:** lst97/lst97-dev
 - **Visibility:** public
 - **URL:** https://github.com/lst97/lst97-dev
 - **Default branch:** dev
+- **Created:** 2025-05-03T12:31:59Z
 - **Last updated:** 2025-12-12T17:23:12Z
 - **Primary language:** TypeScript
 - **Homepage:** https://www.lst97.dev

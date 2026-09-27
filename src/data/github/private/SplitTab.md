@@ -5,15 +5,18 @@
 - Relationship: Owned repository.
 - Repository: lst97/SplitTab.
 - Owner-provided purpose: Expense-management app for splitting shared costs.
+- Curated topics: expense-management, shared-expenses
 
 ## Repository metadata
 - **Repository:** lst97/SplitTab
 - **Visibility:** private
 - **URL:** https://github.com/lst97/SplitTab
 - **Default branch:** main
+- **Created:** 2025-07-02T03:19:11Z
 - **Last updated:** 2025-07-02T03:38:56Z
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Curated topics:** `expense-management`, `shared-expenses`
 
 ### GitHub language breakdown
 - GitHub language breakdown is unavailable.

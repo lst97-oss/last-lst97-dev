@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: defines http request handlers; gets target images path; analyzes pose.
 - Observed capabilities: Defines HTTP request handlers; Defines the Api Response type or service; Gets target images path
 - Technology: FastAPI, Python
+- Software kinds: api_backend, data_ml
+- Curated topics: computer-vision, pose-analysis, thermal-imaging
 
 ## Repository metadata
 - **Repository:** lst97/Thermal_Image_Pose_Analysis
 - **Visibility:** private
 - **URL:** https://github.com/lst97/Thermal_Image_Pose_Analysis
 - **Default branch:** main
+- **Created:** 2024-01-07T04:15:11Z
 - **Last updated:** 2024-03-08T06:30:29Z
 - **Primary language:** Python
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `api_backend`, `data_ml`
+- **Curated topics:** `computer-vision`, `pose-analysis`, `thermal-imaging`
 
 ### GitHub language breakdown
 - Python (17,426 bytes)

@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: renders a react user interface.
 - Observed capabilities: Renders a React user interface; Tested behavior: renders learn react link
 - Technology: React, JavaScript
+- Software kinds: web_app
+- Curated topics: food-service, ordering
 
 ## Repository metadata
 - **Repository:** lst97/simple-kitchen-order
 - **Visibility:** public
 - **URL:** https://github.com/lst97/simple-kitchen-order
 - **Default branch:** master
+- **Created:** 2022-10-20T06:42:22Z
 - **Last updated:** 2023-01-27T20:02:36Z
 - **Primary language:** JavaScript
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `web_app`
+- **Curated topics:** `food-service`, `ordering`
 
 ### GitHub language breakdown
 - JavaScript (1,912 bytes)

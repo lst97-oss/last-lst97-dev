@@ -5,18 +5,23 @@
 - Relationship: Owned repository.
 - Repository: lst97/TPWFC-Fire-Documentary.
 - Technology: Python, JavaScript
+- Software kinds: web_app
+- Curated topics: fire-documentary, media
 
 ## Repository metadata
 - **Repository:** lst97/TPWFC-Fire-Documentary
 - **Visibility:** public
 - **URL:** https://github.com/lst97/TPWFC-Fire-Documentary
 - **Default branch:** main
+- **Created:** 2025-12-06T15:31:15Z
 - **Last updated:** 2025-12-28T11:10:04Z
 - **Primary language:** HTML
 - **License:** Other
 - **Homepage:** https://adminlby.github.io/Hong-Kong-Fire-Documentary/
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `web_app`
+- **Curated topics:** `fire-documentary`, `media`
 
 ### GitHub language breakdown
 - HTML (2,172,065,562 bytes)

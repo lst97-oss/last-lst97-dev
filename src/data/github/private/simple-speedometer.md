@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: persists or queries application data.
 - Observed capabilities: Persists or queries application data; Defines the Live Activity Manager type or service; Defines the Location Manager type or service
 - Technology: Swift
+- Software kinds: mobile_app
+- Curated topics: swift, speedometer
 
 ## Repository metadata
 - **Repository:** lst97/simple-speedometer
 - **Visibility:** private
 - **URL:** https://github.com/lst97/simple-speedometer
 - **Default branch:** dev
+- **Created:** 2025-06-08T20:29:09Z
 - **Last updated:** 2025-06-10T13:05:08Z
 - **Primary language:** Swift
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `mobile_app`
+- **Curated topics:** `swift`, `speedometer`
 
 ### GitHub language breakdown
 - Swift (405,430 bytes)

@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; validates structured input or configuration; persists or queries application data; renders a react user interface; validates and types runtime environment configuration.
 - Observed capabilities: Reads runtime environment variables; Validates structured input or configuration; Persists or queries application data
 - Technology: TypeScript, React, TanStack Router, TanStack Start, Vite, PostgreSQL, Tailwind CSS
+- Software kinds: web_app
+- Curated topics: cantonese, lyrics
 
 ## Repository metadata
 - **Repository:** lst97/cantolyrics-web
 - **Visibility:** private
 - **URL:** https://github.com/lst97/cantolyrics-web
 - **Default branch:** main
+- **Created:** 2026-04-25T14:33:59Z
 - **Last updated:** 2026-04-26T14:48:04Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 0 / 1
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `web_app`
+- **Curated topics:** `cantonese`, `lyrics`
 
 ### GitHub language breakdown
 - TypeScript (374,157 bytes)

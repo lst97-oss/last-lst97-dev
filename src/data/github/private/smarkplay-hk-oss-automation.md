@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; validates structured input or configuration; implements command-line behavior; defines http request handlers; validates and types runtime environment configuration.
 - Observed capabilities: Reads runtime environment variables; Validates structured input or configuration; Implements command-line behavior
 - Technology: TypeScript, JavaScript
+- Software kinds: automation_devtool
+- Curated topics: hong-kong, open-data, automation
 
 ## Repository metadata
 - **Repository:** lst97/smarkplay-hk-oss-automation
 - **Visibility:** private
 - **URL:** https://github.com/lst97/smarkplay-hk-oss-automation
 - **Default branch:** main
+- **Created:** 2026-01-25T08:36:47Z
 - **Last updated:** 2026-01-25T08:36:52Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `automation_devtool`
+- **Curated topics:** `hong-kong`, `open-data`, `automation`
 
 ### GitHub language breakdown
 - TypeScript (27,503 bytes)

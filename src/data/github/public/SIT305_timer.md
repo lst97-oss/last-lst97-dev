@@ -5,16 +5,21 @@
 - Relationship: Owned repository.
 - Repository: lst97/SIT305_timer.
 - Technology: Java
+- Software kinds: mobile_app
+- Curated topics: coursework, android, timer
 
 ## Repository metadata
 - **Repository:** lst97/SIT305_timer
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT305_timer
 - **Default branch:** main
+- **Created:** 2023-03-28T02:30:35Z
 - **Last updated:** 2024-03-19T07:08:45Z
 - **Primary language:** Java
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `mobile_app`
+- **Curated topics:** `coursework`, `android`, `timer`
 
 ### GitHub language breakdown
 - Java (8,503 bytes)

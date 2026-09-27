@@ -7,17 +7,22 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; validates structured input or configuration; renders a react user interface; creates collection dialog.
 - Observed capabilities: Reads runtime environment variables; Validates structured input or configuration; Renders a React user interface
 - Technology: TypeScript, React, Vite, Tailwind CSS, JavaScript
-- Related topics: cms
+- Software kinds: web_app
+- GitHub topics: cms
+- Curated topics: cms
 
 ## Repository metadata
 - **Repository:** lst97/simple-cms-frontend
 - **Visibility:** public
 - **URL:** https://github.com/lst97/simple-cms-frontend
 - **Default branch:** dev
+- **Created:** 2024-03-21T01:19:45Z
 - **Last updated:** 2024-07-31T02:07:10Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 0 / 0
 - **Topics:** `cms`
+- **Software kinds:** `web_app`
+- **Curated topics:** `cms`
 
 ### GitHub language breakdown
 - TypeScript (144,903 bytes)

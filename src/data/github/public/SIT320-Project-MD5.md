@@ -5,16 +5,19 @@
 - Relationship: Owned repository.
 - Repository: lst97/SIT320-Project-MD5.
 - Technology: Python
+- Curated topics: coursework, SIT320, md5
 
 ## Repository metadata
 - **Repository:** lst97/SIT320-Project-MD5
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT320-Project-MD5
 - **Default branch:** main
+- **Created:** 2022-10-13T11:37:56Z
 - **Last updated:** 2024-03-19T07:10:41Z
 - **Primary language:** C++
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Curated topics:** `coursework`, `SIT320`, `md5`
 
 ### GitHub language breakdown
 - C++ (7,778 bytes)

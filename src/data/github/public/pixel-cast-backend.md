@@ -7,16 +7,21 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; calls external http services; persists or queries application data; defines http request handlers.
 - Observed capabilities: Reads runtime environment variables; Calls external HTTP services; Persists or queries application data
 - Technology: PostgreSQL, TypeScript
+- Software kinds: api_backend
+- Curated topics: pixel-art, media
 
 ## Repository metadata
 - **Repository:** lst97/pixel-cast-backend
 - **Visibility:** public
 - **URL:** https://github.com/lst97/pixel-cast-backend
 - **Default branch:** main
+- **Created:** 2025-06-23T16:49:57Z
 - **Last updated:** 2025-06-30T14:12:46Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `api_backend`
+- **Curated topics:** `pixel-art`, `media`
 
 ### GitHub language breakdown
 - TypeScript (80,139 bytes)

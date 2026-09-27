@@ -5,16 +5,21 @@
 - Relationship: Owned repository.
 - Repository: lst97/SIT305_SharePreferences.
 - Technology: Kotlin
+- Software kinds: mobile_app
+- Curated topics: coursework, android, preferences
 
 ## Repository metadata
 - **Repository:** lst97/SIT305_SharePreferences
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT305_SharePreferences
 - **Default branch:** main
+- **Created:** 2023-03-27T06:53:18Z
 - **Last updated:** 2024-03-19T07:09:50Z
 - **Primary language:** Kotlin
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `mobile_app`
+- **Curated topics:** `coursework`, `android`, `preferences`
 
 ### GitHub language breakdown
 - Kotlin (6,354 bytes)

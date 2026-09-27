@@ -7,18 +7,23 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; validates structured input or configuration; persists or queries application data; renders a react user interface; creates share link form params.
 - Observed capabilities: Reads runtime environment variables; Validates structured input or configuration; Persists or queries application data
 - Technology: TypeScript, React
-- Related topics: management, react, scheduler, typescript, mui-material
+- Software kinds: web_app
+- GitHub topics: management, react, scheduler, typescript, mui-material
+- Curated topics: scheduling, management
 
 ## Repository metadata
 - **Repository:** lst97/project-st-zita-frontend
 - **Visibility:** public
 - **URL:** https://github.com/lst97/project-st-zita-frontend
 - **Default branch:** main
+- **Created:** 2024-01-27T06:17:07Z
 - **Last updated:** 2024-02-29T08:06:03Z
 - **Primary language:** TypeScript
 - **Homepage:** https://project-st-zita-frontend.vercel.app
 - **Stars / forks:** 0 / 0
 - **Topics:** `management`, `react`, `scheduler`, `typescript`, `mui-material`
+- **Software kinds:** `web_app`
+- **Curated topics:** `scheduling`, `management`
 
 ### GitHub language breakdown
 - TypeScript (168,666 bytes)

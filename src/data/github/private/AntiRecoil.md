@@ -5,16 +5,19 @@
 - Relationship: Owned repository.
 - Repository: lst97/AntiRecoil.
 - Technology: Python
+- Curated topics: computer-vision, coursework
 
 ## Repository metadata
 - **Repository:** lst97/AntiRecoil
 - **Visibility:** private
 - **URL:** https://github.com/lst97/AntiRecoil
 - **Default branch:** main
+- **Created:** 2024-01-16T11:31:01Z
 - **Last updated:** 2024-07-05T09:12:29Z
 - **Primary language:** Python
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Curated topics:** `computer-vision`, `coursework`
 
 ### GitHub language breakdown
 - Python (37,844 bytes)

@@ -7,17 +7,22 @@
 - Purpose: Source implementation indicates these responsibilities: reads runtime environment variables; calls external http services; persists or queries application data; implements authentication; implements ai or language-model features.
 - Observed capabilities: Reads runtime environment variables; Calls external HTTP services; Persists or queries application data
 - Technology: TypeScript, React, Next.js, PostgreSQL, Tailwind CSS, JavaScript
+- Software kinds: web_app, automation_devtool
+- Curated topics: ai-agents, developer-tools
 
 ## Repository metadata
 - **Repository:** lst97/subagents.sh
 - **Visibility:** public
 - **URL:** https://github.com/lst97/subagents.sh
 - **Default branch:** main
+- **Created:** 2025-08-02T17:20:52Z
 - **Last updated:** 2025-08-14T16:18:56Z
 - **Primary language:** TypeScript
 - **Homepage:** https://subagents.sh/
 - **Stars / forks:** 1 / 7
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `web_app`, `automation_devtool`
+- **Curated topics:** `ai-agents`, `developer-tools`
 
 ### GitHub language breakdown
 - TypeScript (1,627,078 bytes)

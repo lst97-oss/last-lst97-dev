@@ -5,17 +5,22 @@
 - Relationship: Owned repository.
 - Repository: lst97/simple-receipt-manager.
 - Technology: Python
-- Related topics: receipt-parser, webapp
+- Software kinds: web_app, api_backend
+- GitHub topics: receipt-parser, webapp
+- Curated topics: receipt-management, coursework
 
 ## Repository metadata
 - **Repository:** lst97/simple-receipt-manager
 - **Visibility:** public
 - **URL:** https://github.com/lst97/simple-receipt-manager
 - **Default branch:** main
+- **Created:** 2023-01-10T03:23:48Z
 - **Last updated:** 2023-02-01T10:59:30Z
 - **License:** Other
 - **Stars / forks:** 0 / 0
 - **Topics:** `receipt-parser`, `webapp`
+- **Software kinds:** `web_app`, `api_backend`
+- **Curated topics:** `receipt-management`, `coursework`
 
 ### GitHub language breakdown
 - GitHub language breakdown is unavailable.

@@ -6,13 +6,14 @@
 - Repository: lst97/CommonResponse.
 - Observed capabilities: Defines the Config type or service; Defines the Containers type or service; Defines the I Error Handler Service type or service
 - Technology: TypeScript
-- Related topics: api
+- GitHub topics: api
 
 ## Repository metadata
 - **Repository:** lst97/CommonResponse
 - **Visibility:** public
 - **URL:** https://github.com/lst97/CommonResponse
 - **Default branch:** master
+- **Created:** 2024-03-08T05:42:15Z
 - **Last updated:** 2024-03-19T07:05:36Z
 - **Primary language:** TypeScript
 - **Stars / forks:** 0 / 0

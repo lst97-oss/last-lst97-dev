@@ -6,13 +6,14 @@
 - Repository: lst97/blockchain_demo.
 - Observed capabilities: Defines the Coinbase type or service; Defines the TX type or service; Defines the Block type or service
 - Technology: JavaScript
-- Related topics: js, html
+- GitHub topics: js, html
 
 ## Repository metadata
 - **Repository:** lst97/blockchain_demo
 - **Visibility:** public
 - **URL:** https://github.com/lst97/blockchain_demo
 - **Default branch:** main
+- **Created:** 2021-05-25T08:54:36Z
 - **Last updated:** 2024-03-19T07:18:55Z
 - **Primary language:** JavaScript
 - **License:** GNU General Public License v3.0

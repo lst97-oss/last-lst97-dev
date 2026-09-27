@@ -5,16 +5,21 @@
 - Relationship: Owned repository.
 - Repository: lst97/SIT305_Lost_Found_App.
 - Technology: Java
+- Software kinds: mobile_app
+- Curated topics: coursework, android, lost-and-found
 
 ## Repository metadata
 - **Repository:** lst97/SIT305_Lost_Found_App
 - **Visibility:** public
 - **URL:** https://github.com/lst97/SIT305_Lost_Found_App
 - **Default branch:** main
+- **Created:** 2023-05-14T07:39:36Z
 - **Last updated:** 2024-03-08T06:31:22Z
 - **Primary language:** Java
 - **Stars / forks:** 0 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `mobile_app`
+- **Curated topics:** `coursework`, `android`, `lost-and-found`
 
 ### GitHub language breakdown
 - Java (31,292 bytes)

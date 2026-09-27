@@ -6,13 +6,14 @@
 - Repository: lst97/Java_practise.
 - Observed capabilities: Defines the Achievement type or service; Defines the Command type or service; Defines the Env type or service
 - Technology: Java
-- Related topics: java
+- GitHub topics: java
 
 ## Repository metadata
 - **Repository:** lst97/Java_practise
 - **Visibility:** public
 - **URL:** https://github.com/lst97/Java_practise
 - **Default branch:** master
+- **Created:** 2020-06-05T05:23:54Z
 - **Last updated:** 2023-01-28T14:16:26Z
 - **Primary language:** Java
 - **License:** GNU General Public License v3.0

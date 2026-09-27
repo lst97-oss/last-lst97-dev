@@ -5,16 +5,21 @@
 - Relationship: Owned repository.
 - Repository: lst97/e2ee-messaging-android-app-frontend.
 - Technology: Java
+- Software kinds: mobile_app
+- Curated topics: end-to-end-encryption, messaging, android
 
 ## Repository metadata
 - **Repository:** lst97/e2ee-messaging-android-app-frontend
 - **Visibility:** public
 - **URL:** https://github.com/lst97/e2ee-messaging-android-app-frontend
 - **Default branch:** main
+- **Created:** 2023-05-31T04:13:16Z
 - **Last updated:** 2023-07-06T06:06:57Z
 - **Primary language:** Java
 - **Stars / forks:** 1 / 0
 - **Topics:** No GitHub topics are set.
+- **Software kinds:** `mobile_app`
+- **Curated topics:** `end-to-end-encryption`, `messaging`, `android`
 
 ### GitHub language breakdown
 - Java (46,482 bytes)
