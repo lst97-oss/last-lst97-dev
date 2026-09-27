@@ -15,7 +15,8 @@ function anchorHasSource(anchor: ChatTopicAnchor, source: 'search_knowledge' | '
   return anchor.tools.some((tool) => tool.name === source && tool.status !== 'rejected')
 }
 
-function chooseAnchor(message: string, anchors: ChatTopicAnchor[]): ChatTopicAnchor | undefined {
+export function selectRelevantTopicAnchor(message: string, topicAnchors: ChatTopicAnchor[] = []): ChatTopicAnchor | undefined {
+  const anchors = topicAnchors.slice(-8)
   const available = anchors.filter((anchor) => anchor.tools.some((tool) => tool.status !== 'rejected'))
   const lower = message.toLowerCase()
 
@@ -86,7 +87,7 @@ export function resolveKnowledgeQuery(message: string, verifiedHistory: ChatMess
   if (!current || ACKNOWLEDGEMENT.test(current)) return current
   if (!FOLLOW_UP_REFERENCE.test(current)) return current
 
-  const anchor = chooseAnchor(current, topicAnchors.slice(-8))
+  const anchor = selectRelevantTopicAnchor(current, topicAnchors)
   const resolved = anchor
     ? buildStandaloneFollowUp(current, anchor, verifiedHistory)
     : historyOnlyFollowUp(current, verifiedHistory)

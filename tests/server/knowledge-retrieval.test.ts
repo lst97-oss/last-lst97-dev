@@ -5,6 +5,7 @@ import { resolveKnowledgeQuery } from '../../src/server/knowledge/query-resoluti
 import { formatKnowledgeEvidence } from '../../src/server/knowledge/prompt-evidence'
 import type { KnowledgeCandidate, RankedKnowledgeCandidate } from '../../src/server/knowledge/types'
 import type { ChatMessage, ChatTopicAnchor } from '../../src/server/chat/types'
+import type { ChatModelCallDiagnostic, ChatRagRetrievalDiagnostic } from '../../src/server/observability/chat-diagnostics'
 
 const candidates: KnowledgeCandidate[] = Array.from({ length: 10 }, (_, index) => ({
   id: `source-${index}`,
@@ -13,6 +14,7 @@ const candidates: KnowledgeCandidate[] = Array.from({ length: 10 }, (_, index) =
   source: { type: 'post', sourceId: `post-${index}`, title: `Article ${index}`, url: `https://example.test/articles/${index}` },
 }))
 const vector = Array.from({ length: 1024 }, (_, index) => index === 0 ? 1 : 0)
+
 const experienceAnchor: ChatTopicAnchor = {
   question: "Tell me about Nelson's experience",
   observedAtUtc: '2026-09-24T00:00:00.000Z',
@@ -31,15 +33,26 @@ function harness(options: {
   ranked?: RankedKnowledgeCandidate[]
   rerankError?: boolean
   evidenceBudget?: number
+  relevance?: (input: { query: string; candidate: KnowledgeCandidate }) => Promise<{ isRelevantProbability: number; answerEvidenceProbability: number }> | { isRelevantProbability: number; answerEvidenceProbability: number }
+  relevanceError?: boolean
 } = {}) {
-  const calls: { order: string[]; embedInput?: { text: string; kind: 'query' | 'document' }; rerankQuery?: string; rerankCandidates?: KnowledgeCandidate[]; logs: string[] } = {
-    order: [], logs: [],
+  const calls: {
+    order: string[]
+    embedInput?: { text: string; kind: 'query' | 'document' }
+    rerankQuery?: string
+    rerankCandidates?: KnowledgeCandidate[]
+    relevanceInputs: Array<{ query: string; candidate: KnowledgeCandidate }>
+    logs: string[]
+    modelCalls: ChatModelCallDiagnostic[]
+  } = {
+    order: [], relevanceInputs: [], logs: [], modelCalls: [],
   }
   const dependencies = {
     embedding: {
-      embed: async (input: { text: string; kind: 'query' | 'document' }) => {
+      embed: async (input: { text: string; kind: 'query' | 'document'; onModelCall?: (call: ChatModelCallDiagnostic) => void }) => {
         calls.order.push('embed')
         calls.embedInput = input
+        input.onModelCall?.({ provider: 'siliconflow', operation: 'query_embedding', status: 'succeeded', inputTokens: 8, totalTokens: 8 })
         return vector
       },
     },
@@ -49,15 +62,26 @@ function harness(options: {
         expect(limit).toBe(10)
         return candidates
       },
+      listOwnedProjects: async () => ({ projects: [], hasMore: false }),
     },
     reranker: {
-      rerank: async (input: { query: string; candidates: KnowledgeCandidate[]; limit: number }) => {
+      rerank: async (input: { query: string; candidates: KnowledgeCandidate[]; limit: number; onModelCall?: (call: ChatModelCallDiagnostic) => void }) => {
         calls.order.push('rerank')
+        input.onModelCall?.({ provider: 'siliconflow', operation: 'rerank', status: 'succeeded', inputTokens: 10, totalTokens: 10 })
         calls.rerankQuery = input.query
         calls.rerankCandidates = input.candidates
         expect(input.limit).toBe(3)
         if (options.rerankError) throw new Error('private provider failure')
         return options.ranked ?? candidates.slice(0, 3).map((candidate, index) => ({ ...candidate, relevanceScore: 1 - index / 10 }))
+      },
+    },
+    relevanceGate: {
+      assess: async (input: { query: string; candidate: KnowledgeCandidate; onModelCall?: (call: ChatModelCallDiagnostic) => void }) => {
+        calls.order.push('relevance')
+        calls.relevanceInputs.push(input)
+        if (options.relevanceError) throw new Error('private relevance provider failure')
+        input.onModelCall?.({ provider: 'jev', operation: 'rag_relevance', status: 'succeeded', inputTokens: 5, outputTokens: 2 })
+        return options.relevance?.(input) ?? { isRelevantProbability: 0.9, answerEvidenceProbability: 0.9 }
       },
     },
     logger: {
@@ -78,10 +102,77 @@ describe('knowledge retrieval', () => {
 
     const result = await retrieve.execute({ message: 'Which projects have I built?', verifiedHistory: [] })
 
-    expect(deps.calls.order).toEqual(['embed', 'search', 'rerank'])
+    expect(deps.calls.order.slice(0, 3)).toEqual(['embed', 'search', 'rerank'])
+    expect(deps.calls.order.slice(3)).toEqual(['relevance', 'relevance', 'relevance'])
     expect(result.evidence.map(({ id }) => id)).toEqual(['source-7', 'source-2', 'source-1'])
     expect(result.citations.map(({ title }) => title)).toEqual(['Article 7', 'Article 2', 'Article 1'])
     expect(result.degraded).toBe(false)
+  })
+
+  it('reports RAG candidate decisions and only provider-reported usage to the turn trace', async () => {
+    const deps = harness()
+    const retrievals: ChatRagRetrievalDiagnostic[] = []
+    const retrieve = createRetrieveKnowledge(deps.dependencies)
+
+    await retrieve.execute({
+      message: 'Which projects have I built?',
+      verifiedHistory: [],
+      diagnostics: {
+        onModelCall: (call) => deps.calls.modelCalls.push(call),
+        onRetrieval: (retrieval) => retrievals.push(retrieval),
+      },
+    })
+
+    expect(deps.calls.modelCalls).toHaveLength(5)
+    expect(deps.calls.modelCalls.slice(0, 2)).toMatchObject([
+      { provider: 'siliconflow', operation: 'query_embedding', inputTokens: 8 },
+      { provider: 'siliconflow', operation: 'rerank', inputTokens: 10 },
+    ])
+    expect(deps.calls.modelCalls.slice(2)).toMatchObject(Array.from({ length: 3 }, () => ({
+      provider: 'jev', operation: 'rag_relevance', inputTokens: 5, outputTokens: 2,
+    })))
+    expect(retrievals[0]?.candidates).toHaveLength(10)
+    expect(retrievals[0]?.candidates[0]).toMatchObject({
+      id: 'source-0',
+      rerankScore: 1,
+      relevanceProbability: 0.9,
+      answerEvidenceProbability: 0.9,
+      outcome: 'accepted',
+      finalSelected: true,
+    })
+    expect(retrievals[0]?.candidates[9]?.outcome).toBe('not_ranked')
+  })
+
+  it('keeps only direct-support documents at or above both probability thresholds', async () => {
+    const ranked = [0, 1, 2].map((index, rank) => ({ ...candidates[index]!, relevanceScore: 1 - rank / 10 }))
+    const deps = harness({ ranked, relevance: ({ candidate }) => {
+      if (candidate.id === 'source-0') return { isRelevantProbability: 0.95, answerEvidenceProbability: 0.59 }
+      if (candidate.id === 'source-1') return { isRelevantProbability: 0.60, answerEvidenceProbability: 0.60 }
+      return { isRelevantProbability: 0.59, answerEvidenceProbability: 0.99 }
+    } })
+
+    const result = await createRetrieveKnowledge(deps.dependencies).execute({ message: 'What directly answers the question?', verifiedHistory: [] })
+
+    expect(result.evidence.map(({ id }) => id)).toEqual(['source-1'])
+    expect(result.citations).toEqual([{ id: 'K1', title: 'Article 1', url: 'https://example.test/articles/1', isPublic: true }])
+    expect(JSON.stringify(result)).not.toContain('Evidence passage 0')
+    expect(JSON.stringify(result)).not.toContain('Evidence passage 2')
+    expect(deps.calls.order.slice(0, 3)).toEqual(['embed', 'search', 'rerank'])
+  })
+
+  it('falls back per document while filtering successful unrelated Jev decisions', async () => {
+    const ranked = [0, 1, 2].map((index, rank) => ({ ...candidates[index]!, relevanceScore: 1 - rank / 10 }))
+    const deps = harness({ ranked, relevance: ({ candidate }) => {
+      if (candidate.id === 'source-0') throw new Error('private Jev provider failure')
+      if (candidate.id === 'source-1') return { isRelevantProbability: 0.1, answerEvidenceProbability: 0.99 }
+      return { isRelevantProbability: 0.95, answerEvidenceProbability: 0.95 }
+    } })
+
+    const result = await createRetrieveKnowledge(deps.dependencies).execute({ message: 'Which documents directly answer?', verifiedHistory: [] })
+
+    expect(result.evidence.map(({ id }) => id)).toEqual(['source-0', 'source-2'])
+    expect(result.degraded).toBe(true)
+    expect(deps.calls.logs).toContain('knowledge.relevance_gate.fallback')
   })
 
   it('uses only the current question and at most two verified conversation turns for a short follow-up', () => {
