@@ -1,51 +1,58 @@
-# Guided Project Discovery for Jev
+# Owned Project Catalogue for Jev
 
 Date: 2026-09-25
-Status: Awaiting user review
+Status: Approved by user on 2026-09-25
 
 ## Goal
 
-Help users discover Nelson's work without sending all 111 owned repository summaries to Jev or dumping all 111 into a reply. The first broad project-list request should ask what kind of project the user wants. If the user insists on a complete list, Jev should return a short, useful selection instead: the most-starred project first, highlighted, followed by recent projects. Third-party contributions remain separate.
+Give Jev a compact, reliable way to browse Nelson's full owned-project inventory without returning all 111 repositories at once. The tool should support queries across repository metadata and let Jev use RAG separately for deeper report details. Do not ask the user to choose a project category before looking up an inventory request.
 
-The current local corpus represents 89 public and 22 private owned repositories. The selection should include visibility labels and only summaries supported by the indexed repository records.
+The catalogue includes Nelson's owned public and private repositories. Third-party contributions remain separate. Current inventory is 89 public and 22 private repositories.
 
-## Current failure
+## User behavior
 
-`site_content({op: "list_projects"})` reads only published Payload showcase entries. The knowledge search uses vector similarity, reranking, and a three-source result limit, so it cannot reliably enumerate or rank the full set of owned repositories. Repository records already live in the knowledge database under owned source types `github` and `github-private`.
+- Jev calls a dedicated `list_owned_projects` tool for inventory, browse, filter, and “show more” requests.
+- Return at most 10 concise project records per call with a short summary, visibility, languages, software kind, topics, dates, stars, forks, and recorded coding time when available.
+- For an unfiltered first batch, highlight the most-starred matching project first, then favor recently updated projects. An explicit sort request controls ordering.
+- If the user asks for more, apply the current filter set and exclude project IDs already shown in signed conversation state. Never duplicate a previously returned project during continuation.
+- Jev can call `search_knowledge` in a later routing step when the user also asks for detail about listed projects. The catalogue is a compact index; RAG reports remain the source for deeper descriptions and citations.
+- Use `site_content` only for current published-showcase membership and links. It does not replace the owned-project inventory.
 
-## Interaction design
+## Catalogue filters
 
-1. For a broad, unfiltered question about Nelson's project list, Jev asks one short clarification about the kind of project the user wants to hear about. It does not query or return the entire inventory on this first turn.
-2. A follow-up that names a category or kind uses ordinary semantic retrieval to answer with matching verified project records.
-3. If the user repeats or insists on seeing the full list, Jev queries the owned repository inventory and returns a batch of at most 10 entries. The first batch puts the highest-star-count repository first with a clear “Most starred” label, then the nine most recently updated other repositories. Later requests return the next unshown recent entries, up to 10 at a time. Never repeat a repository already provided in this project-list sequence. When there are no more unshown entries, say so without repeating earlier results.
-4. Ask about or list third-party contributions separately; do not mix them into the owned project results.
+`list_owned_projects` accepts optional filters for free-text query, programming languages, software kinds, topics, public/private visibility, created and updated date ranges, star ranges, fork ranges, and WakaTime time-spent ranges. It also supports sort field, sort direction, and a limit from 1 to 10.
 
-## Data and retrieval design
+Filter categories combine with AND. Multiple values within one category combine with OR. Date bounds are inclusive calendar days. WakaTime time defaults to the complete imported history unless a date range is supplied; missing coding time remains unknown. Time joins use a normalized exact repository basename, including an optional owner prefix, without fuzzy matching.
 
-- Reuse the existing Jev-facing `search_knowledge({query})` tool; no new model-facing tool name or argument schema is needed.
-- Add an internal direct database listing path for the repeated full-list case. Query distinct owned records only from `knowledge_chunks` source types `github` and `github-private`; exclude `github-contrib` and `github-contrib-private`.
-- Use the first indexed chunk per repository, which contains the retrieval summary and metadata. Parse `Stars / forks` and `Last updated` only from their explicit indexed metadata labels. The current source reports carry these values in chunk text; `source_updated_at` is not populated by the report renderer.
-- Select one most-starred repository and up to nine other repositories by descending verified last-updated date. Unknown metrics sort after known values. Use a stable name order to break ties. Do not infer a missing star count, update date, or project purpose.
-- Keep normal semantic retrieval for named-project, category, and factual questions. The broad first-turn clarification and repeated-full-list behavior must be selected from the latest message plus minimal recent signed context, not inferred from old unrelated transcript content.
-- Store `clarificationAsked` and owned repository IDs already surfaced during project discovery/list replies in the signed conversation context. Validate and bound these fields; do not rely on the model to remember its previous output. Filter these IDs from later shortlist batches. An explicit request for details about a named project may still discuss that project again.
-- Keep the existing 1,200-token answer limit for the short clarification and 10-item batch. Do not pass the 111-row result into Jev; the server selects and formats only the next small result set.
-- Cite each selected record using its actual repository source and visibility. Public entries may link to their canonical GitHub URL. Private entries must be marked private and must not be described as publicly viewable.
-- Preserve `site_content` for questions specifically about currently published showcase projects.
+Software kind is multi-label and uses controlled values: `web_app`, `mobile_app`, `desktop_app`, `api_backend`, `cli_tool`, `library_package`, `automation_devtool`, `data_ml`, `game`, `infrastructure_devops`, `plugin_extension`, and `other`. Leave uncertain classification empty. A kind filter matches only explicitly classified projects. Topic matching combines GitHub topics and curated topics.
 
-## Safety and fallback behavior
+## Data and storage
 
-- Only return records actually found in the database; if the inventory is empty or unavailable, state that Jev could not retrieve it rather than substituting a partial history answer.
-- If no stars are present, omit the “most starred” distinction and select by recency. If dates are missing, rank those entries after dated records.
-- Never expose third-party contribution records as projects owned by Nelson.
-- Never invent a summary where source evidence is absent; use a brief unknown-purpose label or omit the summary.
-- Keep private-project visibility labels accurate and avoid claims that a visitor can access private source code.
+- Store one structured row per owned public or private repository in `knowledge_projects`, in the dedicated knowledge database.
+- Keep report chunks and vector search in `knowledge_chunks`. Direct catalogue listing must not embed, search, rerank, or call Jev relevance for the catalogue query.
+- Update owned catalogue metadata in the same transaction as report chunks during normal indexing. A metadata-only GitHub API refresh can update the catalogue without cloning or re-embedding reports.
+- Catalogue fields include canonical source identity, visibility, short summary, created/updated dates, stars, forks, primary language, language list, software kinds, GitHub topics, and curated topics. WakaTime seconds are joined from `wakatime_daily_projects` at query time.
+- Contributions and other knowledge-source types never enter this table.
+- Report Markdown renders creation/update dates, languages, GitHub topics, software kinds, and curated topics so a full reindex can rebuild the catalogue.
 
-## Verification criteria
+## Signed conversation state
 
-- A first broad project-list question asks one clarification and does not return an inventory.
-- A follow-up specifying a project kind uses semantic knowledge retrieval.
-- Repeated insistence returns at most 10 unshown owned projects per response, with the highest verified star count first on the first batch and recent projects thereafter.
-- Several project-discovery/list follow-ups never repeat an already surfaced repository ID; after all candidates are shown, Jev says there are no additional unshown projects.
-- Returned entries are sourced from owned public/private rows only, with correct visibility and citations; contributions are excluded.
-- Missing dates, stars, summaries, or database results do not lead to fabricated claims.
-- Existing named-project retrieval and published showcase behavior remain unchanged.
+Keep only trusted server-signed state: up to 200 unique owned project source IDs already shown, whether catalogue browsing has started, and the active project filters. Continue accepting old signed context versions. The model does not determine which IDs are excluded; the server adds them to the validated catalogue query.
+
+## Failure behavior and privacy
+
+- Query only verified rows already in the dedicated knowledge database. If the catalogue is unavailable or empty, report that outcome without fabricating projects.
+- Include only owned source types `github` and `github-private`; never mix in contributions.
+- Preserve accurate public/private labels and citation URLs. Private records may be described from their sanitized summaries, but do not imply their source is publicly accessible.
+- Use bounded validated input and parameterized SQL. Do not return raw database rows or secrets.
+
+## Acceptance criteria
+
+- Jev has a first-class catalogue tool with validated filters and a maximum batch size of 10.
+- Broad inventory requests call the tool without a category clarification.
+- A request for project list plus deeper detail runs the catalogue first, then asks Jev for a fresh RAG routing decision.
+- Continuations preserve filters and exclude all previously surfaced IDs.
+- The first default batch highlights the star leader and favors recency; explicit sorts are honored.
+- Language, kind, topic, visibility, date, star, fork, and WakaTime filters execute against database rows.
+- All 111 owned repositories are represented; public/private counts and contribution exclusion are correct.
+- README and RAG docs explain the table, filters, refresh, and reindex workflows.
