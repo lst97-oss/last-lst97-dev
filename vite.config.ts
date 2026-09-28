@@ -82,6 +82,19 @@ const config = defineConfig({
       },
     },
   },
+  build: {
+    // Vite's default 500 kB threshold is exceeded by two client chunks that are
+    // both deferred and out of the initial path: `elk` (1.4 MB, reached only via
+    // mermaid, which chat-pipeline-diagram.tsx loads with a dynamic import) and
+    // a Payload admin chunk. Neither blocks first paint, so warning on them
+    // every build trains the reader to ignore the warning — including the day
+    // a real regression moves that much weight onto the critical path.
+    //
+    // 2000 kB keeps the signal for a genuinely new oversized entry chunk while
+    // silencing the known-deferred ones. Revisit if `elk` is ever dropped from
+    // the client graph rather than dynamically imported.
+    chunkSizeWarningLimit: 2000,
+  },
   optimizeDeps: {
     exclude: [...optimizeDepsExcludeDefaults, '@openrouter/sdk'],
     include: [...optimizeDepsIncludeDefaults],
