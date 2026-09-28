@@ -1,5 +1,5 @@
 import type { SQL } from 'drizzle-orm'
-import type { ProjectCatalogQuery, ProjectCatalogRecord } from '../project-catalog'
+import type { ProjectCatalogBreakdownEntry, ProjectCatalogQuery, ProjectCatalogRecord } from '../project-catalog'
 import type { KnowledgeProjectCatalogMetadata } from '../source-types'
 import type { KnowledgeCandidate, KnowledgeSourceReference, KnowledgeSourceType } from '../types'
 
@@ -35,7 +35,14 @@ export interface KnowledgeIndexRepository {
   ): Promise<void>
   removeSource(sourceType: KnowledgeSourceType, sourceId: string): Promise<void>
   listSourceIds(sourceType: KnowledgeSourceType): Promise<string[]>
-  listOwnedProjects(query: ProjectCatalogQuery): Promise<{ projects: KnowledgeProjectRecord[]; hasMore: boolean }>
+  listOwnedProjects(query: ProjectCatalogQuery): Promise<{
+    projects: KnowledgeProjectRecord[]
+    hasMore: boolean
+    /** Total rows matching the active filters, computed before LIMIT. */
+    matchingTotal: number
+    /** Visibility/kind/topic counts over the same filtered set. */
+    breakdown: ProjectCatalogBreakdownEntry[]
+  }>
   upsertOwnedProjectCatalogEntries(
     entries: Array<{
       sourceType: 'github' | 'github-private'

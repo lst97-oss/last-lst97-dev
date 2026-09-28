@@ -96,12 +96,12 @@ describe('KnowledgeIndexRepository', () => {
       {
         source_type: 'github', source_id: 'lst97/public-tool', title: 'public-tool', url: 'https://github.com/lst97/public-tool', is_public: true,
         summary: 'Public purpose.', created_at: null, updated_at: null, stars: null, forks: null,
-        primary_language: null, languages: [], software_kinds: [], github_topics: [], curated_topics: [], time_spent_seconds: null, most_starred: false,
+        primary_language: null, languages: [], software_kinds: [], github_topics: [], curated_topics: [], time_spent_seconds: null, most_starred: false, matching_total: 2,
       },
       {
         source_type: 'github-private', source_id: 'lst97/private-tool', title: 'private-tool', url: 'https://github.com/lst97/private-tool', is_public: false,
         summary: 'Private purpose.', created_at: null, updated_at: null, stars: null, forks: null,
-        primary_language: null, languages: [], software_kinds: [], github_topics: [], curated_topics: [], time_spent_seconds: null, most_starred: false,
+        primary_language: null, languages: [], software_kinds: [], github_topics: [], curated_topics: [], time_spent_seconds: null, most_starred: false, matching_total: 2,
       },
     ])
     const repository = createKnowledgeIndexRepository(db)
@@ -127,7 +127,7 @@ describe('KnowledgeIndexRepository', () => {
       updated_at: '2026-09-10T00:00:00.000Z', stars: 4, forks: 2,
       primary_language: 'Python', languages: ['Python', 'Rust'],
       software_kinds: ['cli_tool'], github_topics: ['cli'], curated_topics: ['developer-tool'],
-      time_spent_seconds: 7_200, most_starred: true,
+      time_spent_seconds: 7_200, most_starred: true, matching_total: 1,
     }])
     const repository = createKnowledgeIndexRepository(db)
     const filters = projectCatalogFiltersSchema.parse({
@@ -152,6 +152,83 @@ describe('KnowledgeIndexRepository', () => {
       sourceId: 'lst97/python-tool', languages: ['Python', 'Rust'], kinds: ['cli_tool'],
       timeSpentSeconds: 7_200, mostStarred: true,
     })
+  })
+
+  it('computes a filter-aware total and a deduped breakdown alongside the page', async () => {
+    const db = createDatabase([{
+      source_type: 'github', source_id: 'lst97/python-tool', title: 'python-tool',
+      url: 'https://github.com/lst97/python-tool', is_public: true,
+      summary: 'A Python command line app.', created_at: null, updated_at: null, stars: 4, forks: 2,
+      primary_language: 'Python', languages: ['Python'],
+      software_kinds: ['cli_tool'],
+      // The same topic in both arrays must count once, not twice.
+      github_topics: ['cli', 'cantonese'], curated_topics: ['cli'],
+      time_spent_seconds: null, most_starred: true, matching_total: 111,
+      breakdown: [
+        { dimension: 'visibility', key: 'true', count: 89 },
+        { dimension: 'visibility', key: 'false', count: 22 },
+        { dimension: 'topic', key: 'cantonese', count: 7 },
+        { dimension: 'kind', key: 'cli_tool', count: 18 },
+      ],
+    }])
+    const repository = createKnowledgeIndexRepository(db)
+    const filters = projectCatalogFiltersSchema.parse({ limit: 5 })
+
+    const result = await repository.listOwnedProjects({
+      ...filters, exclude_source_ids: [], first_batch: false,
+    })
+
+    const statement = db.queries[0]?.sql ?? ''
+    // The total counts the whole filtered set before LIMIT, not the page.
+    expect(statement).toContain('COUNT(*) OVER () AS "matching_total"')
+    // Topics are deduped per project and counted by distinct project, not by unnest row.
+    expect(statement).toContain('ARRAY(SELECT DISTINCT unnest(p."github_topics" || p."curated_topics"))')
+    expect(statement).toContain("COUNT(DISTINCT p.\"source_id\")::int")
+    expect(result.matchingTotal).toBe(111)
+    expect(result.breakdown).toEqual([
+      { dimension: 'visibility', key: 'true', count: 89 },
+      { dimension: 'visibility', key: 'false', count: 22 },
+      { dimension: 'topic', key: 'cantonese', count: 7 },
+      { dimension: 'kind', key: 'cli_tool', count: 18 },
+    ])
+    // A list call still returns its page alongside the totals.
+    expect(result.projects).toHaveLength(1)
+  })
+
+  it('returns totals and no projects for the count op', async () => {
+    const db = createDatabase([{
+      source_type: 'github', source_id: 'lst97/lst97', title: 'lst97',
+      url: 'https://github.com/lst97/lst97', is_public: true, summary: 'Profile.',
+      created_at: null, updated_at: null, stars: null, forks: null, primary_language: null,
+      languages: [], software_kinds: [], github_topics: [], curated_topics: [],
+      time_spent_seconds: null, most_starred: false, matching_total: 111,
+      breakdown: [{ dimension: 'visibility', key: 'true', count: 89 }],
+    }])
+    const repository = createKnowledgeIndexRepository(db)
+    const filters = projectCatalogFiltersSchema.parse({})
+
+    const result = await repository.listOwnedProjects({
+      ...filters, exclude_source_ids: [], first_batch: false, op: 'count',
+    })
+
+    expect(result).toEqual({
+      projects: [],
+      hasMore: false,
+      matchingTotal: 111,
+      breakdown: [{ dimension: 'visibility', key: 'true', count: 89 }],
+    })
+  })
+
+  it('reports a zero total when the filters match nothing', async () => {
+    const db = createDatabase([])
+    const repository = createKnowledgeIndexRepository(db)
+    const filters = projectCatalogFiltersSchema.parse({ query: 'no-such-project' })
+
+    const result = await repository.listOwnedProjects({
+      ...filters, exclude_source_ids: [], first_batch: true, op: 'count',
+    })
+
+    expect(result).toEqual({ projects: [], hasMore: false, matchingTotal: 0, breakdown: [] })
   })
 
   it('applies the named WakaTime windows to project time totals', async () => {

@@ -35,6 +35,7 @@ export interface AgentTurnState {
   activeProjectFilters?: ProjectCatalogFilters
   catalogueToolExecutedThisStep: boolean
   catalogueFallback?: string
+  ownedProjectCount?: string
 }
 
 export function createChatAgentLoop(
@@ -210,6 +211,15 @@ export function createChatAgentLoop(
     state.toolOutputs = state.toolOutputs ? `${state.toolOutputs}\n${call.name}: ${text}` : `${call.name}: ${text}`
     if (call.name === 'list_owned_projects' && result.status === 'completed') state.catalogueFallback = text
     if (call.name !== 'list_owned_projects') state.toolSummaries.push(`${call.name}: ${text}`)
+    // Count mode is the only producer of this prefix, and it is bounded to a few
+    // hundred characters, so it is safe to carry without the toolSummaries cap
+    // that keeps a 6,000-char catalogue dump out of the prompt.
+    if (
+      call.name === 'list_owned_projects' &&
+      result.status === 'completed' &&
+      result.output.startsWith('Owned project total:')
+    )
+      state.ownedProjectCount = result.output
     if (call.name === 'search_knowledge') {
       state.evidence = state.evidence ? `${state.evidence}\n${text}` : text
     } else if (call.name === 'coding_stats') {

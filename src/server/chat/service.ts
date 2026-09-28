@@ -138,6 +138,7 @@ export function createChatService(responder: ChatResponder, dependencies: ChatSe
       ...(state.toolRoutingUnavailable ? { toolRoutingUnavailable: true as const } : {}),
       ...(extraContext ? { extraContext } : {}),
       ...(state.catalogueFallback ? { catalogueFallback: state.catalogueFallback } : {}),
+      ...(state.ownedProjectCount ? { ownedProjectCount: state.ownedProjectCount } : {}),
       onModelCall: diagnostics?.addModelCall,
     }
   }

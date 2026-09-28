@@ -149,7 +149,11 @@ describe('createChatService', () => {
       knowledgeEnabled: true,
       knowledge: {
         execute: async () => { knowledgeCalls += 1; return { evidence: [], citations: [], degraded: false } },
-        listOwnedProjects: async (query) => { catalogueCalls += 1; received = query; return { projects: [project], hasMore: false } },
+        listOwnedProjects: async (query) => {
+          catalogueCalls += 1
+          received = query
+          return { projects: [project], hasMore: false, matchingTotal: 1, breakdown: [] }
+        },
       },
       planner: { planNextStep: async () => ({ kind: 'tool_calls', calls: [{ id: 'python-projects', name: 'list_owned_projects', arguments: { languages: ['Python'] } }] }) },
     })
@@ -184,7 +188,10 @@ describe('createChatService', () => {
       } as ModerationService,
       contextSigner: signer, knowledgeEnabled: true,
       knowledge: {
-        listOwnedProjects: async () => { toolOrder.push('catalogue'); return { projects: [project], hasMore: false } },
+        listOwnedProjects: async () => {
+          toolOrder.push('catalogue')
+          return { projects: [project], hasMore: false, matchingTotal: 1, breakdown: [] }
+        },
         execute: async () => { toolOrder.push('rag'); return { evidence: [], citations: [], degraded: false } },
       },
       planner: { planNextStep: async ({ allowedTools }) => ({ kind: 'tool_calls', calls: allowedTools?.includes('list_owned_projects')
@@ -1233,6 +1240,72 @@ describe('createChatService.sendStream', () => {
     expect(toolResult).toMatchObject({ type: 'tool_result', name: 'coding_history' })
     expect(JSON.stringify(toolResult)).toContain('best-maker-web')
     expect(events[events.length - 1]).toMatchObject({ type: 'done' })
+  })
+
+  it('asks the catalogue for exact totals when Jev is uncertain about a count question', async () => {
+    let received: { op?: string } | undefined
+    const service = createChatService(streamingResponder(['ok']), {
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async () => ({ allowed: true }),
+        routeTools: async ({ availableTools }) => Object.fromEntries(availableTools.map((tool) => [tool, {
+          label: 'uncertain',
+          confidence: 0.5,
+        }])),
+      } as ModerationService,
+      contextSigner: { verify: async () => ({ messages: [], topicAnchors: [] }), sign: async () => 'signed' } as ChatContextSigner,
+      knowledgeEnabled: true,
+      knowledge: {
+        listOwnedProjects: async (query) => {
+          received = query
+          return {
+            projects: [],
+            hasMore: false,
+            matchingTotal: 111,
+            breakdown: [
+              { dimension: 'visibility', key: 'true', count: 89 },
+              { dimension: 'visibility', key: 'false', count: 22 },
+            ],
+          }
+        },
+        execute: async () => ({ evidence: [], citations: [], degraded: false }),
+      },
+    })
+
+    const result = await service.send({ message: 'how many projects do you have?' })
+
+    expect(result.status).toBe('replied')
+    // The uncertain path has no planner, so the deterministic matcher must ask
+    // for the count op; without it the question degrades to a truncated list.
+    expect(received).toMatchObject({ op: 'count' })
+  })
+
+  it('keeps a list request on the list operation', async () => {
+    let received: { op?: string } | undefined
+    const service = createChatService(streamingResponder(['ok']), {
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async () => ({ allowed: true }),
+        routeTools: async ({ availableTools }) => Object.fromEntries(availableTools.map((tool) => [tool, {
+          label: 'uncertain',
+          confidence: 0.5,
+        }])),
+      } as ModerationService,
+      contextSigner: { verify: async () => ({ messages: [], topicAnchors: [] }), sign: async () => 'signed' } as ChatContextSigner,
+      knowledgeEnabled: true,
+      knowledge: {
+        listOwnedProjects: async (query) => {
+          received = query
+          return { projects: [], hasMore: false, matchingTotal: 0, breakdown: [] }
+        },
+        execute: async () => ({ evidence: [], citations: [], degraded: false }),
+      },
+    })
+
+    await service.send({ message: 'show me your projects' })
+
+    expect(received).toBeDefined()
+    expect(received?.op).toBeUndefined()
   })
 
   it('fans out live totals and warehouse breakdown for total-plus-project questions', async () => {

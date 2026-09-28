@@ -167,6 +167,40 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
     expected: [], toolOutputs: 'coding_stats: current all-time total is 1,234 hours.',
     topicAnchors: [{ question: 'What is the live all-time coding total?', observedAtUtc: '2026-09-24T00:00:00.000Z', tools: [{ name: 'coding_stats', arguments: { category: 'activity', range: 'all_time' }, status: 'completed' }] }],
   },
+  {
+    id: 'followup-total-count-after-partial-public-list', category: 'positive', message: 'What is your total projects count?',
+    expected: ['list_owned_projects'],
+    history: [
+      { role: 'user', content: 'Here are my projects?' },
+      { role: 'assistant', content: 'Here are 10 public repositories: claude-code-sub-agents, toonconv, super-opencode, smartplay-hk-oss, opencode-commands, github-readme-stats, typo-sync-server, CantoCap, canto-101-web, canto-101-server. This covers all 10 public repositories.' },
+    ],
+    topicAnchors: [{
+      question: 'Here are my projects?', observedAtUtc: '2026-09-24T00:00:00.000Z',
+      tools: [{ name: 'list_owned_projects', arguments: {}, status: 'completed' }],
+    }],
+  },
+  {
+    id: 'context-total-count-already-answered', category: 'context', message: 'Repeat that total, please.',
+    expected: [],
+    history: [{ role: 'assistant', content: 'I have 111 owned projects in total, including public and private.' }],
+    toolOutputs: 'list_owned_projects: total 111 owned projects, including public and private.',
+    topicAnchors: [{ question: 'What is your total projects count?', observedAtUtc: '2026-09-24T00:00:00.000Z', tools: [{ name: 'list_owned_projects', arguments: {}, status: 'completed' }] }],
+  },
+  {
+    id: 'followup-bare-what-is-your-projects', category: 'positive', message: 'what is your projects?',
+    expected: ['list_owned_projects'],
+  },
+  {
+    id: 'followup-total-number-after-rag-summary', category: 'positive', message: 'what is the total number of project you did?',
+    expected: ['list_owned_projects'],
+    history: [
+      { role: 'assistant', content: 'Here is a summary of my projects based on my public GitHub repositories: claude-code-sub-agents, qwen3-tts-rs, QwenASR, smartplay-hk-oss, gnaf-autocomplete, github-readme-stats, typo-sync-server, CantoCap, super-opencode, lst97. I also have a private repository.' },
+    ],
+    topicAnchors: [{
+      question: 'what is your projects?', observedAtUtc: '2026-09-24T00:00:00.000Z',
+      tools: [{ name: 'search_knowledge', arguments: { query: 'Nelson projects' }, status: 'completed' }],
+    }],
+  },
 
   // False-positive guards: assistant-directed “you”, general facts, and tasks
   // that do not need one of these private/live sources.

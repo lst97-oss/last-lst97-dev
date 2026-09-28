@@ -51,6 +51,20 @@ export const projectCatalogRowSchema = z.object({
   curated_topics: z.array(z.string()),
   time_spent_seconds: z.coerce.number().nonnegative().nullable(),
   most_starred: z.boolean(),
+  // Required on purpose: a missing matching_total is a genuine query bug and
+  // should fail loudly rather than silently report 0 matches.
+  matching_total: z.coerce.number().int().nonnegative(),
+  // Defaulted because a filtered-empty result still needs a usable shape, and
+  // because repository row fixtures may omit the column entirely.
+  breakdown: z
+    .array(
+      z.object({
+        dimension: z.enum(['visibility', 'topic', 'kind']),
+        key: z.string().min(1),
+        count: z.coerce.number().int().nonnegative(),
+      }),
+    )
+    .default([]),
 })
 export const projectCatalogMetadataSchema = z
   .object({

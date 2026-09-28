@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { projectCatalogFiltersSchema } from '../../knowledge/project-catalog'
+import { projectCatalogQuerySchema } from '../../knowledge/project-catalog'
 import type { AgentToolCall, AgentToolResult, AgentToolRunner } from './agent-tools'
 import { resolveCodingHistoryRange, runCodingHistoryTool } from './coding-history-tool'
 import { codingStatsLabel, parseCodingStatsToolArguments, runCodingStatsTool } from './coding-stats-tool'
@@ -52,7 +52,9 @@ const codingHistoryArgs = z
 export async function runAgentTool(call: AgentToolCall, runner: AgentToolRunner): Promise<AgentToolResult> {
   const timeoutMs = runner.toolTimeoutMs
   if (call.name === 'list_owned_projects') {
-    const parsed = projectCatalogFiltersSchema.safeParse(call.arguments)
+    // The query schema is a strict superset of the filters schema: it carries `op`
+    // plus the two server-owned fields, which the tool always overwrites below.
+    const parsed = projectCatalogQuerySchema.safeParse(call.arguments)
     if (!parsed.success) return invalid(call, 'expected bounded project catalogue filters', runner)
     if (runner.knowledgeEnabled !== true) return invalid(call, 'knowledge lookup is disabled', runner)
     return runOwnedProjectsTool(call, runner, parsed.data)

@@ -1,7 +1,7 @@
 import type { ChatMessage, ChatTopicAnchor } from '../chat/types'
 import type { ChatModelCallDiagnostic, ChatRagRetrievalDiagnostic } from '../observability/chat-diagnostics'
 import type { Logger } from '../observability/logger'
-import type { ProjectCatalogQuery } from './project-catalog'
+import type { ProjectCatalogBreakdownEntry, ProjectCatalogQuery } from './project-catalog'
 import { resolveKnowledgeQuery } from './query-resolution'
 import type { KnowledgeIndexRepository, KnowledgeProjectRecord } from './repository'
 import type {
@@ -48,7 +48,12 @@ export interface RetrieveKnowledgeResult {
 
 export interface RetrieveKnowledge {
   execute(input: RetrieveKnowledgeInput): Promise<RetrieveKnowledgeResult>
-  listOwnedProjects(input: ProjectCatalogQuery): Promise<{ projects: KnowledgeProjectRecord[]; hasMore: boolean }>
+  listOwnedProjects(input: ProjectCatalogQuery): Promise<{
+    projects: KnowledgeProjectRecord[]
+    hasMore: boolean
+    matchingTotal: number
+    breakdown: ProjectCatalogBreakdownEntry[]
+  }>
 }
 
 export interface RetrieveKnowledgeDependencies {

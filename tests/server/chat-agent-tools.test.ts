@@ -109,7 +109,7 @@ describe('agent tool runner', () => {
         execute: async () => ({ evidence: [], citations: [], degraded: false }),
         listOwnedProjects: async (input) => {
           received = input
-          return { projects: [project], hasMore: false }
+          return { projects: [project], hasMore: false, matchingTotal: 1, breakdown: [] }
         },
       },
     })
@@ -124,6 +124,110 @@ describe('agent tool runner', () => {
     expect(result.retrieval?.citations).toEqual([{ id: 'K1', title: 'python-tool', url: 'https://github.com/lst97/python-tool', isPublic: true }])
   })
 
+  it('answers a count question with server-computed totals and no citations', async () => {
+    let received: unknown
+    const project = {
+      sourceType: 'github' as const, sourceId: 'lst97/lst97', title: 'lst97',
+      url: 'https://github.com/lst97/lst97', isPublic: true, summary: 'Profile.',
+      createdAt: null, updatedAt: null, stars: null, forks: null, primaryLanguage: null,
+      languages: [], kinds: [], githubTopics: [], curatedTopics: [], timeSpentSeconds: null, mostStarred: false,
+    }
+    const result = await runAgentTool({
+      id: 'catalogue-count', name: 'list_owned_projects', arguments: { op: 'count' },
+    }, {
+      ...runner,
+      knowledgeEnabled: true,
+      projectListState: { clarificationAsked: false, shownProjectIds: [], shortlistStarted: true },
+      knowledge: {
+        execute: async () => ({ evidence: [], citations: [], degraded: false }),
+        listOwnedProjects: async (input) => {
+          received = input
+          return {
+            projects: [project],
+            hasMore: false,
+            matchingTotal: 111,
+            breakdown: [
+              { dimension: 'visibility' as const, key: 'true', count: 89 },
+              { dimension: 'visibility' as const, key: 'false', count: 22 },
+              { dimension: 'kind' as const, key: 'cli_tool', count: 18 },
+              { dimension: 'topic' as const, key: 'coursework', count: 14 },
+            ],
+          }
+        },
+      },
+    })
+
+    // The model may send server-owned fields, and they must still be replaced by
+    // server values: `op` must not let it choose its own exclusion list.
+    expect(received).toMatchObject({ op: 'count', exclude_source_ids: [], first_batch: false })
+    expect(result.status).toBe('completed')
+    expect(result.output).toContain('Owned project total: 111')
+    expect(result.output).toContain('89 public, 22 private')
+    expect(result.output).toContain('CLI tool 18')
+    expect(result.output).toContain('coursework 14')
+    expect(result.output).toContain('Topic and kind counts overlap')
+    // A pure count cites nothing, so it cannot be presented as sourced evidence.
+    expect(result.retrieval).toBeUndefined()
+  })
+
+  it('keeps server-owned exclusions when the model sends its own', async () => {
+    let received: unknown
+    const result = await runAgentTool({
+      id: 'catalogue-injection', name: 'list_owned_projects',
+      arguments: { exclude_source_ids: ['lst97/attacker-choice'], first_batch: false },
+    }, {
+      ...runner,
+      knowledgeEnabled: true,
+      projectListState: { clarificationAsked: false, shownProjectIds: ['lst97/server-shown'], shortlistStarted: true },
+      knowledge: {
+        execute: async () => ({ evidence: [], citations: [], degraded: false }),
+        listOwnedProjects: async (input) => {
+          received = input
+          return { projects: [], hasMore: false, matchingTotal: 111, breakdown: [] }
+        },
+      },
+    })
+
+    expect(result.status).toBe('completed')
+    // The model must never choose which already-shown projects to exclude.
+    expect(received).toMatchObject({ exclude_source_ids: ['lst97/server-shown'], first_batch: false })
+  })
+
+  it('counts the whole inventory rather than the unshown remainder', async () => {
+    let received: { exclude_source_ids?: string[] } | undefined
+    const result = await runAgentTool({
+      id: 'catalogue-count-after-page', name: 'list_owned_projects', arguments: { op: 'count' },
+    }, {
+      ...runner,
+      knowledgeEnabled: true,
+      // Ten projects were already listed earlier in the conversation.
+      projectListState: {
+        clarificationAsked: false,
+        shownProjectIds: Array.from({ length: 10 }, (_, index) => `lst97/shown-${index}`),
+        shortlistStarted: true,
+      },
+      knowledge: {
+        execute: async () => ({ evidence: [], citations: [], degraded: false }),
+        listOwnedProjects: async (input) => {
+          received = input
+          return {
+            projects: [],
+            hasMore: false,
+            matchingTotal: 111,
+            breakdown: [{ dimension: 'visibility', key: 'true', count: 89 }],
+          }
+        },
+      },
+    })
+
+    // The exclusion list is a paging artifact. If count mode carried it, the total
+    // would report 101 and the visibility breakdown would drop to 79 public.
+    expect(received).toMatchObject({ op: 'count', exclude_source_ids: [] })
+    expect(result.output).toContain('Owned project total: 111')
+    expect(result.output).toContain('89 public, 0 private')
+    expect(result.output).not.toContain('excluding projects already shown')
+  })
+
   it('keeps regular search_knowledge calls on semantic retrieval', async () => {
     let semanticCalls = 0
     let listCalls = 0
@@ -133,7 +237,10 @@ describe('agent tool runner', () => {
         expect(input.message).toBe('Nelson education')
         return { evidence: [], citations: [], degraded: false }
       },
-      listOwnedProjects: async () => { listCalls += 1; return { projects: [], hasMore: false } },
+      listOwnedProjects: async () => {
+        listCalls += 1
+        return { projects: [], hasMore: false, matchingTotal: 0, breakdown: [] }
+      },
     }
     const result = await runAgentTool(
       { id: 'knowledge', name: 'search_knowledge', arguments: { query: 'Nelson education' } },

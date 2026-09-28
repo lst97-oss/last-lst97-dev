@@ -1,4 +1,9 @@
-import type { ProjectCatalogFilters, ProjectCatalogQuery, ProjectCatalogRecord } from '../../knowledge/project-catalog'
+import type {
+  ProjectBreakdownDimension,
+  ProjectCatalogBreakdownEntry,
+  ProjectCatalogQuery,
+  ProjectCatalogRecord,
+} from '../../knowledge/project-catalog'
 import type { AgentToolCall, AgentToolResult, AgentToolRunner } from './agent-tools'
 import { TOOL_TIMEOUT, unavailableToolResult, withToolTimeout } from './tool-support'
 
@@ -67,10 +72,36 @@ function projectEvidence(project: ProjectCatalogRecord & { mostStarred: boolean 
   }
 }
 
+const PROJECT_COUNT_OVERLAP_NOTE = 'Topic and kind counts overlap; a project can have several of each.'
+
+function formatProjectCount(matchingTotal: number, breakdown: ProjectCatalogBreakdownEntry[]): string {
+  const byDimension = (dimension: ProjectBreakdownDimension) =>
+    breakdown.filter((entry) => entry.dimension === dimension).sort((a, b) => b.count - a.count)
+  const lines: string[] = []
+  const visibility = byDimension('visibility')
+  if (visibility.length > 0) {
+    const publicCount = visibility.find((entry) => entry.key === 'true')?.count ?? 0
+    const privateCount = visibility.find((entry) => entry.key === 'false')?.count ?? 0
+    lines.push(`Visibility: ${publicCount} public, ${privateCount} private.`)
+  }
+  const kinds = byDimension('kind')
+  if (kinds.length > 0)
+    lines.push(`Kinds: ${kinds.map(({ key, count }) => `${displayProjectKind(key)} ${count}`).join('; ')}.`)
+  const topics = byDimension('topic')
+  if (topics.length > 0) lines.push(`Topics: ${topics.map(({ key, count }) => `${key} ${count}`).join('; ')}.`)
+  // Total first, then visibility, then kinds, then topics: the responder is told to
+  // report these verbatim, so their order must not invite picking the wrong figure.
+  return [
+    `Owned project total: ${matchingTotal} projects match the current filters.`,
+    ...lines,
+    PROJECT_COUNT_OVERLAP_NOTE,
+  ].join('\n')
+}
+
 export async function runOwnedProjectsTool(
   call: AgentToolCall,
   runner: AgentToolRunner,
-  requestedFilters: ProjectCatalogFilters,
+  requestedFilters: ProjectCatalogQuery,
 ): Promise<AgentToolResult> {
   const knowledge = runner.knowledge
   const listOwnedProjects = knowledge?.listOwnedProjects
@@ -87,14 +118,22 @@ export async function runOwnedProjectsTool(
   const state = runner.projectListState ?? { clarificationAsked: false, shownProjectIds: [] }
   const continuation = /\b(?:more|next|another|continue|additional)\b/i.test(runner.message ?? '')
   const hasExplicitFilters = Object.keys(call.arguments).some((key) => key !== 'limit')
+  // `op` is the operation, not a filter: it is absent from the filters value that
+  // activeFilters round-trips through signed context, so keep it separate.
+  const { op, ...requestedFilterArgs } = requestedFilters
   const filters =
     continuation && state.shortlistStarted === true && !hasExplicitFilters && state.activeFilters
       ? state.activeFilters
-      : requestedFilters
+      : requestedFilterArgs
   const request: ProjectCatalogQuery = {
     ...filters,
-    exclude_source_ids: state.shownProjectIds.slice(0, 200),
+    // A count is about the whole matching inventory, not the unshown remainder.
+    // The exclusion list is a paging artifact, so applying it would report the
+    // page-adjusted figure (101) and drop every already-shown project from the
+    // visibility and topic breakdowns.
+    exclude_source_ids: op === 'count' ? [] : state.shownProjectIds.slice(0, 200),
     first_batch: state.shortlistStarted !== true,
+    ...(op ? { op } : {}),
   }
 
   const result = await withToolTimeout(listOwnedProjects.call(knowledge, request), runner.toolTimeoutMs)
@@ -109,6 +148,17 @@ export async function runOwnedProjectsTool(
     )
   }
 
+  if (op === 'count') {
+    return {
+      call,
+      output: formatProjectCount(result.matchingTotal, result.breakdown),
+      status: 'completed',
+      validatedArguments: { ...(filters.query ? { query: filters.query } : {}), op: 'count' },
+      sseLabel: 'COUNTING PROJECTS…',
+      sseName: 'list_owned_projects',
+    }
+  }
+
   const evidence = result.projects.map(projectEvidence)
   const citations = evidence.map(({ citationId, source, isPublic }) => ({
     id: citationId,
@@ -117,7 +167,7 @@ export async function runOwnedProjectsTool(
     isPublic,
   }))
   const output = evidence.length
-    ? `Owned project matches (${evidence.length}${result.hasMore ? '; more available' : ''}):\n${evidence.map(({ citationId, text }) => `- [${citationId}] ${text}`).join('\n')}\nSummary: ${evidence.length} project${evidence.length === 1 ? '' : 's'} matched${result.hasMore ? '; more matching projects are available.' : '.'}`
+    ? `Owned project matches (${evidence.length} of ${result.matchingTotal}; more available):\n${evidence.map(({ citationId, text }) => `- [${citationId}] ${text}`).join('\n')}\nSummary: ${result.matchingTotal} project${result.matchingTotal === 1 ? '' : 's'} match these filters in total${result.matchingTotal > evidence.length ? `; ${evidence.length} shown in this batch, ${result.matchingTotal - evidence.length} not yet shown` : ''}.`
     : 'No unshown owned projects matched these catalogue filters.'
 
   return {

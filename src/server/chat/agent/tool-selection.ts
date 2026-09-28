@@ -144,8 +144,17 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
     if (tools.length === 0) return []
     const selected = new Set(tools)
     const calls: AgentToolCall[] = []
-    if (selected.has('list_owned_projects'))
-      calls.push({ id: 'owned-projects', name: 'list_owned_projects', arguments: {} })
+    if (selected.has('list_owned_projects')) {
+      const asksForCount =
+        /\b(?:how many|total (?:number|count|projects?)|number of projects?|count of projects?|projects? in total|breakdown|what topics|which topics|topics (?:do|does|are|cover)|topic breakdown)\b/i.test(
+          message,
+        )
+      calls.push({
+        id: 'owned-projects',
+        name: 'list_owned_projects',
+        arguments: asksForCount ? { op: 'count' } : {},
+      })
+    }
     if (selected.has('search_knowledge')) {
       const knowledge = matchKnowledgeRequest(message)
       if (knowledge) calls.push(knowledge)
@@ -340,20 +349,43 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
     if (!decisions) return { calls: [], unavailable: true, argumentsUnavailable: false }
 
     const projectInventoryRequest =
-      /\b(?:list|show|browse|see|more|all|available)\b/i.test(input.message) &&
+      /\b(?:list|show|browse|see|more|all|available|count|total|many|number)\b/i.test(input.message) &&
       /\b(?:projects?|repositories|repos)\b/i.test(input.message)
+    const mentionsProjects = /\b(?:projects?|repositories|repos)\b/i.test(input.message)
+    const mentionsContributions = /\bcontribut(?:e|ed|ion|ions)\b/i.test(input.message)
+    // Catalogue guard: bare inventory (“what are your projects?”) and counts
+    // (“total number of projects”) must come from list_owned_projects even when
+    // prior chat holds a partial RAG list. This mirrors the forced-RAG guard
+    // below but for the catalogue, since history can never establish
+    // completeness for inventory/counts. Contributions stay on search_knowledge.
+    const isCatalogueInventoryRequest =
+      availableTools.includes('list_owned_projects') &&
+      mentionsProjects &&
+      !mentionsContributions &&
+      (/\b(?:how many|total|count|number|many)\b/i.test(input.message) ||
+        /\b(?:list|show|browse|see|more|all|available)\b/i.test(input.message) ||
+        /\b(?:what|which)\b.{0,40}\b(?:projects?|repositories|repos)\b/i.test(input.message) ||
+        /\b(?:projects?|repositories|repos)\b.{0,40}\b(?:you|your|my|owned|built|did|have|total)\b/i.test(
+          input.message,
+        ))
     const projectDetailsRequested = /\b(?:describe|details?|purpose|how (?:does|do)|what (?:is|does|are))\b/i.test(
       input.message,
     )
     const requiredQuery =
-      availableTools.includes('search_knowledge') && !(projectInventoryRequest && !projectDetailsRequested)
+      availableTools.includes('search_knowledge') &&
+      !isCatalogueInventoryRequest &&
+      !(projectInventoryRequest && !projectDetailsRequested)
         ? requiredKnowledgeQuery(input.message, input.history, input.topicAnchors)
         : undefined
     // Explicit Jev labels win even when confidence is low. Only the literal
     // uncertain label delegates that tool's routing decision to regex. For
     // owner knowledge, however, chat history cannot establish completeness:
-    // every new factual request requires a fresh source lookup.
+    // every new factual request requires a fresh source lookup. Catalogue
+    // inventory/counts get the symmetric guard: history can never prove a
+    // partial list is the total, so force the catalogue even on Jev skip.
     let jevApprovedTools = availableTools.filter((tool) => decisions?.[tool]?.label === 'use')
+    if (isCatalogueInventoryRequest && !jevApprovedTools.includes('list_owned_projects'))
+      jevApprovedTools.push('list_owned_projects')
     if (requiredQuery && !jevApprovedTools.includes('search_knowledge')) jevApprovedTools.push('search_knowledge')
     if (jevApprovedTools.includes('list_owned_projects') && jevApprovedTools.includes('search_knowledge'))
       jevApprovedTools = ['list_owned_projects']

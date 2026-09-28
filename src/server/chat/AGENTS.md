@@ -49,7 +49,7 @@ Do not refer to the planner and responder as separate providers: both are OpenRo
 
 ## Source boundaries
 
-- `list_owned_projects`: canonical owned-repository inventory, filters, and “more” batches. Inventory alone does not require RAG; contributions are excluded.
+- `list_owned_projects`: canonical owned-repository inventory, counts, totals, filters, and “more” batches. Inventory alone does not require RAG; contributions are excluded. A prior subset or public-only list never satisfies a total/all/including-private count. Every call returns an exact, filter-aware `matchingTotal` plus a visibility/kind/topic `breakdown` alongside its page. A count question passes `op: "count"`, which returns those figures and no page; the server then hands the responder the rendered total as authoritative input, and the responder reports it verbatim instead of re-deriving a number from a truncated list.
 - `search_knowledge`: fresh owner/profile facts and details about a named project, repository, contribution, purpose, or demo URL.
 - `site_content`: currently published Payload projects and blog posts. It answers showcase/publication state.
 - `coding_stats`: current WakaTime aggregate activity and category shares.
@@ -59,8 +59,8 @@ Use multiple sources only when the latest request needs each source. Project inv
 
 ## Evidence and conversation rules
 
-- The latest user message defines the request. Recent messages and topic anchors resolve follow-up references, active filters, accepted offers, or already-shown projects; they do not establish facts.
-- Retrieve fresh source evidence for new factual claims about Nelson. A prior answer or evidence from another source does not count as a fresh same-source result.
+- The latest user message defines the request. Recent messages and topic anchors resolve follow-up references, active filters, accepted offers, or already-shown projects; they do not establish facts. Shown projects identify references only, not totals.
+- Retrieve fresh source evidence for new factual claims about Nelson. A prior answer or evidence from another source does not count as a fresh same-source result. A partial, subset, or differently scoped answer does not count as the exact answer for a new total/count request.
 - Keep Nelson and the visitor distinct. “You/your” in questions about Nelson’s work means Nelson; the response voice refers to Nelson’s verified projects and accounts as “my” or “Nelson’s”. Never describe Nelson’s account/data as the visitor’s.
 - Use trusted runtime UTC for relative dates. Preserve source period, retrieval time, and warehouse coverage when describing activity.
 - Keep model prompts concise and non-duplicative. Put routing authority in Jev’s prompt, approved-argument constraints in the planner prompt, and persona/evidence/formatting rules in the responder prompt.
@@ -69,7 +69,7 @@ Use multiple sources only when the latest request needs each source. Project inv
 
 - Diagnostics are request-scoped observer callbacks collected by `chat/service.ts`; provider and retrieval modules must not post directly to Discord.
 - `CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL` is optional. When configured, the collector sends a redacted, bounded turn record to the restricted Discord channel through `observability/chat-diagnostics.ts`. Delivery is asynchronous and must not affect the chat result.
-- Record the current query, up to six recent context messages, the final/partial user-facing reply, Jev decisions, retrieval candidates, provider-reported usage, and server-derived visitor metadata. Include an IP only from production requests whose `x-origin-verification` header matches `CLOUDFLARE_ORIGIN_VERIFY_SECRET`, then use `CF-Connecting-IP`; accept Cloudflare location headers only alongside that IP. Limit location to country/region/city/timezone; never collect coordinates or postal code. Parse browser, OS, and device class from the user-agent without storing the raw header. Never include signed context tokens, cookies, session credentials, other credentials, raw exceptions, or diagnostics in model prompts or SSE events.
+- Record the current query, up to six recent context messages, the final/partial user-facing reply, Jev decisions, retrieval candidates, provider-reported usage, and server-derived visitor metadata. Include an IP and Vercel country, region code, city, and timezone only for production requests running on Vercel with one valid address in Vercel's `x-forwarded-for` header. Never collect coordinates or postal code. Parse browser, OS, and device class from the user-agent without storing the raw header. Never include signed context tokens, cookies, session credentials, other credentials, raw exceptions, or diagnostics in model prompts or SSE events.
 - Preserve exact usage fields when providers report them; mark usage unreported when they do not. Do not infer token counts or costs.
 - Keep the persistent disclosure below the chat composer accurate when changing collected fields or destination.
 
