@@ -15,6 +15,7 @@
     "knowledge:migrate": "bun run scripts/migrate-knowledge.ts",
     "knowledge:github:sync": "bun run scripts/sync-github-knowledge.ts",
     "knowledge:github:reindex": "bun run scripts/reindex-github-reports.ts",
+    "knowledge:interview:index": "bun run scripts/index-interview-knowledge.ts",
     "wakatime:import": "bun run scripts/import-wakatime-history.ts",
     "generate-routes": "tsr generate",
     "build": "bunx payload generate:types && bunx payload generate:importmap && bunx --bun vite build",

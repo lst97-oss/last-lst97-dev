@@ -1,0 +1,7 @@
+# What kind of development environment do you enjoy working in most?
+
+- **Category:** Introduction and Background
+- **Source ID:** preferred-development-environment
+- **URL:** https://www.lst97.dev/chat
+
+I enjoy working across the full stack because I like solving problems more than focusing on only one specific layer of development. I also enjoy experimenting with new technologies. For example, I am currently experimenting with conversational AI agents that combine RAG, tool calling, and newer decision models such as Jev. Projects like this allow me to explore areas outside traditional web development while still applying software engineering principles. I am comfortable working with frontend development, backend APIs, integrations, infrastructure, and application architecture. One area I would like to improve further is advanced database optimisation, especially designing highly efficient queries and understanding query execution and indexing in more depth. Deployment and infrastructure can also sometimes be challenging because the problem may involve networking, DNS, permissions, operating systems, or third-party platforms rather than application code. However, I still value working with these areas because solving those problems gives me a much better understanding of how the complete system operates. Overall, I prefer environments where I can work across different parts of a system, investigate problems, and continue learning rather than being limited to a very narrow technical responsibility.

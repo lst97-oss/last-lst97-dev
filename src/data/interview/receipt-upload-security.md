@@ -1,0 +1,7 @@
+# What security measures would you implement for an application that accepts uploaded receipt images?
+
+- **Category:** System Design and Architecture
+- **Source ID:** receipt-upload-security
+- **URL:** https://www.lst97.dev/chat
+
+I would treat every uploaded file as untrusted input. First, I would enforce limits on file size and only allow file types that the application actually needs. I would validate both the extension and the actual file contents rather than trusting the MIME type provided by the client. This becomes especially important if the application accepts formats such as PDF or Office documents, because those formats can contain embedded or malicious content. The object storage itself should remain private. Access should go through an authenticated and authorised API, or use short-lived signed URLs, so that knowing or guessing an object URL does not allow one user to access another user's receipt. I would also generate unpredictable object keys rather than using the original filename as the storage path. The upload endpoints should have rate limits, file-size limits and authentication checks to reduce abuse and storage-exhaustion attacks. Depending on the application's risk level, I would also consider malware scanning before making a file available to other users or downstream systems. Finally, I would make sure uploaded files are served with safe response headers and are not automatically interpreted as executable content by the browser.

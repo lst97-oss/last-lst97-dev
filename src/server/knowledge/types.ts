@@ -4,6 +4,7 @@ export type KnowledgeSourceType =
   | 'post'
   | 'project'
   | 'profile'
+  | 'interview'
   | 'github'
   | 'github-private'
   | 'github-profile'
