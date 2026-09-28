@@ -7,6 +7,15 @@ export default {
       'src/components/ui/**',
       'server/**',
       'components/ui/**',
+      // Generated build output. These are gitignored (.gitignore:3,10,11) and
+      // contain no author-written logic, but a root scan reads them and reports
+      // findings in bundled dependencies — e.g. Nitro's `queryReq.query = {
+      // ...req.query }`, react-dom's `escapeTextForBrowser(script)` inside a
+      // chunk, and @aws-sdk/checksums' `Object.assign(request.headers, ...)`.
+      // A root scan must not score a build artifact the repo does not track.
+      '.output/**',
+      '.vercel/**',
+      'dist/**',
     ],
     // Every entry below is a verified false positive or a pessimization, scoped
     // to the exact file that produced it so the rule stays live everywhere else.

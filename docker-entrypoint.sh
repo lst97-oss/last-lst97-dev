@@ -10,7 +10,13 @@ else
   echo "[entrypoint] running payload migrations..."
   # `bunx --bun` keeps the Payload CLI on the Bun runtime;
   # --disable-transpile lets Bun load TS natively (tsx's loader breaks on Linux).
-  if ! bunx --bun payload --disable-transpile migrate; then
+  # --force-accept-warning: Payload writes a `batch = -1, name = 'dev'` row into
+  # payload_migrations whenever dev auto-push has run. `migrate` filters that row
+  # out but never deletes it, so on every later boot the CLI — and the runtime's
+  # first DB access — blocks forever on an interactive confirm prompt that a
+  # container has no TTY to answer. `push: false` in payload.config.ts stops new
+  # rows; this flag is what unblocks an already-stale one.
+  if ! bunx --bun payload --disable-transpile migrate --force-accept-warning; then
     echo "[entrypoint] payload migrate failed" >&2
     exit 1
   fi
