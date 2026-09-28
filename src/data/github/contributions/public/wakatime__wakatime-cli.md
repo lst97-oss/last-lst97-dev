@@ -44,8 +44,8 @@ Evidence: none
 - Runs cmd with offline sync — Evidence: `cmd/run.go` (**inferred**)
 
 ## Tracked files
-- **1201 tracked files** in total
-- Source: 778; tests: 5; documentation: 22; configuration: 100; assets/other: 296
+- **1207 tracked files** in total
+- Source: 784; tests: 5; documentation: 22; configuration: 100; assets/other: 296
 
 ## Repository structure
 - Inspected 46 source files from the cloned repository (bounded for safety).
@@ -53,7 +53,7 @@ Evidence: none
 - `.vscode/` (1 tracked files)
 - `bin/` (8 tracked files)
 - `cmd/` (91 tracked files)
-- `pkg/` (1047 tracked files)
+- `pkg/` (1053 tracked files)
 - `testdata/` (30 tracked files)
 - `cmd/api/api_test.go`
 - `cmd/api/api.go`
