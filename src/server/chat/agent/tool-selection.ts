@@ -11,6 +11,15 @@ const PERSONAL_KNOWLEDGE_FACT =
   /\b(?:nelson|lst97|handle|username|profile|education|educational|degree|qualification|study|school|experience|employment|career|professional|skills?|background|contributions?|contact|email|linkedin|repositories|repository|repos?|projects?|website|codebase|technology|tech stack)\b/i
 const ASSISTANT_USAGE_REQUEST =
   /\b(?:chat assistant|portfolio assistant|what can you help|your capabilities|how do you (?:decide|work|process|handle|choose)|how does (?:this|your) chat|what services do you provide)\b/i
+/**
+ * Software-development vocabulary that the interview Q&A corpus answers from Nelson's own
+ * recorded experience. Bare "ai" and "machine learning" are deliberately absent so general
+ * AI chatter stays out of the knowledge route.
+ */
+const SOFTWARE_DEVELOPMENT_TOPIC =
+  /\b(?:react|next\.js|typescript|javascript|node\.js|deno|bun|sql|postgresql|mysql|mongodb|redis|database|index|indexes|indexing|query|queries|orm|rest|restful|api|apis|http|https|graphql|websocket|authentication|authorization|idempotency|promise|async|await|middleware|component|components|state management|server|backend|frontend|full stack|fullstack|microservices|cache|caching|cdn|latency|throughput|scalability|optimization|optimisation|memory leak|security|owasp|encryption|reverse engineering|assembly|compiler|operating system|linux|kernel|regex|code review|technical debt|design pattern|architecture|scale|scaling|system design|observability|monitoring|metrics|logging|tracing|incident|email delivery|webhook|retrieval augmented|rag|vector search|embedding|prompt engineering)\b/i
+const TECHNICAL_QUESTION_FRAME =
+  /\b(?:how|why|what|when|where|which|explain|describe|difference|best|should|would you|do you|can you|tell me|walk me)\b/i
 
 export function createChatToolSelection(dependencies: ChatServiceDependencies) {
   function diagnosticsObserver(capture: ChatDiagnosticsCapture | undefined) {
@@ -41,7 +50,7 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
   ): string | undefined {
     const query = resolveKnowledgeQuery(message, history, topicAnchors)
     if (ASSISTANT_USAGE_REQUEST.test(message) && !/\b(?:nelson|lst97|his|him)\b/i.test(message)) return undefined
-    if (!PERSONAL_KNOWLEDGE_FACT.test(query)) return undefined
+    if (!PERSONAL_KNOWLEDGE_FACT.test(query) && !SOFTWARE_DEVELOPMENT_TOPIC.test(query)) return undefined
 
     if (/\b(?:demo|demos|live[- ]?site|live[- ]?url|deployment|deployed)\b/i.test(query)) {
       return `Nelson's projects, live demo URLs, deployed websites, and project links. Original question: ${query}`.slice(
@@ -81,7 +90,8 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
       /\b(?:this|the|your|my) (?:portfolio )?(?:website|site|repository|repo|codebase|implementation|architecture)\b|\bhow (?:is|does) (?:this|the|your) (?:portfolio )?(?:website|site|repository|repo|codebase)\b/.test(
         text,
       )
-    if (assistantDirected || (!aboutNelson && !aboutSiteImplementation)) return null
+    const technicalQuestion = SOFTWARE_DEVELOPMENT_TOPIC.test(text) && TECHNICAL_QUESTION_FRAME.test(text)
+    if (assistantDirected || (!aboutNelson && !aboutSiteImplementation && !technicalQuestion)) return null
     return { id: 'rag-fallback', name: 'search_knowledge', arguments: { query: message } }
   }
 
@@ -384,10 +394,23 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
     // inventory/counts get the symmetric guard: history can never prove a
     // partial list is the total, so force the catalogue even on Jev skip.
     let jevApprovedTools = availableTools.filter((tool) => decisions?.[tool]?.label === 'use')
-    if (isCatalogueInventoryRequest && !jevApprovedTools.includes('list_owned_projects'))
+    // The inventory guard is symmetric with the forced-RAG guard above, so it
+    // re-fires on every step. Once the catalogue has already answered this
+    // turn, re-running it would loop on the same page and strand the detail
+    // lookup, so the guard only applies while the catalogue is still pending.
+    const catalogueAlreadyAnswered = input.state.catalogueToolExecutedThisStep || input.stepsUsed > 0
+    if (isCatalogueInventoryRequest && !catalogueAlreadyAnswered && !jevApprovedTools.includes('list_owned_projects'))
       jevApprovedTools.push('list_owned_projects')
     if (requiredQuery && !jevApprovedTools.includes('search_knowledge')) jevApprovedTools.push('search_knowledge')
-    if (jevApprovedTools.includes('list_owned_projects') && jevApprovedTools.includes('search_knowledge'))
+    // A catalogue-plus-details request stays sequential: the catalogue runs
+    // first, then the detail lookup gets its own fresh Jev decision. Collapse
+    // to the catalogue only for inventory-only requests; dropping RAG here
+    // would discard exactly the detail lookup `projectDetailsRequested` kept.
+    if (
+      !projectDetailsRequested &&
+      jevApprovedTools.includes('list_owned_projects') &&
+      jevApprovedTools.includes('search_knowledge')
+    )
       jevApprovedTools = ['list_owned_projects']
     const uncertainTools = availableTools.filter((tool) => decisions?.[tool]?.label === 'uncertain')
     const regexCalls = deterministicPlans(input.message, uncertainTools, input.today)
@@ -432,8 +455,11 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
               plannerCalls.push(call)
           }
         }
-        const preparedTools = new Set(plannerCalls.map((call) => call.name))
-        argumentsUnavailable = jevApprovedTools.some((tool) => !preparedTools.has(tool))
+        // Availability is decided once, after the catalogue-first collapse
+        // below: a sequentially-deferred tool is not "unavailable", it is
+        // simply not this step's call. Flagging it here would strand the loop
+        // on step 0 and skip the follow-up decision entirely.
+        argumentsUnavailable = false
       } catch (error) {
         dependencies.logger?.warn('chat.agent_arguments.unavailable', { error })
         // Jev remains the authority on whether a source is needed. If the

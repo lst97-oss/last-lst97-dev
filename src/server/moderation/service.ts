@@ -114,6 +114,7 @@ export function createModerationService(classifier: ModerationClassifier, minimu
         'owner_goals',
         'on_behalf',
         'assistant_usage',
+        'technical_question',
       ].includes(finding.scope.label)
       const safetyAllowed = finding.safety.label === 'safe'
       const safetyConfidenceAllowed = isConfident(finding.safety.confidence, minimumConfidence)
