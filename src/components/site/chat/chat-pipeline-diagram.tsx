@@ -190,7 +190,7 @@ export function ChatPipelineDiagram() {
 
     void renderDiagrams()
     return () => { active = false }
-  }, [DIAGRAMS, generatedId])
+  }, [generatedId])
 
   return (
     <div className="chat-pipeline-diagram-shell">

@@ -84,7 +84,7 @@ function fieldsSchema(template: ChatContactTemplate) {
     fieldSizeSchema(field).optional(),
   ])) as z.ZodRawShape
 
-  return z.object(shape).strict()
+  return z.strictObject(shape)
 }
 
 /** The shared client/server schema for one selected contact template. */
@@ -93,7 +93,7 @@ export function createChatContactDraftSchema(template: ChatContactTemplate): z.Z
     field.key,
     draftFieldSchema(field),
   ])) as z.ZodRawShape
-  return z.object(shape).strict() as unknown as z.ZodType<unknown, ChatContactFieldValues>
+  return z.strictObject(shape) as unknown as z.ZodType<unknown, ChatContactFieldValues>
 }
 
 export function createChatContactFieldSchema(template: ChatContactTemplate, key: ChatContactField): z.ZodType<unknown, string | undefined> {

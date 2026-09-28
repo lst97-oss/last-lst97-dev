@@ -8,7 +8,7 @@ import { formatProjectTimeframe, getProjectLifecycleLabel } from '@/lib/content/
 import type { ChangelogSummary, PostSummary, ProjectSummary } from '@/server/content/types'
 
 const cardClass =
-  'content-card flex min-h-50 flex-col items-start border-3 border-border bg-card p-5 shadow-none transition-all duration-100 ease-out hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-warning-muted'
+  'content-card flex min-h-50 flex-col items-start border-3 border-border bg-card p-5 shadow-none transition-[translate,background-color] duration-100 ease-out hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-warning-muted'
 
 const kickerClass = 'card-kicker text-xs font-black tracking-widest text-accent uppercase'
 

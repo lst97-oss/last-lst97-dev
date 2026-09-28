@@ -95,20 +95,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
+const MELBOURNE_BOM_PARTS = new Intl.DateTimeFormat('en', {
+  timeZone: 'Australia/Melbourne',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  hourCycle: 'h23',
+})
+
 function getMelbourneBomTemperature(payload: unknown, now: Date): number | null {
   if (!isRecord(payload) || !isRecord(payload.hourly)) return null
 
   const hourly = payload.hourly
   if (!Array.isArray(hourly.time) || !Array.isArray(hourly.temperature_2m)) return null
 
-  const parts = new Intl.DateTimeFormat('en', {
-    timeZone: 'Australia/Melbourne',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(now)
+  const parts = MELBOURNE_BOM_PARTS.formatToParts(now)
   const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value
   const year = part('year')
   const month = part('month')
