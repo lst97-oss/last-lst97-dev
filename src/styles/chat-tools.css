@@ -4,28 +4,14 @@
   gap: 10px;
 }
 
-.chat-help-button {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border: 3px solid var(--os-ink);
-  padding: 0;
-  background: var(--os-yellow);
-  color: var(--os-ink);
-  box-shadow: 3px 3px 0 var(--os-ink);
-  font-size: 16px;
-  font-weight: 900;
-  line-height: 1;
-  cursor: pointer;
-}
-
+/* Help button box lives in chat-help-dialog.tsx via Tailwind.
+   Hover + focus states stay here. */
 .chat-help-button:hover {
-  background: var(--os-coral);
+  background: var(--accent);
 }
 
 .chat-help-button:focus-visible {
-  outline: 3px solid var(--os-coral);
+  outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
 

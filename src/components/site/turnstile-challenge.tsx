@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { TurnstileAction } from '../../lib/turnstile'
+import type { TurnstileAction } from '@/lib/turnstile'
 
 interface TurnstileOptions {
   sitekey: string

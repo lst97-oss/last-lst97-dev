@@ -1,3 +1,7 @@
+import { ChatContextStack } from '@/components/site/chat/chat-context-stack'
+import { ChatPipelineDiagram } from '@/components/site/chat/chat-pipeline-diagram'
+import { Eyebrow } from '@/components/site/os-ui'
+import { PixelIcon } from '@/components/site/pixel-icon'
 import {
   Dialog,
   DialogContent,
@@ -6,19 +10,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { PixelIcon } from '../pixel-icon'
-import { ChatContextStack } from './chat-context-stack'
-import { ChatPipelineDiagram } from './chat-pipeline-diagram'
 
 export function ChatHelpDialog({ privacyNotice }: { privacyNotice: string | undefined }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button aria-label="How this chat works" className="chat-help-button" type="button">?</button>
+        <button aria-label="How this chat works" className="chat-help-button grid size-8.5 place-items-center border-3 border-border bg-primary p-0 text-base leading-none font-black text-foreground shadow-os-xs hover:bg-accent" type="button">?</button>
       </DialogTrigger>
       <DialogContent className="chat-pipeline-dialog">
         <DialogHeader>
-          <p className="eyebrow"><PixelIcon glyph="?" /> SYSTEM / PIPELINE</p>
+          <Eyebrow><PixelIcon glyph="?" /> SYSTEM / PIPELINE</Eyebrow>
           <DialogTitle>How your question is processed</DialogTitle>
           <DialogDescription className="chat-pipeline-description">
             Follow the request from the chat to the answer. The server first verifies the HMAC-signed conversation context, then Jev reads a compact slice of that history to judge safety, scope, and which read-only sources fit your question. Owned-project lists use a structured catalogue query; detailed knowledge passages are checked for direct relevance before they reach the answer model. The answer model then receives the whole verified conversation plus this turn&apos;s evidence. The same Jev screening also decides whether your message is contact intent; if it is, the second diagram shows the separate email, bug report, and feature request workflow you enter only after you confirm. Drag to pan; use the controls to zoom.
@@ -133,7 +134,7 @@ export function ChatHelpDialog({ privacyNotice }: { privacyNotice: string | unde
         </ol>
         <ChatContextStack />
         <section className="chat-pipeline-contact" aria-labelledby="chat-pipeline-contact-title">
-          <p className="eyebrow"><PixelIcon glyph="@" /> CONTACT / SEPARATE WORKFLOW</p>
+          <Eyebrow><PixelIcon glyph="@" /> CONTACT / SEPARATE WORKFLOW</Eyebrow>
           <h3 id="chat-pipeline-contact-title">When you choose to contact Nelson</h3>
           <p className="chat-pipeline-contact-intro">Jev screens contact intent in normal chat. Only your confirmation starts the separate, context-cleared contact session.</p>
           <div className="chat-pipeline-contact-grid">

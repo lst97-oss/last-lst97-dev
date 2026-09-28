@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
 
-import { fetchSiteHealthStatus, type SiteHealthStatus } from '../../lib/site-health'
+import { fetchSiteHealthStatus, type SiteHealthStatus } from '@/lib/site-health'
 
 const SiteHealthContext = createContext<SiteHealthStatus>('checking')
 const HEALTH_POLL_INTERVAL_MS = 30_000

@@ -1,7 +1,9 @@
-import type { ChatContactTemplate } from '../../../../lib/chat-contact'
-import { CHAT_CONTACT_TEMPLATES } from '../../../../lib/chat-contact'
-import { TurnstileChallenge } from '../../turnstile-challenge'
-import type { ChatContactReview } from '../chat-types'
+import { cn } from 'cn'
+import type { ChatContactReview } from '@/components/site/chat/chat-types'
+import { pixelButtonVariants } from '@/components/site/os-ui'
+import { TurnstileChallenge } from '@/components/site/turnstile-challenge'
+import type { ChatContactTemplate } from '@/lib/chat-contact'
+import { CHAT_CONTACT_TEMPLATES } from '@/lib/chat-contact'
 
 interface ChatContactReviewPhaseProps {
   template: ChatContactTemplate
@@ -73,8 +75,8 @@ export function ChatContactReviewPhase({
           : <p className="turnstile-unavailable" role="status">The security check is not configured yet.</p>}
       </div>
       <div className="os-chat-contact-actions">
-        <button className="pixel-button" disabled={pending} onClick={onEdit} type="button">EDIT REQUEST</button>
-        <button className="pixel-button primary" disabled={pending || !siteKey || !turnstileToken || !hasContextToken} onClick={onConfirmSend} type="button">SEND EMAIL</button>
+        <button className={cn(pixelButtonVariants())} disabled={pending} onClick={onEdit} type="button">EDIT REQUEST</button>
+        <button className={cn(pixelButtonVariants({ tone: 'coral' }))} disabled={pending || !siteKey || !turnstileToken || !hasContextToken} onClick={onConfirmSend} type="button">SEND EMAIL</button>
       </div>
     </div>
   )

@@ -106,7 +106,4 @@
   margin-bottom: 0;
 }
 
-.changelog-card .changelog-version {
-  margin: 12px 0;
-  align-self: flex-start;
-}
+/* Card version-chip spacing lives in content/card.tsx via Tailwind. */

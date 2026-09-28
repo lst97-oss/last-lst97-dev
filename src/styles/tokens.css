@@ -1,0 +1,82 @@
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Consolas, monospace;
+  --font-display: "Arial Black", Impact, sans-serif;
+
+  --animate-blink: blink 1s steps(2, jump-none) infinite;
+
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+}
+
+/*
+ * Semantic design tokens → Tailwind utilities.
+ * `inline` keeps the var() reference in the generated utility so that
+ * `:root` / `.dark` values switch at runtime. Never hardcode hex here.
+ */
+@theme inline {
+  /* Brand primitives (raw palette, for shadows/grid only) */
+  --color-os-ink: var(--os-ink);
+  --color-os-ink-soft: var(--os-ink-soft);
+  --color-os-cream: var(--os-cream);
+  --color-os-paper: var(--os-paper);
+  --color-os-yellow: var(--os-yellow);
+  --color-os-coral: var(--os-coral);
+  --color-os-teal: var(--os-teal);
+  --color-os-teal-soft: var(--os-teal-soft);
+  --color-os-violet: var(--os-violet);
+  --color-os-violet-soft: var(--os-violet-soft);
+
+  /* Core surfaces */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  /* Brand actions */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  /* Neutral UI */
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Status */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-error-muted: var(--error-muted);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-muted: var(--info-muted);
+
+  /* Dangerous actions */
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* Elevation (follow --border / --accent so dark mode inverts) */
+  --shadow-os: var(--shadow-os);
+  --shadow-os-sm: var(--shadow-os-sm);
+  --shadow-os-xs: var(--shadow-os-xs);
+  --shadow-os-hover: var(--shadow-os-hover);
+  --shadow-os-coral: var(--shadow-os-coral);
+  --shadow-os-coral-sm: var(--shadow-os-coral-sm);
+}

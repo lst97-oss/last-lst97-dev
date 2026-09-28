@@ -1,7 +1,9 @@
+import { cn } from 'cn'
+import type { ChatConversationViewModel } from '@/components/site/chat/chat-types'
+import { pixelButtonVariants } from '@/components/site/os-ui'
+import { TurnstileChallenge } from '@/components/site/turnstile-challenge'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { CHAT_TURN_LIMIT_MESSAGE, MAX_CHAT_TURNS } from '../../../lib/chat-limits'
-import { TurnstileChallenge } from '../turnstile-challenge'
-import type { ChatConversationViewModel } from './chat-types'
+import { CHAT_TURN_LIMIT_MESSAGE, MAX_CHAT_TURNS } from '@/lib/chat-limits'
 
 interface ChatComposerProps {
   conversation: ChatConversationViewModel
@@ -18,16 +20,16 @@ export function ChatComposer({ conversation, pending, siteKey }: ChatComposerPro
       <div className="os-chat-turn-meta" aria-live="polite">
         <span>TURN {String(completedTurns).padStart(2, '0')} / {MAX_CHAT_TURNS}</span>
         {turnLimitReached ? (
-          <button className="pixel-button primary os-chat-new-button" onClick={reset} type="button">
+          <button className={cn(pixelButtonVariants({ tone: 'coral' }), 'os-chat-new-button min-h-9 px-3 py-2 text-xs')} onClick={reset} type="button">
             CLEAR CHAT / START NEW
           </button>
         ) : null}
       </div>
       <form className="os-chat-form" onSubmit={sendMessage}>
         <label className="sr-only" htmlFor="chat-message">Message</label>
-        <InputGroup className="os-chat-input-group h-auto min-h-[46px] w-auto min-w-0 flex-1 rounded-none border-[3px] border-[var(--os-ink)] bg-[var(--os-paper)] shadow-[4px_4px_0_var(--os-ink)]">
-          <InputGroupAddon align="inline-start" className="pl-3 text-[var(--os-coral)]">
-            <span aria-hidden="true" className="text-[20px] leading-none font-black">&gt;</span>
+        <InputGroup className="os-chat-input-group h-auto min-h-11 w-auto min-w-0 flex-1 rounded-none border-3 border-border bg-card shadow-os-sm">
+          <InputGroupAddon align="inline-start" className="pl-3 text-accent">
+            <span aria-hidden="true" className="text-xl leading-none font-black">&gt;</span>
           </InputGroupAddon>
           <InputGroupInput
             id="chat-message"
@@ -36,10 +38,10 @@ export function ChatComposer({ conversation, pending, siteKey }: ChatComposerPro
             onChange={(event) => setMessage(event.target.value)}
             placeholder="Type a question..."
             value={message}
-            className="!px-4 font-mono text-[16px] text-[var(--os-ink)] placeholder:text-[var(--os-ink-soft)]/70 sm:text-[14px]"
+            className="!px-4 font-mono text-base text-foreground placeholder:text-muted-foreground/70 sm:text-sm"
           />
         </InputGroup>
-        <button className="pixel-button primary os-chat-send shrink-0" disabled={pending || turnLimitReached || !message.trim() || !siteKey || !turnstileToken} type="submit">SEND ↵</button>
+        <button className={cn(pixelButtonVariants({ tone: 'coral' }), 'os-chat-send shrink-0')} disabled={pending || turnLimitReached || !message.trim() || !siteKey || !turnstileToken} type="submit">SEND ↵</button>
       </form>
       {!turnLimitReached ? (
         <div className="turnstile-field os-chat-chat-turnstile" role="group" aria-labelledby="chat-turnstile-label">

@@ -1,9 +1,10 @@
 import { useForm } from '@tanstack/react-form'
+import { cn } from 'cn'
 import { type ChangeEvent, useRef, useState } from 'react'
 import { z } from 'zod'
-
-import { contactSchema } from '../../../server/contact/validation'
-import { TurnstileChallenge } from '../turnstile-challenge'
+import { formErrorClass, pixelButtonVariants } from '@/components/site/os-ui'
+import { TurnstileChallenge } from '@/components/site/turnstile-challenge'
+import { contactSchema } from '@/server/contact/validation'
 
 type ContactFormValues = {
   name: string
@@ -61,31 +62,31 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
 
   if (status === 'sent') {
     return (
-      <div className="success-panel" role="status">
-        <span className="success-mark">✓</span>
-        <h2>Message delivered.</h2>
-        <p>Thanks for reaching out. The operator will get back to you soon.</p>
-        <button className="pixel-button" onClick={() => setStatus('idle')} type="button">SEND ANOTHER</button>
+      <div className="success-panel flex min-h-75 flex-col items-center justify-center gap-1.5 border-3 border-border bg-secondary p-6 text-center" role="status">
+        <span className="success-mark grid size-15 place-items-center border-3 border-border bg-primary text-3xl font-black">✓</span>
+        <h2 className="mb-0">Message delivered.</h2>
+        <p className="m-0">Thanks for reaching out. The operator will get back to you soon.</p>
+        <button className={cn(pixelButtonVariants())} onClick={() => setStatus('idle')} type="button">SEND ANOTHER</button>
       </div>
     )
   }
 
   return (
     <form
-      className="contact-form"
+      className="contact-form flex w-full flex-col gap-4.5"
       noValidate
       onSubmit={(event) => {
         event.preventDefault()
         void form.handleSubmit()
       }}
     >
-      <div className="form-grid">
+      <div className="form-grid grid grid-cols-1 gap-4.5">
         <form.Field name="name" validators={{ onChange: contactSchema.shape.name }}>
           {(fieldApi) => {
             const errorText = fieldErrorText(fieldApi.state.meta.errors)
             return (
               <label htmlFor="contact-name">
-                <span>YOUR NAME</span>
+                <span className="mb-2 block text-xs font-black tracking-widest text-accent">YOUR NAME</span>
                 <input
                   aria-describedby={errorText ? 'contact-name-error' : undefined}
                   aria-invalid={Boolean(errorText)}
@@ -96,7 +97,7 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
                   required
                   value={fieldApi.state.value}
                 />
-                {errorText ? <p className="form-error" id="contact-name-error" role="alert">{errorText}</p> : null}
+                {errorText ? <p className={cn(formErrorClass)} id="contact-name-error" role="alert">{errorText}</p> : null}
               </label>
             )
           }}
@@ -106,7 +107,7 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
             const errorText = fieldErrorText(fieldApi.state.meta.errors)
             return (
               <label htmlFor="contact-email">
-                <span>EMAIL ADDRESS</span>
+                <span className="mb-2 block text-xs font-black tracking-widest text-accent">EMAIL ADDRESS</span>
                 <input
                   aria-describedby={errorText ? 'contact-email-error' : undefined}
                   aria-invalid={Boolean(errorText)}
@@ -118,7 +119,7 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
                   type="email"
                   value={fieldApi.state.value}
                 />
-                {errorText ? <p className="form-error" id="contact-email-error" role="alert">{errorText}</p> : null}
+                {errorText ? <p className={cn(formErrorClass)} id="contact-email-error" role="alert">{errorText}</p> : null}
               </label>
             )
           }}
@@ -129,7 +130,7 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
           const errorText = fieldErrorText(fieldApi.state.meta.errors)
           return (
             <label htmlFor="contact-message">
-              <span>MESSAGE</span>
+              <span className="mb-2 block text-xs font-black tracking-widest text-accent">MESSAGE</span>
               <textarea
                 aria-describedby={errorText ? 'contact-message-error' : undefined}
                 aria-invalid={Boolean(errorText)}
@@ -141,7 +142,7 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
                 rows={7}
                 value={fieldApi.state.value}
               />
-              {errorText ? <p className="form-error" id="contact-message-error" role="alert">{errorText}</p> : null}
+              {errorText ? <p className={cn(formErrorClass)} id="contact-message-error" role="alert">{errorText}</p> : null}
             </label>
           )
         }}
@@ -172,8 +173,8 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
           </label>
         )}
       </form.Field>
-      {status === 'error' ? <p className="form-error" role="alert">{error}</p> : null}
-      <div className="form-actions"><p className="form-note">Messages are sent directly to the operator’s inbox.</p><button className="pixel-button primary" disabled={status === 'sending' || !siteKey || !turnstileToken} type="submit">{status === 'sending' ? 'SENDING...' : 'TRANSMIT MESSAGE →'}</button></div>
+      {status === 'error' ? <p className={cn(formErrorClass)} role="alert">{error}</p> : null}
+      <div className="form-actions flex flex-wrap items-center gap-3"><p className="form-note m-0 text-xs text-muted-foreground">Messages are sent directly to the operator’s inbox.</p><button className={cn(pixelButtonVariants({ tone: 'coral' }))} disabled={status === 'sending' || !siteKey || !turnstileToken} type="submit">{status === 'sending' ? 'SENDING...' : 'TRANSMIT MESSAGE →'}</button></div>
     </form>
   )
 }

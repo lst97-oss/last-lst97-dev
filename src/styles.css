@@ -1,5 +1,15 @@
+/* Cascade layer order — declared first so it wins over later declarations.
+   Payload's admin CSS (@payloadcms/ui) ships its own preflight in
+   `payload-default` and loads AFTER this stylesheet on public routes.
+   Without this line, Payload's `* { margin: 0; padding: 0; border: 0 solid }`
+   beats every Tailwind utility. Unlayered site CSS below still wins overall. */
+@layer payload-default, payload, theme, base, components, utilities;
+
 @import "tailwindcss";
-@import "./styles/foundation.css";
+@import "./styles/tokens.css";
+@import "./styles/globals.css";
+@import "./styles/animations.css";
+@import "./styles/prose.css";
 @import "./styles/shell.css";
 @import "./styles/home.css";
 @import "./styles/content-cards.css";

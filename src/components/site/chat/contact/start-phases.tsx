@@ -1,5 +1,7 @@
-import type { ChatContactTemplate } from '../../../../lib/chat-contact'
-import { CHAT_CONTACT_TEMPLATES } from '../../../../lib/chat-contact'
+import { cn } from 'cn'
+import { pixelButtonVariants } from '@/components/site/os-ui'
+import type { ChatContactTemplate } from '@/lib/chat-contact'
+import { CHAT_CONTACT_TEMPLATES } from '@/lib/chat-contact'
 
 export function ChatContactConfirmationPhase({
   pending,
@@ -16,8 +18,8 @@ export function ChatContactConfirmationPhase({
     <div className="os-chat-contact-card">
       <p>Starting clears the current conversation. Jev will screen this new contact session without the earlier chat context, and none of those earlier messages will be included in your email.</p>
       <div className="os-chat-contact-actions">
-        <button className="pixel-button primary" disabled={pending || !hasContextToken} onClick={onStart} type="button">START CONTACT SESSION</button>
-        <button className="pixel-button" disabled={pending || !hasContextToken} onClick={onDecline} type="button">KEEP CHATTING</button>
+        <button className={cn(pixelButtonVariants({ tone: 'coral' }))} disabled={pending || !hasContextToken} onClick={onStart} type="button">START CONTACT SESSION</button>
+        <button className={cn(pixelButtonVariants())} disabled={pending || !hasContextToken} onClick={onDecline} type="button">KEEP CHATTING</button>
       </div>
     </div>
   )

@@ -10,7 +10,7 @@ import {
   battleTick,
   createBattle,
   resizeBattle,
-} from './pixel-battle-sim'
+} from '@/components/site/battle/pixel-battle-sim'
 
 const TEAM_FILL: Record<BattleTeam, string> = {
   blue: 'rgba(96, 150, 255, 0.35)',

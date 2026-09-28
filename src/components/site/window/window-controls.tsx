@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/react-router'
-import type { WindowMode } from '../../../lib/os-store'
-import { closeWindow, toggleMaximizeWindow, toggleMinimizeWindow } from '../../../lib/os-store'
-import { useIsMobile } from '../../hooks/use-mobile'
+import { cn } from "cn"
+import { useIsMobile } from '@/components/hooks/use-mobile'
+import type { WindowMode } from '@/lib/os-store'
+import { closeWindow, toggleMaximizeWindow, toggleMinimizeWindow } from '@/lib/os-store'
 
 export type WindowFrameControls = {
   minimize?: boolean
@@ -16,6 +17,9 @@ interface WindowControlsProps {
   closeHref: string
   controls?: WindowFrameControls
 }
+
+const controlClass =
+  'grid size-6 place-items-center border-2 border-border bg-transparent p-0 align-middle font-mono text-base leading-none font-black text-foreground hover:bg-accent'
 
 export function WindowControls({
   title,
@@ -33,11 +37,11 @@ export function WindowControls({
   if (!showMinimize && !showMaximize && !showClose) return null
 
   return (
-    <span className="window-controls" aria-label="Window controls">
+    <span className="window-controls inline-flex items-center gap-1.5 text-base leading-none" aria-label="Window controls">
       {showMinimize ? (
         <button
           aria-label={`${windowMode === 'minimized' ? 'Restore' : 'Minimize'} ${title}`}
-          className="window-control"
+          className={cn(controlClass, 'window-control')}
           onClick={(event) => {
             event.stopPropagation()
             toggleMinimizeWindow(windowId)
@@ -51,7 +55,7 @@ export function WindowControls({
         <button
           aria-label={`${windowMode === 'maximized' ? 'Restore' : 'Maximize'} ${title}`}
           aria-pressed={windowMode === 'maximized'}
-          className="window-control"
+          className={cn(controlClass, 'window-control')}
           onClick={(event) => {
             event.stopPropagation()
             toggleMaximizeWindow(windowId)
@@ -64,7 +68,7 @@ export function WindowControls({
       {showClose ? (
         <Link
           aria-label={`Close ${title}`}
-          className="window-close"
+          className={cn(controlClass, 'window-close')}
           onClick={() => closeWindow(windowId)}
           to={closeHref}
         >

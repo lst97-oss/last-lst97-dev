@@ -1,26 +1,7 @@
-.content-card {
-  display: flex;
-  min-height: 200px;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 22px;
-  border: 3px solid var(--os-ink);
-  background: var(--os-paper);
-  transition:
-    transform 0.1s ease,
-    background 0.1s ease;
-}
+/* Card layout/typography lives in content/card.tsx + cover.tsx via Tailwind.
+   Hover fill uses bg-amber-100 (native) instead of #fff4ba. */
 
-.card-kicker {
-  margin-bottom: 12px;
-}
-
-.content-cover {
-  overflow: hidden;
-  border: 3px solid var(--os-ink);
-  background: var(--os-teal-soft);
-}
-
+/* Single source for cover image containment (also used by detail layout). */
 .content-cover img {
   display: block;
   width: 100%;
@@ -28,69 +9,7 @@
   object-fit: cover;
 }
 
-.card-cover {
-  width: calc(100% + 44px);
-  aspect-ratio: 16 / 9;
-  margin: 0 -22px 18px;
-  border-width: 0 0 3px;
-}
-
-.content-detail-cover {
-  max-height: 420px;
-  aspect-ratio: 16 / 9;
-  margin: 0 0 24px;
-}
-
-.content-card:hover {
-  transform: translate(-3px, -3px);
-  background: #fff4ba;
-}
-
-.card-kicker {
-  margin-bottom: auto;
-  color: var(--os-coral);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-}
-
-.content-card p {
-  margin-bottom: 18px;
-  color: var(--os-ink-soft);
-}
-
-.post-card-tags {
-  margin: -2px 0 12px;
-}
-
-.content-card .card-link {
-  margin-top: auto;
-  padding-top: 12px;
-}
-
-.project-card-meta,
-.project-detail-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin: 12px 0;
-  color: var(--os-ink-soft);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-
-.project-status {
-  display: inline-flex;
-  border: 2px solid var(--os-ink);
-  padding: 3px 6px;
-  background: var(--os-teal-soft);
-  color: var(--os-ink);
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-}
+/* Project detail meta lives in _site.projects.$slug.tsx via Tailwind. */
 
 .card-link,
 .text-link,
@@ -101,6 +20,8 @@
   letter-spacing: 0.05em;
 }
 
+/* CardGrid primitive (os-ui.tsx) covers grids in migrated components.
+   Legacy .card-grid stays until all routes migrate. */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -130,32 +51,4 @@
   margin-top: 15px;
 }
 
-.count-badge,
-.online-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border: 2px solid var(--os-ink);
-  padding: 5px 8px;
-  background: var(--os-teal);
-  font-size: 10px;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
-.online-badge span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--os-ink);
-}
-
-.online-badge[data-health="checking"] span {
-  background: var(--os-yellow);
-}
-.online-badge[data-health="online"] span {
-  background: var(--os-teal);
-}
-.online-badge[data-health="offline"] span {
-  background: var(--os-coral);
-}
+/* Count badges live in os-ui CountBadge via Tailwind. */

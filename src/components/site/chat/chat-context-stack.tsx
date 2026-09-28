@@ -1,5 +1,6 @@
-import { MAX_CHAT_CONTEXT_MESSAGES, MAX_CHAT_TURNS } from '../../../lib/chat-limits'
-import { PixelIcon } from '../pixel-icon'
+import { Eyebrow } from '@/components/site/os-ui'
+import { PixelIcon } from '@/components/site/pixel-icon'
+import { MAX_CHAT_CONTEXT_MESSAGES, MAX_CHAT_TURNS } from '@/lib/chat-limits'
 
 /**
  * The answer model never receives a bare question. `openrouter-responder.ts`
@@ -52,7 +53,7 @@ export function ChatContextStack() {
   return (
     <section className="chat-context-stack" aria-labelledby="chat-context-stack-title">
       <header className="chat-context-stack-header">
-        <p className="eyebrow"><PixelIcon glyph="#" /> LLM CONTEXT / MEMORY STACK</p>
+        <Eyebrow className="m-0"><PixelIcon glyph="#" /> LLM CONTEXT / MEMORY STACK</Eyebrow>
         <h3 id="chat-context-stack-title">What the answer model actually receives</h3>
         <p>
           One request, three frames: a server-written system frame, the entire verified conversation, and the

@@ -1,8 +1,8 @@
 import type { JSXConverterArgs, JSXConverters } from '@payloadcms/richtext-lexical/react'
 import { defaultJSXConverters, RichText as PayloadRichText } from '@payloadcms/richtext-lexical/react'
-import { safeAssetHref, safeContentHref } from '../../../lib/content/url'
-import { parseLexicalContent } from '../../../server/content/types'
-import { ChecklistItem } from './checklist-item'
+import { ChecklistItem } from '@/components/site/content/checklist-item'
+import { safeAssetHref, safeContentHref } from '@/lib/content/url'
+import { parseLexicalContent } from '@/server/content/types'
 
 type RecordValue = Record<string, unknown>
 type ConverterNode = { [key: string]: any; type?: string }
