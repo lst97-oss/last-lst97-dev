@@ -10,6 +10,7 @@ import { createContentMeta } from '@/lib/content/meta'
 import { formatProjectTimeframe, getProjectLifecycleLabel } from '@/lib/content/project-display'
 import { loadProject } from '@/lib/content/site-data'
 import { safeAssetHref } from '@/lib/content/url'
+import { canonicalUrl } from '@/lib/seo/site-seo'
 
 export const Route = createFileRoute('/_site/projects/$slug')({
   errorComponent: () => <ContentUnavailableRoute
@@ -22,17 +23,21 @@ export const Route = createFileRoute('/_site/projects/$slug')({
     if (!project) throw notFound()
     return project
   },
-  head: ({ loaderData }) => ({
-    meta: loaderData
+  head: ({ loaderData, params }) =>
+    loaderData
       ? createContentMeta({
           title: loaderData.title,
           description: loaderData.summary,
           image: loaderData.coverImage,
           seo: loaderData.seo,
           kind: 'article',
+          pathname: `/projects/${params.slug}`,
+          tags: loaderData.technologies,
         })
-      : [{ title: 'Project — LAST//OS' }],
-  }),
+      : {
+          meta: [{ title: 'Project — LAST//OS' }],
+          links: [{ rel: 'canonical', href: canonicalUrl(`/projects/${params.slug}`) }],
+        },
   component: ProjectPage,
 })
 

@@ -131,7 +131,7 @@ describe('TypeSafe Jev classifier adapter', () => {
       expect(JSON.parse(String(requestBody?.state))).toMatchObject({ project_list_state: { shown_project_ids: ['lst97/already-shown'] } })
       expect(JSON.stringify(requestBody?.questions)).toContain('list_owned_projects')
       expect(JSON.stringify(requestBody?.questions)).toContain('software kind')
-      expect(JSON.stringify(requestBody?.questions)).toContain('Do NOT use to compile an owned-project inventory')
+      expect(JSON.stringify(requestBody?.questions)).toContain('Never use search_knowledge for counts or totals')
       expect(JSON.stringify(requestBody?.questions)).toContain('can you show me all your projects?')
       expect(JSON.stringify(requestBody?.questions)).not.toContain('owned_project_list')
     } finally { globalThis.fetch = originalFetch }
@@ -208,7 +208,7 @@ describe('TypeSafe Jev classifier adapter', () => {
       expect(JSON.stringify(requestBody?.questions)).toContain('portfolio assistant')
       expect(JSON.stringify(requestBody?.questions)).toContain('identity, purpose, capabilities, or process')
       expect(JSON.stringify(requestBody?.questions)).toContain('A greeting')
-      expect(JSON.stringify(requestBody?.questions)).toContain('Unrelated general and technical questions are out of scope')
+      expect(JSON.stringify(requestBody?.questions)).toContain('general technical questions outside software development are out of scope')
     } finally {
       globalThis.fetch = originalFetch
     }
@@ -318,7 +318,7 @@ describe('TypeSafe Jev classifier adapter', () => {
       expect(questions).toContain('published posts')
       expect(questions).toContain('projects')
       expect(questions).toContain('this repository’s implementation')
-      expect(questions).toContain('Unrelated general web-development questions are out of scope')
+      expect(questions).toContain('general technical questions outside software development are out of scope')
     } finally {
       globalThis.fetch = originalFetch
     }

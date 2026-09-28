@@ -68,6 +68,12 @@ const config = defineConfig({
   },
   define: {
     global: 'globalThis',
+    // Canonical origin for every SEO surface (meta, canonical links, og:url,
+    // sitemap.xml, robots.txt, security.txt). Route head() runs in the client
+    // bundle too, so this cannot read process.env at runtime; it is inlined
+    // at build time from PUBLIC_SITE_URL and falls back to the dev origin.
+    // Changing it on Vercel therefore requires a redeploy to take effect.
+    __LAST_OS_SITE_URL__: JSON.stringify(process.env.PUBLIC_SITE_URL ?? 'http://localhost:3000'),
   },
   environments: {
     ssr: {

@@ -6,11 +6,33 @@ import { Eyebrow, PageStack, pixelButtonVariants } from '@/components/site/os-ui
 import { PixelIcon } from '@/components/site/pixel-icon'
 import { WindowFrame } from '@/components/site/window-frame'
 import { osStore } from '@/lib/os-store'
+import { createPageMeta, SITE_AUTHOR } from '@/lib/seo/site-seo'
 
 const ABOUT_WINDOW_ID = 'about-the-operator.exe'
 
 export const Route = createFileRoute('/_site/about')({
-  head: () => ({ meta: [{ title: 'About — LAST//OS' }, { name: 'description', content: 'Meet Nelson, a Hong Kong-born, Melbourne-based developer building practical web apps and open-source tools.' }] }),
+  head: () =>
+    createPageMeta({
+      pathname: '/about',
+      title: 'About',
+      description:
+        'Meet Nelson, a Hong Kong-born, Melbourne-based developer building practical web apps and open-source tools with React, TypeScript, and Next.js.',
+      image: '/assets/me-pixel-art.webp',
+      imageAlt: 'Pixel-art portrait of Nelson',
+      type: 'profile',
+      structuredData: {
+        '@context': 'https://schema.org',
+        '@type': 'ProfilePage',
+        mainEntity: {
+          '@type': 'Person',
+          name: SITE_AUTHOR.name,
+          url: SITE_AUTHOR.url,
+          sameAs: [...SITE_AUTHOR.sameAs],
+          jobTitle: 'Full-stack developer',
+          knowsAbout: ['React', 'TypeScript', 'Next.js', 'System architecture'],
+        },
+      },
+    }),
   component: AboutPage,
 })
 

@@ -126,7 +126,7 @@ describe('moderation service', () => {
   })
 
   it('allows only explicitly supported owner, site-content, and site-assistant scopes', async () => {
-    for (const label of ['owner_context', 'owner_projects', 'owner_goals', 'on_behalf', 'assistant_usage', 'site_content']) {
+    for (const label of ['owner_context', 'owner_projects', 'owner_goals', 'on_behalf', 'assistant_usage', 'site_content', 'technical_question']) {
       const result = await createModerationService({
         classify: async () => ({
           channel: 'chat',

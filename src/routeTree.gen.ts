@@ -11,6 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PayloadRouteImport } from './routes/_payload'
 import { Route as SiteRouteImport } from './routes/_site'
+import { Route as HumansDottxtRouteImport } from './routes/humans[.txt]'
+import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.txt]'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.txt]'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.txt]'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.xml]'
+import { Route as Char91DotwellKnownChar93SecurityChar91DottxtChar93RouteImport } from './routes/[.well-known]/security[.txt]'
 import { Route as SiteIndexRouteImport } from './routes/_site.index'
 import { Route as SiteAboutRouteImport } from './routes/_site.about'
 import { Route as SiteChatRouteImport } from './routes/_site.chat'
@@ -36,6 +42,37 @@ const SiteRoute = SiteRouteImport.update({
   id: '/_site',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HumansDottxtRoute = HumansDottxtRouteImport.update({
+  id: '/humans.txt',
+  path: '/humans.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
+  id: '/llms-full.txt',
+  path: '/llms-full.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotwellKnownChar93SecurityChar91DottxtChar93Route =
+  Char91DotwellKnownChar93SecurityChar91DottxtChar93RouteImport.update({
+    id: '/.well-known/security.txt',
+    path: '/.well-known/security.txt',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const SiteIndexRoute = SiteIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -119,6 +156,12 @@ const ApiSiteHealthRoute = ApiSiteHealthRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof SiteIndexRoute
+  '/humans.txt': typeof HumansDottxtRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
+  '/llms.txt': typeof LlmsDottxtRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/.well-known/security.txt': typeof Char91DotwellKnownChar93SecurityChar91DottxtChar93Route
   '/about': typeof SiteAboutRoute
   '/chat': typeof SiteChatRoute
   '/contact': typeof SiteContactRoute
@@ -137,6 +180,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof SiteIndexRoute
+  '/humans.txt': typeof HumansDottxtRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
+  '/llms.txt': typeof LlmsDottxtRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/.well-known/security.txt': typeof Char91DotwellKnownChar93SecurityChar91DottxtChar93Route
   '/about': typeof SiteAboutRoute
   '/chat': typeof SiteChatRoute
   '/contact': typeof SiteContactRoute
@@ -157,6 +206,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_payload': typeof PayloadRouteWithChildren
   '/_site': typeof SiteRouteWithChildren
+  '/humans.txt': typeof HumansDottxtRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
+  '/llms.txt': typeof LlmsDottxtRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/.well-known/security.txt': typeof Char91DotwellKnownChar93SecurityChar91DottxtChar93Route
   '/_site/about': typeof SiteAboutRoute
   '/_site/chat': typeof SiteChatRoute
   '/_site/contact': typeof SiteContactRoute
@@ -178,6 +233,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/humans.txt'
+    | '/llms-full.txt'
+    | '/llms.txt'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/.well-known/security.txt'
     | '/about'
     | '/chat'
     | '/contact'
@@ -196,6 +257,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/humans.txt'
+    | '/llms-full.txt'
+    | '/llms.txt'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/.well-known/security.txt'
     | '/about'
     | '/chat'
     | '/contact'
@@ -215,6 +282,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_payload'
     | '/_site'
+    | '/humans.txt'
+    | '/llms-full.txt'
+    | '/llms.txt'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/.well-known/security.txt'
     | '/_site/about'
     | '/_site/chat'
     | '/_site/contact'
@@ -236,6 +309,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   PayloadRoute: typeof PayloadRouteWithChildren
   SiteRoute: typeof SiteRouteWithChildren
+  HumansDottxtRoute: typeof HumansDottxtRoute
+  LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  Char91DotwellKnownChar93SecurityChar91DottxtChar93Route: typeof Char91DotwellKnownChar93SecurityChar91DottxtChar93Route
   ApiSplatRoute: typeof ApiSplatRoute
   ApiSiteChatRoute: typeof ApiSiteChatRoute
   ApiSiteContactRoute: typeof ApiSiteContactRoute
@@ -256,6 +335,48 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof SiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/humans.txt': {
+      id: '/humans.txt'
+      path: '/humans.txt'
+      fullPath: '/humans.txt'
+      preLoaderRoute: typeof HumansDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms-full.txt': {
+      id: '/llms-full.txt'
+      path: '/llms-full.txt'
+      fullPath: '/llms-full.txt'
+      preLoaderRoute: typeof LlmsFullDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/security.txt': {
+      id: '/.well-known/security.txt'
+      path: '/.well-known/security.txt'
+      fullPath: '/.well-known/security.txt'
+      preLoaderRoute: typeof Char91DotwellKnownChar93SecurityChar91DottxtChar93RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_site/': {
@@ -417,6 +538,13 @@ const SiteRouteWithChildren = SiteRoute._addFileChildren(SiteRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   PayloadRoute: PayloadRouteWithChildren,
   SiteRoute: SiteRouteWithChildren,
+  HumansDottxtRoute: HumansDottxtRoute,
+  LlmsFullDottxtRoute: LlmsFullDottxtRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  Char91DotwellKnownChar93SecurityChar91DottxtChar93Route:
+    Char91DotwellKnownChar93SecurityChar91DottxtChar93Route,
   ApiSplatRoute: ApiSplatRoute,
   ApiSiteChatRoute: ApiSiteChatRoute,
   ApiSiteContactRoute: ApiSiteContactRoute,

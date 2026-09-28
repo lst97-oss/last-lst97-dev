@@ -39,8 +39,12 @@ describe('Jev tool-routing baseline', () => {
     expect(byId.get('history-project-all-time-followup')?.expected).toEqual(['coding_history'])
     expect(byId.get('history-project-all-time-followup')?.history?.at(-1)?.content).toBe('The total was 33 hours and 4 minutes in the recent activity window.')
 
-    for (const testCase of jevToolRoutingCases.filter(({ id }) => id.startsWith('followup-') && id !== 'followup-accepts-offered-coding-tools' && id !== 'followup-refuses-offered-coding-tools')) {
-      expect(testCase.topicAnchors?.length).toBeGreaterThan(0)
+    // A follow-up that resumes an earlier turn must carry the signed anchors
+    // that turn produced. Cases with no `history` are single-turn probes that
+    // legitimately have no prior anchor, so they are excluded rather than
+    // forced to invent one.
+    for (const testCase of jevToolRoutingCases.filter(({ id, history }) => id.startsWith('followup-') && (history?.length ?? 0) > 0 && id !== 'followup-accepts-offered-coding-tools' && id !== 'followup-refuses-offered-coding-tools')) {
+      expect(testCase.topicAnchors?.length ?? 0).toBeGreaterThan(0)
     }
     expect(byId.get('followup-accepts-offered-coding-tools')?.expected).toEqual(['coding_stats', 'coding_history'])
     expect(byId.get('followup-refuses-offered-coding-tools')?.expected).toEqual([])

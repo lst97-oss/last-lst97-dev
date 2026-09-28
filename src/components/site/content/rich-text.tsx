@@ -6,7 +6,6 @@ import { parseLexicalContent } from '@/server/content/types'
 
 type RecordValue = Record<string, unknown>
 type ConverterNode = { [key: string]: any; type?: string }
-type NodesToJSX = JSXConverterArgs<ConverterNode>['nodesToJSX']
 
 function isRecord(value: unknown): value is RecordValue {
   return typeof value === 'object' && value !== null && !Array.isArray(value)

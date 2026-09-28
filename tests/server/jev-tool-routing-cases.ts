@@ -208,8 +208,8 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
   { id: 'negative-assistant-identity', category: 'negative', message: 'Who are you, the chat assistant?', expected: [] },
   { id: 'negative-assistant-routing', category: 'negative', message: 'How do you decide whether to search my profile or project data?', expected: [] },
   { id: 'negative-assistant-pipeline', category: 'negative', message: 'How does this chat process my question from submission to answer?', expected: [] },
-  { id: 'negative-general-rag', category: 'negative', message: 'What does retrieval-augmented generation mean?', expected: [] },
-  { id: 'negative-general-react', category: 'negative', message: 'Explain how React state updates work.', expected: [] },
+  { id: 'technical-question-rag', category: 'positive', message: 'What does retrieval-augmented generation mean?', expected: ['search_knowledge'] },
+  { id: 'technical-question-react-state', category: 'positive', message: 'Explain how React state updates work.', expected: ['search_knowledge'] },
   { id: 'negative-unrelated-current-fact', category: 'negative', message: 'What is the current population of Melbourne?', expected: [] },
   { id: 'negative-general-howto', category: 'negative', message: 'How do I build a portfolio website with a blog?', expected: [] },
   { id: 'negative-writing-task', category: 'negative', message: 'Write a short thank-you note for my neighbour.', expected: [] },
@@ -217,7 +217,7 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
   { id: 'negative-advice-portfolio', category: 'negative', message: 'What projects should I build for my portfolio?', expected: [] },
   { id: 'negative-github-general', category: 'negative', message: 'How do I discover interesting projects on GitHub?', expected: [] },
   { id: 'negative-general-repo-terms', category: 'negative', message: 'What is the difference between a public and private repository?', expected: [] },
-  { id: 'negative-general-backend', category: 'negative', message: 'Which technologies are commonly used for backend development?', expected: [] },
+  { id: 'technical-question-backend-technologies', category: 'positive', message: 'Which technologies are commonly used for backend development?', expected: ['search_knowledge'] },
   { id: 'negative-tool-capabilities', category: 'negative', message: 'What sources can you search, and how do you choose between them?', expected: [] },
   { id: 'negative-site-recommendation', category: 'negative', message: 'How should I organize projects on my own portfolio site?', expected: [] },
   { id: 'negative-writing-about-portfolio', category: 'negative', message: 'Help me write a portfolio project description for a weather app.', expected: [] },
@@ -225,8 +225,16 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
   // More second-person boundary cases. Generic “you” alone must not trigger a
   // source; personal facts belong to Nelson while assistant-process questions
   // do not.
-  { id: 'negative-you-general-advice', category: 'negative', message: 'What should you consider when choosing a database?', expected: [] },
+  { id: 'technical-question-database-advice', category: 'positive', message: 'What should you consider when choosing a database?', expected: ['search_knowledge'] },
   { id: 'negative-you-chat-feature', category: 'negative', message: 'Can you explain how your chat interface works?', expected: [] },
   { id: 'positive-you-personal-skill', category: 'positive', message: 'Which programming languages do you know?', expected: ['search_knowledge'] },
   { id: 'positive-you-projects', category: 'positive', message: 'What projects have you built?', expected: ['list_owned_projects'] },
+
+  // Unframed software-development questions are answered from the interview Q&A
+  // corpus, so they reach search_knowledge without naming Nelson or a project.
+  { id: 'technical-question-split-expense-cents', category: 'positive', message: 'How would you handle the remaining cents when splitting an expense?', expected: ['search_knowledge'] },
+  { id: 'technical-question-production-monitoring', category: 'positive', message: 'What would you monitor in a production web application?', expected: ['search_knowledge'] },
+  { id: 'technical-question-architecture-today', category: 'positive', message: 'What would you do differently in the Best Maker architecture today?', expected: ['search_knowledge'] },
+  { id: 'technical-question-promise-async-await', category: 'positive', message: 'What is the difference between Promise, async, and await?', expected: ['search_knowledge'] },
+  { id: 'technical-question-safe-deploy', category: 'positive', message: 'How do you make a deployment safe when the API and database release separately?', expected: ['search_knowledge'] },
 ]

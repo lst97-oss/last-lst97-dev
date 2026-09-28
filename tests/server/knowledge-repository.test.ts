@@ -91,6 +91,29 @@ describe('KnowledgeIndexRepository', () => {
     expect(result).toEqual(['lst97/tool', 'lst97/another'])
   })
 
+  // Every type the DB CHECK and `KnowledgeSourceType` allow must survive
+  // `validateSourceType`. Dropping one turns a legitimate index or delete into a
+  // thrown "invalid" at the persistence boundary, where nothing names the type
+  // that was rejected.
+  it('accepts every source type the knowledge chunk CHECK constraint allows', async () => {
+    const db = createDatabase()
+    const repository = createKnowledgeIndexRepository(db)
+
+    for (const sourceType of ['post', 'project', 'profile', 'interview', 'github', 'github-private', 'github-profile', 'github-contrib', 'github-contrib-private', 'wakatime'] as const) {
+      await repository.removeSource(sourceType, 'source-1')
+    }
+
+    expect(db.transactionCount).toBe(10)
+    // `removeSource` also clears the catalogue row for owner-repository types,
+    // so the chunk DELETE is not always the first statement. Filtering to the
+    // chunk delete keeps this about which types are accepted, not query order.
+    const chunkDeletes = db.queries.filter(({ sql: statement }) => statement.includes('DELETE FROM "knowledge_chunks"'))
+    expect(chunkDeletes.map(({ params }) => params[0])).toEqual([
+      'post', 'project', 'profile', 'interview', 'github',
+      'github-private', 'github-profile', 'github-contrib', 'github-contrib-private', 'wakatime',
+    ])
+  })
+
   it('lists structured owned repositories and preserves private visibility', async () => {
     const db = createDatabase([
       {

@@ -125,13 +125,15 @@ describe('OpenRouter knowledge system prompt', () => {
     expect(prompt).toContain('Never claim that a message was sent unless delivery is confirmed')
   })
 
-  it('permits evidence-grounded questions about published site content and this web repository only', () => {
+  it('permits evidence-grounded site-content questions and Nelson’s recorded software-development answers, but not general knowledge', () => {
     const prompt = buildChatSystemPrompt('Base instructions.', { message: 'How does this site work?', currentDateTimeUtc: CURRENT_DATE_TIME_UTC, history: [] })
 
     expect(prompt).toContain('published blog posts')
     expect(prompt).toContain('current web repository')
     expect(prompt).toContain('verified site-content tool results or retrieved evidence')
-    expect(prompt).toContain('unrelated general technical')
+    expect(prompt).toContain('Do not answer general technical questions outside software development')
+    expect(prompt).toContain('answer software-development questions from Nelson’s recorded experience in the retrieved evidence')
+    expect(prompt).toContain('prefer Nelson’s recorded approach and trade-offs from the retrieved evidence over a generic textbook answer')
     expect(prompt).toContain('Use only verified personal evidence')
   })
 

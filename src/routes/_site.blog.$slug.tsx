@@ -5,6 +5,7 @@ import { ContentUnavailableRoute } from '@/components/site/content/unavailable'
 import { formatPublishedDate } from '@/lib/content/date'
 import { createContentMeta } from '@/lib/content/meta'
 import { loadPost } from '@/lib/content/site-data'
+import { canonicalUrl } from '@/lib/seo/site-seo'
 
 export const Route = createFileRoute('/_site/blog/$slug')({
   errorComponent: () => <ContentUnavailableRoute
@@ -17,17 +18,22 @@ export const Route = createFileRoute('/_site/blog/$slug')({
     if (!post) throw notFound()
     return post
   },
-  head: ({ loaderData }) => ({
-    meta: loaderData
+  head: ({ loaderData, params }) =>
+    loaderData
       ? createContentMeta({
           title: loaderData.title,
           description: loaderData.excerpt,
           image: loaderData.coverImage,
           seo: loaderData.seo,
           kind: 'article',
+          pathname: `/blog/${params.slug}`,
+          publishedTime: loaderData.publishedAt,
+          tags: loaderData.tags,
         })
-      : [{ title: 'Note — LAST//OS' }],
-  }),
+      : {
+          meta: [{ title: 'Note — LAST//OS' }],
+          links: [{ rel: 'canonical', href: canonicalUrl(`/blog/${params.slug}`) }],
+        },
   component: PostPage,
 })
 

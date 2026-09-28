@@ -5,13 +5,20 @@ import { ContactMessageForm } from '@/components/site/contact/contact-message-fo
 import { Eyebrow, PageHeading, PageStack } from '@/components/site/os-ui'
 import { WindowFrame } from '@/components/site/window-frame'
 import { osStore } from '@/lib/os-store'
+import { createPageMeta } from '@/lib/seo/site-seo'
 import { getTurnstileSiteKeyServerFn } from '@/server/contact/server-functions'
 
 const CONTACT_WINDOW_ID = 'send-message.exe'
 
 export const Route = createFileRoute('/_site/contact')({
   loader: () => getTurnstileSiteKeyServerFn(),
-  head: () => ({ meta: [{ title: 'Contact — LAST//OS' }, { name: 'description', content: 'Send a message to the operator.' }] }),
+  head: () =>
+    createPageMeta({
+      pathname: '/contact',
+      title: 'Contact',
+      description:
+        'Send a message to Nelson about a project, question, collaboration, or open-source idea. Messages go straight to the inbox.',
+    }),
   component: ContactPage,
 })
 

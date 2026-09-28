@@ -9,6 +9,7 @@ import {
 } from '@/components/site/home'
 import { PageStack } from '@/components/site/os-ui'
 import { loadPosts, loadProjects } from '@/lib/content/site-data'
+import { createPageMeta, SITE_DESCRIPTION, SITE_TAGLINE } from '@/lib/seo/site-seo'
 import { getWakaTimeSnapshotServerFn } from '@/server/wakatime/server-functions'
 
 export const Route = createFileRoute('/_site/')({
@@ -20,12 +21,12 @@ export const Route = createFileRoute('/_site/')({
     ])
     return { posts, projects, wakatimeSnapshot }
   },
-  head: () => ({
-    meta: [
-      { title: 'LAST//OS — Personal system online' },
-      { name: 'description', content: 'A pixel-art personal operating system for ideas, projects, and conversations.' },
-    ],
-  }),
+  head: () =>
+    createPageMeta({
+      pathname: '/',
+      title: `LAST//OS — ${SITE_TAGLINE}`,
+      description: SITE_DESCRIPTION,
+    }),
   component: HomePage,
 })
 
