@@ -116,9 +116,20 @@ provided: four stages on `oven/bun:1.4.1-slim`, non-root `bun` user, port 3000, 
 and `PAYLOAD_SECRET`. A Preview environment has neither, so every PR preview fails at
 `Environment validation failed: DATABASE_URL: Invalid input: expected string, received undefined`.
 
-The failure is unrelated to the PR being tested — it is a property of the build, so **Preview
-deployments are intentionally disabled** in the Vercel project. Only `main` deploys, via the
-`Production` deploy hook scoped to `ref: main`. To preview a branch, run the app locally instead.
+The failure is unrelated to the PR being tested — it is a property of the build. Only `main` deploys,
+via the `Production` deploy hook scoped to `ref: main`. To preview a branch, run the app locally.
+
+Preview builds have **not** been disabled. The GitHub App builds a Preview for every non-`main` push
+and each one fails this way. Two things that look like fixes and are not:
+
+- `vercel.json` has no `gitDeploymentEnabled` key. Adding one fails the schema check outright and
+  takes Production down with it — `Invalid vercel.json - should NOT have additional property`.
+- `gitProviderOptions.createDeployments: disabled` via the project API returns HTTP 200 but does not
+  stop the GitHub App; a `git-dev` Preview is still created afterwards.
+
+Disabling previews needs either the Vercel dashboard's branch-ignore setting or unlinking the Git
+integration and deploying `main` through the CLI or the deploy hook. That is a project-settings
+decision, not a code one, so nothing in the repo attempts it.
 
 Do not "fix" this by making `DATABASE_URL` or `PAYLOAD_SECRET` optional. Both are load-bearing at
 runtime, and relaxing them trades a build-time failure for a deploy-time one.
