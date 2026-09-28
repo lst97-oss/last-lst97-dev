@@ -140,7 +140,7 @@ body {
   line-height: 1.6;
 }
 
-/* :where() keeps this at zero specificity so text-*/decoration utilities
+/* :where() keeps this at zero specificity so text decoration utilities
    on links (citations, titles) always win for styled links, while bare
    links keep the OS look. */
 :where(a) {
