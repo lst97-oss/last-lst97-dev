@@ -109,6 +109,27 @@ provided: four stages on `oven/bun:1.4.1-slim`, non-root `bun` user, port 3000, 
 `sitemap.xml`, `robots.txt` and `security.txt` are all baked from it at build time via the
 `__LAST_OS_SITE_URL__` define.
 
+### Preview builds do not work
+
+`bun run build` starts with `payload generate:types`, which loads `payload.config.ts`, which calls
+`getServerEnv()` at module scope. That validates the whole server schema and requires `DATABASE_URL`
+and `PAYLOAD_SECRET`. A Preview environment has neither, so every PR preview fails at
+`Environment validation failed: DATABASE_URL: Invalid input: expected string, received undefined`.
+
+The failure is unrelated to the PR being tested — it is a property of the build, so **Preview
+deployments are intentionally disabled** in the Vercel project. Only `main` deploys, via the
+`Production` deploy hook scoped to `ref: main`. To preview a branch, run the app locally instead.
+
+Do not "fix" this by making `DATABASE_URL` or `PAYLOAD_SECRET` optional. Both are load-bearing at
+runtime, and relaxing them trades a build-time failure for a deploy-time one.
+
+### Secret storage
+
+Store `PAYLOAD_SECRET` as an encrypted **Secret**, not a plaintext **Config** value. Config values are
+readable by anyone with project access. Note that Vercel will not return the value of a Config var —
+the API yields a ciphertext blob and `vercel env pull` writes `[SENSITIVE]` placeholders — so a secret
+mistakenly stored as Config cannot be recovered once written; rotate it instead.
+
 ## Contributing
 
 Run `bun run typecheck` and `bun test` before opening a pull request. See [`AGENTS.md`](AGENTS.md) for the
