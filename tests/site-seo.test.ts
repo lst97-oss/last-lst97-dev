@@ -11,6 +11,10 @@ import {
 import { buildRobotsTxt, buildSecurityTxt, buildLlmsTxt, BLOCKED_BOT_AGENTS } from '../src/server/seo/text-files'
 import { buildSitemapXml } from '../src/server/seo/sitemap'
 
+
+const viteConfigSource = await Bun.file(new URL('../vite.config.ts', import.meta.url)).text()
+const siteSeoSource = await Bun.file(new URL('../src/lib/seo/site-seo.ts', import.meta.url)).text()
+
 describe('site url resolution', () => {
   test('falls back to localhost when no origin is injected', () => {
     // The test runner has no Vite `define`, so this exercises the fallback.
@@ -28,6 +32,21 @@ describe('site url resolution', () => {
     expect(canonicalUrl('/')).toBe('http://localhost:3000/')
     expect(canonicalUrl('/blog/post')).toBe('http://localhost:3000/blog/post')
     expect(canonicalUrl('/blog/post/')).toBe('http://localhost:3000/blog/post')
+  })
+})
+
+describe('canonical origin build wiring', () => {
+  // getSiteUrl() reads a Vite `define`, not process.env, because route head()
+  // also runs in the client bundle. If the define is dropped or renamed, the
+  // identifier is left as a bare global: every canonical, og:url, sitemap
+  // entry and robots.txt absolute URL silently falls back to localhost, and
+  // only a production deploy reveals it. These read the config directly.
+  test('injects PUBLIC_SITE_URL as the identifier site-seo.ts reads', () => {
+    expect(viteConfigSource).toMatch(/__LAST_OS_SITE_URL__\s*:[^,]*JSON\.stringify\(\s*process\.env\.PUBLIC_SITE_URL/)
+  })
+
+  test('declares the same identifier site-seo.ts consumes', () => {
+    expect(siteSeoSource).toContain('declare const __LAST_OS_SITE_URL__')
   })
 })
 
