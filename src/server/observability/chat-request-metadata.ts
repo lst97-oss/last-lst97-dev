@@ -1,5 +1,5 @@
-import { hasTrustedCloudflareOrigin } from '../security/cloudflare-origin'
-import { type ChatDiagnosticsMetadata, isValidIpAddress, redactDiagnosticsText } from './chat-diagnostics'
+import { vercelClientIpFromRequest } from '../security/vercel-client-ip'
+import { type ChatDiagnosticsMetadata, redactDiagnosticsText } from './chat-diagnostics'
 
 // biome-ignore lint/suspicious/noControlCharactersInRegex: Remove control characters from untrusted headers.
 const HEADER_CONTROL_CHARACTERS = /[\r\n\u0000-\u001f\u007f]/g
@@ -12,14 +12,12 @@ function safeHeader(request: Request, name: string, maxLength = 120, redact = tr
 }
 
 function locationFromRequest(request: Request): ChatDiagnosticsMetadata['location'] {
-  const country = safeHeader(request, 'cf-ipcountry', 2)
-  const region = safeHeader(request, 'cf-region', 100)
-  const regionCode = safeHeader(request, 'cf-region-code', 12)
-  const city = safeHeader(request, 'cf-ipcity', 100)
-  const timezone = safeHeader(request, 'cf-timezone', 80)
+  const country = safeHeader(request, 'x-vercel-ip-country', 2)
+  const regionCode = safeHeader(request, 'x-vercel-ip-country-region', 12)
+  const city = safeHeader(request, 'x-vercel-ip-city', 100)
+  const timezone = safeHeader(request, 'x-vercel-ip-timezone', 80)
   const location = {
     ...(country ? { country } : {}),
-    ...(region ? { region } : {}),
     ...(regionCode ? { regionCode } : {}),
     ...(city ? { city } : {}),
     ...(timezone ? { timezone } : {}),
@@ -81,11 +79,9 @@ function referrerPath(request: Request): string | undefined {
 
 export function chatRequestMetadataFromRequest(
   request: Request,
-  options: { cloudflareOriginVerifySecret?: string },
+  options: { production: boolean; vercelRuntime: boolean },
 ): ChatDiagnosticsMetadata | undefined {
-  const hasTrustedOrigin = hasTrustedCloudflareOrigin(request, options.cloudflareOriginVerifySecret)
-  const ipHeader = hasTrustedOrigin ? request.headers.get('cf-connecting-ip')?.trim() : undefined
-  const ipAddress = ipHeader && isValidIpAddress(ipHeader) ? ipHeader : undefined
+  const ipAddress = vercelClientIpFromRequest(request, options.production && options.vercelRuntime)
   const location = ipAddress ? locationFromRequest(request) : undefined
   const browser = browserFromUserAgent(safeHeader(request, 'user-agent', 512, false))
   const language = safeHeader(request, 'accept-language', 120)

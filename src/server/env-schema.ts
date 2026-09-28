@@ -6,7 +6,6 @@ export type ServerEnvSource = Partial<
     | 'CONTACT_TO'
     | 'CHAT_CONTEXT_SIGNING_SECRET'
     | 'CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL'
-    | 'CLOUDFLARE_ORIGIN_VERIFY_SECRET'
     | 'CHAT_STREAM_MAX_MS'
     | 'CHAT_TOOL_TIMEOUT_MS'
     | 'DATABASE_URL'
@@ -55,7 +54,6 @@ export type ServerEnvSource = Partial<
 export type IntegrationEnvKey =
   | 'CONTACT_TO'
   | 'CHAT_CONTEXT_SIGNING_SECRET'
-  | 'CLOUDFLARE_ORIGIN_VERIFY_SECRET'
   | 'KNOWLEDGE_DATABASE_URL'
   | 'OPENROUTER_API_KEY'
   | 'OPENROUTER_MODEL'
@@ -98,7 +96,6 @@ export function createServerEnv(source: ServerEnvSource) {
           { message: 'must be an HTTPS Discord webhook URL' },
         )
         .optional(),
-      CLOUDFLARE_ORIGIN_VERIFY_SECRET: z.string().min(32).optional(),
       CHAT_STREAM_MAX_MS: z.coerce.number().int().positive().default(90_000),
       CHAT_TOOL_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
       DATABASE_URL: z.url().refine((value) => ['postgres:', 'postgresql:'].includes(new URL(value).protocol), {
@@ -155,7 +152,6 @@ export function createServerEnv(source: ServerEnvSource) {
       CONTACT_TO: source.CONTACT_TO,
       CHAT_CONTEXT_SIGNING_SECRET: source.CHAT_CONTEXT_SIGNING_SECRET,
       CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: source.CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL,
-      CLOUDFLARE_ORIGIN_VERIFY_SECRET: source.CLOUDFLARE_ORIGIN_VERIFY_SECRET,
       CHAT_STREAM_MAX_MS: source.CHAT_STREAM_MAX_MS,
       CHAT_TOOL_TIMEOUT_MS: source.CHAT_TOOL_TIMEOUT_MS,
       DATABASE_URL: source.DATABASE_URL,
