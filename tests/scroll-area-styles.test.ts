@@ -1,16 +1,14 @@
 import { describe, expect, test } from 'bun:test'
-import { Window } from 'happy-dom'
+import { createSiteStyleWindow } from './site-stylesheet'
 
-const browser = new Window()
-const styles = browser.document.createElement('style')
-styles.textContent = await Bun.file(new URL('../src/styles.css', import.meta.url)).text()
-browser.document.head.append(styles)
+const { window: browser, styleElement: styles } = await createSiteStyleWindow()
 
 // happy-dom keeps `var()` references unresolved in getComputedStyle, so the
 // themed bar is asserted through the declarations that produce those colors.
+// Authored selectors may wrap across lines, so compare on collapsed whitespace.
 function declaration(selector: string, property: string) {
-  const rules = Array.from(styles.sheet?.cssRules ?? []) as unknown as CSSStyleRule[]
-  const rule = rules.find((entry) => entry.selectorText === selector)
+  const rules = Array.from((styles as unknown as HTMLStyleElement).sheet?.cssRules ?? []) as unknown as CSSStyleRule[]
+  const rule = rules.find((entry) => entry.selectorText?.replace(/\s+/g, ' ') === selector)
   return rule ? rule.style.getPropertyValue(property) : undefined
 }
 
@@ -59,6 +57,8 @@ describe('scroll area styles', () => {
     expect(browser.getComputedStyle(thumb).marginTop).toBe('')
     expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-thumb"]', 'background')).toBe('var(--os-yellow)')
     expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-thumb"]', 'border-radius')).toBe('0px')
+    // Radix does not put data-orientation on the thumb, so the resize cursor is
+    // selected through the orientation-bearing bar that contains it.
     expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"][data-orientation="vertical"] [data-slot="scroll-area-thumb"]', 'cursor')).toBe('ns-resize')
   })
 

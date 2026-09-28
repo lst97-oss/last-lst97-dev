@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { Window } from 'happy-dom'
+import { createSiteStyleWindow } from './site-stylesheet'
 
-const browser = new Window()
-const styles = browser.document.createElement('style')
-styles.textContent = await Bun.file(new URL('../src/styles.css', import.meta.url)).text()
-browser.document.head.append(styles)
+const shellSource = await Bun.file(new URL('../src/components/site/shell.tsx', import.meta.url)).text()
+
+const { window: browser, styleElement: styles } = await createSiteStyleWindow()
 
 describe('window frame styles', () => {
   test('keeps the desktop background grid fixed while content scrolls', () => {
@@ -90,11 +89,27 @@ describe('window frame styles', () => {
   })
 
   test('uses dark ink for the default dock navigation label color', () => {
-    const shortcutRule = Array.from(styles.sheet?.cssRules ?? []).find((rule) =>
-      rule.cssText.startsWith('.desktop-shortcut {'),
-    )
+    // The resting label ink left .desktop-shortcut in the shell refresh; it is
+    // now Tailwind's `text-foreground` utility on the dock link itself.
+    const shortcutLink = shellSource
+      .split('\n')
+      .find((line) => line.includes('desktop-shortcut ') && line.includes('className='))
 
-    expect(shortcutRule?.cssText).toContain('color: var(--os-ink)')
+    expect(shortcutLink).toContain('text-foreground')
+
+    // text-foreground resolves through --color-foreground, which is itself
+    // aliased to --foreground, the dark ink token.
+    const rules = Array.from((styles as unknown as HTMLStyleElement).sheet?.cssRules ?? []) as unknown as CSSStyleRule[]
+    const root = rules.find((rule) => rule.selectorText === ':root')
+    expect(root?.style.getPropertyValue('--foreground')).toBe('var(--os-ink)')
+
+    const activeRule = rules.find((rule) =>
+      rule.selectorText
+        ?.split(',')
+        .map((selector) => selector.trim())
+        .includes('.desktop-shortcut.is-active'),
+    )
+    expect(activeRule?.style.getPropertyValue('color')).toBe('var(--os-ink)')
   })
 
   test('reveals operator coding details only when the profile window is maximized', () => {

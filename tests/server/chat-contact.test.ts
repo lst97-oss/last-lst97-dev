@@ -26,7 +26,7 @@ describe('chat contact templates and draft validation', () => {
 
     expect(fields.name).toBe('')
     expect(parseChatContactFields('email', fields)).toEqual({ ok: true, fields })
-    expect(validateChatContactDraft('email', fields)).toMatchObject({ ok: true, submission: { template: 'email', fields: { name: '', email: '  person@example.com  ', message: '  Please check this exact text.\nLine two.  ' } } })
+    expect(validateChatContactDraft('email', fields)).toMatchObject({ ok: true, submission: { template: 'email', fields: { name: '', email: 'person@example.com', message: '  Please check this exact text.\nLine two.  ' } } })
   })
 
   it('reports required fields and rejects an invalid reply email', () => {

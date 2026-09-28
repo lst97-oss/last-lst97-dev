@@ -25,7 +25,7 @@ const { TurnstileChallenge } = await import('../src/components/site/turnstile-ch
 
 let root: ReturnType<typeof createRoot>
 let container: ReturnType<typeof browserWindow.document.createElement>
-let widgetOptions: { callback: (token: string) => void } | undefined
+let widgetOptions: { callback: (token: string | null) => void } | undefined
 const neverResolves = new Promise<void>(() => undefined)
 
 function ConditionalSuspension({ shouldSuspend }: { shouldSuspend: boolean }) {
@@ -33,7 +33,7 @@ function ConditionalSuspension({ shouldSuspend }: { shouldSuspend: boolean }) {
   return null
 }
 
-function challengeTree(onToken: (token: string) => void, shouldSuspend: boolean) {
+function challengeTree(onToken: (token: string | null) => void, shouldSuspend: boolean) {
   return React.createElement(React.Suspense, { fallback: 'loading' }, React.createElement(React.Fragment, null, [
     React.createElement(TurnstileChallenge, {
       key: 'challenge',
@@ -79,8 +79,8 @@ afterAll(() => {
 
 describe('Turnstile challenge callback', () => {
   test('does not publish a callback from a render that React suspends', async () => {
-    const committedTokens: string[] = []
-    const abandonedTokens: string[] = []
+    const committedTokens: (string | null)[] = []
+    const abandonedTokens: (string | null)[] = []
 
     await act(async () => {
       root.render(challengeTree((token) => committedTokens.push(token), false))
