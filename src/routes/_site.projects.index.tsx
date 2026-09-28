@@ -6,6 +6,7 @@ import { CardGrid, CountBadge, EmptyPanel, PageHeading, PageStack } from '@/comp
 import { PixelIcon } from '@/components/site/pixel-icon'
 import { WindowFrame } from '@/components/site/window-frame'
 import { loadProjects } from '@/lib/content/site-data'
+import { createPageMeta } from '@/lib/seo/site-seo'
 
 export const Route = createFileRoute('/_site/projects/')({
   loader: loadProjects,
@@ -14,7 +15,13 @@ export const Route = createFileRoute('/_site/projects/')({
     icon="▤"
     message="Projects could not be loaded from the content service. Try again in a moment."
   />,
-  head: () => ({ meta: [{ title: 'Projects — LAST//OS' }, { name: 'description', content: 'Selected projects and experiments from the operator.' }] }),
+  head: () =>
+    createPageMeta({
+      pathname: '/projects',
+      title: 'Projects',
+      description:
+        'Selected projects, products, tools, and experiments — full-stack web apps and open-source utilities built with React, TypeScript, and Next.js.',
+    }),
   component: ProjectsPage,
 })
 

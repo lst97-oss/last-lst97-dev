@@ -5,6 +5,7 @@ import { ContentUnavailableRoute } from '@/components/site/content/unavailable'
 import { formatPublishedDate } from '@/lib/content/date'
 import { createContentMeta } from '@/lib/content/meta'
 import { loadChangelog } from '@/lib/content/site-data'
+import { canonicalUrl } from '@/lib/seo/site-seo'
 
 export const Route = createFileRoute('/_site/changelog/$slug')({
   errorComponent: () => <ContentUnavailableRoute
@@ -17,17 +18,22 @@ export const Route = createFileRoute('/_site/changelog/$slug')({
     if (!entry) throw notFound()
     return entry
   },
-  head: ({ loaderData }) => ({
-    meta: loaderData
+  head: ({ loaderData, params }) =>
+    loaderData
       ? createContentMeta({
           title: loaderData.version ? `${loaderData.version} — ${loaderData.title}` : loaderData.title,
           description: loaderData.excerpt,
           image: loaderData.coverImage,
           seo: loaderData.seo,
           kind: 'article',
+          pathname: `/changelog/${params.slug}`,
+          publishedTime: loaderData.publishedAt,
+          tags: loaderData.tags,
         })
-      : [{ title: 'Changelog — LAST//OS' }],
-  }),
+      : {
+          meta: [{ title: 'Changelog — LAST//OS' }],
+          links: [{ rel: 'canonical', href: canonicalUrl(`/changelog/${params.slug}`) }],
+        },
   component: ChangelogEntryPage,
 })
 

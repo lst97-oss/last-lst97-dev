@@ -6,6 +6,7 @@ import { PixelIcon } from '@/components/site/pixel-icon'
 import { WindowFrame } from '@/components/site/window-frame'
 import { formatPublishedDate } from '@/lib/content/date'
 import { loadChangelogs } from '@/lib/content/site-data'
+import { createPageMeta } from '@/lib/seo/site-seo'
 
 export const Route = createFileRoute('/_site/changelog/')({
   loader: loadChangelogs,
@@ -14,7 +15,13 @@ export const Route = createFileRoute('/_site/changelog/')({
     icon="↻"
     message="Changelog could not be loaded from the content service. Try again in a moment."
   />,
-  head: () => ({ meta: [{ title: 'Changelog — LAST//OS' }, { name: 'description', content: 'Release notes and system updates from the operator.' }] }),
+  head: () =>
+    createPageMeta({
+      pathname: '/changelog',
+      title: 'Changelog',
+      description:
+        'Release notes and system updates from the operator — what shipped, what changed, and what got fixed.',
+    }),
   component: ChangelogPage,
 })
 

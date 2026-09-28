@@ -6,6 +6,7 @@ import { CardGrid, CountBadge, EmptyPanel, PageHeading, PageStack } from '@/comp
 import { PixelIcon } from '@/components/site/pixel-icon'
 import { WindowFrame } from '@/components/site/window-frame'
 import { loadPosts } from '@/lib/content/site-data'
+import { createPageMeta } from '@/lib/seo/site-seo'
 
 export const Route = createFileRoute('/_site/blog/')({
   loader: loadPosts,
@@ -14,7 +15,13 @@ export const Route = createFileRoute('/_site/blog/')({
     icon="✎"
     message="Notes could not be loaded from the content service. Try again in a moment."
   />,
-  head: () => ({ meta: [{ title: 'Blog — LAST//OS' }, { name: 'description', content: 'Notes, observations, and experiments from the operator.' }] }),
+  head: () =>
+    createPageMeta({
+      pathname: '/blog',
+      title: 'Blog',
+      description:
+        'Notes, observations, and experiments from the field — dispatches about building software, learning, and noticing.',
+    }),
   component: BlogPage,
 })
 
