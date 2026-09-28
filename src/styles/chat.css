@@ -2,6 +2,27 @@
    Message primitives + Tailwind. Citations live in chat-citations.tsx,
    typing dots live in animations.css. */
 
+/* Payload's admin CSS ships a bare `a { color: inherit }` / `a { color:
+   currentcolor }` inside `@layer payload-default`. That layer is registered
+   after Tailwind's own `@layer theme, base, components, utilities;` statement
+   (which the build emits right after ours and silently drops the
+   `payload-default` prefix from), so those anchor rules outrank every
+   Tailwind `text-*` utility. Links that were relying on `text-primary` /
+   `text-accent` were rendering in the inherited ink colour instead.
+
+   Unlayered CSS beats every layer, so scoping the colour to the chat
+   citations restores the intended tokens without touching the other links
+   that intentionally inherit (nav, buttons on coloured backgrounds). */
+.chat-citations a {
+  color: var(--primary);
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+}
+
+.chat-citations a:hover,
+.chat-citations a:focus-visible {
+  color: var(--background);
+}
 .os-chat-viewport {
   scrollbar-width: thin;
   scrollbar-color: var(--os-yellow) #20202b;
