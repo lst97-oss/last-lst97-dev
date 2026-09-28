@@ -4,17 +4,16 @@ The chat knowledge feature is opt-in. With `KNOWLEDGE_RAG_ENABLED=false` (the de
 
 ## Local development
 
-1. Configure `.env` with independent random values for `PAYLOAD_DB_PASSWORD` and `RAG_DB_PASSWORD`, `DATABASE_URL` and (when using RAG) `KNOWLEDGE_DATABASE_URL` containing the matching credentials, `KNOWLEDGE_RAG_ENABLED=true`, `UNSLOTH_EMBEDDING_MODEL_PATH` pointing to the downloaded Qwen3-Embedding-0.6B GGUF file, and `SILICONFLOW_API_KEY`. Use URL-safe hex passwords or URL-encode any reserved characters. Keep credentials only in the ignored local `.env` or deployment secret store. `KNOWLEDGE_EMBEDDING_SERVER_PATH` can select a non-default `llama-server` executable.
-2. Start the isolated pgvector service and apply only the RAG schema migration:
+1. Configure `.env` with `DATABASE_URL` and (when using RAG) `KNOWLEDGE_DATABASE_URL` pointing at remote PostgreSQL databases with the pgvector extension, `KNOWLEDGE_RAG_ENABLED=true`, `UNSLOTH_EMBEDDING_MODEL_PATH` pointing to the downloaded Qwen3-Embedding-0.6B GGUF file, and `SILICONFLOW_API_KEY`. Use URL-safe hex passwords or URL-encode any reserved characters. Keep credentials only in the ignored local `.env` or deployment secret store. `KNOWLEDGE_EMBEDDING_SERVER_PATH` can select a non-default `llama-server` executable.
+2. Apply only the RAG schema migration against the remote knowledge database:
 
    ```sh
-   docker compose up -d rag-db
    bun run knowledge:migrate
    ```
 
-   `rag-db` has its own PostgreSQL data volume and loopback-only host port 5435. The Payload database is likewise bound to loopback on port 5432. Neither port is published on network interfaces. This does not run or modify Payload CMS migrations or its database. The migration creates the `knowledge_chunks` table and vector index in the database named by `KNOWLEDGE_DATABASE_URL`.
+   This does not run or modify Payload CMS migrations or its database. The migration creates the `knowledge_chunks` table and vector index in the database named by `KNOWLEDGE_DATABASE_URL`.
 
-   Compose requires both database passwords and has no committed fallback credentials. On an existing data volume, changing the `.env` password alone does not rotate PostgreSQL's stored password; rotate the existing `postgres` and `rag` roles interactively with `\password` in `psql`, then update the matching connection URLs. Do not remove the volumes to rotate credentials.
+   Rotate remote database credentials in the provider dashboard, then update the matching connection URLs; there are no local data volumes to manage.
 3. Start the embedding server manually in its own terminal when RAG is enabled:
    ```sh
    bun run embedding:serve
@@ -68,6 +67,8 @@ past the import date.
 ## Owned-project catalogue
 
 `list_owned_projects` is a Jev-routed read-only tool backed by `knowledge_projects` in the dedicated knowledge database. It gives Jev a compact repository inventory without embedding a long list into vector search. The response is capped at ten records and includes the repository name, short summary, visibility, languages, software kinds, topics, created and updated dates, stars, forks, and imported WakaTime time when available. `search_knowledge` remains the source for report-level details and citations; Jev may request it in a later routing step after seeing catalogue results.
+
+Every call also returns the exact, filter-aware total of matching projects (`matchingTotal`, computed before the ten-record cap) and a breakdown of that same set by visibility, software kind, and topic, capped at twelve entries per dimension. A count question passes `op: "count"`, which skips the list page and returns only the total and breakdown; nothing is cited for a pure count. The server renders those figures and passes them to the responder as authoritative, so a count is never inferred from the visible page. Topic and kind are multi-valued, so their counts overlap and do not partition the total; topics present in both `github_topics` and `curated_topics` are counted once per project.
 
 Filters use AND between categories and OR among values in one category. Supported fields are free-text `query`; `languages`; `kinds`; `topics`; `visibility`; `created_after` / `created_before`; `updated_after` / `updated_before`; `min_stars` / `max_stars`; `min_forks` / `max_forks`; `min_time_spent_seconds` / `max_time_spent_seconds`; `time_spent_range` (`all_time`, `last_year`, `last_30_days`, or `last_7_days`); and explicit `time_spent_from` / `time_spent_to`. Choose either a named range or explicit dates. `sort_by` supports relevance, stars, forks, created, updated, and time spent; `sort_direction` is ascending or descending; `limit` is 1–10. WakaTime time defaults to the full imported range, and missing time remains unknown rather than zero. Date bounds are inclusive calendar days.
 

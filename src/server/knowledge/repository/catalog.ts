@@ -129,12 +129,47 @@ export function createKnowledgeCatalogOperations(
           LEFT JOIN "time_by_project" w ON w."project_key" = ${catalogProjectKey}
           WHERE ${sql.join(conditions, sql` AND `)}
         ),
+        "breakdown" AS (
+          SELECT 'visibility' AS "dimension", f."is_public"::text AS "key", COUNT(*)::int AS "count"
+          FROM "filtered" f
+          GROUP BY 2
+          UNION ALL
+          -- Topics are multi-valued and github_topics can repeat a curated topic on
+          -- the same project, so dedupe per project before counting, and count
+          -- distinct projects rather than unnest rows.
+          SELECT 'topic', t.topic, COUNT(DISTINCT p."source_id")::int
+          FROM "filtered" f
+          JOIN "knowledge_projects" p ON p."source_type" = f."source_type" AND p."source_id" = f."source_id"
+          CROSS JOIN LATERAL unnest(ARRAY(SELECT DISTINCT unnest(p."github_topics" || p."curated_topics"))) AS t(topic)
+          GROUP BY 2
+          UNION ALL
+          SELECT 'kind', k.kind, COUNT(DISTINCT p."source_id")::int
+          FROM "filtered" f
+          JOIN "knowledge_projects" p ON p."source_type" = f."source_type" AND p."source_id" = f."source_id"
+          CROSS JOIN LATERAL unnest(ARRAY(SELECT DISTINCT unnest(p."software_kinds"))) AS k(kind)
+          GROUP BY 2
+        ),
+        "breakdown_ranked" AS (
+          SELECT "dimension", "key", "count",
+            ROW_NUMBER() OVER (PARTITION BY "dimension" ORDER BY "count" DESC, "key" ASC) AS "rn"
+          FROM "breakdown"
+        ),
+        "breakdown_json" AS (
+          SELECT COALESCE(
+            json_agg(json_build_object('dimension', "dimension", 'key', "key", 'count', "count") ORDER BY "dimension", "rn"),
+            '[]'::json
+          ) AS "breakdown"
+          FROM "breakdown_ranked"
+          WHERE "rn" <= 12
+        ),
         "ranked" AS (
           SELECT f.*, ROW_NUMBER() OVER (ORDER BY f."stars" DESC NULLS LAST, f."source_id" ASC) AS "star_rank"
           FROM "filtered" f
         )
-        SELECT f.*, (f."star_rank" = 1 AND f."stars" IS NOT NULL AND ${filters.first_batch} AND ${filters.sort_by === undefined}) AS "most_starred"
+        SELECT f.*, (f."star_rank" = 1 AND f."stars" IS NOT NULL AND ${filters.first_batch} AND ${filters.sort_by === undefined}) AS "most_starred",
+          COUNT(*) OVER () AS "matching_total", b."breakdown"
         FROM "ranked" f
+        CROSS JOIN "breakdown_json" b
         ORDER BY ${orderedBy}
         LIMIT ${limit + 1}
       `)
@@ -159,9 +194,14 @@ export function createKnowledgeCatalogOperations(
           curatedTopics: parsed.data.curated_topics,
           timeSpentSeconds: parsed.data.time_spent_seconds,
           mostStarred: parsed.data.most_starred,
+          matchingTotal: parsed.data.matching_total,
+          breakdown: parsed.data.breakdown,
         }
       })
-      return { projects: rows.slice(0, limit), hasMore: rows.length > limit }
+      const matchingTotal = rows[0]?.matchingTotal ?? 0
+      const breakdown = rows[0]?.breakdown ?? []
+      if (filters.op === 'count') return { projects: [], hasMore: false, matchingTotal, breakdown }
+      return { projects: rows.slice(0, limit), hasMore: rows.length > limit, matchingTotal, breakdown }
     },
 
     async upsertOwnedProjectCatalogEntries(entries) {

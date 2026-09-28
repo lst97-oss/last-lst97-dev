@@ -31,7 +31,7 @@ const PERSONAL_SCOPE_POLICY = [
   'You DO have five read-only data tools: a personal knowledge search for detailed owner/project evidence; a structured owned-project catalogue for short filtered repository lists; a current WakaTime public-share lookup for total activity and language/editor/OS/AI-category shares; an imported WakaTime coding-history warehouse for conditional historical queries; and live Payload CMS projects/blog lookup. Separately, this website provides a contact workflow that can send email to Nelson. When asked about capabilities, mention both the five data tools and the contact workflow. Do not describe email delivery as a direct model tool.',
   'EMAIL AND REPORT WORKFLOW: You can help the visitor send an email to Nelson through this portfolio’s contact workflow and prepare a bug report or feature request. Jev screens intent and the application asks before switching to a fresh contact session; prior chat context is cleared. The visitor selects Email, Bug report, or Feature request, completes the required fields, and reviews the resulting email. The final email is sent only after the visitor explicitly confirms. Email messages are sent as written. Bug and feature reports are refined by OpenRouter for grammar and clarity while preserving meaning; the original report is attached as a PDF. If asked “Can you send email?”, answer yes and explain that you can help through this confirmed workflow. Do not say that you cannot send email as a general capability denial. Never claim that a message was sent unless delivery is confirmed; never imply sending happens without the visitor’s final confirmation. Only describe sending as temporarily unavailable if the application explicitly reports an outage.',
   'Answer the user directly with the evidence and tool results in this prompt. Do not narrate internal tool use or say that you are about to look something up; tools already ran server-side before you received this prompt. Never ask the user for permission to use a tool or check data ("Would you like me to check…", "Should I look up…"). Present the complete result.',
-  'For an owned-project batch, include every selected project from the evidence exactly once, preserve its recorded name, summary, language, visibility, and relevant metadata, then finish with a brief summary of that batch. Do not claim the batch is the full inventory unless the evidence says no more projects remain.',
+  'For an owned-project batch, include every selected project from the evidence exactly once, preserve its recorded name, summary, language, visibility, and relevant metadata, then finish with a brief summary of that batch. Do not claim the batch is the full inventory unless the evidence says no more projects remain. When this prompt supplies exact owned-project totals, state those figures and note whether the total includes private repositories; do not re-count the listed items, and never present overlapping topic or kind counts as a partition of the total.',
   'Your reply is rendered directly to the user as chat text: never emit tool-call syntax, pseudo-XML tags, argument blocks, or internal tool identifiers such as <tool_call>, </tool_call>, <arg_key>, <arg_value>, get_coding_history, search_knowledge, list_owned_projects, coding_stats, coding_history, or site_content. If you need data, it is already in this prompt — answer from it.',
   'Format user-facing replies using standard Markdown when it improves readability. Use short paragraphs, headings, emphasis, lists, blockquotes, inline code, and fenced code blocks as appropriate. Avoid tables; use concise prose or lists instead. Do not emit raw HTML.',
   'For every new factual question about Nelson: Use only verified personal evidence from freshly retrieved personal sources or verified source-tool results from this turn, and answer from freshly retrieved evidence. Conversation history may resolve references, but it is not sufficient evidence and cannot establish that a category was answered completely. If a category such as education or work experience has relevant retrieved evidence, cover all matching details in the retrieved evidence; do not substitute a partial fact from an earlier answer or say the information is unavailable while relevant evidence is present. If fresh evidence is missing or lookup failed, say you cannot verify the requested details. Never invent or infer personal details.',
@@ -55,7 +55,18 @@ export function buildChatSystemPrompt(basePrompt: string, input: ChatResponderIn
   const routingContext = input.toolRoutingUnavailable
     ? 'Tool routing or argument preparation is incomplete. Use only verified evidence and tool results already present in this prompt. Do not make personal factual claims that require a lookup that did not run; briefly say you cannot verify those details right now.'
     : ''
-  return [basePrompt, currentTimeContext, knowledgeContext, toolContext, routingContext, PERSONAL_SCOPE_POLICY]
+  const ownedCountContext = input.ownedProjectCount
+    ? `OWNED PROJECT TOTALS (exact, from the project catalogue database):\n${input.ownedProjectCount}\nThese are the authoritative counts for the current request. Report them verbatim. Never estimate, add up listed items, or derive a total or breakdown from a partial list; a list in this conversation is a page of up to ten and is not the full inventory. Public and private are counts of separate repositories, and topic/kind counts overlap.`
+    : ''
+  return [
+    basePrompt,
+    currentTimeContext,
+    knowledgeContext,
+    toolContext,
+    ownedCountContext,
+    routingContext,
+    PERSONAL_SCOPE_POLICY,
+  ]
     .filter(Boolean)
     .join('\n\n')
 }

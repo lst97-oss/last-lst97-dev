@@ -1,8 +1,9 @@
 import { Link } from '@tanstack/react-router'
 import type { ComponentProps, ReactNode } from 'react'
-import { PixelIcon } from '../pixel-icon'
-import { WindowFrame } from '../window-frame'
-import { ContentCover } from './cover'
+import { ContentCover } from '@/components/site/content/cover'
+import { Eyebrow, PageStack, Tag, TagRow } from '@/components/site/os-ui'
+import { PixelIcon } from '@/components/site/pixel-icon'
+import { WindowFrame } from '@/components/site/window-frame'
 
 interface ContentDetailLayoutProps {
   windowTitle: string
@@ -30,16 +31,16 @@ export function ContentDetailLayout({
   children,
 }: ContentDetailLayoutProps) {
   return (
-    <div className="page-stack narrow-page">
+    <PageStack className="max-w-4xl">
       <WindowFrame title={windowTitle} icon={icon}>
-        <Link className="back-link" to={backHref}>{backLabel}</Link>
+        <Link className="back-link mb-7 inline-block text-xs font-black tracking-wider text-accent" to={backHref}>{backLabel}</Link>
         <ContentCover image={coverImage} className="content-cover content-detail-cover" />
-        <p className="eyebrow"><PixelIcon glyph="●" /> {eyebrow}</p>
+        <Eyebrow><PixelIcon glyph="●" /> {eyebrow}</Eyebrow>
         <h1>{title}</h1>
         <p className="lead-copy">{excerpt}</p>
-        <div className="tag-row post-tags">{tags.map((tag) => <span className="tag" key={tag}>{tag}</span>)}</div>
+        <TagRow className="post-tags my-6">{tags.map((tag) => <Tag key={tag}>{tag}</Tag>)}</TagRow>
         <div className="article-body">{children}</div>
       </WindowFrame>
-    </div>
+    </PageStack>
   )
 }

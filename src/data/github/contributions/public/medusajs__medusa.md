@@ -52,21 +52,21 @@ Evidence: none
 - Defines the Custom Field Form Keys type or service — Evidence: `packages/admin/admin-shared/src/extensions/custom-fields/types.ts` (**inferred**)
 
 ## Tracked files
-- **24190 tracked files** in total
-- Source: 10291; tests: 1463; documentation: 1275; configuration: 10255; assets/other: 906
+- **24213 tracked files** in total
+- Source: 10294; tests: 1464; documentation: 1290; configuration: 10259; assets/other: 906
 
 ## Repository structure
 - Inspected 92 source files from the cloned repository (bounded for safety).
-- `.changeset/` (3 tracked files)
+- `.changeset/` (17 tracked files)
 - `.claude/` (48 tracked files)
-- `.github/` (65 tracked files)
+- `.github/` (69 tracked files)
 - `.yarn/` (6 tracked files)
 - `integration-tests/` (335 tracked files)
 - `memory/` (2 tracked files)
-- `packages/` (9014 tracked files)
+- `packages/` (9016 tracked files)
 - `scripts/` (27 tracked files)
 - `thoughts/` (2 tracked files)
-- `www/` (14663 tracked files)
+- `www/` (14666 tracked files)
 - `packages/admin/admin-vite-plugin/vitest.config.ts`
 - `packages/design-system/icons/vite.config.ts`
 - `packages/design-system/ui/vite.config.ts`

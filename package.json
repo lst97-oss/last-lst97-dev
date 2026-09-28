@@ -22,7 +22,6 @@
     "payload": "bunx payload",
     "generate:types": "bunx payload generate:types",
     "generate:importmap": "bunx payload generate:importmap",
-    "db:up": "docker compose up -d db",
     "db:migrate": "bunx payload migrate",
     "check:server": "biome check src/server",
     "format:server": "biome format --write src/server",
@@ -62,8 +61,8 @@
     "@tanstack/store": "latest",
     "@typesafe-ai/sdk": "^0.6.0",
     "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "cn": "^0.4.0",
     "date-fns": "^4.4.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.5.0",
@@ -87,7 +86,6 @@
     "remark-gfm": "^4.0.1",
     "sharp": "^0.35.4",
     "sonner": "^2.0.8",
-    "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.1.18",
     "vaul": "^1.1.2",
     "zod": "^4.3.6"
@@ -107,6 +105,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "@vitejs/plugin-rsc": "0.5.35",
     "bun-types": "^1.4.2",
+    "nitro": "^3.0.260903-beta",
     "sass": "^1.104.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.0"

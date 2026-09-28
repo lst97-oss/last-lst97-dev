@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/react-router'
 import type { ComponentProps } from 'react'
 
-import { ProjectCard } from '../content/card'
-import { PixelIcon } from '../pixel-icon'
-import { WindowFrame } from '../window-frame'
-import { homeWindowControls } from './constants'
+import { ProjectCard } from '@/components/site/content/card'
+import { homeWindowControls } from '@/components/site/home/constants'
+import { EmptyPanel } from '@/components/site/os-ui'
+import { PixelIcon } from '@/components/site/pixel-icon'
+import { WindowFrame } from '@/components/site/window-frame'
 
 type Project = ComponentProps<typeof ProjectCard>['project']
 
@@ -14,7 +15,7 @@ export function HomeFeaturedProjectSection({ project }: { project: Project | und
       {project ? (
         <ProjectCard project={project} />
       ) : (
-        <div className="empty-panel"><PixelIcon glyph="◇" /><p>Project archive is ready for its first upload.</p><Link to="/contact">START A CONVERSATION →</Link></div>
+        <EmptyPanel><PixelIcon glyph="◇" /><p>Project archive is ready for its first upload.</p><Link className="text-xs font-black tracking-wider text-accent" to="/contact">START A CONVERSATION →</Link></EmptyPanel>
       )}
     </WindowFrame>
   )

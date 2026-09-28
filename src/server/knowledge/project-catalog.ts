@@ -100,6 +100,9 @@ export const projectCatalogQuerySchema = projectCatalogFiltersSchema
       .max(200)
       .default([]),
     first_batch: z.boolean().default(false),
+    // `undefined` means list. A single literal keeps one code path; the list
+    // operation is the default so there is no second spelling to handle.
+    op: z.literal('count').optional(),
   })
   .strict()
 
@@ -122,4 +125,12 @@ export interface ProjectCatalogRecord {
   githubTopics: string[]
   curatedTopics: string[]
   timeSpentSeconds: number | null
+}
+
+export const PROJECT_BREAKDOWN_DIMENSIONS = ['visibility', 'topic', 'kind'] as const
+export type ProjectBreakdownDimension = (typeof PROJECT_BREAKDOWN_DIMENSIONS)[number]
+export interface ProjectCatalogBreakdownEntry {
+  dimension: ProjectBreakdownDimension
+  key: string
+  count: number
 }

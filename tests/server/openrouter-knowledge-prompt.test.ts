@@ -28,6 +28,32 @@ describe('OpenRouter knowledge system prompt', () => {
     expect(prompt).not.toContain('internal-source')
   })
 
+  it('supplies exact owned-project totals and forbids re-deriving them', () => {
+    const count = 'Owned project total: 111 projects match the current filters (excluding projects already shown).\nVisibility: 89 public, 22 private.'
+    const prompt = buildChatSystemPrompt('Be concise.', {
+      message: 'What is the total number of projects you did?',
+      currentDateTimeUtc: CURRENT_DATE_TIME_UTC,
+      history: [],
+      ownedProjectCount: count,
+    })
+
+    expect(prompt).toContain('OWNED PROJECT TOTALS')
+    expect(prompt).toContain('111')
+    expect(prompt).toContain('89 public, 22 private')
+    expect(prompt).toContain('Report them verbatim')
+    expect(prompt).toContain('a list in this conversation is a page of up to ten')
+  })
+
+  it('omits the owned-project totals block when no count ran', () => {
+    const prompt = buildChatSystemPrompt('Be concise.', {
+      message: 'What are your projects?',
+      currentDateTimeUtc: CURRENT_DATE_TIME_UTC,
+      history: [],
+    })
+
+    expect(prompt).not.toContain('OWNED PROJECT TOTALS')
+  })
+
   it('requires fresh retrieval for factual follow-ups when history only contains a partial answer', () => {
     const prompt = buildChatSystemPrompt('Be concise.', {
       message: 'How about the education?',

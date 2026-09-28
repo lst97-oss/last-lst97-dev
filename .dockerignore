@@ -1,5 +1,5 @@
 # Build + runtime context. Keep the image lean and secret-free:
-# runtime config comes from compose env_file/environment, never baked in.
+# runtime config comes from the container environment, never baked in.
 node_modules
 dist
 dist-ssr
@@ -18,9 +18,11 @@ __unconfig*
 .env.*
 *.local
 
-# Local dev data volumes.
-pgdata
-ragdata
+# Payload generated artefacts (regenerate via bunx payload generate:types /
+# generate:importmap) — the build stage regenerates them; the runner stage
+# copies the fresh files from the build stage instead of the host.
+payload-types.ts
+src/payload-import-map.ts
 
 # Dev / docs / test artefacts not needed at runtime.
 # NOTE: `vendor/` is intentionally NOT ignored — vite.config.ts and src/

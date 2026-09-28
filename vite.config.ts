@@ -7,6 +7,7 @@ import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { devtools } from '@tanstack/devtools-vite'
 import { defineConfig } from 'vite'
+import { nitro } from 'nitro/vite'
 import { clientModuleResolution } from './vendor/payload-tanstack-vite/clientModuleResolution.js'
 import { wrapCjsForClient } from './vendor/payload-tanstack-vite/wrapCjsForClient.js'
 import { ssrStripDistStyleImports } from './vendor/payload-tanstack-vite/stripDistStyleImports.js'
@@ -113,6 +114,11 @@ const config = defineConfig({
       },
     }),
     viteReact(),
+    // Vercel is the production target. NITRO_PRESET overrides it for other
+    // runtimes (the Dockerfile builds with NITRO_PRESET=node-server for a
+    // standalone container server). Explicit config wins over the env var
+    // inside Nitro, so the override has to happen here.
+    nitro({ preset: process.env.NITRO_PRESET ?? 'vercel' }),
   ],
 })
 

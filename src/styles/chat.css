@@ -1,93 +1,6 @@
-.chat-log {
-  max-height: 460px;
-  overflow: auto;
-  border: 3px solid var(--os-ink);
-  padding: 16px;
-  background: #20202b;
-  color: var(--os-paper);
-}
-
-.chat-line {
-  display: grid;
-  grid-template-columns: 42px 1fr;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.chat-line:last-child {
-  margin-bottom: 0;
-}
-
-.chat-line p {
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-.chat-citations,
-.chat-knowledge-note {
-  grid-column: 2;
-}
-
-.chat-citations {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 12px;
-  border-top: 1px solid rgb(255 255 255 / 22%);
-  padding-top: 8px;
-  font-size: 11px;
-}
-
-.chat-citations-label {
-  color: var(--os-yellow);
-  font-size: 9px;
-  font-weight: 900;
-}
-
-.chat-citations a,
-.os-chat-content .chat-citations a,
-.os-chat-viewport .chat-citations a {
-  color: var(--os-yellow);
-  font-weight: 600;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
-}
-
-.chat-citations a:hover,
-.os-chat-content .chat-citations a:hover,
-.os-chat-viewport .chat-citations a:hover {
-  color: var(--os-paper);
-}
-
-.chat-knowledge-note {
-  color: var(--os-yellow);
-  font-size: 9px;
-  font-weight: 800;
-}
-
-.chat-line.user .chat-prompt {
-  color: var(--os-yellow);
-}
-
-.chat-line.assistant .chat-prompt {
-  color: var(--os-teal);
-}
-
-.chat-prompt {
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.loading-dots span {
-  display: inline-block;
-  animation: blink 1s steps(2, jump-none) infinite;
-}
-
-.loading-dots span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-.loading-dots span:nth-child(3) {
-  animation-delay: 0.4s;
-}
+/* Legacy transcript styles removed — chat-transcript.tsx uses shadcn
+   Message primitives + Tailwind. Citations live in chat-citations.tsx,
+   typing dots live in animations.css. */
 
 .os-chat-viewport {
   scrollbar-width: thin;
@@ -137,105 +50,11 @@
   padding: 24px;
 }
 
-.chat-markdown {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  white-space: normal;
-}
-
-.chat-markdown > :first-child {
-  margin-top: 0;
-}
-.chat-markdown > :last-child {
-  margin-bottom: 0;
-}
-.chat-markdown p,
-.chat-markdown ul,
-.chat-markdown ol,
-.chat-markdown blockquote,
-.chat-markdown pre {
-  margin: 0.75em 0;
-}
-.chat-markdown h1,
-.chat-markdown h2,
-.chat-markdown h3,
-.chat-markdown h4 {
-  margin: 0.9em 0 0.45em;
-  color: var(--os-teal);
-  font-size: 1.08em;
-  font-weight: 900;
-  line-height: 1.4;
-}
-.chat-markdown ul,
-.chat-markdown ol {
-  padding-left: 1.5em;
-}
-.chat-markdown ul {
-  list-style: square;
-}
-.chat-markdown ol {
-  list-style: decimal;
-}
-.chat-markdown li + li {
-  margin-top: 0.25em;
-}
-.chat-markdown blockquote {
-  border-left: 3px solid var(--os-coral);
-  padding-left: 0.8em;
-  color: var(--os-teal-soft);
-}
-.chat-markdown a {
-  color: var(--os-yellow);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.chat-markdown a:hover {
-  color: var(--os-paper);
-}
-.chat-markdown :not(pre) > code {
-  border: 1px solid rgb(255 255 255 / 18%);
-  background: rgb(255 255 255 / 8%);
-  padding: 0.08em 0.3em;
-  color: var(--os-yellow);
-  overflow-wrap: anywhere;
-}
-.chat-markdown pre {
-  max-width: 100%;
-  overflow-x: auto;
-  border: 1px solid rgb(255 255 255 / 24%);
-  background: rgb(0 0 0 / 24%);
-  padding: 0.75em;
-}
-.chat-markdown pre code {
-  white-space: pre;
-}
-.chat-markdown-table-scroll {
-  max-width: 100%;
-  margin: 0.75em 0;
-  overflow-x: auto;
-}
-.chat-markdown table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-.chat-markdown th,
-.chat-markdown td {
-  border: 1px solid rgb(255 255 255 / 24%);
-  padding: 0.45em 0.65em;
-  vertical-align: top;
-}
-.chat-markdown th {
-  color: var(--os-teal);
-  font-weight: 900;
-}
+/* Chat markdown lives in prose.css (canonical home).
+   Ordered/unordered lists get extra inset so outside markers clear. */
 
 .os-chat-error-slot {
   margin-top: 16px;
-}
-
-.os-chat-error-slot .form-error {
-  margin: 0;
 }
 
 .os-chat-contact-panel {
@@ -657,20 +476,4 @@
   background: #fff4ba;
 }
 
-.chat-form {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.chat-form input {
-  min-width: 0;
-  flex: 1;
-}
-
-.input-prompt {
-  color: var(--os-coral);
-  font-size: 20px;
-  font-weight: 900;
-}
+/* Legacy single-line form removed — chat-composer.tsx owns the form. */

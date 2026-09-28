@@ -9,12 +9,11 @@ bounded public-share snapshots.
 Source is a WakaTime data-dump export (`days[].heartbeats[]`, ~1GB / 1.1M
 heartbeats / 959 days in the current load). Import:
 
-Before running the import, configure `RAG_DB_PASSWORD` and `KNOWLEDGE_DATABASE_URL`
-in `.env` to use the local `rag-db` credentials. See the local setup in
+Before running the import, configure `KNOWLEDGE_DATABASE_URL`
+in `.env` to point at the remote knowledge database. See the setup in
 [`knowledge-rag.md`](knowledge-rag.md).
 
 ```sh
-docker compose up -d rag-db
 bun run knowledge:migrate        # creates wakatime_heartbeats + wakatime_imports
 bun run wakatime:import /path/to/dump.json   # or set WAKATIME_DUMP_PATH
 ```
@@ -55,9 +54,10 @@ Measured on the live warehouse (Postgres 16, warm cache):
 - full re-import: ~22s → ~19s on conflict-only runs, ~55-65 round-trips
   instead of ~959 day-scoped round-trips
 
-The importer also needs `shm_size: 256mb` on `rag-db`
-(`docker-compose.yml`): parallel aggregates on 1.1M rows exhaust the default
-64MB `/dev/shm` (`could not resize shared memory segment`, SQLSTATE 53100).
+The importer also needs adequate `/dev/shm` on the database host for
+parallel aggregates on 1.1M rows; the default 64MB fails with
+`could not resize shared memory segment` (SQLSTATE 53100). Size the remote
+Postgres instance (or container `shm_size`, if self-hosting) to at least 256MB.
 
 ## Privacy
 

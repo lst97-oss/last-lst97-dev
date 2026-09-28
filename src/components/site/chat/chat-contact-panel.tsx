@@ -1,6 +1,4 @@
-import { CHAT_CONTACT_TEMPLATES } from '../../../lib/chat-contact'
-import { PixelIcon } from '../pixel-icon'
-import type { ChatContactUiState, ChatContactWorkflowViewModel } from './chat-types'
+import type { ChatContactUiState, ChatContactWorkflowViewModel } from '@/components/site/chat/chat-types'
 import {
   ChatContactConfirmationPhase,
   ChatContactDeliveredPhase,
@@ -8,7 +6,10 @@ import {
   ChatContactFormPhase,
   ChatContactReviewPhase,
   ChatContactTemplateSelectionPhase,
-} from './contact'
+} from '@/components/site/chat/contact'
+import { Eyebrow } from '@/components/site/os-ui'
+import { PixelIcon } from '@/components/site/pixel-icon'
+import { CHAT_CONTACT_TEMPLATES } from '@/lib/chat-contact'
 
 interface ChatContactPanelProps {
   workflow: ChatContactWorkflowViewModel
@@ -21,10 +22,10 @@ export function ChatContactPanel({ workflow, pending, siteKey }: ChatContactPane
   if (!state) return null
 
   return (
-    <section className="os-chat-contact-panel" aria-labelledby="chat-contact-panel-title">
-      <div className="os-chat-contact-panel-heading">
-        <p className="eyebrow"><PixelIcon glyph="@" /> CONTACT / {state.phase.replaceAll('_', ' ').toUpperCase()}</p>
-        <h2 id="chat-contact-panel-title">{getContactHeading(state)}</h2>
+    <section className="os-chat-contact-panel grid gap-3" aria-labelledby="chat-contact-panel-title">
+      <div className="os-chat-contact-panel-heading border-3 border-border bg-primary p-4 shadow-os-sm">
+        <Eyebrow className="m-0 mb-2"><PixelIcon glyph="@" /> CONTACT / {state.phase.replaceAll('_', ' ').toUpperCase()}</Eyebrow>
+        <h2 id="chat-contact-panel-title" className="m-0 text-2xl leading-snug text-foreground">{getContactHeading(state)}</h2>
       </div>
       <ContactPhaseContent workflow={workflow} state={state} pending={pending} siteKey={siteKey} />
       {state.phase !== 'confirmation' && state.phase !== 'delivered' ? (

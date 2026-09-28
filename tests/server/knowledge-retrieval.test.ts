@@ -62,7 +62,7 @@ function harness(options: {
         expect(limit).toBe(10)
         return candidates
       },
-      listOwnedProjects: async () => ({ projects: [], hasMore: false }),
+      listOwnedProjects: async () => ({ projects: [], hasMore: false, matchingTotal: 0, breakdown: [] }),
     },
     reranker: {
       rerank: async (input: { query: string; candidates: KnowledgeCandidate[]; limit: number; onModelCall?: (call: ChatModelCallDiagnostic) => void }) => {

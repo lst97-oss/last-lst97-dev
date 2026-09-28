@@ -1,4 +1,4 @@
-import type { PublicCitation } from '../../../server/knowledge/retrieve'
+import type { PublicCitation } from '@/server/knowledge/retrieve'
 
 function safeHttpHref(value: string): string | null {
   try {
@@ -19,21 +19,21 @@ export function ChatCitations({ citations }: { citations: PublicCitation[] }) {
   return (
     <div
       aria-label="Sources"
-      className="chat-citations mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/20 pt-2 text-[11px] leading-relaxed"
+      className="chat-citations mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/20 pt-2 text-xs leading-relaxed"
     >
-      <span className="text-[9px] font-black tracking-[0.12em] text-[var(--os-yellow)]">SOURCES</span>
+      <span className="text-xs font-black tracking-widest text-primary">SOURCES</span>
       {safeCitations.map(({ id, title, href, isPublic }) => (
         <span key={`${id}-${href}`} className="inline-flex items-center gap-1">
           <a
             href={href}
             rel="noreferrer noopener"
             target="_blank"
-            className="font-medium text-[var(--os-yellow)] underline decoration-1 underline-offset-2 hover:text-[var(--os-paper)]"
+            className="font-medium text-primary underline decoration-1 underline-offset-2 hover:text-background"
           >
             [{id}] {title}
           </a>
           {isPublic ? null : (
-            <span className="rounded-sm border border-[var(--os-yellow)]/60 px-1 font-bold text-[8px] uppercase tracking-[0.08em] text-[var(--os-yellow)]">
+            <span className="rounded-sm border border-primary/60 px-1 font-bold text-xs uppercase tracking-widest text-primary">
               private
             </span>
           )}

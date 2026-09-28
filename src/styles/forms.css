@@ -1,38 +1,24 @@
 input,
 textarea {
   width: 100%;
-  border: 3px solid var(--os-ink);
+  border: 3px solid var(--input);
   border-radius: 0;
   padding: 10px 12px;
-  background: var(--os-paper);
-  color: var(--os-ink);
+  background: var(--card);
+  color: var(--foreground);
 }
 
 textarea {
   resize: vertical;
 }
 
-.contact-form {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  max-width: 720px;
-}
-
-.contact-window.is-maximized .contact-form {
-  max-width: none;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 18px;
-}
+/* Contact form layout lives in contact-message-form.tsx via Tailwind. */
+/* Contact form is full-width via Tailwind. */
 
 label > span {
   display: block;
   margin-bottom: 7px;
-  color: var(--os-coral);
+  color: var(--accent);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -41,18 +27,11 @@ label > span {
 .form-note,
 .muted-copy {
   margin: 0;
-  color: var(--os-ink-soft);
+  color: var(--muted-foreground);
   font-size: 12px;
 }
 
-.form-error {
-  margin: 0;
-  border: 3px solid var(--os-ink);
-  padding: 10px 12px;
-  background: var(--os-coral);
-  font-size: 12px;
-  font-weight: 800;
-}
+/* Error boxes live in os-ui formErrorClass via Tailwind. */
 
 .turnstile-field {
   display: flex;
@@ -62,7 +41,7 @@ label > span {
 }
 
 .turnstile-label {
-  color: var(--os-coral);
+  color: var(--accent);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -85,7 +64,7 @@ label > span {
 
 .turnstile-unavailable {
   margin: 0;
-  color: var(--os-ink-soft);
+  color: var(--muted-foreground);
   font-size: 11px;
 }
 
@@ -97,28 +76,7 @@ label > span {
   overflow: hidden;
 }
 
-.success-panel {
-  align-items: center;
-  min-height: 300px;
-  background: var(--os-teal);
-  text-align: center;
-}
-
-.success-panel h2,
-.success-panel p {
-  margin-bottom: 0;
-}
-
-.success-mark {
-  display: grid;
-  width: 60px;
-  height: 60px;
-  place-items: center;
-  border: 3px solid var(--os-ink);
-  background: var(--os-yellow);
-  font-size: 30px;
-  font-weight: 900;
-}
+/* Success panel + mark live in contact-message-form.tsx via Tailwind. */
 
 .sr-only {
   position: absolute;

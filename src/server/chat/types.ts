@@ -82,6 +82,8 @@ export interface ChatResponderInput {
   extraContext?: string
   /** Compact server-rendered catalogue answer used only if the model yields no usable text. */
   catalogueFallback?: string
+  /** Exact server-computed owned-project totals; the responder must report these verbatim. */
+  ownedProjectCount?: string
   onModelCall?: (call: ChatModelCallDiagnostic) => void
 }
 

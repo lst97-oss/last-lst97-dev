@@ -17,25 +17,13 @@
     height: 38px;
     font-size: 20px;
   }
-  .hero-grid,
-  .dashboard-grid,
-  .about-layout {
-    grid-template-columns: 1fr;
-  }
+  /* Hero / dashboard / about grids live in components via Tailwind
+     (base single column, multi-column at sm:/lg:). */
   .about-window.is-maximized .about-layout {
     margin-top: 28px;
   }
   .about-window.is-maximized .fact-panel.has-avatar {
     margin-top: 84px;
-  }
-  .about-expanded {
-    grid-template-columns: 1fr;
-  }
-  .about-detail-card-wide {
-    grid-column: auto;
-  }
-  .card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .operator-profile-window.is-maximized .profile-panel {
     grid-template-columns: minmax(180px, 0.9fr) minmax(0, 1.1fr);
@@ -45,27 +33,8 @@
 }
 
 @media (max-width: 650px) {
-  .system-bar {
-    padding: 8px 12px;
-    gap: 12px;
-  }
-  .system-menu,
-  .system-active-window,
-  .system-menu-right > span:not(.system-clock) {
-    display: none;
-  }
-  .system-menu-button {
-    display: inline-flex;
-  }
-  .system-menu-left {
-    gap: 12px;
-  }
-  .system-clock-full {
-    display: none;
-  }
-  .system-clock-short {
-    display: inline;
-  }
+  /* System bar responsive visibility lives in DesktopShell via Tailwind
+     (max-sm:hidden / max-sm:inline-flex). */
   /* Mobile windows are plain stacked cards: no chrome, no zoom states. */
   .window-controls {
     display: none !important;
@@ -92,8 +61,7 @@
     justify-content: flex-start;
     min-height: 44px;
   }
-  .hero-window.is-maximized .welcome-expanded,
-  .welcome-context-grid {
+  .hero-window.is-maximized .welcome-expanded {
     grid-template-columns: 1fr;
   }
   .operator-profile-window.is-maximized .profile-panel {
@@ -114,35 +82,7 @@
   .desktop-shortcuts {
     display: none;
   }
-  .desktop-main {
-    padding: 16px 12px calc(28px + env(safe-area-inset-bottom, 0px));
-  }
-  .window-content {
-    padding: 18px 14px;
-  }
-  .chat-window .window-content {
-    padding: 16px 12px;
-  }
-  .card-grid,
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-  .section-heading,
-  .page-heading {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .section-heading .text-link,
-  .page-heading .count-badge {
-    margin-top: 0;
-  }
-  .chat-heading-tools {
-    flex-wrap: wrap;
-  }
-  .chat-form {
-    align-items: stretch;
-    flex-wrap: wrap;
-  }
+  /* Main column + window padding live in components via Tailwind. */
   .os-chat-form {
     align-items: stretch;
     flex-direction: column;
@@ -163,12 +103,6 @@
     width: 100%;
     min-height: 44px;
     margin-left: 0;
-  }
-  .chat-form input {
-    flex-basis: calc(100% - 32px);
-  }
-  .chat-form .pixel-button {
-    margin-left: auto;
   }
   .os-chat-turn-meta {
     flex-wrap: wrap;
@@ -193,20 +127,10 @@
   .os-chat-contact-actions {
     align-items: stretch;
   }
-  .os-chat-contact-actions .pixel-button {
+  .os-chat-contact-actions > button {
     flex: 1 1 100%;
     min-height: 44px;
   }
-  .os-mobile-dock-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+/* Reduced-motion handling lives in animations.css. */

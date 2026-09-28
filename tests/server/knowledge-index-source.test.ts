@@ -29,7 +29,7 @@ function dependencies(overrides: Partial<{
     upsertSourceChunks: async (_source: KnowledgeSourceReference, chunks: KnowledgeChunk[], projectCatalog?: unknown) => { calls.upserts.push(chunks); calls.catalogEntries.push(projectCatalog) },
     removeSource: async (_type: string, sourceId: string) => { calls.removed.push(sourceId) },
     listSourceIds: async () => [],
-    listOwnedProjects: async () => ({ projects: [], hasMore: false }),
+    listOwnedProjects: async () => ({ projects: [], hasMore: false, matchingTotal: 0, breakdown: [] }),
     upsertOwnedProjectCatalogEntries: async () => {},
     search: async () => [],
   }

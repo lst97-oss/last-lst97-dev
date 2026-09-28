@@ -1,12 +1,13 @@
 import { useStore } from '@tanstack/react-store'
+import { cn } from "cn"
 import type { ReactNode } from 'react'
-import { focusWindow, osStore } from '../../lib/os-store'
-import { useIsMobile } from '../hooks/use-mobile'
-import { PixelIcon } from './pixel-icon'
-import type { WindowFrameControls } from './window/window-controls'
-import { WindowControls } from './window/window-controls'
+import { useIsMobile } from '@/components/hooks/use-mobile'
+import { PixelIcon } from '@/components/site/pixel-icon'
+import type { WindowFrameControls } from '@/components/site/window/window-controls'
+import { WindowControls } from '@/components/site/window/window-controls'
+import { focusWindow, osStore } from '@/lib/os-store'
 
-export type { WindowFrameControls } from './window/window-controls'
+export type { WindowFrameControls } from '@/components/site/window/window-controls'
 
 type WindowFrameProps = {
   title: string
@@ -36,7 +37,12 @@ export function WindowFrame({
 
   return (
     <section
-      className={`window-frame ${isActive && !isMobile ? 'is-active' : ''} is-${effectiveMode} ${className}`.trim()}
+      className={cn(
+        'window-frame overflow-hidden border-3 border-border bg-card shadow-os',
+        isActive && !isMobile && 'is-active',
+        `is-${effectiveMode}`,
+        className,
+      )}
       data-window-id={windowId}
       onFocusCapture={(event) => {
         if (event.target instanceof Element && event.target.closest('.window-controls')) return
@@ -47,9 +53,9 @@ export function WindowFrame({
         activate()
       }}
     >
-      <div className="window-titlebar">
-        <span className="window-title">
-          <PixelIcon glyph={icon} />
+      <div className="window-titlebar flex min-h-9 items-center justify-between gap-3 border-b-3 border-border bg-primary px-2 py-1 pl-3 text-xs font-black tracking-widest text-foreground uppercase">
+        <span className="window-title inline-flex items-center gap-2">
+          <PixelIcon glyph={icon} className="text-foreground" />
           {title}
         </span>
         <WindowControls
@@ -60,7 +66,7 @@ export function WindowFrame({
           windowMode={effectiveMode}
         />
       </div>
-      <div className="window-content" aria-hidden={effectiveMode === 'minimized'}>{children}</div>
+      <div className="window-content p-6 sm:p-8 lg:p-12" aria-hidden={effectiveMode === 'minimized'}>{children}</div>
     </section>
   )
 }

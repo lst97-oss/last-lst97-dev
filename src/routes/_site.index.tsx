@@ -6,9 +6,10 @@ import {
   HomeHeroSection,
   HomeOperatorProfileSection,
   HomeRecentNotesSection,
-} from '../components/site/home'
-import { loadPosts, loadProjects } from '../lib/content/site-data'
-import { getWakaTimeSnapshotServerFn } from '../server/wakatime/server-functions'
+} from '@/components/site/home'
+import { PageStack } from '@/components/site/os-ui'
+import { loadPosts, loadProjects } from '@/lib/content/site-data'
+import { getWakaTimeSnapshotServerFn } from '@/server/wakatime/server-functions'
 
 export const Route = createFileRoute('/_site/')({
   loader: async () => {
@@ -37,13 +38,13 @@ function HomePage() {
     : null
 
   return (
-    <div className="page-stack">
+    <PageStack>
       <HomeHeroSection />
-      <div className="dashboard-grid">
-        <HomeFeaturedProjectSection project={featuredProject} />
-        <HomeOperatorProfileSection totalCodingTime={totalCodingTime} formattedSnapshot={formattedWakatimeStatsJson} />
+      <div className="dashboard-grid grid gap-6 lg:grid-cols-5">
+        <div className="lg:col-span-3"><HomeFeaturedProjectSection project={featuredProject} /></div>
+        <div className="lg:col-span-2"><HomeOperatorProfileSection totalCodingTime={totalCodingTime} formattedSnapshot={formattedWakatimeStatsJson} /></div>
       </div>
       <HomeRecentNotesSection posts={posts.items} />
-    </div>
+    </PageStack>
   )
 }

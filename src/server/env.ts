@@ -5,8 +5,12 @@ type ServerEnv = ReturnType<typeof createServerEnv>
 
 let serverEnv: ServerEnv | undefined
 
+function runtimeEnvironment() {
+  return typeof Bun !== 'undefined' ? Bun.env : typeof process !== 'undefined' ? process.env : undefined
+}
+
 function readRuntimeEnv(): ServerEnvSource {
-  const source = typeof Bun !== 'undefined' ? Bun.env : typeof process !== 'undefined' ? process.env : undefined
+  const source = runtimeEnvironment()
 
   // Payload's CLI currently runs through Node/tsx under `bunx payload`.
   // Keep this fallback isolated here; Bun remains the normal app runtime.
@@ -14,7 +18,6 @@ function readRuntimeEnv(): ServerEnvSource {
     CONTACT_TO: source?.CONTACT_TO,
     CHAT_CONTEXT_SIGNING_SECRET: source?.CHAT_CONTEXT_SIGNING_SECRET,
     CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: source?.CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL,
-    CLOUDFLARE_ORIGIN_VERIFY_SECRET: source?.CLOUDFLARE_ORIGIN_VERIFY_SECRET,
     CHAT_STREAM_MAX_MS: source?.CHAT_STREAM_MAX_MS,
     CHAT_TOOL_TIMEOUT_MS: source?.CHAT_TOOL_TIMEOUT_MS,
     DATABASE_URL: source?.DATABASE_URL,
@@ -56,6 +59,10 @@ function readRuntimeEnv(): ServerEnvSource {
     SILICONFLOW_API_KEY: source?.SILICONFLOW_API_KEY,
     UNSLOTH_EMBEDDING_MODEL_PATH: source?.UNSLOTH_EMBEDDING_MODEL_PATH,
   }
+}
+
+export function isVercelRuntime(): boolean {
+  return runtimeEnvironment()?.VERCEL === '1'
 }
 
 export function getServerEnv(): ServerEnv {

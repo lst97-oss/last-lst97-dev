@@ -1,8 +1,10 @@
 import { useForm } from '@tanstack/react-form'
+import { cn } from 'cn'
 import { type ChangeEvent, useMemo } from 'react'
-import type { ChatContactField, ChatContactFieldValues, ChatContactTemplate } from '../../../../lib/chat-contact'
-import { CHAT_CONTACT_TEMPLATES, createChatContactDraftSchema, createChatContactFieldSchema } from '../../../../lib/chat-contact'
-import type { ChatContactFieldErrors } from '../chat-types'
+import type { ChatContactFieldErrors } from '@/components/site/chat/chat-types'
+import { formErrorClass, pixelButtonVariants } from '@/components/site/os-ui'
+import type { ChatContactField, ChatContactFieldValues, ChatContactTemplate } from '@/lib/chat-contact'
+import { CHAT_CONTACT_TEMPLATES, createChatContactDraftSchema, createChatContactFieldSchema } from '@/lib/chat-contact'
 
 interface ChatContactFormPhaseProps {
   template: ChatContactTemplate
@@ -48,7 +50,7 @@ export function ChatContactFormPhase({
       <p className="form-note">Fill in the required fields. Examples show the kind of detail that helps Nelson understand your request.</p>
       <form.Subscribe selector={(state) => !state.isValid}>
         {(schemaInvalid) => schemaInvalid || serverErrors.missingFields.length > 0 || serverErrors.invalidFields.length > 0
-          ? <p className="form-error" role="alert">Some fields need your attention. Correct the highlighted fields and submit again.</p>
+          ? <p className={cn(formErrorClass)} role="alert">Some fields need your attention. Correct the highlighted fields and submit again.</p>
           : null}
       </form.Subscribe>
       <div className="os-chat-contact-fields">
@@ -105,7 +107,7 @@ export function ChatContactFormPhase({
                       )}
                     </label>
                     <p className="os-chat-contact-example" id={exampleId}>Example: {field.example}</p>
-                    {errorText ? <p className="form-error" id={errorId} role="alert">{errorText}</p> : null}
+                    {errorText ? <p className={cn(formErrorClass)} id={errorId} role="alert">{errorText}</p> : null}
                   </div>
                 )
               }}
@@ -120,7 +122,7 @@ export function ChatContactFormPhase({
         </div>
       ) : null}
       <div className="os-chat-contact-actions">
-        <button className="pixel-button primary" disabled={pending || !canSubmit} type="submit">SCREEN AND REVIEW →</button>
+        <button className={cn(pixelButtonVariants({ tone: 'coral' }))} disabled={pending || !canSubmit} type="submit">SCREEN AND REVIEW →</button>
       </div>
     </form>
   )

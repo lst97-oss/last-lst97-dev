@@ -1,15 +1,17 @@
 import { useRouter } from '@tanstack/react-router'
-import { PixelIcon } from '../pixel-icon'
-import { WindowFrame } from '../window-frame'
+import { cn } from 'cn'
+import { EmptyPanel, PageStack, pixelButtonVariants } from '@/components/site/os-ui'
+import { PixelIcon } from '@/components/site/pixel-icon'
+import { WindowFrame } from '@/components/site/window-frame'
 
 export function ContentUnavailablePanel({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="empty-panel large-empty content-unavailable" role="alert">
-      <PixelIcon glyph="◇" />
-      <h2>Connection interrupted.</h2>
-      <p>{message}</p>
-      <button className="pixel-button" onClick={onRetry} type="button">RETRY CONNECTION</button>
-    </div>
+    <EmptyPanel className="content-unavailable min-h-82 items-center text-center" role="alert">
+      <PixelIcon glyph="◇" className="text-2xl" />
+      <h2 className="m-0">Connection interrupted.</h2>
+      <p className="m-0">{message}</p>
+      <button className={cn(pixelButtonVariants())} onClick={onRetry} type="button">RETRY CONNECTION</button>
+    </EmptyPanel>
   )
 }
 
@@ -25,10 +27,10 @@ export function ContentUnavailableRoute({
   const router = useRouter()
 
   return (
-    <div className="page-stack">
+    <PageStack>
       <WindowFrame title={title} icon={icon}>
         <ContentUnavailablePanel message={message} onRetry={() => void router.invalidate()} />
       </WindowFrame>
-    </div>
+    </PageStack>
   )
 }

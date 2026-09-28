@@ -1,10 +1,10 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
-import { ContentDetailLayout } from '../components/site/content/detail-layout'
-import { RichText } from '../components/site/content/rich-text'
-import { ContentUnavailableRoute } from '../components/site/content/unavailable'
-import { formatPublishedDate } from '../lib/content/date'
-import { createContentMeta } from '../lib/content/meta'
-import { loadPost } from '../lib/content/site-data'
+import { ContentDetailLayout } from '@/components/site/content/detail-layout'
+import { RichText } from '@/components/site/content/rich-text'
+import { ContentUnavailableRoute } from '@/components/site/content/unavailable'
+import { formatPublishedDate } from '@/lib/content/date'
+import { createContentMeta } from '@/lib/content/meta'
+import { loadPost } from '@/lib/content/site-data'
 
 export const Route = createFileRoute('/_site/blog/$slug')({
   errorComponent: () => <ContentUnavailableRoute

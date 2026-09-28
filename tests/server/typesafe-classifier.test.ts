@@ -355,7 +355,7 @@ describe('TypeSafe Jev classifier adapter', () => {
       const stateData = JSON.parse(state) as { routing_guidance: string }
       expect(stateData.routing_guidance).toContain('latest message defines the request')
       expect(stateData.routing_guidance).toContain('Do not replay older requests')
-      expect(stateData.routing_guidance).toContain('Anchors identify sources, not evidence')
+      expect(stateData.routing_guidance).toContain('Anchors and shown_project_ids identify references only')
       expect(stateData.routing_guidance).toContain('“you/your” means Nelson')
       expect(stateData.routing_guidance).toContain('current-project question needs search_knowledge and coding_history')
       expect(stateData.routing_guidance).toContain('A named project’s all-time coding total needs coding_history')

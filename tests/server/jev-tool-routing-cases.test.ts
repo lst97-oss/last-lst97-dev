@@ -51,6 +51,10 @@ describe('Jev tool-routing baseline', () => {
     expect(byId.get('projects-next-batch')?.expected).toEqual(['list_owned_projects'])
     expect(byId.get('projects-all-owned-inventory')?.expected).toEqual(['list_owned_projects'])
     expect(byId.get('positive-you-projects')?.expected).toEqual(['list_owned_projects'])
+    expect(byId.get('followup-total-count-after-partial-public-list')?.expected).toEqual(['list_owned_projects'])
+    expect(byId.get('followup-bare-what-is-your-projects')?.expected).toEqual(['list_owned_projects'])
+    expect(byId.get('followup-total-number-after-rag-summary')?.expected).toEqual(['list_owned_projects'])
+    expect(byId.get('context-total-count-already-answered')?.expected).toEqual([])
     expect(byId.get('site-latest-projects')?.expected).toEqual(['site_content'])
   })
 

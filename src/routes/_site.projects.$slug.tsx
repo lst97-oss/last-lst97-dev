@@ -1,13 +1,15 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
-import { ContentCover } from '../components/site/content/cover'
-import { RichText } from '../components/site/content/rich-text'
-import { ContentUnavailableRoute } from '../components/site/content/unavailable'
-import { PixelIcon } from '../components/site/pixel-icon'
-import { WindowFrame } from '../components/site/window-frame'
-import { createContentMeta } from '../lib/content/meta'
-import { formatProjectTimeframe, getProjectLifecycleLabel } from '../lib/content/project-display'
-import { loadProject } from '../lib/content/site-data'
-import { safeAssetHref } from '../lib/content/url'
+import { cn } from 'cn'
+import { ContentCover } from '@/components/site/content/cover'
+import { RichText } from '@/components/site/content/rich-text'
+import { ContentUnavailableRoute } from '@/components/site/content/unavailable'
+import { Eyebrow, PageStack, ProjectStatus, pixelButtonVariants, Tag, TagRow } from '@/components/site/os-ui'
+import { PixelIcon } from '@/components/site/pixel-icon'
+import { WindowFrame } from '@/components/site/window-frame'
+import { createContentMeta } from '@/lib/content/meta'
+import { formatProjectTimeframe, getProjectLifecycleLabel } from '@/lib/content/project-display'
+import { loadProject } from '@/lib/content/site-data'
+import { safeAssetHref } from '@/lib/content/url'
 
 export const Route = createFileRoute('/_site/projects/$slug')({
   errorComponent: () => <ContentUnavailableRoute
@@ -42,27 +44,27 @@ function ProjectPage() {
   const repositoryUrl = safeAssetHref(project.repositoryUrl)
 
   return (
-    <div className="page-stack narrow-page">
+    <PageStack className="max-w-4xl">
       <WindowFrame title={`project://${project.slug}`} icon="▤">
-        <Link className="back-link" to="/projects">← BACK TO PROJECTS</Link>
+        <Link className="back-link mb-7 inline-block text-xs font-black tracking-wider text-accent" to="/projects">← BACK TO PROJECTS</Link>
         <ContentCover image={project.coverImage} className="content-cover content-detail-cover" />
-        <p className="eyebrow"><PixelIcon glyph="◆" /> PROJECT / {project.featured ? 'FEATURED' : 'ARCHIVE'}</p>
+        <Eyebrow><PixelIcon glyph="◆" /> PROJECT / {project.featured ? 'FEATURED' : 'ARCHIVE'}</Eyebrow>
         <h1>{project.title}</h1>
         <p className="lead-copy">{project.summary}</p>
         {lifecycle || project.role || timeframe ? (
-          <div className="project-detail-meta">
-            {lifecycle ? <span className="project-status">{lifecycle}</span> : null}
+          <div className="project-detail-meta my-3 flex flex-wrap items-center gap-2 text-xs font-extrabold tracking-wide text-muted-foreground">
+            {lifecycle ? <ProjectStatus>{lifecycle}</ProjectStatus> : null}
             {project.role ? <span>ROLE / {project.role}</span> : null}
             {timeframe ? <span>{timeframe}</span> : null}
           </div>
         ) : null}
-        <div className="tag-row post-tags">{project.technologies.map((technology) => <span className="tag" key={technology}>{technology}</span>)}</div>
-        <div className="project-links">
-          {liveUrl ? <a className="pixel-button primary" href={liveUrl} rel="noopener noreferrer" target="_blank">VIEW LIVE <span>↗</span></a> : null}
-          {repositoryUrl ? <a className="pixel-button" href={repositoryUrl} rel="noopener noreferrer" target="_blank">SOURCE CODE <span>↗</span></a> : null}
+        <TagRow className="post-tags my-6">{project.technologies.map((technology) => <Tag key={technology}>{technology}</Tag>)}</TagRow>
+        <div className="project-links flex flex-wrap items-center gap-3">
+          {liveUrl ? <a className={cn(pixelButtonVariants({ tone: 'coral' }))} href={liveUrl} rel="noopener noreferrer" target="_blank">VIEW LIVE <span>↗</span></a> : null}
+          {repositoryUrl ? <a className={cn(pixelButtonVariants())} href={repositoryUrl} rel="noopener noreferrer" target="_blank">SOURCE CODE <span>↗</span></a> : null}
         </div>
         <div className="article-body"><RichText value={project.content} /></div>
       </WindowFrame>
-    </div>
+    </PageStack>
   )
 }

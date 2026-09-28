@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createChatPostHandler } from '../server/chat/http-handler'
 import { getChatContactWorkflow, getChatService, verifyChatTurnstile } from '../server/chat/runtime'
-import { getServerEnv } from '../server/env'
+import { getServerEnv, isVercelRuntime } from '../server/env'
 import { chatRequestMetadataFromRequest } from '../server/observability/chat-request-metadata'
 import { logger } from '../server/observability/logger'
 import { checkEndpointLimit } from '../server/security/rate-limit-runtime'
@@ -17,7 +17,8 @@ const POST = createChatPostHandler({
     const env = getServerEnv()
     if (!env.CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL) return undefined
     return chatRequestMetadataFromRequest(request, {
-      cloudflareOriginVerifySecret: env.NODE_ENV === 'production' ? env.CLOUDFLARE_ORIGIN_VERIFY_SECRET : undefined,
+      production: env.NODE_ENV === 'production',
+      vercelRuntime: isVercelRuntime(),
     })
   },
   rateLimit: (request) => checkEndpointLimit(request, 'chat'),

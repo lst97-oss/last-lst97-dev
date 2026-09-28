@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ChatPage } from '../components/site/chat/chat-page'
-import { getTurnstileSiteKeyServerFn } from '../server/contact/server-functions'
+import { ChatPage } from '@/components/site/chat/chat-page'
+import { getTurnstileSiteKeyServerFn } from '@/server/contact/server-functions'
 
 export const Route = createFileRoute('/_site/chat')({
   loader: () => getTurnstileSiteKeyServerFn(),
