@@ -5,6 +5,7 @@ import { type ReactNode, useEffect, useState } from 'react'
 import { PixelBattleBackground } from '@/components/site/battle/pixel-battle-background'
 import { MobileNavDrawer } from '@/components/site/mobile-nav-drawer'
 import { PixelIcon } from '@/components/site/pixel-icon'
+import { AboutSiteDialog } from '@/components/site/shell/about-site-dialog'
 import { useSiteHealthStatus } from '@/components/site/site-health-provider'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { updateOpenHeaderMenu } from '@/lib/header-menu-state'
@@ -277,6 +278,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
           {activeWindowId ? <span className="system-active-window max-w-44 overflow-hidden text-ellipsis whitespace-nowrap text-muted max-sm:hidden">▣ {activeWindowId}</span> : null}
           <MelbourneTemperature />
           <MelbourneClock />
+          <AboutSiteDialog />
         </div>
       </header>
 
