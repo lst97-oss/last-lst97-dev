@@ -79,7 +79,7 @@ exporting `up`/`down` plus a sibling `.json` snapshot, registered by name in `sr
 | `bun install` | Install (Bun is the only supported package manager) |
 | `bun run dev` | `bunx --bun vite dev --port 3000` |
 | `bun run dev:rag` | Dev server + `llama-server` embedding sidecar (kills both on signal) |
-| `bun run build` | `payload generate:types` → `generate:importmap` → `vite build` |
+| `bun run build` | `generate:payload-admin-css` → `generate:types` → `generate:importmap` → `vite build`. The Dockerfile calls this same script; see the flags below. |
 | `bun run test` | `bun test` — the whole suite |
 | `bun run typecheck` | `tsc --noEmit` — the only static check that covers `tests/**` |
 | `bun run db:migrate` | `bunx payload migrate` |
@@ -94,6 +94,22 @@ RAG maintenance scripts: `knowledge:migrate`, `knowledge:sync`, `knowledge:githu
 `knowledge:github:reindex`, `knowledge:github:catalog`, `knowledge:interview:index`, `wakatime:import`.
 `scripts/embedding-process.ts` is a library (no npm script); `scripts/evaluate-jev-tool-routing.ts` is run
 ad hoc as `bun scripts/evaluate-jev-tool-routing.ts`.
+
+**The container build is the only caller that sets `PAYLOAD_BUNX_FLAGS` / `PAYLOAD_CLI_ARGS`.** The
+Dockerfile calls `bun run build` instead of repeating the chain, so the image cannot skip a step the
+local and Vercel builds run. Locally both variables are unset and the Payload CLI runs under Node.
+The container passes `--bun` (Payload must run on the Bun runtime) and `--disable-transpile` (tsx's
+`tsx://` loader cannot resolve under Bun, so Bun loads the TypeScript sources natively). They are
+**separate** variables on purpose: one quoted variable lands in a single argv slot that bunx cannot
+split, which silently drops the flags.
+
+**`docker build` currently fails, and it is not this script's fault.** `resolvePayloadServerUrl`
+(`src/server/security/payload-server-url.ts:57`) rejects a loopback origin when `NODE_ENV=production`,
+and the build stage sets `NODE_ENV=production` at the `base` image while `DATABASE_URL` points at
+`localhost`. `generate:types` loads `payload.config.ts`, so the guard fires. Verified pre-existing:
+the Dockerfile at `0838098` fails with the identical `PayloadServerUrlError`. Fixing it means giving
+the build stage a non-loopback `PAYLOAD_PUBLIC_SERVER_URL` (it is compile-time only and never
+reaches the image), not relaxing the guard.
 
 ## Code Conventions & Testing Patterns
 
