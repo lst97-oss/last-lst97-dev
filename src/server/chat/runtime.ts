@@ -95,6 +95,10 @@ export function getChatService(): ChatService {
         ? { codingHistory: getCodingHistoryRepository(), codingHistoryEnabled: true as const }
         : {}),
       siteContent: contentReader,
+      publicSiteUrl: (env.PUBLIC_SITE_URL ?? env.PAYLOAD_PUBLIC_SERVER_URL ?? 'http://localhost:3000').replace(
+        /\/+$/,
+        '',
+      ),
       planner: createAgentPlanner({ ...(env.OPENROUTER_PLANNER_MODEL ? { model: env.OPENROUTER_PLANNER_MODEL } : {}) }),
       ...(chatDiagnosticsSink ? { diagnosticsSink: chatDiagnosticsSink } : {}),
       logger,

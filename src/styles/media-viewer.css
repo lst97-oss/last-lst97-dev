@@ -1,0 +1,193 @@
+/* Media gallery + image viewer.
+   Dialog sizing follows the .chat-pipeline-dialog precedent in chat-tools.css:
+   a class on DialogContent plus descendant selectors on the data-slot
+   attributes, because DialogContent hardcodes `sm:max-w-lg` and wraps its
+   children in a ScrollArea whose viewport owns the padding. */
+
+.media-viewer-dialog {
+  width: min(1080px, calc(100vw - 32px));
+  max-width: min(1080px, calc(100vw - 32px));
+  border: 3px solid var(--os-ink);
+  border-radius: 0;
+  background: var(--os-paper);
+  color: var(--os-ink);
+  box-shadow: 8px 8px 0 var(--os-ink);
+}
+
+/* DialogContent hardcodes `p-6` on the ScrollArea viewport, but this dialog
+   draws its own 3px border and 8px offset shadow, so that padding would read
+   as a second frame floating inside the first. The window below supplies the
+   breathing room instead, matching `.window-content`'s ramp exactly. */
+.media-viewer-dialog [data-dialog-scroll] > [data-slot="scroll-area-viewport"] {
+  padding: 0;
+}
+
+/* The repo has no tailwindcss-animate, so DialogContent's animate-in /
+   zoom-in-95 classes are inert. A plain transition on Radix's data-state
+   matches the house idiom (home.css uses the same approach). */
+.media-viewer-dialog [data-state="open"],
+.media-viewer-dialog [data-state="closed"] {
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+/* The title bar is a direct child of the frame and spans its full width, so
+   the frame itself must stay unpadded — putting padding here would inset the
+   title bar, which is not how any other window on the site looks. The
+   `.media-viewer-body` rule below supplies the padding, mirroring the
+   `.window-content` element `WindowFrame` gives its own body. */
+.media-viewer-window {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 84vh;
+}
+
+.media-viewer-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 16px;
+}
+
+@media (min-width: 640px) {
+  .media-viewer-body {
+    padding: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .media-viewer-body {
+    padding: 32px;
+  }
+}
+
+.media-viewer-image {
+  display: block;
+  max-width: 100%;
+  max-height: 62vh;
+  width: auto;
+  height: auto;
+  margin-inline: auto;
+  object-fit: contain;
+}
+
+.media-viewer-caption {
+  margin: 12px 0 0;
+  color: var(--os-ink-soft);
+  font-size: 13px;
+  text-align: center;
+}
+
+.media-viewer-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.media-viewer-step {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--os-ink);
+  background: var(--os-paper);
+  padding: 0 14px;
+  color: var(--os-ink);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--os-ink);
+}
+
+.media-viewer-step:hover {
+  background: var(--os-coral);
+}
+
+.media-viewer-step:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.media-viewer-counter {
+  color: var(--os-ink);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.media-viewer-filmstrip {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 10px;
+  overflow-x: auto;
+}
+
+.media-viewer-thumb {
+  flex: 0 0 auto;
+  width: 84px;
+  height: 60px;
+  padding: 0;
+  border: 3px solid var(--os-ink);
+  background: var(--os-paper);
+  cursor: pointer;
+}
+
+.media-viewer-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.media-viewer-thumb.is-active {
+  border-color: var(--os-coral);
+  box-shadow: 3px 3px 0 var(--os-coral);
+}
+
+.media-viewer-thumb:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* The tile is a button purely for the click target; the figure inside keeps
+   the card look, and the button itself must not add a box of its own. */
+.media-gallery-tile {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.media-gallery-tile:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.media-trigger {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.media-trigger:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  .media-viewer-image {
+    max-height: 52vh;
+  }
+}

@@ -1,6 +1,6 @@
 import { type Dispatch, type FormEvent, useEffect, useRef } from 'react'
 
-import { isChatTurnLimitReached } from '../../../lib/chat-limits'
+import { CHAT_OFFLINE_MESSAGE, isChatTurnLimitReached, safeChatFailureMessage } from '../../../lib/chat-limits'
 import type { ChatContactEvent } from '../../../server/chat/events'
 import { chatStatusLabel, parseEventFrame, splitEventFrames } from '../../../server/chat/events'
 import type { PublicCitation } from '../../../server/knowledge/retrieve'
@@ -11,6 +11,7 @@ interface UseChatStreamOptions {
   state: ChatSessionState
   dispatch: Dispatch<ChatSessionAction>
 }
+
 
 export function useChatStream({ state, dispatch }: UseChatStreamOptions) {
   const abortRef = useRef<AbortController | null>(null)
@@ -30,9 +31,10 @@ export function useChatStream({ state, dispatch }: UseChatStreamOptions) {
     dispatch({ type: 'status/set-error', error: message })
   }
 
+
   async function readStream(response: Response) {
     const reader = response.body?.getReader()
-    if (!reader) throw new Error('The assistant is offline right now.')
+    if (!reader) throw new Error(CHAT_OFFLINE_MESSAGE)
     const decoder = new TextDecoder()
     let buffer = ''
     try {
@@ -78,7 +80,7 @@ export function useChatStream({ state, dispatch }: UseChatStreamOptions) {
             case 'error':
               dispatch({ type: 'conversation/remove-empty-draft' })
               if (data.code === 'turn_limit') dispatch({ type: 'conversation/turn-limit-reached' })
-              failDraft(String(data.message ?? 'The assistant is offline right now.'))
+              failDraft(String(data.message ?? CHAT_OFFLINE_MESSAGE))
               break
             default:
           }
@@ -138,7 +140,7 @@ export function useChatStream({ state, dispatch }: UseChatStreamOptions) {
         if (response.status === 400 && data?.error?.includes('expired')) {
           dispatch({ type: 'conversation/reset', message: 'That conversation expired. Start a fresh conversation and I’ll be ready.' })
         }
-        throw new Error(data?.error ?? 'The assistant is offline right now.')
+        throw new Error(data?.error ?? CHAT_OFFLINE_MESSAGE)
       }
       dispatch({
         type: 'conversation/reply',
@@ -150,7 +152,7 @@ export function useChatStream({ state, dispatch }: UseChatStreamOptions) {
     } catch (requestError) {
       if (requestError instanceof DOMException && requestError.name === 'AbortError') return
       dispatch({ type: 'conversation/remove-empty-draft' })
-      dispatch({ type: 'status/set-error', error: requestError instanceof Error ? requestError.message : 'The assistant is offline right now.' })
+      dispatch({ type: 'status/set-error', error: safeChatFailureMessage(requestError) })
     } finally {
       if (abortRef.current === controller) {
         abortRef.current = null

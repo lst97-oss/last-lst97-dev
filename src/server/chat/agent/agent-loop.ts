@@ -123,6 +123,7 @@ export function createChatAgentLoop(
       topicAnchors,
       today,
       toolTimeoutMs,
+      publicSiteUrl: dependencies.publicSiteUrl ?? 'http://localhost:3000',
       logger: dependencies.logger ?? { warn() {} },
     }
   }

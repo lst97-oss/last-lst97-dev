@@ -2,9 +2,10 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 import { ContentDetailLayout } from '@/components/site/content/detail-layout'
 import { RichText } from '@/components/site/content/rich-text'
 import { ContentUnavailableRoute } from '@/components/site/content/unavailable'
-import { formatPublishedDate } from '@/lib/content/date'
+import { formatPublishedDate, formatReadingTime, readingTimeMinutes } from '@/lib/content/date'
 import { createContentMeta } from '@/lib/content/meta'
 import { loadPost } from '@/lib/content/site-data'
+import { createPostStructuredData } from '@/lib/content/structured-data'
 import { canonicalUrl } from '@/lib/seo/site-seo'
 
 export const Route = createFileRoute('/_site/blog/$slug')({
@@ -28,7 +29,18 @@ export const Route = createFileRoute('/_site/blog/$slug')({
           kind: 'article',
           pathname: `/blog/${params.slug}`,
           publishedTime: loaderData.publishedAt,
+          modifiedTime: loaderData.updatedAt,
           tags: loaderData.tags,
+          structuredData: createPostStructuredData({
+            title: loaderData.seo.title?.trim() || loaderData.title,
+            description: loaderData.seo.description?.trim() || loaderData.excerpt,
+            slug: params.slug,
+            imageUrl: (loaderData.seo.image.url ?? loaderData.coverImage.url) ?? null,
+            publishedTime: loaderData.publishedAt,
+            modifiedTime: loaderData.updatedAt,
+            tags: loaderData.tags,
+            readingTimeMinutes: readingTimeMinutes(loaderData.content),
+          }),
         })
       : {
           meta: [{ title: 'Note — LAST//OS' }],
@@ -39,6 +51,7 @@ export const Route = createFileRoute('/_site/blog/$slug')({
 
 function PostPage() {
   const post = Route.useLoaderData()
+  const readMinutes = readingTimeMinutes(post.content)
   return (
     <ContentDetailLayout
       windowTitle={`note://${post.slug}`}
@@ -50,6 +63,10 @@ function PostPage() {
       title={post.title}
       excerpt={post.excerpt}
       tags={post.tags}
+      topics={post.topics}
+      readingTime={readMinutes ? formatReadingTime(readMinutes) : null}
+      publishedAt={post.publishedAt}
+      updatedAt={post.updatedAt}
     >
       <RichText value={post.content} />
     </ContentDetailLayout>

@@ -25,6 +25,23 @@ describe('Payload content mappers', () => {
     } }).content).toBeNull()
   })
 
+  test('keeps accessible table metadata and safe code fields for public Markdown rendering', () => {
+    const mapped = mapPost({ content: {
+      root: { type: 'root', children: [
+        { type: 'table', children: [{ type: 'tablerow', children: [{ type: 'tablecell', headerState: 1, colSpan: 2, rowSpan: 1, children: [] }] }] },
+        { type: 'block', fields: { blockType: 'Code', code: 'const safe = true', language: 'typescript', privateField: 'discard me' } },
+      ] },
+    } }).content
+
+    const serialized = JSON.stringify(mapped)
+    expect(serialized).toContain('"headerState":1')
+    expect(serialized).toContain('"colSpan":2')
+    expect(serialized).toContain('"blockType":"Code"')
+    expect(serialized).toContain('"code":"const safe = true"')
+    expect(serialized).toContain('"language":"typescript"')
+    expect(serialized).not.toContain('discard me')
+  })
+
   test('projects only public related records into Lexical relationships and internal links', () => {
     const draftPost = {
       id: 'draft-post',
@@ -98,6 +115,10 @@ describe('Payload content mappers', () => {
       excerpt: 'A short note.',
       publishedAt: '2026-09-20T00:00:00.000Z',
       tags: [{ tag: 'build logs' }],
+      topics: [
+        { id: 12, title: 'Engineering', slug: 'engineering', description: 'How software gets built.' },
+        { id: 13, title: 'AI', slug: 'ai', description: '' },
+      ],
       coverImage: { url: '/media/cover.png', alt: 'A pixelated terminal' },
       seo: {
         title: 'A search title',
@@ -109,12 +130,16 @@ describe('Payload content mappers', () => {
 
     expect(mapPostSummary(document)).toMatchObject({
       tags: ['build logs'],
+      topics: [
+        { id: 12, title: 'Engineering', slug: 'engineering', description: 'How software gets built.' },
+        { id: 13, title: 'AI', slug: 'ai', description: '' },
+      ],
       coverImage: { url: '/media/cover.png', alt: 'A pixelated terminal' },
     })
     expect(mapPost(document).seo).toEqual({
       title: 'A search title',
       description: 'A search description.',
-      image: { url: '/media/social.png', alt: 'Social preview' },
+      image: { url: '/media/social.png', alt: 'Social preview', width: null, height: null, sizes: {} },
     })
   })
 
@@ -126,6 +151,10 @@ describe('Payload content mappers', () => {
         summary: 'A portfolio project.',
         technologies: [{ technology: 'TypeScript' }],
         featured: true,
+        gallery: [
+          { url: '/media/studio-a.png', alt: 'Studio on desktop' },
+          { url: '/media/studio-b.png', alt: 'Studio on mobile' },
+        ],
         projectStatus: 'in_progress',
         role: 'Designer and engineer',
         startDate: '2025-01-01T00:00:00.000Z',
@@ -133,6 +162,10 @@ describe('Payload content mappers', () => {
       }),
     ).toMatchObject({
       projectStatus: 'in_progress',
+      gallery: [
+        { url: '/media/studio-a.png', alt: 'Studio on desktop' },
+        { url: '/media/studio-b.png', alt: 'Studio on mobile' },
+      ],
       role: 'Designer and engineer',
       startDate: '2025-01-01T00:00:00.000Z',
       endDate: null,
@@ -155,6 +188,7 @@ describe('Payload content mappers', () => {
       excerpt: 'What shipped this week.',
       publishedAt: '2026-09-27T00:00:00.000Z',
       tags: [{ tag: 'added' }],
+      changeTypes: ['feature', 'bug_fix', 'unknown'],
       coverImage: { url: null, alt: null },
       content: { root: { children: [] } },
     }
@@ -162,6 +196,7 @@ describe('Payload content mappers', () => {
     expect(mapChangelogSummary(document)).toMatchObject({
       version: 'v1.4.0',
       tags: ['added'],
+      changeTypes: ['feature', 'bug_fix'],
     })
     expect(mapChangelog(document).seo).toEqual({
       title: null,

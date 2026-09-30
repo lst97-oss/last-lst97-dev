@@ -75,7 +75,7 @@ The chat is an agentic loop over five read-only tools, defined as a single tuple
 - `list_owned_projects` — structured catalogue from `knowledge_projects`, with filter-aware totals
 - `coding_stats` — public WakaTime share aggregates
 - `coding_history` — the imported heartbeat warehouse (per-project totals, daily series, streaks)
-- `site_content` — currently published Payload posts and projects
+- `site_content` — currently published Payload posts, projects, changelogs, and topics
 
 `Jev` decides which sources a turn needs; an OpenRouter planner prepares tool arguments for only the
 approved tools; a separate OpenRouter responder writes the answer in Nelson's first person. Retrieval

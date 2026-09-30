@@ -1,0 +1,9 @@
+@layer payload-default {
+  :root {
+    /* @payloadcms/ui ships no font binaries and this repo declares no
+       @font-face, so 'Inter' resolved to whatever the visiting machine
+       happened to have installed. Pin to the platform UI stack. */
+    --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  }
+}

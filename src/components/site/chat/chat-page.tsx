@@ -2,6 +2,7 @@ import { cn } from 'cn'
 import { ChatComposer } from '@/components/site/chat/chat-composer'
 import { ChatContactPanel } from '@/components/site/chat/chat-contact-panel'
 import { ChatHelpDialog } from '@/components/site/chat/chat-help-dialog'
+import { ChatPromptSuggestions } from '@/components/site/chat/chat-prompt-suggestions'
 import { ChatTranscript } from '@/components/site/chat/chat-transcript'
 import { useChatSession } from '@/components/site/chat/use-chat-session'
 import { CountBadge, formErrorClass, PageHeading, PageStack } from '@/components/site/os-ui'
@@ -45,7 +46,10 @@ export function ChatPage({ siteKey }: ChatPageProps) {
         <ChatContactPanel workflow={session.contact} pending={session.status.pending} siteKey={siteKey} />
         {session.status.error ? <div className="os-chat-error-slot mt-4"><p className={cn(formErrorClass)} role="alert">{session.status.error}</p></div> : null}
         {!session.contact.state ? (
-          <ChatComposer conversation={session.conversation} pending={session.status.pending} siteKey={siteKey} />
+          <>
+            <ChatPromptSuggestions conversation={session.conversation} pending={session.status.pending} />
+            <ChatComposer conversation={session.conversation} pending={session.status.pending} siteKey={siteKey} />
+          </>
         ) : null}
         <div className="os-chat-notices">
           <p className="form-note">AI can make mistakes or hallucinate. Verify important information with reliable sources.</p>

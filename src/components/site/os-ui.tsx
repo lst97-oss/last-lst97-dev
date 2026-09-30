@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from "cn"
 import type { ReactNode } from 'react'
+import { useMasonryRows } from '@/components/site/masonry-rows'
 import { PixelIcon } from '@/components/site/pixel-icon'
 
 const pixelButtonVariants = cva(
@@ -63,7 +64,16 @@ export function TagRow({ children, className }: { children: ReactNode; className
 }
 
 export function CardGrid({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('grid grid-cols-1 gap-3.5 md:grid-cols-2 xl:grid-cols-3', className)}>{children}</div>
+  // The hook returns a bare ref: the masonry class is added in the effect once
+  // every card has a row span, because a grid with `grid-auto-rows: 8px` and no
+  // spans would collapse each card to a single row.
+  const ref = useMasonryRows()
+
+  return (
+    <div className={cn('grid grid-cols-1 gap-3.5 md:grid-cols-2 xl:grid-cols-3', className)} ref={ref}>
+      {children}
+    </div>
+  )
 }
 
 export function PageStack({ children, className }: { children: ReactNode; className?: string }) {

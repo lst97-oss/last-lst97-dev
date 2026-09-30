@@ -1,8 +1,11 @@
 import type { CollectionConfig } from 'payload'
 
-import { publishedAccess } from './access'
+import { authenticatedAccess, publishedAccess } from './access'
+import { contentEditor } from './fields/content-editor'
 import { seoField } from './fields/seo'
+import { ensureContentSlug } from './hooks/content-slug'
 import { createKnowledgeAfterChangeHook, createKnowledgeAfterDeleteHook } from '../server/knowledge/payload-hooks'
+import { ensurePublicationDate } from './hooks/publication-date'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -12,8 +15,13 @@ export const Posts: CollectionConfig = {
   },
   access: {
     read: ({ req }) => (req.user ? true : publishedAccess()),
+    create: authenticatedAccess,
+    update: authenticatedAccess,
+    delete: authenticatedAccess,
   },
   hooks: {
+    beforeValidate: [ensureContentSlug],
+    beforeChange: [ensurePublicationDate],
     afterChange: [createKnowledgeAfterChangeHook('post')],
     afterDelete: [createKnowledgeAfterDeleteHook('post')],
   },
@@ -26,9 +34,10 @@ export const Posts: CollectionConfig = {
     {
       name: 'slug',
       type: 'text',
-      required: true,
+      required: false,
       unique: true,
       index: true,
+      admin: { components: { Field: '@/components/payload/slug-field#SlugField' } },
     },
     {
       name: 'excerpt',
@@ -43,12 +52,20 @@ export const Posts: CollectionConfig = {
     {
       name: 'content',
       type: 'richText',
+      editor: contentEditor,
       required: true,
+      admin: { description: 'Use Markdown shortcuts for headings, lists, tables, and fenced code. Insert images through the Media upload control.' },
     },
     {
       name: 'tags',
       type: 'array',
       fields: [{ name: 'tag', type: 'text', required: true }],
+    },
+    {
+      name: 'topics',
+      type: 'relationship',
+      relationTo: 'topics',
+      hasMany: true,
     },
     {
       name: 'status',
@@ -66,11 +83,6 @@ export const Posts: CollectionConfig = {
       type: 'date',
       admin: { date: { pickerAppearance: 'dayOnly' } },
       index: true,
-    },
-    {
-      name: 'featured',
-      type: 'checkbox',
-      defaultValue: false,
     },
     seoField(),
   ],

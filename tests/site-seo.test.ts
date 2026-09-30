@@ -224,6 +224,13 @@ describe('llms.txt', () => {
     expect(llms).toContain('[Projects](https://example.com/projects)')
     expect(llms).toContain('[Blog](https://example.com/blog)')
   })
+
+  test('mentions the chat page while keeping it out of the crawlable surface', () => {
+    expect(llms).toContain('[Chat](https://example.com/chat)')
+    expect(llms).toContain('excluded from the crawlable sitemap')
+    // The description must not imply /chat is indexable.
+    expect(buildRobotsTxt('https://example.com')).toContain('/chat')
+  })
 })
 
 describe('sitemap.xml', () => {

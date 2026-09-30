@@ -28,6 +28,125 @@
   outline-offset: 2px;
 }
 
+/* "About this site" panel, modelled on the macOS About-this-Mac window: the
+   same chunky OS chrome as every other dialog, then a narrow centred spec
+   table rather than the wide prose of the chat pipeline dialog. */
+.system-about-button:focus-visible {
+  outline: 3px solid var(--os-coral);
+  outline-offset: 2px;
+}
+
+.about-site-dialog {
+  width: min(420px, calc(100vw - 32px));
+  max-width: min(420px, calc(100vw - 32px));
+  border: 3px solid var(--os-ink);
+  border-radius: 0;
+  background: var(--os-paper);
+  color: var(--os-ink);
+  box-shadow: 8px 8px 0 var(--os-ink);
+}
+
+.about-site-dialog [data-dialog-scroll] > [data-slot="scroll-area-viewport"] {
+  padding: 24px;
+}
+
+.about-site-dialog [data-slot="dialog-header"] {
+  gap: 8px;
+  padding-right: 30px;
+  text-align: center;
+}
+
+.about-site-dialog .eyebrow {
+  margin: 0;
+  justify-content: center;
+}
+
+.about-site-dialog [data-slot="dialog-title"] {
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.about-site-dialog [data-slot="dialog-description"] {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--os-ink-soft);
+}
+
+/* Each row is a two-column grid rather than a flex space-between, so every
+   value starts at the same x regardless of how long its text is. That column
+   of aligned values is what makes the panel scannable, the way the macOS
+   About-this-Mac spec sheet reads. */
+.about-site-specs {
+  display: grid;
+  gap: 7px;
+  margin: 18px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.about-site-specs > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.about-site-specs dd {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.about-site-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.about-site-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid var(--os-ink);
+  background: var(--os-paper);
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--os-ink);
+  box-shadow: 3px 3px 0 var(--os-ink);
+  transition: translate 100ms ease-out, box-shadow 100ms ease-out;
+}
+
+.about-site-button:hover {
+  background: var(--os-yellow);
+}
+
+.about-site-button:active {
+  translate: 3px 3px;
+  box-shadow: none;
+}
+
+.about-site-button:focus-visible {
+  outline: 3px solid var(--os-coral);
+  outline-offset: 2px;
+}
+
+.about-site-licence {
+  margin: 18px 0 0;
+  border-top: 2px solid color-mix(in srgb, var(--os-ink) 18%, transparent);
+  padding-top: 14px;
+  font-size: 10px;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--os-ink-soft);
+}
+
 .system-menu-positioner {
   z-index: 20;
 }
@@ -118,10 +237,16 @@
    Per-context color overrides stay here (inheritance-based). */
 
 /* Workspace positioning (relative/z) lives in DesktopShell via Tailwind.
-   Grid columns + viewport height stay here — custom grid track. */
+   Grid columns stay here — custom grid track.
+
+   The shell root is `h-dvh overflow-hidden`, so the workspace is the last
+   flex child and must be allowed to shrink below its content height; the
+   ScrollArea in the second column owns the scrolling. `min-height: calc(100vh
+   - 48px)` would defeat that by forcing the grid row to grow with the page
+   and push the scroll back onto <body>. */
 .desktop-workspace {
   grid-template-columns: 110px minmax(0, 1fr);
-  min-height: calc(100vh - 48px);
+  min-height: 0;
 }
 
 .desktop-shortcuts {
@@ -157,9 +282,14 @@
 /* Shortcut art box lives in DesktopShell via Tailwind. */
 
 /* Main column padding lives in DesktopShell via Tailwind (responsive px).
-   Grid placement stays here. */
+   Grid placement stays here.
+
+   `min-height: 0` is load-bearing: the ScrollArea is a grid item, and a grid
+   item's automatic minimum size is its content height, so a long page would
+   stretch it past the viewport and push the scroll back onto <body>. */
 .desktop-main {
   grid-column: 2;
+  min-height: 0;
 }
 
 /* Page stacks live in os-ui PageStack via Tailwind (max-w-6xl / max-w-4xl). */
@@ -197,6 +327,32 @@
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* A `scrollable` WindowFrame scrolls inside the frame even in the normal state,
+   so the desktop page itself never scrolls. This cap is what gives the themed
+   ScrollArea viewport a bounded height. It resolves against the shell viewport
+   because the desktop main column is a stretched flex/grid item, so a percentage
+   height would not resolve up the chain — hence the explicit `100dvh` minus the
+   system bar (3rem) and the ScrollArea viewport padding (2rem + 2rem). The
+   maximized state opts out: its fixed inset already bounds the frame. */
+.window-frame--scroll:not(.is-maximized) {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 7rem);
+}
+
+/* The scrollable content box hosts a ScrollArea, so it must not also overflow
+   natively (that would show a second, unthemed bar) and must not hold padding
+   (padding would sit outside the scroller, not scroll with the content). The
+   ScrollArea viewport carries the responsive padding instead. The frame class is
+   in the selector because `.window-frame.is-maximized .window-content` is more
+   specific than two classes and would re-introduce the native scrollbar. */
+.window-frame .window-content.window-content--scroll {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
 }
 
 /* Titlebar layout/typography lives in WindowFrame via Tailwind.

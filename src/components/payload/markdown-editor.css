@@ -1,0 +1,28 @@
+.payload-markdown-editor {
+  margin-block-end: 0.75rem;
+}
+
+.payload-markdown-editor__modes {
+  display: flex;
+  gap: 0.5rem;
+  margin-block-end: 0.75rem;
+}
+
+.payload-markdown-editor__formatted-container {
+  max-height: 24rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.payload-markdown-editor__textarea {
+  box-sizing: border-box;
+  border: var(--stroke-width-small) solid var(--lexical-border-color);
+  border-radius: var(--radius-medium);
+  min-height: 24rem;
+  padding: 0.75rem;
+  width: 100%;
+  resize: vertical;
+  font-family: var(--font-monospace, monospace);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}

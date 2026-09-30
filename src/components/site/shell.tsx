@@ -5,7 +5,9 @@ import { type ReactNode, useEffect, useState } from 'react'
 import { PixelBattleBackground } from '@/components/site/battle/pixel-battle-background'
 import { MobileNavDrawer } from '@/components/site/mobile-nav-drawer'
 import { PixelIcon } from '@/components/site/pixel-icon'
+import { AboutSiteDialog } from '@/components/site/shell/about-site-dialog'
 import { useSiteHealthStatus } from '@/components/site/site-health-provider'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { updateOpenHeaderMenu } from '@/lib/header-menu-state'
 import { formatMelbourneDate, formatMelbourneShortDate } from '@/lib/melbourne-date'
 import { osStore } from '@/lib/os-store'
@@ -216,7 +218,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   return (
-    <div className="os-site flex min-h-screen flex-col bg-background">
+    <div className="os-site flex h-dvh flex-col overflow-hidden bg-background">
       <PixelBattleBackground />
       <header className="system-bar sticky top-0 z-20 flex min-h-12 items-center justify-between gap-5 border-b-3 border-border bg-foreground px-5 py-2 text-xs font-black tracking-widest text-background uppercase">
         <div className="system-menu-left flex min-w-0 items-center gap-4">
@@ -276,6 +278,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
           {activeWindowId ? <span className="system-active-window max-w-44 overflow-hidden text-ellipsis whitespace-nowrap text-muted max-sm:hidden">▣ {activeWindowId}</span> : null}
           <MelbourneTemperature />
           <MelbourneClock />
+          <AboutSiteDialog />
         </div>
       </header>
 
@@ -294,7 +297,9 @@ export function DesktopShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </aside>
-        <main className="desktop-main min-w-0 px-5 py-8 sm:px-8 lg:px-16">{children}</main>
+        <ScrollArea className="desktop-main min-w-0" viewportProps={{ className: 'px-5 py-8 sm:px-8 lg:px-16' }}>
+          {children}
+        </ScrollArea>
       </div>
       <MobileNavDrawer open={mobileNavOpen} onOpenChange={setMobileNavOpen} />
     </div>

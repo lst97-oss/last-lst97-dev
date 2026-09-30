@@ -11,6 +11,8 @@ const featuredProjectSection = await Bun.file(
 const aboutRoute = await Bun.file(new URL('../src/routes/_site.about.tsx', import.meta.url)).text()
 const homeStyles = await Bun.file(new URL('../src/styles/home.css', import.meta.url)).text()
 const globalStyles = await Bun.file(new URL('../src/styles/globals.css', import.meta.url)).text()
+const changelogRoute = await Bun.file(new URL('../src/routes/_site.changelog.index.tsx', import.meta.url)).text()
+const siteStyles = await Bun.file(new URL('../src/styles.css', import.meta.url)).text()
 
 // The home route composes section components; the markup these tests describe lives in those
 // components, so read both the route and the sections it renders.
@@ -39,7 +41,9 @@ describe('home operator profile', () => {
   test('keeps featured projects sourced from Payload', () => {
     expect(homeRoute).toContain('loadProjects()')
     expect(homeRoute).toContain('<HomeFeaturedProjectSection project={featuredProject} />')
-    expect(featuredProjectSection).toContain('<ProjectCard project={project} />')
+    // The `featured` prop is what caps the cover in that window; the card is
+    // still the same Payload-sourced ProjectCard.
+    expect(featuredProjectSection).toContain('<ProjectCard featured project={project} />')
   })
 
   test('shows the supplied most-used language shares in the operator window', () => {
@@ -119,6 +123,13 @@ describe('home operator profile', () => {
     expect(operatorProfile).toContain('RAW WAKATIME JSON')
     expect(homeRoute).toContain('beautify.js(wakatimeSnapshot.rawJson')
     expect(operatorProfile).toContain('<JsonCodeView code={formattedSnapshot} />')
+  })
+
+  test('lists changelog entries as adaptive cards instead of a timeline', () => {
+    expect(changelogRoute).toContain('<CardGrid>')
+    expect(changelogRoute).toContain('<ChangelogCard entry={entry}')
+    expect(changelogRoute).not.toContain('changelog-timeline')
+    expect(siteStyles).not.toContain('./styles/changelog.css')
   })
 })
 

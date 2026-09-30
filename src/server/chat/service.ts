@@ -1,4 +1,4 @@
-import { CHAT_TURN_LIMIT_MESSAGE } from '../../lib/chat-limits'
+import { CHAT_EXPIRED_MESSAGE, CHAT_OFFLINE_MESSAGE, CHAT_TURN_LIMIT_MESSAGE } from '../../lib/chat-limits'
 import type { ChatDiagnosticsCapture, ChatDiagnosticsOutcome } from '../observability/chat-diagnostics'
 import { createChatDiagnosticsCapture } from '../observability/chat-diagnostics'
 import { type AgentTurnState, createChatAgentLoop } from './agent/agent-loop'
@@ -15,8 +15,8 @@ import {
 } from './types'
 
 const UNAVAILABLE_MESSAGE = 'Message screening is temporarily unavailable.'
-const EXPIRED_MESSAGE = 'This conversation has expired. Please start a new conversation.'
-const OFFLINE_MESSAGE = 'The assistant is offline right now.'
+const EXPIRED_MESSAGE = CHAT_EXPIRED_MESSAGE
+const OFFLINE_MESSAGE = CHAT_OFFLINE_MESSAGE
 
 type ReplyFailure = {
   category: string
@@ -329,9 +329,16 @@ export function createChatService(responder: ChatResponder, dependencies: ChatSe
         finishDiagnostics(diagnostics, 'aborted', fullText)
         return
       }
-      const citations = state.citations
-      if (citations.length > 0) {
-        yield { type: 'citations', citations }
+      // Show only the sources the reply actually rests on. A tool can attach more
+      // citations than the answer used — the owned-project catalogue alone can
+      // attach ten — and listing every one misrepresents the answer's basis. A
+      // reply that cites nothing keeps its first few sources rather than losing
+      // attribution entirely, and the K/W ids the responder wrote still render
+      // as plain text if their source is filtered out.
+      const cited = state.citations.filter((citation) => fullText.includes(`[${citation.id}]`))
+      const visibleCitations = cited.length > 0 ? cited : state.citations.slice(0, 3)
+      if (visibleCitations.length > 0) {
+        yield { type: 'citations', citations: visibleCitations }
       }
       if (state.knowledgeUnavailable) {
         yield { type: 'knowledge_note' }

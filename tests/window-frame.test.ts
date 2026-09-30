@@ -133,4 +133,79 @@ describe('window frame controls', () => {
     expect(osStore.state.windowModes[windowId]).toBe('normal')
     expect(container.querySelector('.window-frame')?.classList.contains('is-minimized')).toBe(false)
   })
+
+  test('renders the children through a themed scroll area only when scrollable', async () => {
+    expect(container.querySelector('[data-slot="scroll-area"]')).toBeNull()
+    expect(container.querySelector('.window-content')?.textContent).toBe('Profile content')
+
+    const scrollRoute = createRootRoute({
+      component: () => React.createElement(WindowFrame, {
+        title: 'note.detail',
+        windowId: 'note.detail',
+        scrollable: true,
+        children: 'Detail body',
+      }),
+    })
+    const scrollRouter = createRouter({
+      routeTree: scrollRoute,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    const scrollContainer = browserWindow.document.createElement('div')
+    browserWindow.document.body.append(scrollContainer)
+    const scrollRoot = createRoot(scrollContainer as unknown as HTMLDivElement)
+
+    try {
+      await act(async () => scrollRoot.render(React.createElement(RouterProvider, { router: scrollRouter })))
+
+      const content = scrollContainer.querySelector('.window-content')
+      // The cap class is applied by the prop, not by the caller: forgetting it
+      // would leave the themed viewport unbounded and the page scrolling.
+      expect(scrollContainer.querySelector('.window-frame--scroll')).not.toBeNull()
+      expect(content?.classList.contains('window-content--scroll')).toBe(true)
+      expect(content?.querySelector('[data-slot="scroll-area"]')).not.toBeNull()
+      expect(content?.querySelector('[data-slot="scroll-area-viewport"]')?.textContent).toBe('Detail body')
+    } finally {
+      await act(async () => scrollRoot.unmount())
+      scrollContainer.remove()
+    }
+  })
+
+  test('keeps the themed scroll area on a mobile viewport', async () => {
+    // The shell root is `h-dvh overflow-hidden`, so the document can never
+    // scroll: a window taller than the viewport is reachable only through its
+    // own ScrollArea. Skipping it on mobile left long detail pages running off
+    // the bottom of a clipped shell with no way to reach the rest.
+    browserWindow.happyDOM.setViewport({ width: 390, height: 844 })
+    const originalInnerWidth = browserWindow.innerWidth
+    Object.defineProperty(browserWindow, 'innerWidth', { configurable: true, value: 390 })
+
+    const mobileRoute = createRootRoute({
+      component: () => React.createElement(WindowFrame, {
+        title: 'note.mobile',
+        windowId: 'note.mobile',
+        scrollable: true,
+        children: 'Long article body',
+      }),
+    })
+    const mobileRouter = createRouter({
+      routeTree: mobileRoute,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    const mobileContainer = browserWindow.document.createElement('div')
+    browserWindow.document.body.append(mobileContainer)
+    const mobileRoot = createRoot(mobileContainer as unknown as HTMLDivElement)
+
+    try {
+      await act(async () => mobileRoot.render(React.createElement(RouterProvider, { router: mobileRouter })))
+
+      const frame = mobileContainer.querySelector('.window-frame')
+      expect(frame?.classList.contains('window-frame--scroll')).toBe(true)
+      expect(frame?.querySelector('[data-slot="scroll-area"]')).not.toBeNull()
+      expect(frame?.querySelector('[data-slot="scroll-area-viewport"]')?.textContent).toBe('Long article body')
+    } finally {
+      await act(async () => mobileRoot.unmount())
+      mobileContainer.remove()
+      Object.defineProperty(browserWindow, 'innerWidth', { configurable: true, value: originalInnerWidth })
+    }
+  })
 })

@@ -2,24 +2,26 @@ import { createFileRoute } from '@tanstack/react-router'
 import beautify from 'js-beautify'
 
 import {
+  HomeFeaturedPostSection,
   HomeFeaturedProjectSection,
   HomeHeroSection,
   HomeOperatorProfileSection,
   HomeRecentNotesSection,
 } from '@/components/site/home'
 import { PageStack } from '@/components/site/os-ui'
-import { loadPosts, loadProjects } from '@/lib/content/site-data'
+import { loadFeaturedPost, loadPosts, loadProjects } from '@/lib/content/site-data'
 import { createPageMeta, SITE_DESCRIPTION, SITE_TAGLINE } from '@/lib/seo/site-seo'
 import { getWakaTimeSnapshotServerFn } from '@/server/wakatime/server-functions'
 
 export const Route = createFileRoute('/_site/')({
   loader: async () => {
-    const [posts, projects, wakatimeSnapshot] = await Promise.all([
+    const [posts, projects, featuredPost, wakatimeSnapshot] = await Promise.all([
       loadPosts(),
       loadProjects(),
+      loadFeaturedPost(),
       getWakaTimeSnapshotServerFn(),
     ])
-    return { posts, projects, wakatimeSnapshot }
+    return { posts, projects, featuredPost, wakatimeSnapshot }
   },
   head: () =>
     createPageMeta({
@@ -31,7 +33,7 @@ export const Route = createFileRoute('/_site/')({
 })
 
 function HomePage() {
-  const { posts, projects, wakatimeSnapshot } = Route.useLoaderData()
+  const { posts, projects, featuredPost, wakatimeSnapshot } = Route.useLoaderData()
   const featuredProject = projects.find((project) => project.featured) ?? projects[0]
   const totalCodingTime = wakatimeSnapshot?.stats.data.grand_total.human_readable_total_including_other_language
   const formattedWakatimeStatsJson = wakatimeSnapshot
@@ -45,6 +47,7 @@ function HomePage() {
         <div className="lg:col-span-3"><HomeFeaturedProjectSection project={featuredProject} /></div>
         <div className="lg:col-span-2"><HomeOperatorProfileSection totalCodingTime={totalCodingTime} formattedSnapshot={formattedWakatimeStatsJson} /></div>
       </div>
+      {featuredPost ? <HomeFeaturedPostSection post={featuredPost} /> : null}
       <HomeRecentNotesSection posts={posts.items} />
     </PageStack>
   )

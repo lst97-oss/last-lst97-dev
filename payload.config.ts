@@ -1,6 +1,5 @@
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { postgresAdapter } from '@payloadcms/db-postgres'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { s3Storage } from '@payloadcms/storage-s3'
 import nodemailer from 'nodemailer'
 import { buildConfig } from 'payload'
@@ -11,6 +10,9 @@ import { Media } from './src/collections/Media'
 import { Changelogs } from './src/collections/Changelogs'
 import { Posts } from './src/collections/Posts'
 import { Projects } from './src/collections/Projects'
+import { Topics } from './src/collections/Topics'
+import { contentEditor } from './src/collections/fields/content-editor'
+import { HomePage } from './src/globals/HomePage'
 import { getServerEnv } from './src/server/env'
 import { buildR2StorageOptions } from './src/server/storage/r2-storage-config'
 import { knowledgePayloadTasks } from './src/server/knowledge/payload-tasks'
@@ -85,7 +87,9 @@ export default buildConfig({
     Changelogs,
     Posts,
     Projects,
+    Topics,
   ],
+  globals: [HomePage],
   db: postgresAdapter({
     // Schema changes are applied through the committed Payload migrations, not dev auto-push.
     push: false,
@@ -99,7 +103,7 @@ export default buildConfig({
     tasks: knowledgePayloadTasks,
     autoRun: [{ cron: '* * * * *', queue: 'knowledge', limit: 10 }],
   },
-  editor: lexicalEditor(),
+  editor: contentEditor,
   secret: env.PAYLOAD_SECRET,
   storage: r2StorageOptions ? [s3Storage(r2StorageOptions)] : [],
   sharp,

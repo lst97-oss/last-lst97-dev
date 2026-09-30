@@ -11,6 +11,16 @@ import {
   createBattle,
   resizeBattle,
 } from '@/components/site/battle/pixel-battle-sim'
+import {
+  ageTrail,
+  cellAt,
+  GRID_TRAIL_STEP_MS,
+  GRID_TRAIL_STEPS,
+  lightTrail,
+  type TrailField,
+  trailAlpha,
+  trailKey,
+} from '@/components/site/battle/pointer-grid-trail'
 
 const TEAM_FILL: Record<BattleTeam, string> = {
   blue: 'rgba(96, 150, 255, 0.35)',
@@ -33,6 +43,10 @@ const CANVAS_SCALE = 1
 const SETTLE_EPS = 0.02
 // Glide rate: eases a 1-cell step to rest in ~0.45s, inside one tick.
 const GLIDE_RATE = 9
+// Wash inset so the CSS grid line stays crisp through a lit cell.
+const TRAIL_INSET_PX = 1
+// Fallback when --os-trail is unresolved (stylesheet not loaded yet).
+const TRAIL_FALLBACK = 'rgba(201, 143, 0, 0.6)'
 
 export interface UnitVisual {
   x: number
@@ -76,10 +90,27 @@ function paint(
   battle: BattleState,
   seen: Map<number, UnitVisual>,
   lasers: LaserVisual[],
+  trail: TrailField,
+  trailColor: string,
+  cols: number,
   width: number,
   height: number,
 ): void {
   context.clearRect(0, 0, width, height)
+
+  context.fillStyle = trailColor
+  for (const [key, steps] of trail) {
+    const col = key % cols
+    const row = (key - col) / cols
+    context.globalAlpha = trailAlpha(steps)
+    context.fillRect(
+      col * BATTLE_CELL_PX + TRAIL_INSET_PX,
+      row * BATTLE_CELL_PX + TRAIL_INSET_PX,
+      BATTLE_CELL_PX - TRAIL_INSET_PX * 2,
+      BATTLE_CELL_PX - TRAIL_INSET_PX * 2,
+    )
+  }
+  context.globalAlpha = 1
 
   for (const unit of battle.units) {
     const visual = seen.get(unit.id)
@@ -134,13 +165,24 @@ export const PixelBattleBackground = memo(function PixelBattleBackground() {
     let running = false
     let last = 0
     let timer = 0
+    const trail: TrailField = new Map()
+    let cols = 1
+    let rows = 1
+    let trailColor = TRAIL_FALLBACK
+    let lastCol = -1
+    let lastRow = -1
+    let trailTimer = 0
 
     const layout = () => {
-      const cols = Math.max(1, Math.floor(window.innerWidth / BATTLE_CELL_PX))
-      const rows = Math.max(1, Math.floor(window.innerHeight / BATTLE_CELL_PX))
+      cols = Math.max(1, Math.floor(window.innerWidth / BATTLE_CELL_PX))
+      rows = Math.max(1, Math.floor(window.innerHeight / BATTLE_CELL_PX))
       canvas.width = Math.max(1, Math.floor(window.innerWidth * CANVAS_SCALE))
       canvas.height = Math.max(1, Math.floor(window.innerHeight * CANVAS_SCALE))
       context.setTransform(CANVAS_SCALE, 0, 0, CANVAS_SCALE, 0, 0)
+      trailColor =
+        getComputedStyle(document.documentElement).getPropertyValue('--os-trail').trim() || TRAIL_FALLBACK
+      // Cell keys embed cols, so a resize invalidates every lit cell.
+      trail.clear()
       if (!battle) {
         battle = createBattle(cols, rows)
       } else {
@@ -187,7 +229,7 @@ export const PixelBattleBackground = memo(function PixelBattleBackground() {
     const paintStill = () => {
       if (!battle) return
       syncVisuals(null)
-      paint(context, battle, seen, [], window.innerWidth, window.innerHeight)
+      paint(context, battle, seen, [], trail, trailColor, cols, window.innerWidth, window.innerHeight)
     }
 
     const stopLoop = () => {
@@ -237,8 +279,8 @@ export const PixelBattleBackground = memo(function PixelBattleBackground() {
         lasers[i].ttl -= dtSec
         if (lasers[i].ttl <= 0) lasers.splice(i, 1)
       }
-      paint(context, battle, seen, lasers, window.innerWidth, window.innerHeight)
-      if (battleVisualsSettled(seen, battle.units, lasers.length)) {
+      paint(context, battle, seen, lasers, trail, trailColor, cols, window.innerWidth, window.innerHeight)
+      if (battleVisualsSettled(seen, battle.units, lasers.length) && trail.size === 0) {
         stopLoop()
       } else {
         frame = window.requestAnimationFrame(onFrame)
@@ -250,11 +292,44 @@ export const PixelBattleBackground = memo(function PixelBattleBackground() {
       if (!running) paintStill()
     }
 
+    const onPointerMove = (event: PointerEvent) => {
+      if (document.hidden) return
+      const { col, row } = cellAt(event.clientX, event.clientY)
+      if (col >= cols || row >= rows) return
+      if (col === lastCol && row === lastRow) return
+      if (lastCol >= 0) lightTrail(trail, cols, lastCol, lastRow, col, row)
+      else trail.set(trailKey(col, row, cols), GRID_TRAIL_STEPS)
+      lastCol = col
+      lastRow = row
+      scheduleTrailStep()
+      startLoop()
+    }
+
+    const scheduleTrailStep = () => {
+      if (trailTimer) return
+      trailTimer = window.setTimeout(runTrailStep, GRID_TRAIL_STEP_MS)
+    }
+
+    const runTrailStep = () => {
+      trailTimer = 0
+      if (document.hidden) {
+        scheduleTrailStep()
+        return
+      }
+      ageTrail(trail)
+      if (trail.size > 0) {
+        scheduleTrailStep()
+        startLoop()
+      }
+    }
+
     const onVisibility = () => {
       if (document.hidden) {
         stopLoop()
         if (timer) window.clearTimeout(timer)
         timer = 0
+        if (trailTimer) window.clearTimeout(trailTimer)
+        trailTimer = 0
       } else {
         layout()
         scheduleTick(250)
@@ -271,11 +346,14 @@ export const PixelBattleBackground = memo(function PixelBattleBackground() {
 
     paintStill()
     scheduleTick(BATTLE_TICK_MS)
+    window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('resize', onResize)
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
       stopLoop()
       if (timer) window.clearTimeout(timer)
+      if (trailTimer) window.clearTimeout(trailTimer)
+      window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('resize', onResize)
       document.removeEventListener('visibilitychange', onVisibility)
     }

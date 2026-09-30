@@ -67,11 +67,26 @@ export interface AgentToolRunner {
   codingStatsEnabled: boolean
   codingHistory?: CodingHistorySource
   codingHistoryEnabled: boolean
-  siteContent?: Pick<ContentReader, 'listProjects' | 'getProject' | 'listPosts' | 'getPost'>
+  siteContent?: Pick<
+    ContentReader,
+    | 'listProjectsPage'
+    | 'getProject'
+    | 'listPosts'
+    | 'getPost'
+    | 'listChangelogs'
+    | 'getChangelog'
+    | 'listTopics'
+    | 'getTopic'
+  >
   verifiedHistory?: ChatMessage[]
   topicAnchors?: ChatTopicAnchor[]
   today: string
   toolTimeoutMs: number
+  /**
+   * Absolute public origin used to build clickable links in tool output. Injected
+   * rather than read from env so tool formatting stays deterministic in tests.
+   */
+  publicSiteUrl: string
   logger: Pick<Logger, 'warn'>
 }
 

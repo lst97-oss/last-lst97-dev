@@ -21,10 +21,17 @@ COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 # ---------------------------------------------------------------------------
-# build: produce dist/client + dist/server.
+# build: produce the standalone Nitro server in .output/.
 # Payload validates env at import time (PAYLOAD_SECRET, DATABASE_URL), so
 # pass dummy build-time values inline. They live only in this RUN layer —
 # real values come from the container runtime environment, never the image.
+#
+# This calls `bun run build` rather than repeating the chain, so the container
+# cannot drift from the local and Vercel builds (it previously skipped
+# generate:payload-admin-css entirely). PAYLOAD_BUNX_FLAGS/PAYLOAD_CLI_ARGS
+# carry the two differences that remain: the Payload CLI must run under Bun
+# (`--bun`), and its tsx loader breaks there, so transpilation is disabled
+# and Bun loads the TypeScript sources natively. Both are no-ops off Linux.
 # ---------------------------------------------------------------------------
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
@@ -32,13 +39,11 @@ COPY . .
 # Standalone container server. Vercel deployments use the default
 # (`vercel`) preset; see the preset override in vite.config.ts.
 ENV NITRO_PRESET=node-server
-# --disable-transpile: skip tsx and let Bun load TS natively. tsx's loader
-# (tsx:// namespace) fails under Bun on Linux even though it works on macOS.
 RUN export PAYLOAD_SECRET=build-only-dummy-secret-override-at-runtime-1234567890 \
     DATABASE_URL=postgres://postgres:postgres@localhost:5432/app \
-  && bunx --bun payload --disable-transpile generate:types \
-  && bunx --bun payload --disable-transpile generate:importmap \
-  && bunx --bun vite build
+    PAYLOAD_BUNX_FLAGS=--bun \
+    PAYLOAD_CLI_ARGS=--disable-transpile \
+  && bun run build
 
 # ---------------------------------------------------------------------------
 # runner: minimal production image.

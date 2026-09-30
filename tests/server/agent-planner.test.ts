@@ -130,8 +130,8 @@ describe('agent planner site-content routing guidance', () => {
 
     expect(plannerSystem).toContain('Current website repository architecture/implementation questions use search_knowledge')
     expect(plannerSystem).toContain('search_knowledge')
-    expect(plannerSystem).toContain('site_content({op, slug?, limit?, page?}) for live Payload CMS projects and blog posts')
-    expect(plannerSystem).toContain('published blog post questions use site_content list_posts or get_post')
+    expect(plannerSystem).toContain('site_content({op, slug?, limit?, page?}) for live Payload CMS posts, projects, changelogs, and topics')
+    expect(plannerSystem).toContain('published blog post, changelog, and topic questions use the matching')
   })
 
   it('anchors relative-date interpretation to the request-time UTC clock', async () => {

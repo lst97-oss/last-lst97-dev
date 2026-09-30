@@ -32,7 +32,7 @@ export const CHAT_PIPELINE_DIAGRAM = `flowchart TB
   dispatch -->|filters| projects["OWNED PROJECT CATALOGUE<br/>Structured database query · no RAG<br/>Language · software kind · dates · stars · forks · coding time<br/>Up to 10 records"]
   dispatch -->|category + range| stats["WAKATIME PUBLIC SHARE<br/>Activity / language / editor / OS / category"]
   dispatch -->|op + date range + optional project| historydb["WAKATIME HISTORY DB<br/>Project / language / daily / streak data"]
-  dispatch -->|op + optional slug / page / limit| cms["PUBLISHED SITE CONTENT<br/>Payload projects + blog posts"]
+  dispatch -->|op + optional slug / page / limit| cms["PUBLISHED SITE CONTENT<br/>Payload projects · posts · changelogs · topics<br/>Plus list_pages for the site's own sections"]
   projects -->|Inventory answer| evidence
   projects -->|Details also requested · next Jev decision| route
   rag --> rerank["RERANK KNOWLEDGE RESULTS<br/>Order candidate passages by relevance"]

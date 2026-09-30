@@ -18,7 +18,14 @@ export const payloadServerFn = createServerFn({ method: 'POST', strict: false })
       importMap: getPayloadImportMap(),
       name: data.name,
     })
-    return toSerializable(result)
+    // `handleServerFunctions` already runs the adapter's `transformResult`
+    // (`serializeForRsc`), which converts React elements into RSC handles.
+    // Wrapping that in `toSerializable` a second time strips every element
+    // back out (`$$typeof` is a Symbol), so handlers that return rendered
+    // trees — `render-document` for the relationship "Create New" drawer,
+    // `form-state`, `render-list` — arrive with their payload missing and the
+    // UI hangs on its spinner. Return the already-serialized value as-is.
+    return result
   })
 
 // Root admin layout data — clientConfig, translations, theme, user,

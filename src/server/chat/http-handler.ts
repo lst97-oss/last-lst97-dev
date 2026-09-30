@@ -1,6 +1,12 @@
 import { z } from 'zod'
 import {
+  CHAT_EXPIRED_MESSAGE,
+  CHAT_INVALID_MESSAGE_MESSAGE,
+  CHAT_OFFLINE_MESSAGE,
+  CHAT_RATE_LIMIT_MESSAGE,
+  CHAT_REQUEST_TOO_LARGE_MESSAGE,
   CHAT_TURN_LIMIT_MESSAGE,
+  CHAT_TURNSTILE_REQUIRED_MESSAGE,
   MAX_CHAT_CONTEXT_TOKEN_CHARS,
   MAX_CHAT_REQUEST_BODY_BYTES,
 } from '../../lib/chat-limits'
@@ -93,7 +99,10 @@ export function createChatPostHandler(dependencies: ChatPostHandlerDependencies)
     if (!body.ok) {
       return jsonResponse(
         requestId,
-        { error: body.reason === 'too_large' ? 'Request is too large.' : 'Enter a valid message.', requestId },
+        {
+          error: body.reason === 'too_large' ? CHAT_REQUEST_TOO_LARGE_MESSAGE : CHAT_INVALID_MESSAGE_MESSAGE,
+          requestId,
+        },
         body.reason === 'too_large' ? 413 : 400,
       )
     }
@@ -109,7 +118,7 @@ export function createChatPostHandler(dependencies: ChatPostHandlerDependencies)
     }
 
     const parsed = chatRequestSchema.safeParse(body.value)
-    if (!parsed.success) return jsonResponse(requestId, { error: 'Enter a valid message.', requestId }, 400)
+    if (!parsed.success) return jsonResponse(requestId, { error: CHAT_INVALID_MESSAGE_MESSAGE, requestId }, 400)
     return handleChatMessageRequest(request, requestId, startedAt, parsed.data, dependencies)
   }
 }
@@ -121,7 +130,7 @@ async function rateLimitResponse(
 ): Promise<Response | undefined> {
   const limit = await dependencies.rateLimit(request)
   if (limit.allowed) return undefined
-  return jsonResponse(requestId, { error: 'Too many requests. Please try again later.', requestId }, 429, {
+  return jsonResponse(requestId, { error: CHAT_RATE_LIMIT_MESSAGE, requestId }, 429, {
     'retry-after': String(limit.retryAfterSeconds),
   })
 }
@@ -185,7 +194,7 @@ async function verifyChatToken(
     return jsonResponse(
       requestId,
       {
-        error: 'Complete the security check and send your message again.',
+        error: CHAT_TURNSTILE_REQUIRED_MESSAGE,
         code: 'turnstile_invalid',
         requestId,
       },
@@ -275,11 +284,7 @@ async function handleChatMessageRequest(
       return jsonResponse(requestId, { error: 'Message screening is temporarily unavailable.', requestId }, 503)
     }
     if (result.status === 'invalid_context') {
-      return jsonResponse(
-        requestId,
-        { error: 'This conversation has expired. Please start a new conversation.', requestId },
-        400,
-      )
+      return jsonResponse(requestId, { error: CHAT_EXPIRED_MESSAGE, requestId }, 400)
     }
     if (result.status === 'turn_limit') {
       return jsonResponse(requestId, { error: CHAT_TURN_LIMIT_MESSAGE, code: 'turn_limit', requestId }, 409)
@@ -300,7 +305,7 @@ async function handleChatMessageRequest(
     })
   } catch {
     dependencies.logger.error('chat.failed', { requestId, failureCategory: 'chat_processing' })
-    return jsonResponse(requestId, { error: 'The assistant is offline right now.', requestId }, 503)
+    return jsonResponse(requestId, { error: CHAT_OFFLINE_MESSAGE, requestId }, 503)
   }
 }
 
@@ -315,7 +320,7 @@ function streamChatEvents(
   const maxMs = typeof maxMsOption === 'function' ? maxMsOption() : (maxMsOption ?? 90_000)
   const sendStream = dependencies.sendStream
   if (!sendStream) {
-    return jsonResponse(requestId, { error: 'The assistant is offline right now.', requestId }, 503)
+    return jsonResponse(requestId, { error: CHAT_OFFLINE_MESSAGE, requestId }, 503)
   }
   const stream = new ReadableStream({
     async start(controller) {
@@ -325,7 +330,7 @@ function streamChatEvents(
       try {
         for await (const event of sendStream(input, signal)) {
           if (Date.now() > deadline) {
-            push({ type: 'error', message: 'The assistant is offline right now.' })
+            push({ type: 'error', message: CHAT_OFFLINE_MESSAGE })
             break
           }
           push(event)
@@ -340,7 +345,7 @@ function streamChatEvents(
         }
       } catch {
         try {
-          push({ type: 'error', message: 'The assistant is offline right now.' })
+          push({ type: 'error', message: CHAT_OFFLINE_MESSAGE })
         } catch {
           // Client already went away; nothing left to report.
         }

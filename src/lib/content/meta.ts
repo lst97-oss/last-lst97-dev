@@ -1,4 +1,4 @@
-import { canonicalUrl } from '@/lib/seo/site-seo'
+import { absoluteUrl, canonicalUrl } from '@/lib/seo/site-seo'
 import type { CoverImage, SEOOverrides } from '../../server/content/types'
 
 interface ContentMetaInput {
@@ -14,6 +14,8 @@ interface ContentMetaInput {
   /** ISO date for `article:modified_time` on article pages. */
   modifiedTime?: string | null
   tags?: readonly string[]
+  /** JSON-LD graph for the page, emitted as a single ld+json script. */
+  structuredData?: Record<string, unknown>
 }
 
 type ContentMetaDescriptor =
@@ -24,6 +26,7 @@ type ContentMetaDescriptor =
 export interface ContentMeta {
   meta: ContentMetaDescriptor[]
   links: { rel: string; href: string }[]
+  scripts?: { type: string; children: string }[]
 }
 
 /**
@@ -39,12 +42,17 @@ export function createContentMeta({
   pathname,
   publishedTime,
   seo,
+  structuredData,
   tags,
   title: fallbackTitle,
 }: ContentMetaInput): ContentMeta {
   const title = seo.title?.trim() || fallbackTitle
   const description = seo.description?.trim() || fallbackDescription
   const image = seo.image.url ? seo.image : fallbackImage
+  // OG and Twitter reject relative image URLs, and a same-origin cover would
+  // emit one. `absoluteUrl` leaves already-absolute R2 media untouched, so this
+  // only rewrites the cases that are actually broken.
+  const resolvedImageUrl = absoluteUrl(image.url)
   const canonical = canonicalUrl(pathname)
   const meta: ContentMetaDescriptor[] = [
     { title: `${title} — LAST//OS` },
@@ -57,19 +65,19 @@ export function createContentMeta({
     { property: 'og:site_name', content: 'LAST//OS' },
   ]
 
-  if (image.url) {
-    meta.push({ property: 'og:image', content: image.url })
+  if (resolvedImageUrl) {
+    meta.push({ property: 'og:image', content: resolvedImageUrl })
     if (image.alt) meta.push({ property: 'og:image:alt', content: image.alt })
   }
 
   meta.push(
-    { name: 'twitter:card', content: image.url ? 'summary_large_image' : 'summary' },
+    { name: 'twitter:card', content: resolvedImageUrl ? 'summary_large_image' : 'summary' },
     { name: 'twitter:title', content: title },
     { name: 'twitter:description', content: description },
   )
 
-  if (image.url) {
-    meta.push({ name: 'twitter:image', content: image.url })
+  if (resolvedImageUrl) {
+    meta.push({ name: 'twitter:image', content: resolvedImageUrl })
     if (image.alt) meta.push({ name: 'twitter:image:alt', content: image.alt })
   }
 
@@ -79,5 +87,20 @@ export function createContentMeta({
     for (const tag of tags ?? []) meta.push({ property: 'article:tag', content: tag })
   }
 
-  return { meta, links: [{ rel: 'canonical', href: canonical }] }
+  return {
+    meta,
+    links: [{ rel: 'canonical', href: canonical }],
+    // JSON-LD goes in `scripts`: the router narrows `head().meta` to plain React
+    // meta props. `<` is escaped so no field value can close the script tag.
+    ...(structuredData === undefined
+      ? {}
+      : {
+          scripts: [
+            {
+              type: 'application/ld+json',
+              children: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
+            },
+          ],
+        }),
+  }
 }

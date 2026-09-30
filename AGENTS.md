@@ -18,13 +18,13 @@ src/components/site/ Site components (shell, chat, contact, content, home, windo
 src/components/ui/   61 shadcn-style wrappers over Base UI primitives. Generated-style code.
 src/lib/             Client-safe shared code: os-store, chat limits, SEO, Payload admin bridge.
 src/collections/     Payload collections + fields/ + access.ts.
-src/migrations/      Committed Payload migrations (7 registered in index.ts).
+src/migrations/      Committed Payload migrations (10 registered in index.ts).
 src/data/            Content corpora (168 .md): interview/, github/{public,private,contributions/public}/, profile.md.
 src/styles/          14 CSS partials imported by the src/styles.css entry.
 src/integrations/    TanStack Query provider wiring.
 vendor/              Vendored Payload TanStack Vite plugins + two module shims. See below.
-scripts/             12 CLI scripts; 10 wired to package.json scripts.
-tests/               109 test files (38 flat + 71 under tests/server/), plus
+scripts/             15 CLI scripts; 13 wired to package.json scripts.
+tests/               124 test files (52 flat + 72 under tests/server/), plus
                      tests/site-stylesheet.ts, the shared CSS loader.
 docs/                Operational docs, research, and dated superpowers specs/plans.
 ```
@@ -79,7 +79,7 @@ exporting `up`/`down` plus a sibling `.json` snapshot, registered by name in `sr
 | `bun install` | Install (Bun is the only supported package manager) |
 | `bun run dev` | `bunx --bun vite dev --port 3000` |
 | `bun run dev:rag` | Dev server + `llama-server` embedding sidecar (kills both on signal) |
-| `bun run build` | `payload generate:types` → `generate:importmap` → `vite build` |
+| `bun run build` | `generate:payload-admin-css` → `generate:types` → `generate:importmap` → `vite build`. The Dockerfile calls this same script; see the flags below. |
 | `bun run test` | `bun test` — the whole suite |
 | `bun run typecheck` | `tsc --noEmit` — the only static check that covers `tests/**` |
 | `bun run db:migrate` | `bunx payload migrate` |
@@ -94,6 +94,22 @@ RAG maintenance scripts: `knowledge:migrate`, `knowledge:sync`, `knowledge:githu
 `knowledge:github:reindex`, `knowledge:github:catalog`, `knowledge:interview:index`, `wakatime:import`.
 `scripts/embedding-process.ts` is a library (no npm script); `scripts/evaluate-jev-tool-routing.ts` is run
 ad hoc as `bun scripts/evaluate-jev-tool-routing.ts`.
+
+**The container build is the only caller that sets `PAYLOAD_BUNX_FLAGS` / `PAYLOAD_CLI_ARGS`.** The
+Dockerfile calls `bun run build` instead of repeating the chain, so the image cannot skip a step the
+local and Vercel builds run. Locally both variables are unset and the Payload CLI runs under Node.
+The container passes `--bun` (Payload must run on the Bun runtime) and `--disable-transpile` (tsx's
+`tsx://` loader cannot resolve under Bun, so Bun loads the TypeScript sources natively). They are
+**separate** variables on purpose: one quoted variable lands in a single argv slot that bunx cannot
+split, which silently drops the flags.
+
+**`docker build` currently fails, and it is not this script's fault.** `resolvePayloadServerUrl`
+(`src/server/security/payload-server-url.ts:57`) rejects a loopback origin when `NODE_ENV=production`,
+and the build stage sets `NODE_ENV=production` at the `base` image while `DATABASE_URL` points at
+`localhost`. `generate:types` loads `payload.config.ts`, so the guard fires. Verified pre-existing:
+the Dockerfile at `0838098` fails with the identical `PayloadServerUrlError`. Fixing it means giving
+the build stage a non-loopback `PAYLOAD_PUBLIC_SERVER_URL` (it is compile-time only and never
+reaches the image), not relaxing the guard.
 
 ## Code Conventions & Testing Patterns
 
@@ -210,7 +226,7 @@ and do not re-wire the unwired `src/server/knowledge/github/source.ts`.
 | `src/styles.css` | Cascade-layer order plus the partial import list |
 | `tests/site-stylesheet.ts` | The only correct way to load site CSS in a test |
 | `biome.json` | Shows exactly which paths get formatted, linted, and import-sorted |
-| `doctor.config.ts` | 8 per-file `react-doctor` suppressions, each with a written justification. `react-doctor` is **not installed** and no script runs it — this file is currently inert. |
+| `doctor.config.ts` | 8 per-file `react-doctor` suppressions, each with a written justification. `react-doctor` is not a devDependency; run it on demand with `npx -y react-doctor@latest` (a root scan is authoritative, `npx react-doctor src` hides findings in build output). `bunx --bun react-doctor` crashes on this machine — use `npx`. |
 
 ## Subdirectory AGENTS.md
 

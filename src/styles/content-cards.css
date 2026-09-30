@@ -9,6 +9,28 @@
   object-fit: cover;
 }
 
+/* The home page's `featured-project.app` window holds a single card, so a
+   full-bleed `card-cover` would stretch one image across the whole window.
+   Cap it and centre it: the aspect ratio still reserves the row, so the card
+   keeps a stable height while the pixels are still the window's focus. */
+.project-card--featured .project-card-cover {
+  margin: 0 auto 1rem;
+  width: 100%;
+  max-width: 30rem;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 3px solid var(--border);
+  border-radius: 0;
+  background: var(--success-muted);
+}
+
+.project-card--featured .project-card-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* Project detail meta lives in _site.projects.$slug.tsx via Tailwind. */
 
 .card-link,
@@ -20,12 +42,22 @@
   letter-spacing: 0.05em;
 }
 
-/* CardGrid primitive (os-ui.tsx) covers grids in migrated components.
-   Legacy .card-grid stays until all routes migrate. */
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+/* Masonry packing for the CardGrid primitive (os-ui.tsx): 8px row pitch, with
+   each card's bottom margin supplying the visual gap. row-gap collapses to 0
+   so a card's span equals its height plus one gap.
+   align-items: start is load-bearing — the default `stretch` makes each card
+   fill its own span, and the ResizeObserver then re-measures the grown card,
+   which grows it again. */
+.card-masonry {
+  grid-auto-flow: row dense;
+  grid-auto-rows: 8px;
+  align-items: start;
+  row-gap: 0;
+  column-gap: 14px;
+}
+
+.card-masonry > * {
+  margin-bottom: 14px;
 }
 
 .section-heading,

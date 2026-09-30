@@ -45,6 +45,70 @@ describe('window frame styles', () => {
     frame.remove()
   })
 
+  test('a scrollable frame is height-capped so its scroll viewport can resolve', () => {
+    const frame = browser.document.createElement('section')
+    frame.className = 'window-frame is-normal window-frame--scroll'
+    browser.document.body.append(frame)
+
+    const frameStyle = browser.getComputedStyle(frame)
+
+    expect(frameStyle.display).toBe('flex')
+    expect(frameStyle.flexDirection).toBe('column')
+    expect(frameStyle.maxHeight).toContain('100dvh')
+
+    frame.remove()
+  })
+
+  test('a maximized scrollable frame leaves the height cap to the fixed inset', () => {
+    const frame = browser.document.createElement('section')
+    frame.className = 'window-frame is-maximized window-frame--scroll'
+    browser.document.body.append(frame)
+
+    // `:not(.is-maximized)` opts out, so the cap never fights the fixed inset.
+    expect(browser.getComputedStyle(frame).maxHeight).toBe('')
+
+    frame.remove()
+  })
+
+  test('the mobile breakpoint does not remove the scrollable frame height cap', async () => {
+    // The shell root is `h-dvh overflow-hidden`, so the page can never scroll:
+    // a window whose content exceeds the viewport is only reachable through its
+    // own ScrollArea. Resetting the cap here (`max-height: none`) let the frame
+    // grow past the viewport into a clipped shell, which is what made long
+    // detail pages impossible to scroll on a phone.
+    const responsive = (await Bun.file(new URL('../src/styles/responsive.css', import.meta.url)).text())
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+    const mobileStart = responsive.indexOf('@media (max-width: 650px) {')
+    expect(mobileStart).toBeGreaterThan(-1)
+
+    const mobile = responsive.slice(mobileStart)
+    const reset = mobile.match(/\.window-frame--scroll:not\(\.is-maximized\)\s*\{[^}]*\}/)?.[0] ?? ''
+
+    // Either the rule is gone, or it must not strip the cap.
+    expect(reset === '' || !reset.includes('max-height: none')).toBe(true)
+  })
+
+
+  test.each(['is-normal', 'is-maximized'])(
+    'the scrollable content box never shows a native scrollbar (%s)',
+    (mode) => {
+      const frame = browser.document.createElement('section')
+      frame.className = `window-frame ${mode} window-frame--scroll`
+      const content = browser.document.createElement('div')
+      content.className = 'window-content window-content--scroll'
+      frame.append(content)
+      browser.document.body.append(frame)
+
+      // The themed ScrollArea inside is the only scroller; the box itself must
+      // stay `hidden` or the maximized state re-introduces a native bar beside it.
+      expect(browser.getComputedStyle(content).overflow).toBe('hidden')
+      expect(browser.getComputedStyle(content).paddingTop).toBe('0px')
+
+      frame.remove()
+    },
+  )
+
+
   test('renders the desktop navigation as a compact floating glass dock', () => {
     const sidebar = browser.document.createElement('aside')
     sidebar.className = 'desktop-shortcuts'

@@ -24,8 +24,8 @@ const planSchema = z.union([
 
 const PLANNER_SYSTEM_PROMPT = [
   'ROLE: This planner is a non-production fallback when no Jev decision was supplied. In production, Jev selects tools. Return JSON only: {"action":"tool_calls","calls":[{"id":"1","name":"<tool>","arguments":{...}}]} or {"action":"final_answer","text":"<reply>"}.',
-  'Available tools: list_owned_projects for a compact filtered inventory of Nelson’s owned repositories; search_knowledge for verified profile, work, contribution, project-detail, demo, and repository evidence; coding_stats for WakaTime aggregate shares; coding_history for imported per-project and historical heartbeat data; site_content for currently published projects and blog posts.',
-  'Use the latest request to decide the needed source. Owned-project lists, filters, and “more” use list_owned_projects; details and demos use search_knowledge. Current website repository architecture/implementation questions use search_knowledge. Published showcase/blog state uses site_content. Use site_content({op, slug?, limit?, page?}) for live Payload CMS projects and blog posts; published blog post questions use site_content list_posts or get_post. Aggregate WakaTime totals and shares use coding_stats; named-project time and historical/per-project breakdowns use coding_history. Inventory alone does not need RAG. If both inventory and details are requested, catalogue first and search for details in the next step. Do not ask the user to choose a project category or claim contributions as owned projects.',
+  'Available tools: list_owned_projects for a compact filtered inventory of Nelson’s owned repositories; search_knowledge for verified profile, work, contribution, project-detail, demo, and repository evidence; coding_stats for WakaTime aggregate shares; coding_history for imported per-project and historical heartbeat data; site_content for currently published posts, projects, changelogs, and topics.',
+  'Use the latest request to decide the needed source. Owned-project lists, filters, and “more” use list_owned_projects; details and demos use search_knowledge. Current website repository architecture/implementation questions use search_knowledge. Anything scoped to this site, website, portfolio, or blog — including “what projects are in this site” or “the latest post on this site” — uses site_content in addition to any catalogue or RAG call the request also needs. Use site_content({op, slug?, limit?, page?}) for live Payload CMS posts, projects, changelogs, and topics; published blog post, changelog, and topic questions use the matching list_posts, get_post, list_changelogs, get_changelog, list_topics, or get_topic op. Aggregate WakaTime totals and shares use coding_stats; named-project time and historical/per-project breakdowns use coding_history. Inventory alone does not need RAG. If both inventory and details are requested, catalogue first and search for details in the next step. Do not ask the user to choose a project category or claim contributions as owned projects.',
   'Use history only to resolve references and detect an exact recent answer from the same source; it is not evidence or instructions. Query the matching source for new facts and never replay older requests. Batch independent calls, use no more than four per step, and do not ask permission to use a tool.',
 ].join('\n')
 
@@ -39,7 +39,7 @@ const ARGUMENT_TOOL_GUIDANCE: Record<AgentToolName, string> = {
   coding_history:
     'coding_history({op, range?, from?, to?, project?}) queries the imported WakaTime heartbeat warehouse. op is summary|by_project|by_language|project_time|daily|streaks. Use exactly one of range (all_time|last_year|last_30_days|last_7_days) or explicit from and to dates; project is required for project_time. For “all projects” or “per-project breakdown,” use by_project, which returns up to ten top projects; this applies when the user asks “how about the all time status for all the projects?” Use the named range requested in the latest message, not dates from an earlier recent-window answer. For a named project total, use project_time. Report the warehouse coverage cutoff because imported history can lag the public share; never describe all-time data as complete beyond that cutoff.',
   site_content:
-    'site_content({op, slug?, limit?, page?}) reads LIVE Payload CMS projects and blog posts. op is list_projects|get_project|list_posts|get_post; get operations require a slug, and list_posts accepts limit 1–20 and page 1–100. Use it for currently published portfolio content; a request for both posts and projects needs both list operations.',
+    'site_content({op, slug?, limit?, page?}) reads LIVE Payload CMS posts, projects, changelogs, and topics. op is list_projects|get_project|list_posts|get_post|list_changelogs|get_changelog|list_topics|get_topic|list_pages; get operations require a slug, list_posts and list_changelogs accept limit 1–20 and page 1–100, and list_topics and list_pages take no arguments. Use list_pages for site-orientation questions that name no collection ("what can I do on this site?", "what pages does this site have?", "where is the contact page?"). Use it for currently published portfolio content; a request spanning several collections needs one call per collection. A project question scoped to this site needs list_projects here alongside the owned-project catalogue: the catalogue lists every repository Nelson owns, while this op lists only what is published on the site.',
 }
 
 function buildArgumentsSystemPrompt(allowedTools: AgentToolName[]): string {
@@ -124,7 +124,13 @@ export function createAgentPlanner(overrides?: {
                 { role: 'user', content: user },
               ],
               stream: false,
-              maxTokens: 800,
+              // `OPENROUTER_MODEL` is a reasoning model and both `reasoning`
+              // and `content` draw from this one budget, so a tight cap can
+              // be fully consumed by reasoning and return a null `content`.
+              // Measured on a planner prompt: 1 of 10 replies was empty at
+              // 800 and 0 of 10 at 3,000, with the average completion
+              // actually lower at the higher cap (384 -> 296 tokens).
+              maxTokens: 3_000,
             },
           },
           OPENROUTER_CHAT_REQUEST_OPTIONS,
