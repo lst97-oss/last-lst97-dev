@@ -36,9 +36,11 @@
   outline-offset: 2px;
 }
 
+/* Width is fluid: the panel opens on phones as well as on the desktop bar, so
+   a fixed 420px made the spec table overflow on narrow viewports. */
 .about-site-dialog {
-  width: min(420px, calc(100vw - 32px));
-  max-width: min(420px, calc(100vw - 32px));
+  width: min(520px, calc(100vw - 24px));
+  max-width: min(520px, calc(100vw - 24px));
   border: 3px solid var(--os-ink);
   border-radius: 0;
   background: var(--os-paper);
@@ -47,7 +49,13 @@
 }
 
 .about-site-dialog [data-dialog-scroll] > [data-slot="scroll-area-viewport"] {
-  padding: 24px;
+  padding: 20px 16px;
+}
+
+@media (min-width: 640px) {
+  .about-site-dialog [data-dialog-scroll] > [data-slot="scroll-area-viewport"] {
+    padding: 24px;
+  }
 }
 
 .about-site-dialog [data-slot="dialog-header"] {
@@ -88,15 +96,32 @@
 .about-site-specs > div {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: baseline;
+  /* `center` rather than `baseline`: a lucide icon is a square box, so
+     baseline alignment pushes it below the text baseline and reads as the
+     icon sitting too low. */
+  align-items: center;
   gap: 12px;
 }
 
 .about-site-specs dd {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
   min-width: 0;
+  text-align: right;
+}
+
+@media (max-width: 420px) {
+  .about-site-specs {
+    font-size: 11px;
+  }
+  .about-site-specs > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .about-site-specs dd {
+    text-align: left;
+  }
 }
 
 .about-site-actions {
@@ -115,6 +140,7 @@
   background: var(--os-paper);
   padding: 7px 12px;
   font-size: 11px;
+  line-height: 1.4;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;

@@ -41,12 +41,13 @@ export function AboutSiteDialog() {
       <DialogTrigger asChild>
         <button
           aria-label="About this site"
-          className="system-about-button inline-flex min-h-9 items-center gap-1.5 border-2 border-primary px-2 py-1 text-xs font-black tracking-widest text-primary uppercase hover:border-accent hover:bg-accent hover:text-foreground"
+          className="system-about-button inline-flex min-h-9 items-center gap-1.5 border-2 border-primary px-2.5 py-1 text-xs leading-none font-black tracking-widest text-primary uppercase hover:border-accent hover:bg-accent hover:text-foreground sm:px-2"
           type="button"
         >
-          <Sparkles aria-hidden="true" className="size-3.5" strokeWidth={2.5} />
-          <span className="max-sm:hidden">ABOUT THIS SITE</span>
-          <span className="sm:hidden">ABOUT</span>
+          <Sparkles aria-hidden="true" className="size-3.5 self-center" strokeWidth={2.5} />
+          {/* Icon-only below sm: the system bar has no room for a label, and
+              the aria-label above still names the control for screen readers. */}
+          <span className="hidden sm:inline">ABOUT THIS SITE</span>
         </button>
       </DialogTrigger>
       <DialogContent className="about-site-dialog">

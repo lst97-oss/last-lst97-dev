@@ -1615,7 +1615,7 @@ describe('createChatService.sendStream', () => {
   it('reads the changelog collection for a changelog question instead of the post list', async () => {
     const { reader, ops } = siteContentFakes({
       listChangelogs: async () => ({
-        items: [{ slug: 'v1-2-0', title: 'Release 1.2.0', version: '1.2.0', excerpt: 'Adds the changelog tool.', publishedAt: '2026-09-01', updatedAt: '2026-09-02', tags: [], changeTypes: ['feature'], coverImage: { url: null, alt: null } }],
+        items: [{ slug: 'v1-2-0', title: 'Release 1.2.0', version: '1.2.0', excerpt: 'Adds the changelog tool.', publishedAt: '2026-09-01', updatedAt: '2026-09-02', createdAt: '2026-08-30', tags: [], changeTypes: ['feature'], coverImage: { url: null, alt: null } }],
         page: 1,
         totalPages: 1,
         totalDocs: 1,

@@ -28,6 +28,9 @@ if (!process.env.DATABASE_URL) {
   process.exit(1)
 }
 
+// Top-level `await` below requires this file to be a module; without an export
+// TypeScript reports TS1375 and the file is treated as a script.
+export {}
 const migration = Bun.spawn(['bunx', 'payload', 'migrate', '--force-accept-warning'], {
   env: process.env,
   stdout: 'inherit',

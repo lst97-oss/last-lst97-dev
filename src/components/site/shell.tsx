@@ -220,8 +220,8 @@ export function DesktopShell({ children }: { children: ReactNode }) {
   return (
     <div className="os-site flex h-dvh flex-col overflow-hidden bg-background">
       <PixelBattleBackground />
-      <header className="system-bar sticky top-0 z-20 flex min-h-12 items-center justify-between gap-5 border-b-3 border-border bg-foreground px-5 py-2 text-xs font-black tracking-widest text-background uppercase">
-        <div className="system-menu-left flex min-w-0 items-center gap-4">
+      <header className="system-bar sticky top-0 z-20 flex min-h-12 items-center justify-between gap-2 border-b-3 border-border bg-foreground px-3 py-2 text-xs font-black tracking-widest text-background uppercase sm:gap-5 sm:px-5">
+        <div className="system-menu-left flex min-w-0 items-center gap-2 sm:gap-4">
           <Link className="system-brand inline-flex items-center gap-2 font-black text-primary" to="/" aria-label="Open home desktop">
             <PixelIcon glyph="◆" /> LAST//OS
           </Link>
@@ -271,7 +271,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
         </div>
-        <div className="system-menu-right ml-auto flex items-center gap-4 text-xs whitespace-nowrap text-muted" aria-label="System status">
+        <div className="system-menu-right ml-auto flex min-w-0 items-center gap-2 text-xs whitespace-nowrap text-muted sm:gap-4" aria-label="System status">
           <span className="system-status text-secondary data-[health=checking]:text-primary data-[health=offline]:text-accent max-sm:hidden" data-health={healthStatus} role="status" aria-live="polite">
             ● {siteHealthLabel(healthStatus)}
           </span>

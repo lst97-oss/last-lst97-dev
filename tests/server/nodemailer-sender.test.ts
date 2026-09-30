@@ -3,6 +3,27 @@ import nodemailer from 'nodemailer'
 
 import { createGmailEmailSender } from '../../src/server/email/nodemailer-sender'
 
+// Nodemailer's `SMTPSentMessageInfo` carries SMTP timing counters that no test
+// asserts on. Building them in one place keeps every fake assignable to the
+// transport type instead of relying on a structurally partial object literal.
+function smtpInfo(overrides: {
+  messageId: string
+  to: string[]
+  accepted?: string[]
+  rejected?: string[]
+}) {
+  return {
+    messageId: overrides.messageId,
+    envelope: { from: 'operator@gmail.com', to: overrides.to },
+    accepted: overrides.accepted ?? overrides.to,
+    rejected: overrides.rejected ?? [],
+    response: '250 OK',
+    envelopeTime: 1,
+    messageTime: 2,
+    messageSize: 512,
+  }
+}
+
 describe('createGmailEmailSender', () => {
   it('sends typed HTML and text email through the transport seam', async () => {
     let sentOptions: Record<string, unknown> | undefined
@@ -14,12 +35,7 @@ describe('createGmailEmailSender', () => {
       transport: {
         sendMail: async (options) => {
           sentOptions = options as Record<string, unknown>
-          return {
-            messageId: 'mail-1',
-            envelope: { from: 'operator@gmail.com', to: ['inbox@example.com'] },
-            accepted: ['inbox@example.com'],
-            rejected: [],
-          }
+          return smtpInfo({ messageId: 'mail-1', to: ['inbox@example.com'] })
         },
       },
     })
@@ -65,12 +81,7 @@ describe('createGmailEmailSender', () => {
       transport: {
         sendMail: async (options) => {
           sentOptions = options as Record<string, unknown>
-          return {
-            messageId: 'mail-2',
-            envelope: { from: 'operator@gmail.com', to: ['ada@example.com'] },
-            accepted: ['ada@example.com'],
-            rejected: [],
-          }
+          return smtpInfo({ messageId: 'mail-2', to: ['ada@example.com'] })
         },
       },
     })
@@ -93,12 +104,7 @@ describe('createGmailEmailSender', () => {
       fromEmail: 'noreply@example.com',
       fromName: 'LAST//OS',
       transport: {
-        sendMail: async () => ({
-          messageId: 'mail-3',
-          envelope: { from: 'operator@gmail.com', to: ['inbox@example.com'] },
-          accepted: [],
-          rejected: ['inbox@example.com'],
-        }),
+        sendMail: async () => smtpInfo({ messageId: 'mail-3', to: ['inbox@example.com'], accepted: [], rejected: ['inbox@example.com'] }),
       },
     })
 
@@ -123,12 +129,7 @@ describe('createGmailEmailSender', () => {
       transportFactory: (options) => {
         smtpOptions = options as unknown as Record<string, unknown>
         return {
-          sendMail: async () => ({
-            messageId: 'mail-4',
-            envelope: { from: 'operator@gmail.com', to: ['inbox@example.com'] },
-            accepted: ['inbox@example.com'],
-            rejected: [],
-          }),
+          sendMail: async () => smtpInfo({ messageId: 'mail-4', to: ['inbox@example.com'] }),
         }
       },
     })
@@ -143,13 +144,9 @@ describe('createGmailEmailSender', () => {
 
   it('passes bounded timeout options to the default Nodemailer transport factory', () => {
     const transport = {
-      sendMail: async () => ({
-        messageId: 'mail-5',
-        envelope: { from: 'operator@gmail.com', to: ['inbox@example.com'] },
-        accepted: ['inbox@example.com'],
-        rejected: [],
-      }),
+      sendMail: async () => smtpInfo({ messageId: 'mail-5', to: ['inbox@example.com'] }),
     }
+
     const createTransportSpy = spyOn(nodemailer, 'createTransport').mockReturnValue(transport as never)
 
     try {
