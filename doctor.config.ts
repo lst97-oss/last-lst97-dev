@@ -1,5 +1,12 @@
 export default {
   ignore: {
+    // Suppressions only. Every finding this repo has actually fixed is fixed in
+    // code, not exempted here:
+    //   chat-prompt-suggestions  no-adjust-state-on-prop-change → `open` is derived
+    //   masonry-rows            no-initialize-state           → no state at all
+    //   cover-placeholder       only-export-components         → constant un-exported
+    //   image-gallery           no-array-index-as-key          → content keys
+    //   detail-layout + $slug   no-high-complexity-...         → extracted sections
     // Doctor matches these paths against whichever scan root is supplied.
     // Support both the usual project root and a focused `src` scan.
     files: [

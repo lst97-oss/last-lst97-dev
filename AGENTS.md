@@ -210,7 +210,7 @@ and do not re-wire the unwired `src/server/knowledge/github/source.ts`.
 | `src/styles.css` | Cascade-layer order plus the partial import list |
 | `tests/site-stylesheet.ts` | The only correct way to load site CSS in a test |
 | `biome.json` | Shows exactly which paths get formatted, linted, and import-sorted |
-| `doctor.config.ts` | 8 per-file `react-doctor` suppressions, each with a written justification. `react-doctor` is **not installed** and no script runs it — this file is currently inert. |
+| `doctor.config.ts` | 8 per-file `react-doctor` suppressions, each with a written justification. `react-doctor` is not a devDependency; run it on demand with `npx -y react-doctor@latest` (a root scan is authoritative, `npx react-doctor src` hides findings in build output). `bunx --bun react-doctor` crashes on this machine — use `npx`. |
 
 ## Subdirectory AGENTS.md
 
