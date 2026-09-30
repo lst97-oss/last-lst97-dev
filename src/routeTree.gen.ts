@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SplatRouteImport } from './routes/$'
 import { Route as PayloadRouteImport } from './routes/_payload'
 import { Route as SiteRouteImport } from './routes/_site'
 import { Route as HumansDottxtRouteImport } from './routes/humans[.txt]'
@@ -35,6 +36,11 @@ import { Route as ApiSiteContactRouteImport } from './routes/api.site.contact'
 import { Route as ApiSiteHealthRouteImport } from './routes/api.site.health'
 import { Route as SiteBlogTopicsSlugRouteImport } from './routes/_site.blog.topics.$slug'
 
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PayloadRoute = PayloadRouteImport.update({
   id: '/_payload',
   getParentRoute: () => rootRouteImport,
@@ -161,6 +167,7 @@ const SiteBlogTopicsSlugRoute = SiteBlogTopicsSlugRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/$': typeof SplatRoute
   '/': typeof SiteIndexRoute
   '/humans.txt': typeof HumansDottxtRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/blog/topics/$slug': typeof SiteBlogTopicsSlugRoute
 }
 export interface FileRoutesByTo {
+  '/$': typeof SplatRoute
   '/': typeof SiteIndexRoute
   '/humans.txt': typeof HumansDottxtRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
@@ -212,6 +220,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/$': typeof SplatRoute
   '/_payload': typeof PayloadRouteWithChildren
   '/_site': typeof SiteRouteWithChildren
   '/humans.txt': typeof HumansDottxtRoute
@@ -241,6 +250,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/$'
     | '/'
     | '/humans.txt'
     | '/llms-full.txt'
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
     | '/blog/topics/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/$'
     | '/'
     | '/humans.txt'
     | '/llms-full.txt'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/blog/topics/$slug'
   id:
     | '__root__'
+    | '/$'
     | '/_payload'
     | '/_site'
     | '/humans.txt'
@@ -319,6 +331,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  SplatRoute: typeof SplatRoute
   PayloadRoute: typeof PayloadRouteWithChildren
   SiteRoute: typeof SiteRouteWithChildren
   HumansDottxtRoute: typeof HumansDottxtRoute
@@ -335,6 +348,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_payload': {
       id: '/_payload'
       path: ''
@@ -557,6 +577,7 @@ const SiteRouteChildren: SiteRouteChildren = {
 const SiteRouteWithChildren = SiteRoute._addFileChildren(SiteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  SplatRoute: SplatRoute,
   PayloadRoute: PayloadRouteWithChildren,
   SiteRoute: SiteRouteWithChildren,
   HumansDottxtRoute: HumansDottxtRoute,

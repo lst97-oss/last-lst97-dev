@@ -29,3 +29,8 @@ __pycache__/
 # owner's private repositories. They are intentionally tracked: `knowledge:github:sync`
 # never stages or commits, and `assertSafeGithubMarkdown` blocks secrets, credential
 # assignments, PEM blocks, and emails before a report is written. Review before publishing.
+#
+# Pulled env files (`vercel env pull` writes .env.production / .env.local). A blanket
+# `.env*` glob is deliberately NOT used: it would also ignore `.env.example`.
+.env.*
+!.env.example

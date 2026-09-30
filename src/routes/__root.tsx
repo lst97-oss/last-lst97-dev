@@ -7,7 +7,10 @@ import {
   Scripts,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
+import { NotFoundPage } from '@/components/site/not-found-page'
+import siteCss from '@/styles.css?url'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
+
 import { createSiteStructuredData, SITE_NAME, SITE_TAGLINE } from '../lib/seo/site-seo'
 
 interface MyRouterContext {
@@ -45,6 +48,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { rel: 'alternate', type: 'text/plain', href: '/llms.txt', title: 'llms.txt' },
       { rel: 'author', href: '/humans.txt' },
       { rel: 'security.txt', href: '/.well-known/security.txt' },
+      // The desktop shell lives in `_site.tsx`, a *child* of the root route, so
+      // a root-level `notFoundComponent` never passes through it and would
+      // render with no site stylesheet at all. The root head must carry the
+      // sheet itself or every unmatched URL is unstyled.
+      { rel: 'stylesheet', href: siteCss },
     ],
   }),
   // `withPayloadRoot` hands the `<html>` element to Payload's own shell on
@@ -52,7 +60,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   // from server-computed layout data. A hand-rolled shell here left ~60
   // `[dir]`/`[data-theme]`-scoped admin rules permanently unmatchable.
   shellComponent: withPayloadRoot(RootDocument),
-  notFoundComponent: () => <p>Not Found</p>,
+  notFoundComponent: () => <NotFoundPage />,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
