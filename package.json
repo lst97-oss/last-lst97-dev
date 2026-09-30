@@ -6,7 +6,7 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "bunx --bun vite dev --port 3000",
+    "dev": "bun run db:migrate:check && bunx --bun vite dev --port 3000",
     "dev:rag": "bun run scripts/dev-with-embedding.ts",
     "embedding:serve": "bun run scripts/start-embedding.ts",
     "embedding:test": "bun test tests/server/embedding-process.test.ts tests/server/knowledge-providers.test.ts",
@@ -18,11 +18,13 @@
     "knowledge:interview:index": "bun run scripts/index-interview-knowledge.ts",
     "wakatime:import": "bun run scripts/import-wakatime-history.ts",
     "generate-routes": "tsr generate",
-    "build": "bunx payload generate:types && bunx payload generate:importmap && bunx --bun vite build",
+    "generate:payload-admin-css": "bun run scripts/generate-payload-admin-css.ts",
+    "build": "bun run generate:payload-admin-css && bunx payload generate:types && bunx payload generate:importmap && bunx --bun vite build",
     "start": "bun ./dist/server/server.js",
     "payload": "bunx payload",
     "generate:types": "bunx payload generate:types",
     "generate:importmap": "bunx payload generate:importmap",
+    "db:migrate:check": "bun run scripts/check-payload-migrations.ts",
     "db:migrate": "bunx payload migrate",
     "check:server": "biome check src/server",
     "format:server": "biome format --write src/server",
@@ -31,7 +33,8 @@
     "lint:server": "biome lint src/server",
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit",
-    "knowledge:github:catalog": "bun run scripts/sync-project-catalog.ts"
+    "knowledge:github:catalog": "bun run scripts/sync-project-catalog.ts",
+    "seed:demo": "bun scripts/seed-demo-content.ts"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-rc.0",

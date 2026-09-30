@@ -3,6 +3,7 @@ import { createFileRoute, Outlet } from '@tanstack/react-router'
 import type React from 'react'
 import '@payloadcms/ui/css/app.css'
 import { TanStackRouterAdapter } from '@payloadcms/tanstack-start/client'
+import payloadAdminCss from '@/styles/payload-admin.css?url'
 import { type PayloadLayoutData, toRootProviderProps } from '../lib/payload/layout'
 import { payloadLayoutServerFn, payloadServerFn } from '../lib/payload/server-fns'
 
@@ -14,6 +15,7 @@ export const Route = createFileRoute('/_payload')({
   component: PayloadLayout,
   head: () => ({
     meta: [{ charSet: 'utf-8' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }],
+    links: [{ rel: 'stylesheet', href: payloadAdminCss }],
   }),
 })
 
