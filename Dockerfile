@@ -25,6 +25,19 @@ RUN bun install --frozen-lockfile
 # Payload validates env at import time (PAYLOAD_SECRET, DATABASE_URL), so
 # pass dummy build-time values inline. They live only in this RUN layer —
 # real values come from the container runtime environment, never the image.
+# `serverURL` is security-relevant: Payload derives admin cookie `Secure`/
+# `SameSite` scoping and its CORS origin allow-list from it, so
+# `resolvePayloadServerUrl` refuses a loopback origin when NODE_ENV is
+# production — which this stage is. `generate:types` loads payload.config.ts,
+# so without an origin the build dies at that step. The value is compile-time
+# only: it is exported into this single RUN layer, never re-declared as ENV,
+# and the container resolves the real origin at boot from the runtime
+# environment. A placeholder hostname would be wrong to bake into the bundle
+# if it ever reached it, so this uses the real public origin.
+#
+# This is why the build stage needs a non-loopback PAYLOAD_PUBLIC_SERVER_URL,
+# not a relaxed guard: the guard is correct for the running server, and only
+# the build-time load is being satisfied here.
 #
 # This calls `bun run build` rather than repeating the chain, so the container
 # cannot drift from the local and Vercel builds (it previously skipped
@@ -47,6 +60,7 @@ COPY . .
 ENV NITRO_PRESET=node-server
 RUN export PAYLOAD_SECRET=build-only-dummy-secret-override-at-runtime-1234567890 \
     DATABASE_URL=postgres://postgres:postgres@localhost:5432/app \
+    PAYLOAD_PUBLIC_SERVER_URL=https://www.lst97.dev \
     PAYLOAD_BUNX_FLAGS=--bun \
     PAYLOAD_CLI_ARGS=--disable-transpile \
   && bun run build
