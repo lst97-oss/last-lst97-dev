@@ -2,6 +2,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 
 import { NotFoundPage } from '@/components/site/not-found-page'
 import { clampDescription, SITE_NAME } from '@/lib/seo/site-seo'
+import siteCss from '@/styles.css?url'
 
 const NOT_FOUND_DESCRIPTION =
   'The requested path does not exist on this system. Return to the desktop, browse the projects, or read the changelog.'
@@ -44,6 +45,10 @@ export const Route = createFileRoute('/$')({
       { name: 'description', content: clampDescription(NOT_FOUND_DESCRIPTION) },
       { name: 'robots', content: 'noindex, nofollow' },
     ],
+    // This route renders the 404 outside `_site.tsx`, so it must link the site
+    // sheet itself. It is safe here because this route only ever matches URLs
+    // no other route claims, never `/_payload` (/admin).
+    links: [{ rel: 'stylesheet', href: siteCss }],
   }),
   notFoundComponent: () => <NotFoundPage />,
 })
