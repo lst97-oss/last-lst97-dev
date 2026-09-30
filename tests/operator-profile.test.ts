@@ -41,7 +41,9 @@ describe('home operator profile', () => {
   test('keeps featured projects sourced from Payload', () => {
     expect(homeRoute).toContain('loadProjects()')
     expect(homeRoute).toContain('<HomeFeaturedProjectSection project={featuredProject} />')
-    expect(featuredProjectSection).toContain('<ProjectCard project={project} />')
+    // The `featured` prop is what caps the cover in that window; the card is
+    // still the same Payload-sourced ProjectCard.
+    expect(featuredProjectSection).toContain('<ProjectCard featured project={project} />')
   })
 
   test('shows the supplied most-used language shares in the operator window', () => {

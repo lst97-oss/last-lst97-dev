@@ -9,11 +9,18 @@ export function ContentCover({
   className = 'content-cover',
   priority = false,
   fallback,
+  sizes,
 }: {
   image: CoverImage
   className?: string
   priority?: boolean
   fallback?: ReactNode
+  /**
+   * Width descriptor for candidate selection. Callers pass the real rendered
+   * width, because the default below is only correct for the card grid: a
+   * lone card in a window is as wide as the window, not a third of a grid.
+   */
+  sizes?: string
 }) {
   const src = safeAssetHref(image.url)
   const isCardCover = className.includes('card-cover')
@@ -32,19 +39,18 @@ export function ContentCover({
 
   const srcSet = coverSrcSet(image)
 
-  // The wrapper is `aspect-video` with a `max-h` ceiling, and its container is
-  // the card grid's column or the detail layout's `max-w-4xl`. Card columns
-  // are a third of the grid above `xl` and half below it; the detail cover is
-  // capped at 768px by its own max-height, which is the number that matters
-  // for candidate selection.
-  const sizes = isCardCover ? '(min-width: 1280px) 33vw, 50vw' : '(min-width: 1024px) 768px, 100vw'
+  // Card columns are a third of the grid above `xl` and half below it; the
+  // detail cover is capped at 768px by its own max-height. A caller that
+  // knows a different width — the home page's single featured card, which
+  // fills its window — passes its own descriptor.
+  const resolvedSizes = sizes ?? (isCardCover ? '(min-width: 1280px) 33vw, 50vw' : '(min-width: 1024px) 768px, 100vw')
 
   return (
     <figure className={wrapperClass}>
       {/* `decoding` follows `loading`: the one cover that can be the LCP
           candidate gets `sync` so the browser does not paint the frame before
           the pixels land; lazy off-screen covers get `async`. */}
-      <img alt={image.alt ?? ''} className="block size-full object-cover" decoding={priority ? 'sync' : 'async'} fetchPriority={priority ? 'high' : 'auto'} height={image.height ?? undefined} loading={priority ? 'eager' : 'lazy'} sizes={sizes} src={src} srcSet={srcSet || undefined} width={image.width ?? undefined} />
+      <img alt={image.alt ?? ''} className="block size-full object-cover" decoding={priority ? 'sync' : 'async'} fetchPriority={priority ? 'high' : 'auto'} height={image.height ?? undefined} loading={priority ? 'eager' : 'lazy'} sizes={resolvedSizes} src={src} srcSet={srcSet || undefined} width={image.width ?? undefined} />
     </figure>
   )
 }

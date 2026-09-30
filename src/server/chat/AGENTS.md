@@ -13,6 +13,15 @@ This note governs `src/server/chat` and `src/server/moderation`. Keep it current
 - `types.ts` owns the canonical chat tool-name tuple. `events.ts` derives the SSE progress-name type while preserving the browser-shared event protocol.
 - `reply-sanitizer.ts` contains pure whole-reply and chunked-stream sanitization. `timeout.ts` owns timer cleanup for bounded asynchronous work.
 - `http-handler.ts` validates and rate-limits HTTP requests, verifies Turnstile before normal chat work, and frames SSE output.
+- `../../lib/chat-limits.ts` is a shared server/client contract, not a server-only module. Every
+  message the server writes for the visitor lives there as a `CHAT_*_MESSAGE` constant and is listed
+  in `AUTHORED_CHAT_MESSAGES`; `http-handler.ts` and `service.ts` copy them into responses and error
+  frames, and `use-chat-stream.ts` renders a thrown transport error through
+  `safeChatFailureMessage`, which collapses anything outside that set to `CHAT_OFFLINE_MESSAGE`.
+  Never render `error.message` in the client and never widen the allowlist in the browser: an SSE body
+  torn down mid-stream rejects the reader with a TypeError whose message is literally
+  "Error in input stream" in Chromium, and "terminated" in undici. Add a new user-facing message to
+  `chat-limits.ts` and the set together, or the visitor sees generic copy for a real server state.
 - `../contact/chat/workflow.ts` owns the signed contact state machine, form screening, exact review proof, and final delivery.
 - `context-signer.ts` owns bounded signed context compatibility and HMAC proof verification; keep its token and proof logic together.
 - `runtime.ts` is the server composition root. Provider-specific prompts and retry policy remain in `agent/agent-planner.ts`, `openrouter-responder.ts`, and `openrouter-retry-policy.ts`.
@@ -56,6 +65,14 @@ Do not refer to the planner and responder as separate providers: both are OpenRo
 - `coding_history`: imported heartbeat queries such as named-project totals and per-project or date-range breakdowns. State its imported coverage; it is not live data.
 
 Use multiple sources only when the latest request needs each source. Project inventory plus project details is intentionally sequential: catalogue first, then a fresh detail decision. The server also enforces a narrow fresh-knowledge guard for new owner facts and prevents inventory-only requests from turning into redundant RAG lookups; preserve this behavior when editing routing rules.
+
+**Tool output is truncated before the responder sees it.** `agent/agent-loop.ts:166` slices every
+result to 600 characters, or 6,000 when the result carries `retrieval.projectSourceIds`, and the SSE
+`tool_result` summary to 400. An op whose formatted output exceeds its budget silently loses its
+tail to the model while still appearing in the DOM. When adding or lengthening an op, count the whole
+formatted string including the header line, keep absolute URLs in `retrieval.citations` (which render
+as SOURCES) instead of in the text, and pin `expect(result.output.length).toBeLessThan(600)` in
+`tests/server/chat-agent-tools.test.ts`. Do not raise the cap to fit an op.
 
 ## Evidence and conversation rules
 

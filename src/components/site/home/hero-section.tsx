@@ -21,14 +21,23 @@ export function HomeHeroSection() {
           </div>
         </div>
         <div className="hero-terminal-col flex min-w-0 flex-col items-center lg:col-span-2">
+          {/* The avatar is the largest above-the-fold image on the page and the
+              LCP candidate on a slow connection, so it is eager with a high
+              fetch priority rather than left on the lazy queue. `decoding`
+              stays `async`: pixel art reads correctly while it decodes, and
+              blocking it would hold back the rest of the first paint. The
+              inline `image-rendering` is load-bearing for the pixel look, so
+              do not move these attributes into a stylesheet. */}
           <img
             alt="Pixel-art portrait of Nelson"
             className="hero-terminal-avatar mb-3.5 size-45 rounded-full border-4 border-border bg-card object-cover shadow-os-coral-sm"
             style={{ imageRendering: 'pixelated', objectPosition: 'center 22%' }}
             decoding="async"
-            height={480}
+            fetchPriority="high"
+            height={640}
+            loading="eager"
             src="/assets/me-pixel-art.webp"
-            width={480}
+            width={640}
           />
           <div className="hero-terminal box-border min-h-56 w-full border-3 border-border bg-foreground p-4.5 text-xs text-background shadow-os-coral" aria-label="System status">
             <div className="terminal-top mb-6 flex justify-between text-xs font-black tracking-widest text-primary"><span>STATUS.LOG</span><span>● REC</span></div>

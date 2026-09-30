@@ -18,13 +18,13 @@ src/components/site/ Site components (shell, chat, contact, content, home, windo
 src/components/ui/   61 shadcn-style wrappers over Base UI primitives. Generated-style code.
 src/lib/             Client-safe shared code: os-store, chat limits, SEO, Payload admin bridge.
 src/collections/     Payload collections + fields/ + access.ts.
-src/migrations/      Committed Payload migrations (7 registered in index.ts).
+src/migrations/      Committed Payload migrations (10 registered in index.ts).
 src/data/            Content corpora (168 .md): interview/, github/{public,private,contributions/public}/, profile.md.
 src/styles/          14 CSS partials imported by the src/styles.css entry.
 src/integrations/    TanStack Query provider wiring.
 vendor/              Vendored Payload TanStack Vite plugins + two module shims. See below.
-scripts/             12 CLI scripts; 10 wired to package.json scripts.
-tests/               109 test files (38 flat + 71 under tests/server/), plus
+scripts/             15 CLI scripts; 13 wired to package.json scripts.
+tests/               124 test files (52 flat + 72 under tests/server/), plus
                      tests/site-stylesheet.ts, the shared CSS loader.
 docs/                Operational docs, research, and dated superpowers specs/plans.
 ```

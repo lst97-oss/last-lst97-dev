@@ -13,7 +13,9 @@ export function HomeFeaturedProjectSection({ project }: { project: Project | und
   return (
     <WindowFrame title="featured-project.app" icon="▤" className="feature-window" controls={homeWindowControls}>
       {project ? (
-        <ProjectCard project={project} />
+        // `featured` caps the cover and corrects its `sizes`: this window holds
+        // one card, not a card-grid column.
+        <ProjectCard featured project={project} />
       ) : (
         <EmptyPanel><PixelIcon glyph="◇" /><p>Project archive is ready for its first upload.</p><Link className="text-xs font-black tracking-wider text-accent" to="/contact">START A CONVERSATION →</Link></EmptyPanel>
       )}

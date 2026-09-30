@@ -43,17 +43,37 @@ export function PostCard({ post }: { post: PostSummary }) {
   )
 }
 
-export function ProjectCard({ project }: { project: ProjectSummary }) {
+/**
+ * The home page's `featured-project.app` window holds one card, not a grid
+ * column, so the card grid's `33vw` descriptor and full-bleed cover are both
+ * wrong there: the cover would span the whole window and the browser would be
+ * told to expect a third of the viewport. `featured` caps the cover and
+ * declares the real width instead.
+ */
+export function ProjectCard({
+  project,
+  featured = false,
+}: {
+  project: ProjectSummary
+  featured?: boolean
+}) {
   const lifecycle = getProjectLifecycleLabel(project.projectStatus)
   const timeframe = formatProjectTimeframe(project.projectStatus, project.startDate, project.endDate)
   const updated = contentCardDate(null, project.updatedAt)
 
   return (
-    <Link className={cn(cardClass, 'project-card')} to="/projects/$slug" params={{ slug: project.slug }}>
+    <Link className={cn(cardClass, 'project-card', featured && 'project-card--featured')} to="/projects/$slug" params={{ slug: project.slug }}>
       <div className={kickerClass}>
         <PixelIcon glyph="▤" /> PROJECT / {project.featured ? 'FEATURED' : 'ARCHIVE'}
       </div>
-      <ContentCover className={COVER_CLASS} fallback={<PlaceholderArt label={project.title} seed={project.slug} />} image={project.coverImage} />
+      <ContentCover
+        className={featured ? 'content-cover project-card-cover' : COVER_CLASS}
+        fallback={<PlaceholderArt label={project.title} seed={project.slug} />}
+        image={project.coverImage}
+        // The window is a 3/5 column of a max-w-6xl page with its own padding,
+        // so the cover tops out near 480px rather than tracking the viewport.
+        sizes={featured ? '(min-width: 1024px) 480px, 100vw' : undefined}
+      />
       {lifecycle || timeframe ? (
         <div className="project-card-meta my-3 flex flex-wrap items-center gap-2 text-xs font-black tracking-wide text-muted-foreground">
           {lifecycle ? <ProjectStatus>{lifecycle}</ProjectStatus> : null}
