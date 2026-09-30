@@ -9,6 +9,10 @@ export function publishedAccess(): Where {
   }
 }
 
+export function authenticatedAccess({ req }: { req: { user?: unknown } }): boolean {
+  return Boolean(req.user)
+}
+
 /**
  * Single-operator site: nobody may create a user through the API.
  *

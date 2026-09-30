@@ -1,7 +1,10 @@
 import type { CollectionConfig } from 'payload'
 
-import { publishedAccess } from './access'
+import { authenticatedAccess, publishedAccess } from './access'
+import { contentEditor } from './fields/content-editor'
 import { seoField } from './fields/seo'
+import { ensureContentSlug } from './hooks/content-slug'
+import { ensurePublicationDate } from './hooks/publication-date'
 import { createKnowledgeAfterChangeHook, createKnowledgeAfterDeleteHook } from '../server/knowledge/payload-hooks'
 
 export const Projects: CollectionConfig = {
@@ -12,8 +15,13 @@ export const Projects: CollectionConfig = {
   },
   access: {
     read: ({ req }) => (req.user ? true : publishedAccess()),
+    create: authenticatedAccess,
+    update: authenticatedAccess,
+    delete: authenticatedAccess,
   },
   hooks: {
+    beforeValidate: [ensureContentSlug],
+    beforeChange: [ensurePublicationDate],
     afterChange: [createKnowledgeAfterChangeHook('project')],
     afterDelete: [createKnowledgeAfterDeleteHook('project')],
   },
@@ -26,9 +34,10 @@ export const Projects: CollectionConfig = {
     {
       name: 'slug',
       type: 'text',
-      required: true,
+      required: false,
       unique: true,
       index: true,
+      admin: { components: { Field: '@/components/payload/slug-field#SlugField' } },
     },
     {
       name: 'summary',
@@ -43,7 +52,22 @@ export const Projects: CollectionConfig = {
     {
       name: 'content',
       type: 'richText',
+      editor: contentEditor,
       required: true,
+      admin: { description: 'Use Markdown shortcuts for headings, lists, tables, and fenced code. Insert images through the Media upload control.' },
+    },
+    {
+      name: 'gallery',
+      type: 'upload',
+      relationTo: 'media',
+      hasMany: true,
+      // One multi-select picker: choose or drop as many images as needed, then
+      // drag to reorder. There is no per-image caption field — the media
+      // document's own `alt` (required in the Media collection) is what the
+      // gallery and the viewer show, so the text is written once at upload.
+      admin: {
+        description: 'Screenshots and photos. Add as many as you like, then drag to reorder. The caption shown in the viewer is the image’s alt text.',
+      },
     },
     {
       name: 'technologies',
