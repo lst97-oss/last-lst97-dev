@@ -45,7 +45,16 @@ function sanitizeUpload(value: unknown): RecordValue | null {
       if (!isRecord(rawSize)) continue
       const sizeURL = safeAssetHref(rawSize.url)
       if (!sizeURL || typeof rawSize.mimeType !== 'string' || typeof rawSize.width !== 'number') continue
-      sizes[key] = { url: sizeURL, mimeType: rawSize.mimeType, width: rawSize.width }
+      // `height` is kept so a client can prove a candidate matches the
+      // original's aspect ratio before offering it in a `w`-descriptor
+      // srcset. Payload's imageSizes are fixed-aspect crops, so a candidate
+      // with the wrong ratio is not a valid substitute.
+      sizes[key] = {
+        url: sizeURL,
+        mimeType: rawSize.mimeType,
+        width: rawSize.width,
+        height: typeof rawSize.height === 'number' ? rawSize.height : null,
+      }
     }
     if (Object.keys(sizes).length > 0) upload.sizes = sizes
   }
@@ -69,6 +78,9 @@ function sanitizeNode(node: RecordValue, now: Date): RecordValue | null {
     'mode',
     'style',
     'text',
+    'headerState',
+    'colSpan',
+    'rowSpan',
   ]) {
     if (key in node) sanitized[key] = node[key]
   }
@@ -79,6 +91,16 @@ function sanitizeNode(node: RecordValue, now: Date): RecordValue | null {
       const projected = sanitizeNode(child, now)
       return projected ? [projected] : []
     })
+  }
+
+  if (node.type === 'block') {
+    if (!isRecord(node.fields) || node.fields.blockType !== 'Code' || typeof node.fields.code !== 'string') return null
+    sanitized.fields = {
+      blockType: 'Code',
+      code: node.fields.code,
+      ...(typeof node.fields.language === 'string' ? { language: node.fields.language } : {}),
+    }
+    return sanitized
   }
 
   if (node.type === 'relationship') {

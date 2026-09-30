@@ -1,6 +1,7 @@
 import type { JSXConverterArgs, JSXConverters } from '@payloadcms/richtext-lexical/react'
 import { defaultJSXConverters, RichText as PayloadRichText } from '@payloadcms/richtext-lexical/react'
 import { ChecklistItem } from '@/components/site/content/checklist-item'
+import { type MediaViewerItem, ProseImage, uploadToMediaItem } from '@/components/site/share/media'
 import { safeAssetHref, safeContentHref } from '@/lib/content/url'
 import { parseLexicalContent } from '@/server/content/types'
 
@@ -66,44 +67,81 @@ function renderRelationship({ node }: JSXConverterArgs<ConverterNode>) {
   )
 }
 
-function renderSafeUpload({ node }: JSXConverterArgs<ConverterNode>) {
-  const value = node.value
-  if (!isRecord(value)) return null
+/**
+ * Every image in one article, in document order, so an in-prose image opens a
+ * viewer that steps through the rest of the article's images rather than a
+ * viewer holding a single image. Collected before render because the Lexical
+ * converters are pure functions that cannot hold shared state.
+ */
+function collectProseImages(editorState: unknown): MediaViewerItem[] {
+  const items: MediaViewerItem[] = []
 
-  const src = safeAssetHref(value.url)
-  if (!src) return null
-
-  const fields = isRecord(node.fields) ? node.fields : {}
-  const alt = typeof fields.alt === 'string'
-    ? fields.alt
-    : typeof value.alt === 'string'
-      ? value.alt
-      : ''
-  const width = typeof value.width === 'number' ? value.width : undefined
-  const height = typeof value.height === 'number' ? value.height : undefined
-
-  if (typeof value.mimeType !== 'string' || !value.mimeType.startsWith('image/')) {
-    const filename = typeof value.filename === 'string' ? value.filename : 'Open attached file'
-    return <a href={src} rel="noopener noreferrer" target="_blank">{filename}</a>
+  const visit = (node: unknown) => {
+    if (!isRecord(node)) return
+    if (node.type === 'upload') {
+      const value = node.value
+      if (isRecord(value) && typeof value.mimeType === 'string' && value.mimeType.startsWith('image/')) {
+        const item = uploadToMediaItem(value)
+        if (item) items.push(item)
+      }
+    }
+    if (Array.isArray(node.children)) node.children.forEach(visit)
   }
 
-  const responsiveSources = isRecord(value.sizes)
-    ? Object.entries(value.sizes).flatMap(([key, rawSize]) => {
-        if (!isRecord(rawSize)) return []
-        const sizeURL = safeAssetHref(rawSize.url)
-        if (!sizeURL || typeof rawSize.width !== 'number' || typeof rawSize.mimeType !== 'string') return []
-        return [
-          <source key={key} media={`(max-width: ${rawSize.width}px)`} srcSet={sizeURL} type={rawSize.mimeType} />,
-        ]
-      })
-    : []
+  if (isRecord(editorState) && isRecord(editorState.root)) visit(editorState.root)
+  return items
+}
 
-  return (
-    <picture>
-      {responsiveSources}
-      <img alt={alt} height={height} src={src} width={width} />
-    </picture>
-  )
+/**
+ * `JSXConverters` only receives the node, so the article's image list and a
+ * document-order cursor are captured in this closure instead of passed in.
+ * The cursor is what keeps the viewer's list aligned with the rendered nodes:
+ * the converter walks the document in the same order the pre-pass did, so the
+ * Nth image node rendered is the Nth entry in `proseImages`.
+ */
+function proseImageConverter(proseImages: MediaViewerItem[]) {
+  let cursor = 0
+
+  return function renderProseImage({ node }: JSXConverterArgs<ConverterNode>) {
+    const value = node.value
+    if (!isRecord(value)) return null
+
+    const src = safeAssetHref(value.url)
+    if (!src) return null
+
+    const fields = isRecord(node.fields) ? node.fields : {}
+    const alt = typeof fields.alt === 'string'
+      ? fields.alt
+      : typeof value.alt === 'string'
+        ? value.alt
+        : ''
+    const width = typeof value.width === 'number' ? value.width : undefined
+    const height = typeof value.height === 'number' ? value.height : undefined
+
+    if (typeof value.mimeType !== 'string' || !value.mimeType.startsWith('image/')) {
+      const filename = typeof value.filename === 'string' ? value.filename : 'Open attached file'
+      return <a href={src} rel="noopener noreferrer" target="_blank">{filename}</a>
+    }
+
+    // Reuse the one srcset builder so prose images get the same aspect-checked
+    // width-descriptor candidates as covers and the gallery. The previous
+    // `<picture>`/`<source media="(max-width: Npx)">` list was art direction
+    // driven by IMAGE width, which is backwards: `media` matches the VIEWPORT,
+    // so a 1600px `hero` was offered to every viewport up to 1600px wide.
+    const srcSet = uploadToMediaItem(value)?.srcSet
+
+    // A node the pre-pass skipped (unsafe URL, or a non-image upload) renders
+    // as a plain image and must NOT consume a slot, or every later image
+    // would open the wrong entry in the viewer.
+    if (!proseImages[cursor]) {
+      return <img alt={alt} decoding="async" height={height} loading="lazy" sizes="(min-width: 1024px) 768px, 100vw" src={src} srcSet={srcSet} width={width} />
+    }
+
+    const index = cursor
+    cursor += 1
+
+    return <ProseImage alt={alt} index={index} items={proseImages} srcSet={srcSet} />
+  }
 }
 
 function renderListItem(args: JSXConverterArgs<ConverterNode>) {
@@ -130,13 +168,27 @@ function renderListItem(args: JSXConverterArgs<ConverterNode>) {
   )
 }
 
-const converters: JSXConverters = {
-  ...defaultJSXConverters,
-  autolink: renderSafeLink,
-  link: renderSafeLink,
-  listitem: renderListItem,
-  relationship: renderRelationship,
-  upload: renderSafeUpload,
+function buildConverters(proseImages: MediaViewerItem[]): JSXConverters {
+  return {
+    ...defaultJSXConverters,
+    autolink: renderSafeLink,
+    link: renderSafeLink,
+    listitem: renderListItem,
+    relationship: renderRelationship,
+    upload: proseImageConverter(proseImages),
+    table: ({ node, nodesToJSX }: JSXConverterArgs<ConverterNode>) => <table><tbody>{nodesToJSX({ nodes: Array.isArray(node.children) ? node.children : [] })}</tbody></table>,
+    tablerow: ({ node, nodesToJSX }: JSXConverterArgs<ConverterNode>) => <tr>{nodesToJSX({ nodes: Array.isArray(node.children) ? node.children : [] })}</tr>,
+    tablecell: ({ node, nodesToJSX }: JSXConverterArgs<ConverterNode>) => {
+      const TagName = node.headerState ? 'th' : 'td'
+      return <TagName colSpan={typeof node.colSpan === 'number' ? node.colSpan : undefined}>{nodesToJSX({ nodes: Array.isArray(node.children) ? node.children : [] })}</TagName>
+    },
+    blocks: { Code: ({ node }: JSXConverterArgs<ConverterNode>) => {
+      const fields = isRecord(node.fields) ? node.fields : {}
+      const code = typeof fields.code === 'string' ? fields.code : ''
+      const language = typeof fields.language === 'string' ? fields.language : 'text'
+      return <pre><code data-language={language}>{code}</code></pre>
+    } },
+  }
 }
 
 export function RichText({ value }: { value: unknown }) {
@@ -145,5 +197,14 @@ export function RichText({ value }: { value: unknown }) {
     return <p className="muted-copy">This entry is still being written.</p>
   }
 
-  return <PayloadRichText className="rich-text" data={editorState} converters={converters} />
+  // A fresh converter set per render: the upload converter holds a
+  // document-order cursor, so a shared module-level set would carry stale
+  // state between articles and between server and client renders.
+  return (
+    <PayloadRichText
+      className="rich-text"
+      converters={buildConverters(collectProseImages(editorState))}
+      data={editorState}
+    />
+  )
 }

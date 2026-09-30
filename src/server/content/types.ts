@@ -10,9 +10,33 @@ export interface Page<T> {
 export interface CoverImage {
   url: string | null
   alt: string | null
+  width?: number | null
+  height?: number | null
+  sizes?: Partial<Record<'thumbnail' | 'card' | 'hero', ImageSize>>
+}
+
+export interface ImageSize {
+  url: string | null
+  width: number | null
+  height: number | null
+}
+
+export interface TopicSummary {
+  id: string | number
+  title: string
+  slug: string
+  description: string
 }
 
 export type ProjectLifecycle = 'planned' | 'in_progress' | 'completed' | 'archived'
+export type ChangelogChangeType =
+  | 'feature'
+  | 'improvement'
+  | 'bug_fix'
+  | 'security'
+  | 'breaking_change'
+  | 'maintenance'
+  | 'documentation'
 
 export interface SEOOverrides {
   title: string | null
@@ -44,6 +68,13 @@ function isSerializedNode(value: unknown): boolean {
     case 'paragraph':
     case 'quote':
       return hasValidChildren(value)
+    case 'table':
+    case 'tablerow':
+      return hasValidChildren(value)
+    case 'tablecell':
+      return hasValidChildren(value)
+    case 'block':
+      return isRecord(value.fields) && value.fields.blockType === 'Code' && typeof value.fields.code === 'string'
     case 'link':
     case 'autolink': {
       if (!hasValidChildren(value) || !isRecord(value.fields)) return false
@@ -88,8 +119,11 @@ export interface PostSummary {
   title: string
   excerpt: string
   publishedAt: string
+  updatedAt: string
   tags: string[]
+  topics?: TopicSummary[]
   coverImage: CoverImage
+  createdAt: string
 }
 
 export interface Post extends PostSummary {
@@ -102,8 +136,10 @@ export interface ProjectSummary {
   title: string
   summary: string
   technologies: string[]
+  gallery: CoverImage[]
   featured: boolean
   coverImage: CoverImage
+  updatedAt: string
   role: string | null
   projectStatus: ProjectLifecycle | null
   startDate: string | null
@@ -115,6 +151,7 @@ export interface Project extends ProjectSummary {
   repositoryUrl: string | null
   liveUrl: string | null
   seo: SEOOverrides
+  createdAt: string
 }
 
 export interface ChangelogSummary {
@@ -123,8 +160,11 @@ export interface ChangelogSummary {
   version: string | null
   excerpt: string
   publishedAt: string
+  updatedAt: string
   tags: string[]
+  changeTypes: ChangelogChangeType[]
   coverImage: CoverImage
+  createdAt: string
 }
 
 export interface Changelog extends ChangelogSummary {
@@ -139,11 +179,23 @@ export interface ListPostsInput {
 
 export interface BlogReader {
   listPublished(input: ListPostsInput): Promise<Page<PostSummary>>
+  listPublishedByTopic(topicId: string | number, input: ListPostsInput): Promise<Page<PostSummary>>
   getPublishedBySlug(slug: string): Promise<Post | null>
 }
 
+export interface TopicReader {
+  listPublished(): Promise<TopicSummary[]>
+  getPublishedBySlug(slug: string): Promise<TopicSummary | null>
+}
+
+export interface HomeReader {
+  getFeaturedPost(): Promise<PostSummary | null>
+}
+
 export interface ProjectReader {
-  listPublished(): Promise<ProjectSummary[]>
+  listPublished(input: ListPostsInput): Promise<Page<ProjectSummary>>
+  /** Every published project, unpaged — for the sitemap and chat tools. */
+  listAll(): Promise<ProjectSummary[]>
   getPublishedBySlug(slug: string): Promise<Project | null>
 }
 

@@ -1,4 +1,9 @@
-import { listChangelogsServerFn, listPostsServerFn, listProjectsServerFn } from '../content/server-functions'
+import {
+  listChangelogsServerFn,
+  listPostsServerFn,
+  listProjectsServerFn,
+  listTopicsServerFn,
+} from '../content/server-functions'
 
 interface SitemapEntry {
   path: string
@@ -55,10 +60,12 @@ export async function createSitemapEntries(
     listPosts: typeof listPostsServerFn
     listProjects: typeof listProjectsServerFn
     listChangelogs: typeof listChangelogsServerFn
+    listTopics?: typeof listTopicsServerFn
   } = {
     listPosts: listPostsServerFn,
     listProjects: listProjectsServerFn,
     listChangelogs: listChangelogsServerFn,
+    listTopics: listTopicsServerFn,
   },
 ): Promise<SitemapEntry[]> {
   const [posts, projects, changelogs] = await Promise.allSettled([
@@ -66,6 +73,10 @@ export async function createSitemapEntries(
     loaders.listProjects(),
     loaders.listChangelogs({ data: { limit: 50 } }),
   ])
+  const topics = await Promise.resolve()
+    .then(() => loaders.listTopics?.() ?? [])
+    .then((value) => ({ status: 'fulfilled' as const, value }))
+    .catch(() => ({ status: 'rejected' as const }))
 
   const entries = [...STATIC_ENTRIES]
 
@@ -77,6 +88,12 @@ export async function createSitemapEntries(
         changefreq: 'monthly',
         priority: '0.6',
       })
+    }
+  }
+
+  if (topics.status === 'fulfilled') {
+    for (const topic of topics.value) {
+      entries.push({ path: `/blog/topics/${topic.slug}`, changefreq: 'weekly', priority: '0.5' })
     }
   }
 

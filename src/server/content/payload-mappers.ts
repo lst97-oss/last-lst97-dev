@@ -1,6 +1,7 @@
 import { projectPublicLexicalContent } from './public-lexical'
 import type {
   Changelog,
+  ChangelogChangeType,
   ChangelogSummary,
   CoverImage,
   Post,
@@ -9,9 +10,11 @@ import type {
   ProjectLifecycle,
   ProjectSummary,
   SEOOverrides,
+  TopicSummary,
 } from './types'
 
 export type PayloadDocument = Record<string, unknown> & {
+  changeTypes?: unknown
   coverImage?: unknown
   endDate?: unknown
   excerpt?: unknown
@@ -26,8 +29,10 @@ export type PayloadDocument = Record<string, unknown> & {
   summary?: unknown
   tags?: unknown
   technologies?: unknown
+  topics?: unknown
   title?: unknown
   content?: unknown
+  gallery?: unknown
   projectStatus?: unknown
   version?: unknown
 }
@@ -56,7 +61,72 @@ function coverImage(value: unknown): CoverImage {
   if (typeof value !== 'object' || value === null) return { url: null, alt: null }
 
   const image = value as Record<string, unknown>
-  return { url: nullableString(image.url), alt: nullableString(image.alt) }
+  const sizes: NonNullable<CoverImage['sizes']> = {}
+  if (typeof image.sizes === 'object' && image.sizes !== null) {
+    const sourceSizes = image.sizes as Record<string, unknown>
+    for (const name of ['thumbnail', 'card', 'hero'] as const) {
+      const rawSize = sourceSizes[name]
+      if (typeof rawSize !== 'object' || rawSize === null) continue
+      const size = rawSize as Record<string, unknown>
+      sizes[name] = {
+        url: nullableString(size.url),
+        width: typeof size.width === 'number' ? size.width : null,
+        height: typeof size.height === 'number' ? size.height : null,
+      }
+    }
+  }
+
+  return {
+    url: nullableString(image.url),
+    alt: nullableString(image.alt),
+    width: typeof image.width === 'number' ? image.width : null,
+    height: typeof image.height === 'number' ? image.height : null,
+    sizes,
+  }
+}
+
+function topicSummaries(value: unknown): TopicSummary[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    if (typeof item !== 'object' || item === null) return []
+    const topic = item as Record<string, unknown>
+    if ((typeof topic.id !== 'string' && typeof topic.id !== 'number') || typeof topic.slug !== 'string') return []
+    return [
+      {
+        id: topic.id,
+        title: stringValue(topic.title, topic.slug),
+        slug: topic.slug,
+        description: stringValue(topic.description),
+      },
+    ]
+  })
+}
+
+const CHANGE_TYPES = new Set<ChangelogChangeType>([
+  'feature',
+  'improvement',
+  'bug_fix',
+  'security',
+  'breaking_change',
+  'maintenance',
+  'documentation',
+])
+
+function changeTypes(value: unknown): ChangelogChangeType[] {
+  return stringArray(value).filter((item): item is ChangelogChangeType => CHANGE_TYPES.has(item as ChangelogChangeType))
+}
+
+/**
+ * The gallery is a `hasMany` upload, so Payload hands back a flat array of
+ * populated media documents rather than rows pairing an image with a caption.
+ * Each document's own `alt` is the caption the gallery and viewer show.
+ */
+function projectGallery(value: unknown): CoverImage[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((entry) => {
+    const image = coverImage(entry)
+    return image.url ? [image] : []
+  })
 }
 
 function seoOverrides(value: unknown): SEOOverrides {
@@ -90,7 +160,10 @@ export function mapPostSummary(document: PayloadDocument): PostSummary {
     title: stringValue(document.title, 'Untitled post'),
     excerpt: stringValue(document.excerpt),
     publishedAt: stringValue(document.publishedAt),
+    updatedAt: stringValue(document.updatedAt),
+    createdAt: stringValue(document.createdAt),
     tags: stringArray(document.tags),
+    topics: topicSummaries(document.topics),
     coverImage: coverImage(document.coverImage),
   }
 }
@@ -109,12 +182,14 @@ export function mapProjectSummary(document: PayloadDocument): ProjectSummary {
     title: stringValue(document.title, 'Untitled project'),
     summary: stringValue(document.summary),
     technologies: stringArray(document.technologies),
+    gallery: projectGallery(document.gallery),
     featured: document.featured === true,
     coverImage: coverImage(document.coverImage),
     role: nullableString(document.role),
     projectStatus: projectLifecycle(document.projectStatus),
     startDate: nullableString(document.startDate),
     endDate: nullableString(document.endDate),
+    updatedAt: stringValue(document.updatedAt),
   }
 }
 
@@ -125,6 +200,7 @@ export function mapProject(document: PayloadDocument): Project {
     repositoryUrl: nullableString(document.repositoryUrl),
     liveUrl: nullableString(document.liveUrl),
     seo: seoOverrides(document.seo),
+    createdAt: stringValue(document.createdAt),
   }
 }
 
@@ -135,7 +211,10 @@ export function mapChangelogSummary(document: PayloadDocument): ChangelogSummary
     version: nullableString(document.version),
     excerpt: stringValue(document.excerpt),
     publishedAt: stringValue(document.publishedAt),
+    updatedAt: stringValue(document.updatedAt),
+    createdAt: stringValue(document.createdAt),
     tags: stringArray(document.tags),
+    changeTypes: changeTypes(document.changeTypes),
     coverImage: coverImage(document.coverImage),
   }
 }
