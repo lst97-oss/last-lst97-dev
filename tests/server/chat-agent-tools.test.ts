@@ -45,6 +45,33 @@ describe('agent planner', () => {
 })
 
 describe('agent tool runner', () => {
+  const changelogEntry = {
+    slug: 'v1-2-0',
+    title: 'Release 1.2.0',
+    version: '1.2.0',
+    excerpt: 'Adds the changelog tool.',
+    publishedAt: '2026-09-01T00:00:00.000Z',
+    updatedAt: '2026-09-02T00:00:00.000Z',
+    tags: [],
+    changeTypes: ['feature' as const],
+    coverImage: { url: null, alt: null },
+    content: null,
+    seo: { title: null, description: null, image: { url: null, alt: null } },
+  }
+  const topicEntry = { id: 1, title: 'AI', slug: 'ai', description: 'Machine learning work.' }
+  const postEntry = {
+    slug: 'measuring-layout',
+    title: 'Measuring layout',
+    excerpt: 'A grid that packs by measured height.',
+    publishedAt: '2026-09-01T00:00:00.000Z',
+    updatedAt: '2026-09-02T00:00:00.000Z',
+    tags: [],
+    topics: [],
+    coverImage: { url: null, alt: null },
+    content: null,
+    seo: { title: null, description: null, image: { url: null, alt: null } },
+  }
+  const projectEntry = { slug: 'demo-app', title: 'Demo App', summary: 'A demo showcase app', technologies: ['Next.js'], featured: false, coverImage: { url: null, alt: null }, gallery: [], role: null, projectStatus: 'completed' as const, startDate: null, endDate: null, updatedAt: '2026-01-01T00:00:00.000Z', createdAt: '2025-12-31T00:00:00.000Z' }
   const runner = {
     knowledgeEnabled: false,
     codingStatsEnabled: true,
@@ -60,12 +87,17 @@ describe('agent tool runner', () => {
     },
     today: '2026-09-23',
     toolTimeoutMs: 1_000,
+    publicSiteUrl: 'https://www.lst97.dev',
     logger: { warn() {} },
     siteContent: {
-      listProjects: async () => [{ slug: 'demo-app', title: 'Demo App', summary: 'A demo showcase app', technologies: ['Next.js'], featured: false, coverImage: { url: null, alt: null }, role: null, projectStatus: 'completed' as const, startDate: null, endDate: null }],
-      getProject: async (slug: string) => slug === 'demo-app' ? { slug: 'demo-app', title: 'Demo App', summary: 'A demo showcase app', technologies: ['Next.js'], featured: false, coverImage: { url: null, alt: null }, role: null, projectStatus: 'completed' as const, startDate: null, endDate: null, content: null, repositoryUrl: 'https://github.com/lst97/demo-app', liveUrl: 'https://demo.lst97.dev', seo: { title: null, description: null, image: { url: null, alt: null } } } : null,
+      listProjectsPage: async () => ({ items: [projectEntry], page: 1, totalPages: 1, totalDocs: 1 }),
+      getProject: async (slug: string) => slug === 'demo-app' ? { slug: 'demo-app', title: 'Demo App', summary: 'A demo showcase app', technologies: ['Next.js'], featured: false, coverImage: { url: null, alt: null }, gallery: [], role: null, projectStatus: 'completed' as const, startDate: null, endDate: null, updatedAt: '2026-01-01T00:00:00.000Z', createdAt: '2025-12-31T00:00:00.000Z', content: null, repositoryUrl: 'https://github.com/lst97/demo-app', liveUrl: 'https://demo.lst97.dev', seo: { title: null, description: null, image: { url: null, alt: null } } } : null,
       listPosts: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
       getPost: async () => null,
+      listChangelogs: async () => ({ items: [changelogEntry], page: 1, totalPages: 1, totalDocs: 1 }),
+      getChangelog: async (slug: string) => (slug === changelogEntry.slug ? changelogEntry : null),
+      listTopics: async () => [topicEntry],
+      getTopic: async (slug: string) => (slug === topicEntry.slug ? topicEntry : null),
     },
   }
 
@@ -311,6 +343,180 @@ describe('agent tool runner', () => {
     expect(result.output).toContain('requires { slug }')
   })
 
+  it('lists live changelog entries with their version', async () => {
+    const result = await runAgentTool(
+      { id: '1', name: 'site_content', arguments: { op: 'list_changelogs', limit: 5, page: 1 } },
+      runner,
+    )
+
+    expect(result.sseName).toBe('site_content')
+    expect(result.sseLabel).toBe('BROWSING SITE CONTENT…')
+    expect(result.status).toBe('completed')
+    expect(result.output).toContain('Recent changelogs (page 1/1):')
+    expect(result.output).toContain('1.2.0')
+    expect(result.output).toContain('Release 1.2.0 (v1-2-0)')
+  })
+
+  it('returns clickable public URLs for posts, projects, changelogs, and topics', async () => {
+    const posts = await runAgentTool(
+      { id: 'posts', name: 'site_content', arguments: { op: 'list_posts' } },
+      { ...runner, siteContent: { ...runner.siteContent, listPosts: async () => ({ items: [postEntry], page: 1, totalPages: 1, totalDocs: 1 }) } },
+    )
+    const projects = await runAgentTool(
+      { id: 'projects', name: 'site_content', arguments: { op: 'list_projects' } },
+      runner,
+    )
+    const changelogs = await runAgentTool(
+      { id: 'changelogs', name: 'site_content', arguments: { op: 'list_changelogs' } },
+      runner,
+    )
+    const topics = await runAgentTool({ id: 'topics', name: 'site_content', arguments: { op: 'list_topics' } }, runner)
+    const post = await runAgentTool(
+      { id: 'post', name: 'site_content', arguments: { op: 'get_post', slug: 'measuring-layout' } },
+      { ...runner, siteContent: { ...runner.siteContent, getPost: async () => postEntry } },
+    )
+    const topic = await runAgentTool(
+      { id: 'topic', name: 'site_content', arguments: { op: 'get_topic', slug: 'ai' } },
+      runner,
+    )
+
+    expect(posts.output).toContain('https://www.lst97.dev/blog/measuring-layout')
+    expect(projects.output).toContain('https://www.lst97.dev/projects/demo-app')
+    expect(changelogs.output).toContain('https://www.lst97.dev/changelog/v1-2-0')
+    expect(topics.output).toContain('https://www.lst97.dev/blog/topics/ai')
+    expect(post.output).toContain('Page: https://www.lst97.dev/blog/measuring-layout')
+    expect(topic.output).toContain('Page: https://www.lst97.dev/blog/topics/ai')
+  })
+
+  it('lists the site sections with a purpose and a link, without needing a CMS', async () => {
+    const result = await runAgentTool({ id: 'pages', name: 'site_content', arguments: { op: 'list_pages' } }, {
+      ...runner,
+      siteContent: undefined,
+    })
+
+    expect(result.status).toBe('completed')
+    expect(result.output).toContain('Site sections (7):')
+    expect(result.output).toContain('- Contact (/contact) —')
+    // URLs live in the citations; the text stays inside the 600-char tool budget.
+    expect(result.output).not.toContain('URL:')
+    // The agent loop truncates tool output to 600 chars before the responder sees
+    // it, so a longer list would silently drop its last sections.
+    expect(result.output.length).toBeLessThan(600)
+    expect(result.output).toContain('- Chat (/chat)')
+    expect(result.retrieval?.citations).toEqual([
+      { id: 'K1', title: 'Home', url: 'https://www.lst97.dev/', isPublic: true },
+      { id: 'K2', title: 'About', url: 'https://www.lst97.dev/about', isPublic: true },
+      { id: 'K3', title: 'Projects', url: 'https://www.lst97.dev/projects', isPublic: true },
+      { id: 'K4', title: 'Blog', url: 'https://www.lst97.dev/blog', isPublic: true },
+      { id: 'K5', title: 'Changelog', url: 'https://www.lst97.dev/changelog', isPublic: true },
+      { id: 'K6', title: 'Contact', url: 'https://www.lst97.dev/contact', isPublic: true },
+      { id: 'K7', title: 'Chat', url: 'https://www.lst97.dev/chat', isPublic: true },
+    ])
+  })
+
+  it('returns SOURCES citations so a site-content answer is attributable', async () => {
+    const changelogs = await runAgentTool(
+      { id: 'changelogs', name: 'site_content', arguments: { op: 'list_changelogs' } },
+      runner,
+    )
+    const post = await runAgentTool(
+      { id: 'post', name: 'site_content', arguments: { op: 'get_post', slug: 'measuring-layout' } },
+      { ...runner, siteContent: { ...runner.siteContent, getPost: async () => postEntry } },
+    )
+
+    expect(changelogs.retrieval?.citations).toEqual([
+      { id: 'K1', title: '1.2.0 — Release 1.2.0', url: 'https://www.lst97.dev/changelog/v1-2-0', isPublic: true },
+    ])
+    expect(post.retrieval?.citations).toEqual([
+      { id: 'K1', title: 'Measuring layout', url: 'https://www.lst97.dev/blog/measuring-layout', isPublic: true },
+    ])
+  })
+
+  it('does not double the version prefix already stored on the changelog entry', async () => {
+    const result = await runAgentTool(
+      { id: 'changelogs', name: 'site_content', arguments: { op: 'list_changelogs' } },
+      runner,
+    )
+
+    expect(result.output).toContain('1.2.0 Release 1.2.0')
+    expect(result.output).not.toContain('vv1.2.0')
+    expect(result.output).not.toContain('v1.2.0 Release')
+  })
+
+  it('percent-encodes a slug so a crafted one cannot escape its path', async () => {
+    const result = await runAgentTool(
+      { id: 'projects', name: 'site_content', arguments: { op: 'list_projects' } },
+      {
+        ...runner,
+        siteContent: {
+          ...runner.siteContent,
+          listProjectsPage: async () => ({
+            items: [{ ...projectEntry, slug: '../admin' }],
+            page: 1,
+            totalPages: 1,
+            totalDocs: 1,
+          }),
+        },
+      },
+    )
+
+    expect(result.output).toContain('https://www.lst97.dev/projects/..%2Fadmin')
+    expect(result.output).not.toContain('/projects/../admin')
+  })
+
+  it('reads one changelog entry and rejects a slugless lookup', async () => {
+    const found = await runAgentTool(
+      { id: '1', name: 'site_content', arguments: { op: 'get_changelog', slug: 'v1-2-0' } },
+      runner,
+    )
+    const missing = await runAgentTool(
+      { id: '1', name: 'site_content', arguments: { op: 'get_changelog' } },
+      runner,
+    )
+
+    expect(found.status).toBe('completed')
+    expect(found.output).toContain('Version: 1.2.0')
+    expect(found.output).toContain('Change types: feature')
+    expect(missing.status).toBe('rejected')
+    expect(missing.output).toContain('get_changelog requires { slug }')
+  })
+
+  it('lists and reads live topics', async () => {
+    const list = await runAgentTool({ id: '1', name: 'site_content', arguments: { op: 'list_topics' } }, runner)
+    const found = await runAgentTool(
+      { id: '1', name: 'site_content', arguments: { op: 'get_topic', slug: 'ai' } },
+      runner,
+    )
+    const missing = await runAgentTool(
+      { id: '1', name: 'site_content', arguments: { op: 'get_topic', slug: 'nope' } },
+      runner,
+    )
+
+    expect(list.status).toBe('completed')
+    expect(list.output).toContain('Published topics (1):')
+    expect(list.output).toContain('AI (ai) — Machine learning work.')
+    expect(found.status).toBe('completed')
+    expect(found.output).toContain('AI (ai): Machine learning work.')
+    expect(missing.status).toBe('completed')
+    expect(missing.output).toBe('No published topic found for slug nope.')
+  })
+
+  it('reports an empty changelog or topic list without borrowing another collection', async () => {
+    const changelogs = await runAgentTool(
+      { id: '1', name: 'site_content', arguments: { op: 'list_changelogs' } },
+      { ...runner, siteContent: { ...runner.siteContent, listChangelogs: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }) } },
+    )
+    const topics = await runAgentTool(
+      { id: '1', name: 'site_content', arguments: { op: 'list_topics' } },
+      { ...runner, siteContent: { ...runner.siteContent, listTopics: async () => [] } },
+    )
+
+    expect(changelogs.output).toBe('No published changelogs found.')
+    expect(topics.output).toBe('No published topics found.')
+    expect(changelogs.output).not.toContain('AI')
+    expect(topics.output).not.toContain('Release 1.2.0')
+  })
+
   it('runs a typed public-share query and labels its freshness', async () => {
     const result = await runAgentTool(
       { id: '1', name: 'coding_stats', arguments: { category: 'activity', range: 'all_time' } },
@@ -339,7 +545,7 @@ describe('agent tool runner', () => {
   it('records empty successful tool results as completed', async () => {
     const result = await runAgentTool(
       { id: '1', name: 'site_content', arguments: { op: 'list_projects' } },
-      { ...runner, siteContent: { ...runner.siteContent, listProjects: async () => [] } },
+      { ...runner, siteContent: { ...runner.siteContent, listProjectsPage: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }) } },
     )
 
     expect(result.output).toBe('No published projects found.')

@@ -19,8 +19,20 @@ export interface ChatServiceDependencies {
   codingStatsEnabled?: boolean
   codingHistory?: CodingHistorySource
   codingHistoryEnabled?: boolean
-  siteContent?: Pick<ContentReader, 'listProjects' | 'getProject' | 'listPosts' | 'getPost'>
+  siteContent?: Pick<
+    ContentReader,
+    | 'listProjectsPage'
+    | 'getProject'
+    | 'listPosts'
+    | 'getPost'
+    | 'listChangelogs'
+    | 'getChangelog'
+    | 'listTopics'
+    | 'getTopic'
+  >
   planner?: AgentPlanner
+  /** Absolute public origin for clickable links in tool output. Defaults to localhost. */
+  publicSiteUrl?: string
   today?: string
   toolTimeoutMs?: number
   maxAgentSteps?: number

@@ -144,8 +144,18 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
         arguments: { query: 'the previously offered personal knowledge lookup' },
       })
     }
-    if (selected.has('site_content') && /\b(?:published site|site content|blog post|showcase)\b/i.test(offer)) {
-      calls.push({ id: 'site-accepted', name: 'site_content', arguments: { op: 'list_projects' } })
+    if (selected.has('site_content')) {
+      if (/\b(?:changelog|release notes?|releases?)\b/i.test(offer)) {
+        calls.push({
+          id: 'site-changelogs-accepted',
+          name: 'site_content',
+          arguments: { op: 'list_changelogs', limit: 5, page: 1 },
+        })
+      } else if (/\btopics?\b/i.test(offer)) {
+        calls.push({ id: 'site-topics-accepted', name: 'site_content', arguments: { op: 'list_topics' } })
+      } else if (/\b(?:published site|site content|blog post|showcase)\b/i.test(offer)) {
+        calls.push({ id: 'site-accepted', name: 'site_content', arguments: { op: 'list_projects' } })
+      }
     }
     return calls.slice(0, 4)
   }
@@ -227,41 +237,98 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
     return plans.slice(0, 2)
   }
 
+  function siteContentCollections(message: string) {
+    return {
+      posts: /\b(?:blog|posts?|articles?)\b/i.test(message),
+      projects: /\bprojects?\b/i.test(message),
+      changelogs: /\b(?:changelog|changelogs|release notes?|releases?|what'?s new|version history)\b/i.test(message),
+      topics: /\b(?:topics?|tags?|categories|category)\b/i.test(message),
+    }
+  }
+
+  /**
+   * Orientation questions — what the site offers and where a section lives — are
+   * a different axis from the content collections: they name no collection at all.
+   */
+  function asksForSitePages(message: string): boolean {
+    return (
+      /\b(?:what|which)\b.{0,40}\b(?:pages?|sections?|features?|sections of the site)\b/i.test(message) ||
+      /\b(?:pages?|sections?)\b.{0,30}\b(?:does (?:this|the) site|on (?:this|the) site|available|offer)\b/i.test(
+        message,
+      ) ||
+      /\b(?:what can (?:i|you|we) do|how do i (?:navigate|browse|find)|where (?:do|can) i (?:find|go|see)|site map|sitemap|site structure|navigation)\b/i.test(
+        message,
+      )
+    )
+  }
+
   function matchSiteContentPlans(message: string): AgentToolCall[] {
-    const asksPosts = /\b(?:blog|posts?|articles?)\b/i.test(message)
-    const asksProjects = /\bprojects?\b/i.test(message)
+    if (asksForSitePages(message)) return [{ id: 'site-pages', name: 'site_content', arguments: { op: 'list_pages' } }]
+    const collections = siteContentCollections(message)
+    const { posts: asksPosts, projects: asksProjects, changelogs: asksChangelogs, topics: asksTopics } = collections
     // Only route to Payload when the question is really about site/blog/demo
     // content — bare "which project took most time" is a warehouse question.
+    // "on this site", "in this site", or "published" scope the question to the
+    // live Payload showcase rather than the owned-repository catalogue or RAG.
+    const asksAboutSite =
+      /\b(?:this|your)\s+(?:site|website|web\s?site|portfolio|blog)\b/i.test(message) ||
+      /\b(?:on|in|for|to|of|at)\s+(?:this|your|the)\s+(?:site|website|web\s?site|portfolio|blog|changelog)\b/i.test(
+        message,
+      ) ||
+      /\b(?:published|featured)\b/i.test(message)
     const wantsSite =
       asksPosts ||
+      asksChangelogs ||
+      asksTopics ||
+      asksAboutSite ||
       /demo|showcase|show case|live url|live site/i.test(message) ||
       (asksProjects && /portfolio|website|showcase|demo|live|published|list|all|latest|recent|current/i.test(message))
     if (!wantsSite || !dependencies.siteContent) return []
-    if (asksPosts && asksProjects) {
+    const detected = [asksPosts, asksProjects, asksChangelogs, asksTopics].filter(Boolean).length
+    if (detected > 1) {
+      // A mixed request cannot name one slug for every collection, so it
+      // becomes one list call per collection in a fixed order.
       return [
-        { id: 'site-posts', name: 'site_content', arguments: { op: 'list_posts', limit: 5, page: 1 } },
-        { id: 'site-projects', name: 'site_content', arguments: { op: 'list_projects' } },
+        ...(asksPosts
+          ? [{ id: 'site-posts', name: 'site_content' as const, arguments: { op: 'list_posts', limit: 5, page: 1 } }]
+          : []),
+        ...(asksProjects
+          ? [{ id: 'site-projects', name: 'site_content' as const, arguments: { op: 'list_projects' } }]
+          : []),
+        ...(asksChangelogs
+          ? [
+              {
+                id: 'site-changelogs',
+                name: 'site_content' as const,
+                arguments: { op: 'list_changelogs', limit: 5, page: 1 },
+              },
+            ]
+          : []),
+        ...(asksTopics ? [{ id: 'site-topics', name: 'site_content' as const, arguments: { op: 'list_topics' } }] : []),
       ]
     }
     const slug =
+      message.match(/["“”'`「」『』]([^"“”'`「」『』]{2,120})["“”'`「」『』]/)?.[1]?.trim() ??
       message
         .match(
-          /["\u201c\u201d'`\u300c\u300d\u300e\u300f]([^"\u201c\u201d'`\u300c\u300d\u300e\u300f]{2,120})["\u201c\u201d'`\u300c\u300d\u300e\u300f]/,
+          /\b(?:project|post|blog|article|repo|changelog|release|topic)\s+(?:called\s+|named\s+)?([A-Za-z0-9][\w+.#-]{1,120})/i,
         )?.[1]
-        ?.trim() ??
-      message
-        .match(/\b(?:project|post|blog|article|repo)\s+(?:called\s+|named\s+)?([A-Za-z0-9][\w+.#-]{1,120})/i)?.[1]
         ?.trim() ??
       null
     // Bare words like "demo"/"showcase" are not slugs — only treat the
     // capture as a slug when it looks like an identifier, not a stopword.
     const slugIsReal =
       slug !== null &&
-      !/^(demo|demos|showcase|showcases|project|projects|post|posts|blog|blogs|article|articles|live|site|sites|portfolio|list|all|some|any|the|a|an|my|his|and|or|latest|recent|current)$/i.test(
+      !/^(demo|demos|showcase|showcases|project|projects|post|posts|blog|blogs|article|articles|live|site|sites|portfolio|list|all|some|any|the|a|an|my|his|and|or|latest|recent|current|new|old|first|about|for|from|in|of|on|at|to|with|that|this|these|those|it|its|there|here|was|were|is|are|be|been|has|have|had|do|does|did|can|could|would|should|will|shall|may|might|must|tell|show|list|give|find|get|see|me|us|you|they|he|she|changelog|changelogs|release|releases|version|versions|notes|topic|topics|update|updates|history|tag|tags|category|categories)$/i.test(
         slug,
       )
-    if (slugIsReal)
-      return [{ id: 'site-1', name: 'site_content', arguments: { op: asksPosts ? 'get_post' : 'get_project', slug } }]
+    if (slugIsReal) {
+      const op = asksChangelogs ? 'get_changelog' : asksTopics ? 'get_topic' : asksPosts ? 'get_post' : 'get_project'
+      return [{ id: 'site-1', name: 'site_content', arguments: { op, slug } }]
+    }
+    if (asksChangelogs)
+      return [{ id: 'site-changelogs', name: 'site_content', arguments: { op: 'list_changelogs', limit: 5, page: 1 } }]
+    if (asksTopics) return [{ id: 'site-topics', name: 'site_content', arguments: { op: 'list_topics' } }]
     return asksPosts
       ? [{ id: 'site-posts', name: 'site_content', arguments: { op: 'list_posts', limit: 5, page: 1 } }]
       : [{ id: 'site-projects', name: 'site_content', arguments: { op: 'list_projects' } }]
@@ -401,17 +468,35 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
     const catalogueAlreadyAnswered = input.state.catalogueToolExecutedThisStep || input.stepsUsed > 0
     if (isCatalogueInventoryRequest && !catalogueAlreadyAnswered && !jevApprovedTools.includes('list_owned_projects'))
       jevApprovedTools.push('list_owned_projects')
+    // Site-scoped guard: a question naming this site/website/portfolio, or asking
+    // what is published/featured on it, is about live Payload content that no
+    // other source can answer. Neither the owned-project catalogue nor RAG holds
+    // publication state, so history and a model skip cannot stand in for it.
+    const asksForOrientation = asksForSitePages(input.message)
+    const isSiteScopedRequest =
+      availableTools.includes('site_content') &&
+      (asksForOrientation ||
+        (/\b(?:projects?|posts?|articles?|changelogs?|releases?|topics?)\b/i.test(input.message) &&
+          (/\b(?:this|your)\s+(?:site|website|web\s?site|portfolio|blog)\b/i.test(input.message) ||
+            /\b(?:on|in|for|to|of|at)\s+(?:this|your|the)\s+(?:site|website|web\s?site|portfolio|blog|changelog)\b/i.test(
+              input.message,
+            ) ||
+            /\b(?:published|featured)\b/i.test(input.message))))
+    if (isSiteScopedRequest && !jevApprovedTools.includes('site_content')) jevApprovedTools.push('site_content')
     if (requiredQuery && !jevApprovedTools.includes('search_knowledge')) jevApprovedTools.push('search_knowledge')
     // A catalogue-plus-details request stays sequential: the catalogue runs
     // first, then the detail lookup gets its own fresh Jev decision. Collapse
     // to the catalogue only for inventory-only requests; dropping RAG here
     // would discard exactly the detail lookup `projectDetailsRequested` kept.
+    // A site-scoped request still needs Payload alongside the catalogue: the
+    // catalogue knows what Nelson owns, the CMS knows what is published here.
+    const siteScopedKept = isSiteScopedRequest && jevApprovedTools.includes('site_content')
     if (
       !projectDetailsRequested &&
       jevApprovedTools.includes('list_owned_projects') &&
       jevApprovedTools.includes('search_knowledge')
     )
-      jevApprovedTools = ['list_owned_projects']
+      jevApprovedTools = siteScopedKept ? ['list_owned_projects', 'site_content'] : ['list_owned_projects']
     const uncertainTools = availableTools.filter((tool) => decisions?.[tool]?.label === 'uncertain')
     const regexCalls = deterministicPlans(input.message, uncertainTools, input.today)
     let plannerCalls: AgentToolCall[] = []
@@ -434,9 +519,9 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
           const approved = new Set(jevApprovedTools)
           plannerCalls = plan.calls.filter((call) => approved.has(call.name)).slice(0, 4)
         }
-        const hasBothSiteSources =
-          /\b(?:blog|posts?|articles?)\b/i.test(input.message) && /\bprojects?\b/i.test(input.message)
-        if (hasBothSiteSources && jevApprovedTools.includes('site_content')) {
+        const siteCollections = siteContentCollections(input.message)
+        const wantsSeveralSiteCollections = Object.values(siteCollections).filter(Boolean).length > 1
+        if (wantsSeveralSiteCollections && jevApprovedTools.includes('site_content')) {
           const siteFallbacks = matchSiteContentPlans(input.message)
           for (const call of siteFallbacks) {
             if (!plannerCalls.some((planned) => toolKey(planned) === toolKey(call)) && plannerCalls.length < 4)

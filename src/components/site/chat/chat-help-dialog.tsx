@@ -104,7 +104,7 @@ export function ChatHelpDialog({ privacyNotice }: { privacyNotice: string | unde
                 </section>
                 <section className="chat-pipeline-argument">
                   <h4>Published Payload content</h4>
-                  <p><code>{'{ op, slug?, limit?, page? }'}</code> — operation is <code>list_projects</code>, <code>get_project</code>, <code>list_posts</code>, or <code>get_post</code>. Get operations require a slug; post lists accept a limit of 1–20 and page of 1–100.</p>
+                  <p><code>{'{ op, slug?, limit?, page? }'}</code> — operation is <code>list_projects</code>, <code>get_project</code>, <code>list_posts</code>, <code>get_post</code>, <code>list_changelogs</code>, <code>get_changelog</code>, <code>list_topics</code>, or <code>get_topic</code>, or <code>list_pages</code> for the site&rsquo;s own sections. Get operations require a slug; post and changelog lists accept a limit of 1–20 and page of 1–100. Every result carries the entry&rsquo;s public page URL, and each returned entry becomes a clickable source link under the reply.</p>
                   <pre><code>{'{"id":"1","name":"site_content","arguments":{"op":"list_posts","limit":5,"page":1}}'}</code></pre>
                 </section>
               </div>

@@ -10,6 +10,8 @@ import { createModerationService } from '../../src/server/moderation/service'
 import type { ModerationClassifier } from '../../src/server/moderation/types'
 import type { KnowledgeEvidence, PublicCitation } from '../../src/server/knowledge/retrieve'
 import type { CodingStatsRequest, CodingStatsResult } from '../../src/server/wakatime/stats'
+import type { ContentReader } from '../../src/server/content/service'
+import type { ListPostsInput } from '../../src/server/content/types'
 
 const codingActivityResult = (range: CodingStatsRequest['range']): CodingStatsResult => ({
   category: 'activity',
@@ -1325,11 +1327,15 @@ describe('createChatService.sendStream', () => {
       codingStats: { fetchSummary: async (query) => codingActivityResult(query.range) },
       codingStatsEnabled: true,
       siteContent: {
-        listProjects: async () => [],
+        listProjectsPage: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
         getProject: async () => null,
         listPosts: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
         getPost: async () => null,
-      },
+        listChangelogs: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
+        getChangelog: async () => null,
+        listTopics: async () => [],
+        getTopic: async () => null,
+      } as never,
     })
 
     const events = await collect(service, 'What is the total coding hours and most time spent for which project?')
@@ -1379,10 +1385,14 @@ describe('createChatService.sendStream', () => {
     const service = createChatService(streamingResponder(['ok']), {
       ...deps,
       siteContent: {
-        listProjects: async () => [{ slug: 'demo-app', title: 'Demo App', summary: 'A demo showcase app', technologies: ['Next.js'], featured: true, coverImage: { url: null, alt: null }, role: null, projectStatus: 'completed' as const, startDate: null, endDate: null }],
+        listProjectsPage: async () => ({ items: [{ slug: 'demo-app', title: 'Demo App', summary: 'A demo showcase app', technologies: ['Next.js'], featured: true, coverImage: { url: null, alt: null }, gallery: [], role: null, projectStatus: 'completed' as const, startDate: null, endDate: null, updatedAt: '2026-01-01T00:00:00.000Z', createdAt: '2025-12-31T00:00:00.000Z' }], page: 1, totalPages: 1, totalDocs: 1 }),
         getProject: async () => null,
         listPosts: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
         getPost: async () => null,
+        listChangelogs: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
+        getChangelog: async () => null,
+        listTopics: async () => [],
+        getTopic: async () => null,
       },
     })
 
@@ -1392,6 +1402,252 @@ describe('createChatService.sendStream', () => {
     expect(events[2]).toMatchObject({ type: 'tool_result', name: 'site_content' })
     expect(JSON.stringify(events[2])).toContain('Demo App')
   })
+
+  type SiteContentReader = Pick<
+    ContentReader,
+    'listProjectsPage' | 'getProject' | 'listPosts' | 'getPost' | 'listChangelogs' | 'getChangelog' | 'listTopics' | 'getTopic'
+  >
+  type SiteContentFakeOverrides = Partial<SiteContentReader>
+
+  /**
+   * Builds a reader whose collection methods answer empty and record which op served each
+   * call. An override replaces the returned data but is still recorded, so a routed op is
+   * provable from `ops` even when the test supplies its own rows.
+   */
+  function siteContentFakes(overrides: SiteContentFakeOverrides = {}): { reader: SiteContentReader; ops: string[] } {
+    const ops: string[] = []
+    const emptyPage = { items: [], page: 1, totalPages: 1, totalDocs: 0 }
+    const methods = {
+      listProjectsPage: async () => emptyPage,
+      getProject: async () => null,
+      listPosts: async () => emptyPage,
+      getPost: async () => null,
+      listChangelogs: async () => emptyPage,
+      getChangelog: async () => null,
+      listTopics: async () => [],
+      getTopic: async () => null,
+      ...overrides,
+    }
+    const reader = {
+      listProjectsPage: async (input: ListPostsInput) => (ops.push('list_projects'), methods.listProjectsPage(input)),
+      getProject: async (slug: string) => (ops.push('get_project'), methods.getProject(slug)),
+      listPosts: async (input: ListPostsInput) => (ops.push('list_posts'), methods.listPosts(input)),
+      getPost: async (slug: string) => (ops.push('get_post'), methods.getPost(slug)),
+      listChangelogs: async (input: ListPostsInput) => (ops.push('list_changelogs'), methods.listChangelogs(input)),
+      getChangelog: async (slug: string) => (ops.push('get_changelog'), methods.getChangelog(slug)),
+      listTopics: async () => (ops.push('list_topics'), methods.listTopics()),
+      getTopic: async (slug: string) => (ops.push('get_topic'), methods.getTopic(slug)),
+    } satisfies SiteContentReader
+    return { reader, ops }
+  }
+
+  function siteContentService(siteContent: SiteContentReader) {
+    const { planner: _skipped, ...deps } = baseDependencies
+    void _skipped
+    return createChatService(streamingResponder(['ok']), {
+      ...deps,
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async () => ({ allowed: true }),
+        routeTools: async ({ availableTools }) => Object.fromEntries(availableTools.map((tool) => [tool, {
+          label: tool === 'site_content' ? 'use' : 'skip',
+          confidence: 0.99,
+        }])),
+      } as ModerationService,
+      siteContent,
+    })
+  }
+
+  /**
+   * Reproduces the reported failure: Jev answers a site-scoped question from the
+   * owned-project catalogue and skips site_content. The forced guard must add the
+   * Payload lookup back so the responder can describe the published showcase.
+   */
+  function catalogueOnlyService(siteContent: SiteContentReader) {
+    const { planner: _skipped, ...deps } = baseDependencies
+    void _skipped
+    return createChatService(streamingResponder(['ok']), {
+      ...deps,
+      moderation: {
+        checkContact: async () => ({ allowed: true }),
+        checkChat: async () => ({ allowed: true }),
+        routeTools: async ({ availableTools }) => Object.fromEntries(availableTools.map((tool) => [tool, {
+          label: tool === 'list_owned_projects' ? 'use' : 'skip',
+          confidence: 0.99,
+        }])),
+      } as ModerationService,
+      siteContent,
+    })
+  }
+
+  it('answers site-orientation questions with the section list even when Jev skips it', async () => {
+    const { reader, ops } = siteContentFakes()
+
+    const events = await collect(catalogueOnlyService(reader), 'what can i do on this site?')
+
+    // The section list is static, so the reader records no collection call; assert
+    // the op through the tool result the turn actually emitted instead.
+    expect(ops).toEqual([])
+    const summary = toolResultSummaries(events).join('\n')
+    expect(summary).toContain('Site sections (7):')
+    // Every section must survive the 600-char tool-output budget, not just the head.
+    for (const path of ['/', '/about', '/projects', '/blog', '/changelog', '/contact', '/chat'])
+      expect(summary).toContain(`(${path})`)
+  })
+
+  it('routes a where-is-the-contact-page question to the section list', async () => {
+    const { reader } = siteContentFakes()
+
+    const events = await collect(siteContentService(reader), 'where can i find the contact page?')
+
+    expect(toolResultSummaries(events).join('\n')).toContain('Site sections (7):')
+  })
+
+  it('shows only the sources the reply cites, not every catalogue project it touched', async () => {
+    const { reader } = siteContentFakes()
+    const projects = Array.from({ length: 10 }, (_, index) => ({
+      sourceType: 'github' as const,
+      sourceId: `lst97/repo-${index}`,
+      title: `repo-${index}`,
+      url: `https://github.com/lst97/repo-${index}`,
+      isPublic: true,
+      summary: `Repository ${index}`,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      stars: index,
+      forks: 0,
+      primaryLanguage: 'TypeScript',
+      languages: ['TypeScript'],
+      kinds: ['web_app' as const],
+      githubTopics: [],
+      curatedTopics: [],
+      timeSpentSeconds: 0,
+      mostStarred: false,
+    }))
+    const service = createChatService(
+      streamingResponder(['The latest post is "Measuring layout" [K1].']),
+      {
+        ...baseDependencies,
+        moderation: {
+          checkContact: async () => ({ allowed: true }),
+          checkChat: async () => ({ allowed: true }),
+          routeTools: async ({ availableTools }) => Object.fromEntries(availableTools.map((tool) => [tool, {
+            label: tool === 'list_owned_projects' ? 'use' : 'skip',
+            confidence: 0.99,
+          }])),
+        } as ModerationService,
+        knowledgeEnabled: true,
+        knowledge: {
+          execute: async () => ({ evidence: [], citations: [], degraded: false }),
+          listOwnedProjects: async () => ({ projects, hasMore: false, matchingTotal: 10, breakdown: [] }),
+        },
+        siteContent: reader,
+      },
+    )
+
+    const events = await collect(service, 'what is the latest project post in this site?')
+    const citationEvent = events.find(
+      (event) => typeof event === 'object' && event !== null && 'type' in event && event.type === 'citations',
+    )
+    const citations =
+      typeof citationEvent === 'object' && citationEvent !== null && 'citations' in citationEvent
+        ? (citationEvent.citations as { id: string; title: string }[])
+        : []
+
+    // The turn touched ten catalogue projects, but the reply rests on [K1] alone.
+    expect(citations.map((citation) => citation.id)).toEqual(['K1'])
+  })
+
+  it('keeps a bounded fallback when the reply cites nothing', async () => {
+    const { reader } = siteContentFakes()
+    const service = createChatService(
+      streamingResponder(['There is nothing published here yet.']),
+      {
+        ...baseDependencies,
+        moderation: {
+          checkContact: async () => ({ allowed: true }),
+          checkChat: async () => ({ allowed: true }),
+          routeTools: async ({ availableTools }) => Object.fromEntries(availableTools.map((tool) => [tool, {
+            label: tool === 'site_content' ? 'use' : 'skip',
+            confidence: 0.99,
+          }])),
+        } as ModerationService,
+        siteContent: reader,
+      },
+    )
+
+    const events = await collect(service, 'what is the latest post in this site?')
+    const citationEvent = events.find(
+      (event) => typeof event === 'object' && event !== null && 'type' in event && event.type === 'citations',
+    )
+
+    expect(citationEvent).toBeUndefined()
+  })
+
+  it('reaches the published showcase for a site-scoped project question even when Jev skips it', async () => {
+    const { reader, ops } = siteContentFakes({
+      listProjectsPage: async () => ({ items: [{ slug: 'walk-through', title: 'My overall projects walk through', summary: 'Portfolio entry.', technologies: [], featured: true, coverImage: { url: null, alt: null }, gallery: [], role: null, projectStatus: 'completed', startDate: null, endDate: null, updatedAt: '2026-01-01T00:00:00.000Z' }], page: 1, totalPages: 1, totalDocs: 1 }),
+    })
+
+    const events = await collect(catalogueOnlyService(reader), 'what is the current projects in this site have?')
+
+    expect(ops).toContain('list_projects')
+    expect(toolResultSummaries(events).join('\n')).toContain('My overall projects walk through')
+  })
+
+  it('reaches both the published showcase and the post list for a site-scoped release question', async () => {
+    const { reader, ops } = siteContentFakes()
+
+    await collect(catalogueOnlyService(reader), 'what is the latest blog post and project post this site released?')
+
+    expect(ops).toEqual(expect.arrayContaining(['list_posts', 'list_projects']))
+  })
+
+  function toolResultSummaries(events: unknown[]) {
+    return events
+      .filter((event) => typeof event === 'object' && event !== null && 'type' in event && event.type === 'tool_result')
+      .map((event) => (event as { summary: string }).summary)
+  }
+
+
+
+
+  it('reads the changelog collection for a changelog question instead of the post list', async () => {
+    const { reader, ops } = siteContentFakes({
+      listChangelogs: async () => ({
+        items: [{ slug: 'v1-2-0', title: 'Release 1.2.0', version: '1.2.0', excerpt: 'Adds the changelog tool.', publishedAt: '2026-09-01', updatedAt: '2026-09-02', tags: [], changeTypes: ['feature'], coverImage: { url: null, alt: null } }],
+        page: 1,
+        totalPages: 1,
+        totalDocs: 1,
+      }),
+    })
+
+    const events = await collect(siteContentService(reader), 'What is the latest changelog on this site?')
+
+    expect(ops).toEqual(['list_changelogs'])
+    expect(toolResultSummaries(events).join('\n')).toContain('Release 1.2.0')
+  })
+
+  it('reads the topic collection for a topic question', async () => {
+    const { reader, ops } = siteContentFakes({
+      listTopics: async () => [{ id: 1, title: 'AI', slug: 'ai', description: 'Machine learning work.' }],
+    })
+
+    const events = await collect(siteContentService(reader), 'What topics do you cover?')
+
+    expect(ops).toEqual(['list_topics'])
+    expect(toolResultSummaries(events).join('\n')).toContain('AI (ai)')
+  })
+
+  it('queries each collection once for a mixed posts, projects, and changelog request', async () => {
+    const { reader, ops } = siteContentFakes()
+
+    await collect(siteContentService(reader), 'List your blog posts, projects, and changelog entries')
+
+    expect(ops).toEqual(['list_posts', 'list_projects', 'list_changelogs'])
+  })
+
+
 
   it('records a redacted non-streamed query, Jev decision, RAG candidates, and reported usage', async () => {
     const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')

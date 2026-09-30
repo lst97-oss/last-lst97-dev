@@ -3,6 +3,14 @@ import type { TurnstileVerifier } from './types'
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 const TOKEN_MAX_LENGTH = 2_048
+
+// Cloudflare's documented test secret
+// (`1x0000000000000000000000000000000AA`) always reports success, but its
+// siteverify payload is NOT shaped like a real one: it omits `action`
+// entirely and reports `hostname: "example.com"`. A verifier that requires
+// both would reject every local request, so using the test secret switches to
+// checking `success` only. Production secrets keep the strict checks.
+const TURNSTILE_TEST_SECRET = '1x0000000000000000000000000000000AA'
 const VERIFY_TIMEOUT_MS = 5_000
 
 interface SiteverifyResponse {
@@ -63,6 +71,11 @@ export function createTurnstileVerifier(options: TurnstileVerifierOptions): Turn
       }
 
       const result = payload
+
+      // The test secret's payload omits `action` and reports a fixed
+      // hostname, so only a real secret can satisfy those two checks.
+      if (secret === TURNSTILE_TEST_SECRET) return result.success === true
+
       return (
         result.success === true &&
         result.action === action &&
