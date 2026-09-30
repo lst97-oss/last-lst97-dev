@@ -283,10 +283,13 @@ export function DesktopShell({ children }: { children: ReactNode }) {
       </header>
 
       <div className="desktop-workspace relative z-10 grid flex-1">
-        <aside className="desktop-shortcuts" aria-label="Desktop sidebar">
+        <ScrollArea
+          className="desktop-shortcuts"
+          viewportProps={{ className: 'desktop-shortcuts-viewport' }}
+        >
           {shortcuts.map((shortcut) => (
             <Link
-              className={`desktop-shortcut flex w-22 flex-col items-center gap-1.5 p-1 text-center text-xs font-black tracking-wide text-foreground uppercase hover:bg-primary ${isCurrent(location.pathname, shortcut.href) ? 'is-active' : ''}`}
+              className={`desktop-shortcut flex w-22 flex-col items-center gap-1.5 border-3 border-transparent p-1 text-center text-xs font-black tracking-wide text-foreground uppercase hover:border-border hover:bg-primary ${isCurrent(location.pathname, shortcut.href) ? 'is-active' : ''}`}
               key={shortcut.href}
               to={shortcut.href}
             >
@@ -296,7 +299,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
               <span>{shortcut.label}</span>
             </Link>
           ))}
-        </aside>
+        </ScrollArea>
         <ScrollArea className="desktop-main min-w-0" viewportProps={{ className: 'px-5 py-8 sm:px-8 lg:px-16' }}>
           {children}
         </ScrollArea>

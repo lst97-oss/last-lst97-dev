@@ -29,7 +29,7 @@ function ContactPage() {
 
   return (
     <PageStack>
-      <WindowFrame title={CONTACT_WINDOW_ID} icon="@" className="contact-window" windowId={CONTACT_WINDOW_ID}>
+      <WindowFrame title={CONTACT_WINDOW_ID} icon="@" className="contact-window" windowId={CONTACT_WINDOW_ID} scrollable>
         <PageHeading
           icon="@"
           eyebrow="CONTACT / OUTBOUND"

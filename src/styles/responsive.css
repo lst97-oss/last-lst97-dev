@@ -2,11 +2,16 @@
   .system-active-window {
     max-width: 120px;
   }
+  /* 90px, not the old 82px: the dock viewport is border-box with 1px borders
+     and 8px padding per side, so 18px of the width is chrome. 82px left 64px
+     of content for a 72px `.desktop-shortcut`, which is the horizontal overflow
+     that forced a scrollbar; 88px still fell 2px short. The grid track must
+     match or the dock would overlap the content column. */
   .desktop-workspace {
-    grid-template-columns: 82px minmax(0, 1fr);
+    grid-template-columns: 90px minmax(0, 1fr);
   }
   .desktop-shortcuts {
-    width: 82px;
+    width: 90px;
   }
   .desktop-shortcut {
     width: 72px;
@@ -84,6 +89,32 @@
   }
   .desktop-workspace {
     display: block;
+  }
+  /* Mobile has two scroll models, and which one applies depends on the page.
+
+     Home is a single tall desktop: nothing else can scroll, so <body> is the
+     scroller. The shell root normally clamps to `h-dvh overflow-hidden` to
+     let the desktop ScrollArea own the scroll, but that leaves nothing
+     scrollable on a phone — the document is exactly one viewport tall while
+     `.desktop-main` grows to its content height, so tall pages are clipped
+     and unreachable. Releasing the clamp here is what makes home scroll.
+     `overflow-x: clip` still contains the decorative background without
+     forcing `overflow-y` to `auto`, which would make the shell a second,
+     competing scroller.
+
+     Every other page wraps its content in a `scrollable` WindowFrame, and the
+     user asked for those to scroll the shell, not the page. So when a
+     scrollable frame is present the clamp goes back, and the frame's themed
+     ScrollArea is the only reachable scroller. */
+  .os-site {
+    height: auto;
+    min-height: 100dvh;
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+  .os-site:has(.window-frame--scroll) {
+    height: 100dvh;
+    overflow: hidden;
   }
   .desktop-shortcuts {
     display: none;

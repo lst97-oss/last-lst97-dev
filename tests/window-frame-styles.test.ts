@@ -5,6 +5,25 @@ const shellSource = await Bun.file(new URL('../src/components/site/shell.tsx', i
 
 const { window: browser, styleElement: styles } = await createSiteStyleWindow()
 
+/**
+ * The `@media (max-width: 650px)` block from src/styles/responsive.css with
+ * comments stripped. Read as text rather than through computed styles because
+ * happy-dom does not apply media queries, and `:has()` selectors would need
+ * real engine support to resolve.
+ */
+let mobileBlock: Promise<string> | null = null
+function readMobileBlock(): Promise<string> {
+  mobileBlock ??= Bun.file(new URL('../src/styles/responsive.css', import.meta.url))
+    .text()
+    .then((css) => {
+      const block = css.replace(/\/\*[\s\S]*?\*\//g, '').split('@media (max-width: 650px) {')[1] ?? ''
+      // Stop at the media query's own closing brace so later blocks cannot
+      // satisfy a matcher meant for this one.
+      return block.slice(0, block.indexOf('\n}'))
+    })
+  return mobileBlock
+}
+
 describe('window frame styles', () => {
   test('keeps the desktop background grid fixed while content scrolls', () => {
     const desktop = browser.document.createElement('div')
@@ -108,24 +127,133 @@ describe('window frame styles', () => {
     },
   )
 
+  test('releases the shell height clamp on mobile so a page without a scrollable frame can scroll', async () => {
+    // Below `sm` the shell root stops being a viewport-locked app frame. While
+    // it stayed `h-dvh overflow-hidden`, a page with no `scrollable` WindowFrame
+    // (home) had nowhere to scroll: the document was exactly one viewport tall
+    // and the content column grew past it, so the overflow was clipped and
+    // unreachable. `overflow-y: visible` is load-bearing — `auto` would turn
+    // the shell into a second scroller competing with the page.
+    const mobile = await readMobileBlock()
+
+    expect(mobile).toMatch(/\.os-site\s*\{[^}]*overflow-y:\s*visible/)
+    // A word boundary is required, not selector anchoring: the released rule
+    // keeps `min-height: 100dvh`, whose `height: 100dvh` substring would
+    // otherwise satisfy a matcher meant for the clamped `height` declaration.
+    expect(mobile).not.toMatch(/\.os-site\s*\{[^}]*(^|[\s;])height:\s*100dvh/)
+    // The decorative background must stay contained, and `clip` is the only
+    // value that does that without forcing `overflow-y` to a scroll container.
+    expect(mobile).toMatch(/\.os-site\s*\{[^}]*overflow-x:\s*clip/)
+  })
+
+  test('re-applies the shell height clamp on mobile when a scrollable frame owns the scroll', async () => {
+    // Chat, contact, and every list/detail page wrap their content in a
+    // `scrollable` WindowFrame, so the frame's themed ScrollArea must stay the
+    // only reachable scroller. Releasing the clamp for those pages too would
+    // leak page scroll past the frame (a 23px gap on a 390x844 phone) and give
+    // two nested scrollers on one screen.
+    const mobile = await readMobileBlock()
+
+    expect(mobile).toMatch(/\.os-site:has\(\.window-frame--scroll\)\s*\{[^}]*height:\s*100dvh/)
+    expect(mobile).toMatch(/\.os-site:has\(\.window-frame--scroll\)\s*\{[^}]*overflow:\s*hidden/)
+  })
+
+  test('every scrollable frame route opts into the shell scroller', async () => {
+    // The two scroll models are selected by whether a `scrollable` frame is
+    // present, so a route that scrolls tall content without the prop silently
+    // falls back to the page model — the pre-fix mobile behaviour.
+    const chatPage = await Bun.file(new URL('../src/components/site/chat/chat-page.tsx', import.meta.url)).text()
+    const contactRoute = await Bun.file(new URL('../src/routes/_site.contact.tsx', import.meta.url)).text()
+
+    // The prop can sit on any line of the JSX tag, so match across newlines.
+    expect(chatPage).toMatch(/<WindowFrame[\s\S]{0,200}?\bscrollable\b/)
+    expect(contactRoute).toMatch(/<WindowFrame[\s\S]{0,200}?\bscrollable\b/)
+  })
+
 
   test('renders the desktop navigation as a compact floating glass dock', () => {
+    // The chrome is on the Radix viewport, not the ScrollArea root: the root is
+    // only the positioning context, and the viewport is what clips and scrolls.
     const sidebar = browser.document.createElement('aside')
     sidebar.className = 'desktop-shortcuts'
+    const viewport = browser.document.createElement('div')
+    viewport.className = 'desktop-shortcuts-viewport'
+    sidebar.append(viewport)
     browser.document.body.append(sidebar)
 
-    const computedStyle = browser.getComputedStyle(sidebar)
-    expect(computedStyle.position).toBe('fixed')
-    expect(computedStyle.height).not.toBe('calc(100vh - 48px)')
-    expect(computedStyle.maxHeight).toContain('96px')
-    expect(computedStyle.transform).toBe('translateY(-50%)')
-    expect(computedStyle.borderRadius).toBe('6px')
-    expect(computedStyle.borderRightWidth).toBe('1px')
-    expect(computedStyle.backdropFilter).toBe('blur(16px)')
-    expect(computedStyle.backgroundColor).toBe('transparent')
-    expect(computedStyle.boxShadow).toBe('0 4px 12px rgba(23, 23, 31, 0.16)')
+    const rootStyle = browser.getComputedStyle(sidebar)
+    expect(rootStyle.position).toBe('fixed')
+    expect(rootStyle.maxHeight).toContain('96px')
+    expect(rootStyle.transform).toBe('translateY(-50%)')
+
+    const chrome = browser.getComputedStyle(viewport)
+    expect(chrome.borderRadius).toBe('6px')
+    expect(chrome.borderRightWidth).toBe('1px')
+    expect(chrome.backdropFilter).toBe('blur(16px)')
+    expect(chrome.backgroundColor).toBe('transparent')
+    expect(chrome.boxShadow).toBe('0 4px 12px rgba(23, 23, 31, 0.16)')
 
     sidebar.remove()
+  })
+
+  test('the dock outranks the ScrollArea root utility class so it stays fixed', async () => {
+    // Regression: `ScrollArea` bakes Tailwind's `relative` into its own root
+    // class list. Tailwind's `utilities` layer outranks this unlayered file
+    // (layer order in src/styles.css), so a plain `position: fixed` silently
+    // lost. The dock stayed `relative` — a grid item stretched to its row and
+    // bounded only by `max-height`, painting a full-height translucent column.
+    // happy-dom cannot catch this: it does not load the `utilities` layer, so
+    // the computed style looked correct while the real page regressed.
+    const shell = (await Bun.file(new URL('../src/styles/shell.css', import.meta.url)).text())
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+    const dock = shell.match(/\.desktop-shortcuts\s*\{[^}]*\}/)?.[0] ?? ''
+
+    expect(dock).not.toBe('')
+    expect(dock).toMatch(/position:\s*fixed\s*!important/)
+    // Without `min-height: 0` the root is a flex container whose `flex-1`
+    // viewport child gives it an automatic minimum size of its content height,
+    // so the box grows to the shortcuts instead of hugging them.
+    expect(dock).toMatch(/min-height:\s*0/)
+    // The viewport must not claim a height; a `100%` resolves against the
+    // fixed root and re-introduces the full-height chrome.
+    const dockViewport = shell.match(/\.desktop-shortcuts-viewport\s*\{[^}]*\}/)?.[0] ?? ''
+    expect(dockViewport).not.toMatch(/(^|[\s;])height:/)
+  })
+
+  test('the dock never scrolls horizontally', () => {
+    // `overflow-y: auto` alone computed `overflow-x` to `auto`, which gave the
+    // dock a sideways scrollbar at narrow widths. The themed bar owns the
+    // vertical axis; x must stay `clip`.
+    const sidebar = browser.document.createElement('aside')
+    sidebar.className = 'desktop-shortcuts'
+    const viewport = browser.document.createElement('div')
+    viewport.className = 'desktop-shortcuts-viewport'
+    sidebar.append(viewport)
+    browser.document.body.append(sidebar)
+
+    const chrome = browser.getComputedStyle(viewport)
+    expect(chrome.overflowX).toBe('clip')
+
+    sidebar.remove()
+  })
+
+  test('the narrow dock is wide enough for its own children', async () => {
+    // The viewport is border-box with 1px borders and 8px padding per side, so
+    // the old 82px width left 62px of content for a 72px `.desktop-shortcut`,
+    // and the dock overlapped the grid track that still reserved 82px.
+    // `await` binds tighter than `.`, so without the parens it awaits the
+    // BunFile object and `.replace` is called on a Promise.
+    const responsive = (await Bun.file(new URL('../src/styles/responsive.css', import.meta.url)).text())
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+    const narrow = responsive.split('@media (max-width: 900px) {')[1] ?? ''
+
+    const dockWidth = Number(narrow.match(/\.desktop-shortcuts\s*\{\s*width:\s*(\d+)px/)?.[1])
+    const trackWidth = Number(narrow.match(/\.desktop-workspace\s*\{\s*grid-template-columns:\s*(\d+)px/)?.[1])
+    const childWidth = Number(narrow.match(/\.desktop-shortcut\s*\{\s*width:\s*(\d+)px/)?.[1])
+    const paddingAndBorder = 8 * 2 + 1 * 2
+
+    expect(dockWidth).toBe(trackWidth)
+    expect(dockWidth - paddingAndBorder).toBeGreaterThanOrEqual(childWidth)
   })
 
   test('keeps desktop content in the content column beside the fixed dock', () => {

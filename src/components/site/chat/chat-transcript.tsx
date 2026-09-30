@@ -42,7 +42,12 @@ export function ChatTranscript({ messages, pending, toolStatus }: ChatTranscript
                   scrollAnchor={isUser}
                 >
                   <Message align={isUser ? 'end' : 'start'}>
-                    <MessageAvatar className="overflow-visible rounded-none bg-transparent">
+                    {/* The avatar occupies its own flex column beside the text,
+                        which costs ~2.5rem of a 390px viewport — a real slice of
+                        a reply's line length. Below `sm` the avatar is dropped
+                        and the same label is inlined in the header instead, so
+                        the text runs the full width of the card. */}
+                    <MessageAvatar className="max-sm:hidden">
                       <Avatar className="size-8 rounded-none border-2 border-border shadow-os-hover">
                         <AvatarFallback
                           className={
@@ -63,6 +68,16 @@ export function ChatTranscript({ messages, pending, toolStatus }: ChatTranscript
                             : 'px-0 text-xs font-black tracking-widest text-secondary'
                         }
                       >
+                        <span
+                          aria-hidden="true"
+                          className={
+                            isUser
+                              ? 'mr-2 rounded-none bg-primary px-1.5 py-0.5 text-foreground sm:hidden'
+                              : 'mr-2 rounded-none bg-secondary px-1.5 py-0.5 text-foreground sm:hidden'
+                          }
+                        >
+                          {isUser ? 'YOU' : 'SYS'}
+                        </span>
                         {isUser ? 'YOU' : 'OPERATOR.SYS'} · {String(index + 1).padStart(2, '0')}
                       </MessageHeader>
                       <Bubble align={isUser ? 'end' : 'start'} variant={isUser ? 'default' : 'ghost'}>

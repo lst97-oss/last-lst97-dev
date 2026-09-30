@@ -22,7 +22,7 @@ export function ChatPage({ siteKey }: ChatPageProps) {
 
   return (
     <PageStack>
-      <WindowFrame title="assistant.shell" icon=">" className="chat-window">
+      <WindowFrame title="assistant.shell" icon=">" className="chat-window" scrollable>
         <PageHeading
           icon=">"
           eyebrow="CHAT / LIVE"

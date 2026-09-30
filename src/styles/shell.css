@@ -275,19 +275,41 @@
   min-height: 0;
 }
 
+/* `position: fixed` must be `!important` here. `ScrollArea` bakes Tailwind's
+   `relative` into its own root class list, and Tailwind's `utilities` layer
+   outranks this unlayered file (see the layer order in src/styles.css), so a
+   plain `position: fixed` lost the cascade and the dock stayed `relative`:
+   a grid item stretched to its row, bounded only by `max-height`, painting a
+   full-height translucent column. `top`/`left`/`transform` had no fixed
+   ancestor to anchor to.
+   `min-height: 0` is the second half of the contract — the root is a flex
+   container whose viewport child is `flex-1`, so without it the root's
+   automatic minimum size is its content height and the box grows to the
+   shortcuts instead of hugging them. */
 .desktop-shortcuts {
-  position: fixed;
+  position: fixed !important;
   z-index: 9;
   top: calc(50% + 24px);
   left: 12px;
   transform: translateY(-50%);
+  box-sizing: border-box;
   width: 110px;
   max-height: calc(100vh - 96px);
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
+  min-height: 0;
+}
+
+/* `height` must NOT be set here. A `100%` resolves against the fixed root and
+   re-introduces chrome that paints the full height of the screen; the viewport
+   sizes to its content and is bounded by the root's `max-height`, which is
+   what scrolls.
+   `align-items` on this element would only centre the Radix inner wrapper (a
+   `display: table; min-width: 100%` div), not the shortcuts inside it, so the
+   items stayed left-aligned. The rule below targets that wrapper instead. */
+.desktop-shortcuts-viewport {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  overflow-x: clip;
   padding: 12px 8px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 6px;
@@ -297,11 +319,30 @@
   -webkit-backdrop-filter: blur(16px);
 }
 
+/* The Radix viewport renders its children inside a wrapper carrying an INLINE
+   `style="min-width: 100%; display: table"`, which no stylesheet rule can
+   outrank at normal specificity. `display: table` also means the wrapper is not
+   a flex container, so `align-items` and `gap` set on the viewport never
+   reached the shortcuts and they stayed left-aligned inside the panel.
+   `!important` is the only override available for an inline declaration, and
+   it is scoped to this single descendant. */
+.desktop-shortcuts-viewport > div {
+  display: flex !important;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
 /* Shortcut layout/typography lives in DesktopShell via Tailwind.
-   Active/hover fill stays here (state-based). */
+   Active/hover fill stays here (state-based).
+   The border is transparent at rest and only its COLOR changes on active/hover,
+   matching `.os-mobile-dock-item` in the bottom sheet. A border that appears from
+   `none` would reflow the item and shift every icon below it by 6px. */
 .desktop-shortcut:hover,
 .desktop-shortcut.is-active {
   background: var(--os-yellow);
+  border-color: var(--os-ink);
   color: var(--os-ink);
 }
 
