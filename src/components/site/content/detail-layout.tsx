@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { Children, type ComponentProps, type ReactNode } from 'react'
 import { ContentCover } from '@/components/site/content/cover'
+import { DetailMeta } from '@/components/site/content/detail-meta'
 import { Eyebrow, PageStack, Tag, TagRow } from '@/components/site/os-ui'
 import { PixelIcon } from '@/components/site/pixel-icon'
 import { MediaTrigger, toMediaItem } from '@/components/site/share/media'
@@ -26,32 +27,6 @@ interface ContentDetailLayoutProps {
   children: ReactNode
 }
 
-/**
- * The byline strip. Extracted from the layout so each optional field is a
- * single conditional at the call site instead of five inside one function.
- */
-function DetailMeta({
-  published,
-  created,
-  updated,
-  readingTime,
-}: {
-  published: string | null
-  created: string | null
-  updated: string | null
-  readingTime: string | null
-}) {
-  if (!published && !created && !updated && !readingTime) return null
-
-  return (
-    <div className="detail-meta mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-black tracking-widest text-muted-foreground uppercase">
-      {published ? <span>PUBLISHED / {published}</span> : null}
-      {created ? <span>CREATED / {created}</span> : null}
-      {updated ? <span>UPDATED / {updated}</span> : null}
-      {readingTime ? <span>{readingTime}</span> : null}
-    </div>
-  )
-}
 
 /**
  * A label row, or nothing when the document carries no labels. Both the tag
@@ -90,7 +65,10 @@ export function ContentDetailLayout({
   const created = publishedAt ? null : contentCardDate(updatedAt)
 
   return (
-    <PageStack className="max-w-4xl">
+    // No width override: the list pages use PageStack's default `max-w-6xl`, and
+    // a narrower detail column made the window jump inward on every navigation
+    // between a list and one of its entries.
+    <PageStack>
       <WindowFrame title={windowTitle} icon={icon} scrollable>
         <Link className="back-link mb-7 inline-block text-xs font-black tracking-wider text-accent" to={backHref}>{backLabel}</Link>
         <MediaTrigger item={coverItem} label={`View full size image: ${title}`}>

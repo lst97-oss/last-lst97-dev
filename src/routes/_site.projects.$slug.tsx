@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { cn } from 'cn'
 import { ContentCover } from '@/components/site/content/cover'
+import { DetailMeta } from '@/components/site/content/detail-meta'
 import { RichText } from '@/components/site/content/rich-text'
 import { ContentUnavailableRoute } from '@/components/site/content/unavailable'
 import { Eyebrow, PageStack, ProjectStatus, pixelButtonVariants, Tag, TagRow } from '@/components/site/os-ui'
@@ -60,22 +61,6 @@ export const Route = createFileRoute('/_site/projects/$slug')({
   component: ProjectPage,
 })
 
-/**
- * The byline strip, rendered only when the project has at least one field to
- * show. Extracted so the page component stays a composition of the sections it
- * renders rather than a chain of conditionals.
- */
-function ProjectMeta({ projectDate, readMinutes }: { projectDate: string | null; readMinutes: number | null }) {
-  if (!projectDate && !readMinutes) return null
-
-  return (
-    <div className="detail-meta mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-black tracking-widest text-muted-foreground uppercase">
-      {projectDate ? <span>CREATED / {projectDate}</span> : null}
-      {readMinutes ? <span>{formatReadingTime(readMinutes)}</span> : null}
-    </div>
-  )
-}
-
 /** Lifecycle, role, and timeframe — each optional, the whole row conditional. */
 function ProjectFacts({
   lifecycle,
@@ -123,7 +108,7 @@ function ProjectPage() {
         <Eyebrow><PixelIcon glyph="◆" /> PROJECT / {project.featured ? 'FEATURED' : 'ARCHIVE'}</Eyebrow>
         <h1>{project.title}</h1>
         <p className="lead-copy lead-copy--wide">{project.summary}</p>
-        <ProjectMeta projectDate={projectDate} readMinutes={readMinutes} />
+        <DetailMeta created={projectDate} readingTime={readMinutes ? formatReadingTime(readMinutes) : null} />
         <ProjectFacts lifecycle={lifecycle} role={project.role} timeframe={timeframe} />
         <TagRow className="post-tags my-6">{project.technologies.map((technology) => <Tag key={technology}>{technology}</Tag>)}</TagRow>
         <div className="project-links flex flex-wrap items-center gap-3">
