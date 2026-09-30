@@ -57,13 +57,12 @@
     flex: none;
     overflow: visible;
   }
-  /* Scrollable windows are plain stacked cards on mobile: let the page scroll.
-     The inner ScrollArea is not rendered at all below the mobile breakpoint
-     (see WindowFrame), so only the frame cap needs resetting here. */
-  .window-frame--scroll:not(.is-maximized) {
-    display: block;
-    max-height: none;
-  }
+  /* A scrollable window keeps its inner ScrollArea on mobile, because the
+     shell root is `h-dvh overflow-hidden` and the window is then the only
+     thing that can scroll. Do NOT reset the height cap here: with the cap
+     removed the frame grows past the viewport, the shell clips it, and a long
+     detail page becomes unreachable. The cap is viewport-relative, so it
+     still tracks a phone's dynamic browser chrome. */
   .window-titlebar {
     justify-content: flex-start;
     min-height: 44px;

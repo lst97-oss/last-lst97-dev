@@ -169,4 +169,43 @@ describe('window frame controls', () => {
       scrollContainer.remove()
     }
   })
+
+  test('keeps the themed scroll area on a mobile viewport', async () => {
+    // The shell root is `h-dvh overflow-hidden`, so the document can never
+    // scroll: a window taller than the viewport is reachable only through its
+    // own ScrollArea. Skipping it on mobile left long detail pages running off
+    // the bottom of a clipped shell with no way to reach the rest.
+    browserWindow.happyDOM.setViewport({ width: 390, height: 844 })
+    const originalInnerWidth = browserWindow.innerWidth
+    Object.defineProperty(browserWindow, 'innerWidth', { configurable: true, value: 390 })
+
+    const mobileRoute = createRootRoute({
+      component: () => React.createElement(WindowFrame, {
+        title: 'note.mobile',
+        windowId: 'note.mobile',
+        scrollable: true,
+        children: 'Long article body',
+      }),
+    })
+    const mobileRouter = createRouter({
+      routeTree: mobileRoute,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    const mobileContainer = browserWindow.document.createElement('div')
+    browserWindow.document.body.append(mobileContainer)
+    const mobileRoot = createRoot(mobileContainer as unknown as HTMLDivElement)
+
+    try {
+      await act(async () => mobileRoot.render(React.createElement(RouterProvider, { router: mobileRouter })))
+
+      const frame = mobileContainer.querySelector('.window-frame')
+      expect(frame?.classList.contains('window-frame--scroll')).toBe(true)
+      expect(frame?.querySelector('[data-slot="scroll-area"]')).not.toBeNull()
+      expect(frame?.querySelector('[data-slot="scroll-area-viewport"]')?.textContent).toBe('Long article body')
+    } finally {
+      await act(async () => mobileRoot.unmount())
+      mobileContainer.remove()
+      Object.defineProperty(browserWindow, 'innerWidth', { configurable: true, value: originalInnerWidth })
+    }
+  })
 })

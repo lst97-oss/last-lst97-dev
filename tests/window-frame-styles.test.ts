@@ -70,6 +70,25 @@ describe('window frame styles', () => {
     frame.remove()
   })
 
+  test('the mobile breakpoint does not remove the scrollable frame height cap', async () => {
+    // The shell root is `h-dvh overflow-hidden`, so the page can never scroll:
+    // a window whose content exceeds the viewport is only reachable through its
+    // own ScrollArea. Resetting the cap here (`max-height: none`) let the frame
+    // grow past the viewport into a clipped shell, which is what made long
+    // detail pages impossible to scroll on a phone.
+    const responsive = (await Bun.file(new URL('../src/styles/responsive.css', import.meta.url)).text())
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+    const mobileStart = responsive.indexOf('@media (max-width: 650px) {')
+    expect(mobileStart).toBeGreaterThan(-1)
+
+    const mobile = responsive.slice(mobileStart)
+    const reset = mobile.match(/\.window-frame--scroll:not\(\.is-maximized\)\s*\{[^}]*\}/)?.[0] ?? ''
+
+    // Either the rule is gone, or it must not strip the cap.
+    expect(reset === '' || !reset.includes('max-height: none')).toBe(true)
+  })
+
+
   test.each(['is-normal', 'is-maximized'])(
     'the scrollable content box never shows a native scrollbar (%s)',
     (mode) => {

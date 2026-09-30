@@ -22,8 +22,14 @@ type WindowFrameProps = {
    * Scroll the children through a themed ScrollArea instead of letting
    * `.window-content` overflow natively. Self-sufficient: it also applies the
    * `.window-frame--scroll` height cap, so a caller only opts in here and never
-   * has to remember a matching CSS class. Mobile keeps the plain child path —
-   * the page already scrolls there, so a nested scroller would be wrong.
+   * has to remember a matching CSS class.
+   *
+   * This is deliberately NOT switched off on mobile. The shell root is
+   * `h-dvh overflow-hidden`, so a window whose content is taller than the
+   * viewport has nowhere else to scroll: the page cannot grow, and the inner
+   * scroller is the only thing that can. Skipping it made every long detail
+   * page unreachable on a phone — the content simply ran off the bottom of a
+   * clipped shell.
    */
   scrollable?: boolean
 }
@@ -44,9 +50,12 @@ export function WindowFrame({
   // Mobile never uses zoomed/minimized window states; render as a plain stacked card.
   const effectiveMode = isMobile ? 'normal' : windowMode
   const activate = () => focusWindow(windowId)
-  // Below the mobile breakpoint the page itself scrolls, so a themed inner
-  // scroller would just nest a second scrollbar inside the card.
-  const useThemedScroll = scrollable && !isMobile
+  // The themed inner scroller is the only scroll container that can exist: the
+  // shell root is `h-dvh overflow-hidden`, so the page itself can never scroll.
+  // Keep it at every width — dropping it below the mobile breakpoint is what
+  // left long detail pages unreachable on a phone, with their content running
+  // off the bottom of a clipped shell.
+  const useThemedScroll = scrollable
 
   return (
     <section
