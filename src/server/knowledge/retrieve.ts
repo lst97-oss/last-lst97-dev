@@ -178,20 +178,41 @@ export function createRetrieveKnowledge(dependencies: RetrieveKnowledgeDependenc
       const startedAt = now()
       const query = resolveKnowledgeQuery(message, input.verifiedHistory, input.topicAnchors)
       const projectIdentifier = exactProjectIdentifier(query)
-      const vector = await dependencies.embedding.embed({
-        text: query,
-        kind: 'query',
-        onModelCall: input.diagnostics?.onModelCall,
-      })
-      const [semanticCandidates, exactCandidates, demoCandidates] = await Promise.all([
-        dependencies.repository.search(vector, VECTOR_CANDIDATE_LIMIT),
-        projectIdentifier && dependencies.repository.searchExactProjectName
-          ? dependencies.repository.searchExactProjectName(projectIdentifier, 3)
-          : Promise.resolve([]),
-        wantsDemoLinks(query) && dependencies.repository.searchByKeyword
-          ? dependencies.repository.searchByKeyword('demo', 6)
-          : Promise.resolve([]),
-      ])
+      // Embedding the query and reaching the knowledge database are the only
+      // parts of retrieval that cannot degrade locally: without them there is
+      // nothing to rank. They still must not throw, because an unreachable or
+      // misconfigured database would otherwise abort the whole turn. The
+      // reranker and the relevance gate below already degrade, so this makes
+      // the failure mode uniform: a retrieval problem is always an empty,
+      // non-blocking result with a logged reason, never an exception.
+      let vector: number[]
+      let semanticCandidates: KnowledgeCandidate[]
+      let exactCandidates: KnowledgeCandidate[]
+      let demoCandidates: KnowledgeCandidate[]
+      try {
+        vector = await dependencies.embedding.embed({
+          text: query,
+          kind: 'query',
+          onModelCall: input.diagnostics?.onModelCall,
+        })
+        ;[semanticCandidates, exactCandidates, demoCandidates] = await Promise.all([
+          dependencies.repository.search(vector, VECTOR_CANDIDATE_LIMIT),
+          projectIdentifier && dependencies.repository.searchExactProjectName
+            ? dependencies.repository.searchExactProjectName(projectIdentifier, 3)
+            : Promise.resolve([]),
+          wantsDemoLinks(query) && dependencies.repository.searchByKeyword
+            ? dependencies.repository.searchByKeyword('demo', 6)
+            : Promise.resolve([]),
+        ])
+      } catch (error) {
+        dependencies.logger.warn('knowledge.retrieval.unavailable', {
+          query,
+          durationMs: Math.max(0, Math.round(now() - startedAt)),
+          error: error instanceof Error ? error.message : String(error),
+        })
+        input.diagnostics?.onRetrieval?.({ query, degraded: true, candidates: [] })
+        return { evidence: [], citations: [], degraded: true }
+      }
       const candidates: KnowledgeCandidate[] = []
       const candidateIds = new Set<string>()
       for (const candidate of [...exactCandidates, ...demoCandidates, ...semanticCandidates]) {

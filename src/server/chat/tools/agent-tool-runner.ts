@@ -78,9 +78,10 @@ export async function runAgentTool(call: AgentToolCall, runner: AgentToolRunner)
         topicAnchors: runner.topicAnchors ?? [],
       }),
       timeoutMs,
+      runner.logger,
+      { tool: call.name },
     )
     if (result === TOOL_TIMEOUT) {
-      runner.logger.warn('chat.agent_tool.unavailable', { tool: call.name })
       return unavailable(call, 'Knowledge lookup timed out.', 'SEARCHING MY NOTES…', 'knowledge', parsed.data)
     }
     const lines = result.evidence

@@ -172,6 +172,8 @@ export async function runSiteContentTool(
       const projects = await withToolTimeout(
         source.listProjectsPage({ page: args.page ?? 1, limit: args.limit ?? 12 }),
         runner.toolTimeoutMs,
+        runner.logger,
+        { tool: call.name, op: args.op },
       )
       if (projects === TOOL_TIMEOUT)
         return unavailable(call, runner, 'Site projects are temporarily unavailable.', args)
@@ -196,7 +198,10 @@ export async function runSiteContentTool(
 
     case 'get_project': {
       if (!args.slug) return invalidToolResult(call, 'get_project requires { slug }', runner)
-      const project = await withToolTimeout(source.getProject(args.slug), runner.toolTimeoutMs)
+      const project = await withToolTimeout(source.getProject(args.slug), runner.toolTimeoutMs, runner.logger, {
+        tool: call.name,
+        op: args.op,
+      })
       if (project === TOOL_TIMEOUT) return unavailable(call, runner, 'Site projects are temporarily unavailable.', args)
       if (!project) return completed(call, args, `No published project found for slug ${args.slug}.`)
       return completed(
@@ -211,6 +216,8 @@ export async function runSiteContentTool(
       const page = await withToolTimeout(
         source.listPosts({ page: args.page ?? 1, limit: args.limit ?? 5 }),
         runner.toolTimeoutMs,
+        runner.logger,
+        { tool: call.name, op: args.op },
       )
       if (page === TOOL_TIMEOUT) return unavailable(call, runner, 'Site posts are temporarily unavailable.', args)
       if (page.items.length === 0) return completed(call, args, 'No published posts found.')
@@ -232,7 +239,10 @@ export async function runSiteContentTool(
 
     case 'get_post': {
       if (!args.slug) return invalidToolResult(call, 'get_post requires { slug }', runner)
-      const post = await withToolTimeout(source.getPost(args.slug), runner.toolTimeoutMs)
+      const post = await withToolTimeout(source.getPost(args.slug), runner.toolTimeoutMs, runner.logger, {
+        tool: call.name,
+        op: args.op,
+      })
       if (post === TOOL_TIMEOUT) return unavailable(call, runner, 'Site posts are temporarily unavailable.', args)
       if (!post) return completed(call, args, `No published post found for slug ${args.slug}.`)
       return completed(
@@ -247,6 +257,8 @@ export async function runSiteContentTool(
       const page = await withToolTimeout(
         source.listChangelogs({ page: args.page ?? 1, limit: args.limit ?? 5 }),
         runner.toolTimeoutMs,
+        runner.logger,
+        { tool: call.name, op: args.op },
       )
       if (page === TOOL_TIMEOUT) return unavailable(call, runner, 'Site changelogs are temporarily unavailable.', args)
       if (page.items.length === 0) return completed(call, args, 'No published changelogs found.')
@@ -274,7 +286,10 @@ export async function runSiteContentTool(
 
     case 'get_changelog': {
       if (!args.slug) return invalidToolResult(call, 'get_changelog requires { slug }', runner)
-      const entry = await withToolTimeout(source.getChangelog(args.slug), runner.toolTimeoutMs)
+      const entry = await withToolTimeout(source.getChangelog(args.slug), runner.toolTimeoutMs, runner.logger, {
+        tool: call.name,
+        op: args.op,
+      })
       if (entry === TOOL_TIMEOUT) return unavailable(call, runner, 'Site changelogs are temporarily unavailable.', args)
       if (!entry) return completed(call, args, `No published changelog found for slug ${args.slug}.`)
       return completed(
@@ -292,7 +307,10 @@ export async function runSiteContentTool(
     }
 
     case 'list_topics': {
-      const topics = await withToolTimeout(source.listTopics(), runner.toolTimeoutMs)
+      const topics = await withToolTimeout(source.listTopics(), runner.toolTimeoutMs, runner.logger, {
+        tool: call.name,
+        op: args.op,
+      })
       if (topics === TOOL_TIMEOUT) return unavailable(call, runner, 'Site topics are temporarily unavailable.', args)
       if (topics.length === 0) return completed(call, args, 'No published topics found.')
       const lines = topics
@@ -315,7 +333,10 @@ export async function runSiteContentTool(
 
     case 'get_topic': {
       if (!args.slug) return invalidToolResult(call, 'get_topic requires { slug }', runner)
-      const topic = await withToolTimeout(source.getTopic(args.slug), runner.toolTimeoutMs)
+      const topic = await withToolTimeout(source.getTopic(args.slug), runner.toolTimeoutMs, runner.logger, {
+        tool: call.name,
+        op: args.op,
+      })
       if (topic === TOOL_TIMEOUT) return unavailable(call, runner, 'Site topics are temporarily unavailable.', args)
       if (!topic) return completed(call, args, `No published topic found for slug ${args.slug}.`)
       return completed(

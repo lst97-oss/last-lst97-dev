@@ -136,9 +136,13 @@ export async function runOwnedProjectsTool(
     ...(op ? { op } : {}),
   }
 
-  const result = await withToolTimeout(listOwnedProjects.call(knowledge, request), runner.toolTimeoutMs)
+  const result = await withToolTimeout(
+    listOwnedProjects.call(knowledge, request),
+    runner.toolTimeoutMs,
+    runner.logger,
+    { tool: call.name, op: op ?? 'catalogue' },
+  )
   if (result === TOOL_TIMEOUT) {
-    runner.logger.warn('chat.agent_tool.unavailable', { tool: call.name })
     return unavailableToolResult(
       call,
       'Owned project inventory is temporarily unavailable.',
