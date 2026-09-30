@@ -2,10 +2,12 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 import { ContentDetailLayout } from '@/components/site/content/detail-layout'
 import { RichText } from '@/components/site/content/rich-text'
 import { ContentUnavailableRoute } from '@/components/site/content/unavailable'
-import { formatPublishedDate } from '@/lib/content/date'
+import { formatPublishedDate, formatReadingTime, readingTimeMinutes } from '@/lib/content/date'
 import { createContentMeta } from '@/lib/content/meta'
 import { loadChangelog } from '@/lib/content/site-data'
 import { canonicalUrl } from '@/lib/seo/site-seo'
+
+const changeTypeLabels: Record<string, string> = { feature: 'FEATURE', improvement: 'IMPROVEMENT', bug_fix: 'BUG FIX', security: 'SECURITY', breaking_change: 'BREAKING', maintenance: 'MAINTENANCE', documentation: 'DOCS' }
 
 export const Route = createFileRoute('/_site/changelog/$slug')({
   errorComponent: () => <ContentUnavailableRoute
@@ -39,6 +41,7 @@ export const Route = createFileRoute('/_site/changelog/$slug')({
 
 function ChangelogEntryPage() {
   const entry = Route.useLoaderData()
+  const readMinutes = readingTimeMinutes(entry.content)
   return (
     <ContentDetailLayout
       windowTitle={`changelog://${entry.slug}`}
@@ -50,6 +53,11 @@ function ChangelogEntryPage() {
       title={entry.title}
       excerpt={entry.excerpt}
       tags={entry.tags}
+      topics={[]}
+      badges={entry.changeTypes.map((type) => changeTypeLabels[type] ?? type)}
+      readingTime={readMinutes ? formatReadingTime(readMinutes) : null}
+      publishedAt={entry.publishedAt}
+      updatedAt={entry.updatedAt}
     >
       <RichText value={entry.content} />
     </ContentDetailLayout>

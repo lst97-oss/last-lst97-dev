@@ -33,6 +33,7 @@ import { Route as SiteProjectsSlugRouteImport } from './routes/_site.projects.$s
 import { Route as ApiSiteChatRouteImport } from './routes/api.site.chat'
 import { Route as ApiSiteContactRouteImport } from './routes/api.site.contact'
 import { Route as ApiSiteHealthRouteImport } from './routes/api.site.health'
+import { Route as SiteBlogTopicsSlugRouteImport } from './routes/_site.blog.topics.$slug'
 
 const PayloadRoute = PayloadRouteImport.update({
   id: '/_payload',
@@ -153,6 +154,11 @@ const ApiSiteHealthRoute = ApiSiteHealthRouteImport.update({
   path: '/api/site/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SiteBlogTopicsSlugRoute = SiteBlogTopicsSlugRouteImport.update({
+  id: '/blog/topics/$slug',
+  path: '/blog/topics/$slug',
+  getParentRoute: () => SiteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof SiteIndexRoute
@@ -177,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/blog/': typeof SiteBlogIndexRoute
   '/changelog/': typeof SiteChangelogIndexRoute
   '/projects/': typeof SiteProjectsIndexRoute
+  '/blog/topics/$slug': typeof SiteBlogTopicsSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof SiteIndexRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/blog': typeof SiteBlogIndexRoute
   '/changelog': typeof SiteChangelogIndexRoute
   '/projects': typeof SiteProjectsIndexRoute
+  '/blog/topics/$slug': typeof SiteBlogTopicsSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/_site/blog/': typeof SiteBlogIndexRoute
   '/_site/changelog/': typeof SiteChangelogIndexRoute
   '/_site/projects/': typeof SiteProjectsIndexRoute
+  '/_site/blog/topics/$slug': typeof SiteBlogTopicsSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/changelog/'
     | '/projects/'
+    | '/blog/topics/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -278,6 +288,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/changelog'
     | '/projects'
+    | '/blog/topics/$slug'
   id:
     | '__root__'
     | '/_payload'
@@ -304,6 +315,7 @@ export interface FileRouteTypes {
     | '/_site/blog/'
     | '/_site/changelog/'
     | '/_site/projects/'
+    | '/_site/blog/topics/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -491,6 +503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSiteHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_site/blog/topics/$slug': {
+      id: '/_site/blog/topics/$slug'
+      path: '/blog/topics/$slug'
+      fullPath: '/blog/topics/$slug'
+      preLoaderRoute: typeof SiteBlogTopicsSlugRouteImport
+      parentRoute: typeof SiteRoute
+    }
   }
 }
 
@@ -518,6 +537,7 @@ interface SiteRouteChildren {
   SiteBlogIndexRoute: typeof SiteBlogIndexRoute
   SiteChangelogIndexRoute: typeof SiteChangelogIndexRoute
   SiteProjectsIndexRoute: typeof SiteProjectsIndexRoute
+  SiteBlogTopicsSlugRoute: typeof SiteBlogTopicsSlugRoute
 }
 
 const SiteRouteChildren: SiteRouteChildren = {
@@ -531,6 +551,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteBlogIndexRoute: SiteBlogIndexRoute,
   SiteChangelogIndexRoute: SiteChangelogIndexRoute,
   SiteProjectsIndexRoute: SiteProjectsIndexRoute,
+  SiteBlogTopicsSlugRoute: SiteBlogTopicsSlugRoute,
 }
 
 const SiteRouteWithChildren = SiteRoute._addFileChildren(SiteRouteChildren)

@@ -45,6 +45,51 @@ describe('window frame styles', () => {
     frame.remove()
   })
 
+  test('a scrollable frame is height-capped so its scroll viewport can resolve', () => {
+    const frame = browser.document.createElement('section')
+    frame.className = 'window-frame is-normal window-frame--scroll'
+    browser.document.body.append(frame)
+
+    const frameStyle = browser.getComputedStyle(frame)
+
+    expect(frameStyle.display).toBe('flex')
+    expect(frameStyle.flexDirection).toBe('column')
+    expect(frameStyle.maxHeight).toContain('100dvh')
+
+    frame.remove()
+  })
+
+  test('a maximized scrollable frame leaves the height cap to the fixed inset', () => {
+    const frame = browser.document.createElement('section')
+    frame.className = 'window-frame is-maximized window-frame--scroll'
+    browser.document.body.append(frame)
+
+    // `:not(.is-maximized)` opts out, so the cap never fights the fixed inset.
+    expect(browser.getComputedStyle(frame).maxHeight).toBe('')
+
+    frame.remove()
+  })
+
+  test.each(['is-normal', 'is-maximized'])(
+    'the scrollable content box never shows a native scrollbar (%s)',
+    (mode) => {
+      const frame = browser.document.createElement('section')
+      frame.className = `window-frame ${mode} window-frame--scroll`
+      const content = browser.document.createElement('div')
+      content.className = 'window-content window-content--scroll'
+      frame.append(content)
+      browser.document.body.append(frame)
+
+      // The themed ScrollArea inside is the only scroller; the box itself must
+      // stay `hidden` or the maximized state re-introduces a native bar beside it.
+      expect(browser.getComputedStyle(content).overflow).toBe('hidden')
+      expect(browser.getComputedStyle(content).paddingTop).toBe('0px')
+
+      frame.remove()
+    },
+  )
+
+
   test('renders the desktop navigation as a compact floating glass dock', () => {
     const sidebar = browser.document.createElement('aside')
     sidebar.className = 'desktop-shortcuts'

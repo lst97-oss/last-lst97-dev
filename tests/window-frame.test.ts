@@ -133,4 +133,40 @@ describe('window frame controls', () => {
     expect(osStore.state.windowModes[windowId]).toBe('normal')
     expect(container.querySelector('.window-frame')?.classList.contains('is-minimized')).toBe(false)
   })
+
+  test('renders the children through a themed scroll area only when scrollable', async () => {
+    expect(container.querySelector('[data-slot="scroll-area"]')).toBeNull()
+    expect(container.querySelector('.window-content')?.textContent).toBe('Profile content')
+
+    const scrollRoute = createRootRoute({
+      component: () => React.createElement(WindowFrame, {
+        title: 'note.detail',
+        windowId: 'note.detail',
+        scrollable: true,
+        children: 'Detail body',
+      }),
+    })
+    const scrollRouter = createRouter({
+      routeTree: scrollRoute,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    const scrollContainer = browserWindow.document.createElement('div')
+    browserWindow.document.body.append(scrollContainer)
+    const scrollRoot = createRoot(scrollContainer as unknown as HTMLDivElement)
+
+    try {
+      await act(async () => scrollRoot.render(React.createElement(RouterProvider, { router: scrollRouter })))
+
+      const content = scrollContainer.querySelector('.window-content')
+      // The cap class is applied by the prop, not by the caller: forgetting it
+      // would leave the themed viewport unbounded and the page scrolling.
+      expect(scrollContainer.querySelector('.window-frame--scroll')).not.toBeNull()
+      expect(content?.classList.contains('window-content--scroll')).toBe(true)
+      expect(content?.querySelector('[data-slot="scroll-area"]')).not.toBeNull()
+      expect(content?.querySelector('[data-slot="scroll-area-viewport"]')?.textContent).toBe('Detail body')
+    } finally {
+      await act(async () => scrollRoot.unmount())
+      scrollContainer.remove()
+    }
+  })
 })

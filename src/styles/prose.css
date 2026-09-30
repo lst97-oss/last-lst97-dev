@@ -8,6 +8,13 @@
   font-size: 16px;
 }
 
+/* Project detail runs the full container width; `.article-body`'s 700px cap
+   exists for prose reading measure, and a project page is as much layout and
+   reference material as it is prose. Scoped so blog and changelog keep it. */
+.article-body--wide {
+  max-width: none;
+}
+
 .rich-text > *:last-child {
   margin-bottom: 0;
 }

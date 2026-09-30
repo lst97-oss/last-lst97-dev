@@ -57,6 +57,13 @@
     flex: none;
     overflow: visible;
   }
+  /* Scrollable windows are plain stacked cards on mobile: let the page scroll.
+     The inner ScrollArea is not rendered at all below the mobile breakpoint
+     (see WindowFrame), so only the frame cap needs resetting here. */
+  .window-frame--scroll:not(.is-maximized) {
+    display: block;
+    max-height: none;
+  }
   .window-titlebar {
     justify-content: flex-start;
     min-height: 44px;

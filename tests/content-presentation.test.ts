@@ -31,12 +31,12 @@ describe('content presentation helpers', () => {
       { property: 'og:type', content: 'article' },
       { property: 'og:url', content: `${getSiteUrl()}/blog/build-notes` },
       { property: 'og:site_name', content: 'LAST//OS' },
-      { property: 'og:image', content: '/media/social.png' },
+      { property: 'og:image', content: `${getSiteUrl()}/media/social.png` },
       { property: 'og:image:alt', content: 'Social art' },
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:title', content: 'SEO title' },
       { name: 'twitter:description', content: 'SEO description.' },
-      { name: 'twitter:image', content: '/media/social.png' },
+      { name: 'twitter:image', content: `${getSiteUrl()}/media/social.png` },
       { name: 'twitter:image:alt', content: 'Social art' },
       { property: 'article:published_time', content: '2026-09-20T00:00:00.000Z' },
       { property: 'article:tag', content: 'react' },
@@ -58,7 +58,7 @@ describe('content presentation helpers', () => {
       pathname: '/projects/project-title',
     })
 
-    expect(fallback.meta).toContainEqual({ property: 'og:image', content: '/media/project.png' })
+    expect(fallback.meta).toContainEqual({ property: 'og:image', content: `${getSiteUrl()}/media/project.png` })
     // Website pages carry no article dates or tags even when supplied.
     expect(fallback.meta.some((entry) => 'property' in entry && entry.property?.startsWith('article:'))).toBe(false)
   })

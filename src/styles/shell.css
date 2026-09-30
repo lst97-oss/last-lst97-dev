@@ -118,10 +118,16 @@
    Per-context color overrides stay here (inheritance-based). */
 
 /* Workspace positioning (relative/z) lives in DesktopShell via Tailwind.
-   Grid columns + viewport height stay here — custom grid track. */
+   Grid columns stay here — custom grid track.
+
+   The shell root is `h-dvh overflow-hidden`, so the workspace is the last
+   flex child and must be allowed to shrink below its content height; the
+   ScrollArea in the second column owns the scrolling. `min-height: calc(100vh
+   - 48px)` would defeat that by forcing the grid row to grow with the page
+   and push the scroll back onto <body>. */
 .desktop-workspace {
   grid-template-columns: 110px minmax(0, 1fr);
-  min-height: calc(100vh - 48px);
+  min-height: 0;
 }
 
 .desktop-shortcuts {
@@ -157,9 +163,14 @@
 /* Shortcut art box lives in DesktopShell via Tailwind. */
 
 /* Main column padding lives in DesktopShell via Tailwind (responsive px).
-   Grid placement stays here. */
+   Grid placement stays here.
+
+   `min-height: 0` is load-bearing: the ScrollArea is a grid item, and a grid
+   item's automatic minimum size is its content height, so a long page would
+   stretch it past the viewport and push the scroll back onto <body>. */
 .desktop-main {
   grid-column: 2;
+  min-height: 0;
 }
 
 /* Page stacks live in os-ui PageStack via Tailwind (max-w-6xl / max-w-4xl). */
@@ -197,6 +208,32 @@
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* A `scrollable` WindowFrame scrolls inside the frame even in the normal state,
+   so the desktop page itself never scrolls. This cap is what gives the themed
+   ScrollArea viewport a bounded height. It resolves against the shell viewport
+   because the desktop main column is a stretched flex/grid item, so a percentage
+   height would not resolve up the chain — hence the explicit `100dvh` minus the
+   system bar (3rem) and the ScrollArea viewport padding (2rem + 2rem). The
+   maximized state opts out: its fixed inset already bounds the frame. */
+.window-frame--scroll:not(.is-maximized) {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 7rem);
+}
+
+/* The scrollable content box hosts a ScrollArea, so it must not also overflow
+   natively (that would show a second, unthemed bar) and must not hold padding
+   (padding would sit outside the scroller, not scroll with the content). The
+   ScrollArea viewport carries the responsive padding instead. The frame class is
+   in the selector because `.window-frame.is-maximized .window-content` is more
+   specific than two classes and would re-introduce the native scrollbar. */
+.window-frame .window-content.window-content--scroll {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
 }
 
 /* Titlebar layout/typography lives in WindowFrame via Tailwind.

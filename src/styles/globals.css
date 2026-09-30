@@ -17,6 +17,7 @@
   --os-violet: #9a8cff;
   --os-violet-soft: #e8e4ff;
   --os-grid: rgba(23, 23, 31, 0.09);
+  --os-trail: rgba(201, 143, 0, 0.6);
 
   /* Core surfaces */
   --background: var(--os-cream);
@@ -70,6 +71,7 @@
 
 .dark {
   --os-grid: rgba(255, 247, 223, 0.08);
+  --os-trail: rgba(255, 211, 78, 0.6);
 
   /* Core surfaces */
   --background: #17171f;

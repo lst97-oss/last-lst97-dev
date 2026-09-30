@@ -1,3 +1,4 @@
+import { withPayloadRoot } from '@payloadcms/tanstack-start/client'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import type { QueryClient } from '@tanstack/react-query'
 import {
@@ -46,13 +47,17 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { rel: 'security.txt', href: '/.well-known/security.txt' },
     ],
   }),
-  shellComponent: RootDocument,
+  // `withPayloadRoot` hands the `<html>` element to Payload's own shell on
+  // `/admin` routes, which is the only place `data-theme`/`lang`/`dir` get set
+  // from server-computed layout data. A hand-rolled shell here left ~60
+  // `[dir]`/`[data-theme]`-scoped admin rules permanently unmatchable.
+  shellComponent: withPayloadRoot(RootDocument),
   notFoundComponent: () => <p>Not Found</p>,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" dir="ltr">
       <head>
         <HeadContent />
       </head>

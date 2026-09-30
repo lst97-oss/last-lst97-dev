@@ -1,3 +1,4 @@
+export { HomeFeaturedPostSection } from './featured-post-section'
 export { HomeFeaturedProjectSection } from './featured-project-section'
 export { HomeHeroSection } from './hero-section'
 export { HomeOperatorProfileSection } from './operator-profile-section'

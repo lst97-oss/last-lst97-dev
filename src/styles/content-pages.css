@@ -250,6 +250,23 @@
   margin: 24px 0;
 }
 
+.topic-filter-link {
+  display: inline-flex;
+  border: 2px solid var(--border);
+  background: var(--card);
+  padding: 0.45rem 0.7rem;
+  color: var(--foreground);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.topic-filter-link:hover,
+.topic-filter-link:focus-visible {
+  background: var(--warning-muted);
+  color: var(--accent);
+}
+
 .back-link {
   display: inline-block;
   margin-bottom: 30px;

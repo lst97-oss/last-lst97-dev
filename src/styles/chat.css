@@ -430,6 +430,124 @@
   margin-top: 8px;
 }
 
+.os-chat-suggestions {
+  margin-top: 14px;
+}
+
+/* Example chips are a desktop affordance: below the two-column breakpoint the
+   grid would stack eight rows and crowd the composer. */
+@media (max-width: 900px) {
+  .os-chat-suggestions {
+    display: none;
+  }
+}
+
+.os-chat-suggestions-summary {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  border: 2px solid var(--os-ink);
+  border-radius: 0;
+  padding: 7px 10px;
+  background: var(--os-paper);
+  color: var(--os-ink-soft);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 100ms ease-out, box-shadow 100ms ease-out;
+}
+
+.os-chat-suggestions-summary:hover {
+  background: #fff4ba;
+  box-shadow: 3px 3px 0 var(--os-ink);
+}
+
+.os-chat-suggestions-summary:focus-visible {
+  outline: 3px solid var(--os-coral);
+  outline-offset: 2px;
+}
+
+.os-chat-suggestions-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.os-chat-suggestions-chevron {
+  color: var(--os-coral);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Collapsed state: the summary stays, the grid is removed from layout and from
+   the accessibility tree. */
+.os-chat-suggestions--closed .os-chat-suggestions-list {
+  display: none;
+}
+
+.os-chat-suggestions-list {
+  display: grid;
+  margin-top: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.os-chat-suggestion {
+  box-sizing: border-box;
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+  border: 2px solid var(--os-ink);
+  border-radius: 0;
+  padding: 8px 10px;
+  background: var(--os-paper);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 100ms ease-out, box-shadow 100ms ease-out, background-color 100ms ease-out;
+}
+
+.os-chat-suggestion:hover:not(:disabled) {
+  background: #fff4ba;
+  box-shadow: 3px 3px 0 var(--os-ink);
+  transform: translate(-1px, -1px);
+}
+
+.os-chat-suggestion:active:not(:disabled) {
+  box-shadow: 1px 1px 0 var(--os-ink);
+  transform: translate(0, 0);
+}
+
+.os-chat-suggestion:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.os-chat-suggestion:focus-visible {
+  outline: 3px solid var(--os-coral);
+  outline-offset: 2px;
+}
+
+.os-chat-suggestion-tool {
+  color: var(--os-coral);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.os-chat-suggestion-prompt {
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
 .os-chat-new-button {
   min-height: 38px;
   padding: 8px 12px;
