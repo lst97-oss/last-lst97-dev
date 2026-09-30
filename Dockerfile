@@ -32,6 +32,12 @@ RUN bun install --frozen-lockfile
 # carry the two differences that remain: the Payload CLI must run under Bun
 # (`--bun`), and its tsx loader breaks there, so transpilation is disabled
 # and Bun loads the TypeScript sources natively. Both are no-ops off Linux.
+#
+# Migrations are NOT applied here: `DEPLOY_MIGRATE` is deliberately unset in
+# this stage, so `bun run build` skips `deploy:migrate` and the image builds
+# against the dummy DATABASE_URL above without needing a live server. They run
+# on container start instead — see docker-entrypoint.sh, which is the correct
+# place for a container that may sit built for a long time before booting.
 # ---------------------------------------------------------------------------
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules

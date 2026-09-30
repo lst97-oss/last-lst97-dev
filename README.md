@@ -109,6 +109,30 @@ provided: four stages on `oven/bun:1.4.1-slim`, non-root `bun` user, port 3000, 
 `sitemap.xml`, `robots.txt` and `security.txt` are all baked from it at build time via the
 `__LAST_OS_SITE_URL__` define.
 
+### Migrations run as part of the deploy
+
+`bun run build` calls `deploy:migrate` between code generation and `vite build`. That script applies
+pending Payload migrations and **fails the build** if they error, so new code is never deployed against
+a schema it does not match. Each platform opts in differently, because the two have different lifetimes:
+
+- **Vercel** sets `DEPLOY_MIGRATE=true` in Production. Its build has a real `DATABASE_URL`, and a
+  migration belongs before the new code starts serving.
+- **Docker** leaves it unset, so the image builds without a live database, and
+  `docker-entrypoint.sh` migrates on container start instead. An image can sit built for a long time
+  before it boots, so migrating only at build time would leave it stale.
+
+To apply migrations by hand — a production hotfix, or a Vercel deploy where you do not want the build
+to touch the database — run `bun run db:migrate` with `DATABASE_URL` pointing at the target.
+
+`db:migrate:check` is the read-only counterpart: `bun run dev` runs it first and refuses to start when a
+committed migration is unregistered, so a schema change cannot be developed against unnoticed.
+
+> **Hosted Postgres and `sslmode`.** Zeabur's endpoint requires TLS and presents a self-signed
+> certificate, so its `DATABASE_URL` needs `?sslmode=no-verify` appended. Without it the connection fails
+> with `no pg_hba.conf entry ... no encryption`, and with `sslmode=require` it fails as
+> `self-signed certificate`. A value written before the endpoint was moved behind TLS will carry neither
+> parameter and will fail the same way; re-add `?sslmode=no-verify` when editing `DATABASE_URL`.
+
 ### Preview builds do not work
 
 `bun run build` starts with `payload generate:types`, which loads `payload.config.ts`, which calls
