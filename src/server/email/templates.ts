@@ -52,15 +52,7 @@ export function renderContactReceipt(contact: ContactMessage): EmailTemplate {
   return {
     templateId: 'contact-receipt',
     subject: CUSTOMER_RECEIPT_SUBJECT,
-    text: [
-      `Dear ${contact.name},`,
-      '',
-      CUSTOMER_RECEIPT_MESSAGE,
-      '',
-      'Kind regards,',
-      'Nelson',
-      'LAST//OS',
-    ].join('\n'),
+    text: [`Dear ${contact.name},`, '', CUSTOMER_RECEIPT_MESSAGE, '', 'Kind regards,', 'Nelson', 'LAST//OS'].join('\n'),
     html: renderLayout(
       'DELIVERY CONFIRMED',
       'Message received',
@@ -123,15 +115,9 @@ export function renderChatContactReceipt(contact: ChatContactSubmission): EmailT
   return {
     templateId: 'chat-contact-receipt',
     subject: CUSTOMER_RECEIPT_SUBJECT,
-    text: [
-      `Dear ${name || 'Customer'},`,
-      '',
-      CUSTOMER_RECEIPT_MESSAGE,
-      '',
-      'Kind regards,',
-      'Nelson',
-      'LAST//OS',
-    ].join('\n'),
+    text: [`Dear ${name || 'Customer'},`, '', CUSTOMER_RECEIPT_MESSAGE, '', 'Kind regards,', 'Nelson', 'LAST//OS'].join(
+      '\n',
+    ),
     html: renderLayout(
       'DELIVERY CONFIRMED',
       'Message received',
