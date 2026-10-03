@@ -10,7 +10,6 @@ import type { KnowledgeListSource } from './jobs'
 import { createKnowledgeSourceSynchronizer } from './jobs'
 import type { PayloadKnowledgeRecord } from './payload-source'
 import { createPayloadKnowledgeSource } from './payload-source'
-import { createProfileKnowledgeSource } from './profile-source'
 import type { KnowledgeDocument, KnowledgeSource } from './source-types'
 import type { KnowledgeSourceType } from './types'
 import { createWakaTimeKnowledgeSource } from './wakatime-source'
@@ -70,12 +69,17 @@ export async function runPayloadKnowledgeIndexTask(
 export function createPayloadKnowledgeSourceList(sources: {
   post: KnowledgeSource & KnowledgeListSource
   project: KnowledgeSource & KnowledgeListSource
-  profile: KnowledgeSource & KnowledgeListSource
   wakatime: KnowledgeSource & KnowledgeListSource
+  profile?: KnowledgeSource & KnowledgeListSource
 }): Array<KnowledgeSource & KnowledgeListSource> {
   // Repository summaries are indexed by sync-github-knowledge from inspected clones.
   // The lightweight GitHub API source shares the same IDs and would overwrite them.
-  return [sources.post, sources.project, sources.profile, sources.wakatime]
+  // `profile` is omitted by the sync: its curated biography is merged into the
+  // github-profile/lst97-profile document, so a separate profile record would
+  // store the same text twice under different source identities.
+  return sources.profile
+    ? [sources.post, sources.project, sources.profile, sources.wakatime]
+    : [sources.post, sources.project, sources.wakatime]
 }
 
 export async function runPayloadKnowledgeSyncTask(
@@ -83,12 +87,13 @@ export async function runPayloadKnowledgeSyncTask(
 ): Promise<{ indexedCount: number; removedCount: number }> {
   const postSource = createPayloadContentSource(payload, 'post')
   const projectSource = createPayloadContentSource(payload, 'project')
-  const profileSource = createProfileKnowledgeSource()
   const wakaTimeSource = createWakaTimeKnowledgeSource({ endpoint: WAKATIME_SHARE_URL })
+  // `profile` is deliberately absent: the curated biography is merged into the
+  // `github-profile`/`lst97-profile` document by renderGithubProfileMarkdown, so
+  // indexing it here too would store the same text under two source identities.
   const sources = createPayloadKnowledgeSourceList({
     post: postSource,
     project: projectSource,
-    profile: profileSource,
     wakatime: wakaTimeSource,
   })
   const env = getServerEnv()

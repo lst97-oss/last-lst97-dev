@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'bun:test'
 import { sql } from '@payloadcms/db-postgres'
-import { PgDialect } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/node-postgres'
+import { PgDialect } from 'drizzle-orm/pg-core'
 import { Pool } from 'pg'
 
 import { migrateKnowledgeDatabase } from '../../src/server/knowledge/database-migration'
-import { createKnowledgeIndexRepository } from '../../src/server/knowledge/repository'
-import type { KnowledgeChunk } from '../../src/server/knowledge/repository'
 import { projectCatalogFiltersSchema } from '../../src/server/knowledge/project-catalog'
+import type { KnowledgeChunk } from '../../src/server/knowledge/repository'
+import { createKnowledgeIndexRepository } from '../../src/server/knowledge/repository'
 
 const dialect = new PgDialect()
 
@@ -20,7 +20,9 @@ function createDatabase(rows: unknown[] = []) {
   }
   return {
     queries,
-    get transactionCount() { return transactionCount },
+    get transactionCount() {
+      return transactionCount
+    },
     transaction: async <T>(callback: (tx: { execute: typeof execute }) => Promise<T>) => {
       transactionCount += 1
       return callback({ execute })
@@ -35,7 +37,7 @@ const chunks: KnowledgeChunk[] = [
     chunkIndex: 0,
     text: 'I wrote about safe APIs.',
     contentHash: 'a'.repeat(64),
-    embedding: Array.from({ length: 1024 }, (_, index) => index === 0 ? 1 : 0),
+    embedding: Array.from({ length: 1024 }, (_, index) => (index === 0 ? 1 : 0)),
     isPublic: true,
     sourceUpdatedAt: new Date('2026-09-22T00:00:00Z'),
   },
@@ -99,67 +101,141 @@ describe('KnowledgeIndexRepository', () => {
     const db = createDatabase()
     const repository = createKnowledgeIndexRepository(db)
 
-    for (const sourceType of ['post', 'project', 'profile', 'interview', 'github', 'github-private', 'github-profile', 'github-contrib', 'github-contrib-private', 'wakatime'] as const) {
+    for (const sourceType of [
+      'post',
+      'project',
+      'profile',
+      'interview',
+      'services',
+      'github',
+      'github-private',
+      'github-profile',
+      'github-contrib',
+      'github-contrib-private',
+      'wakatime',
+    ] as const) {
       await repository.removeSource(sourceType, 'source-1')
     }
 
-    expect(db.transactionCount).toBe(10)
+    expect(db.transactionCount).toBe(11)
     // `removeSource` also clears the catalogue row for owner-repository types,
     // so the chunk DELETE is not always the first statement. Filtering to the
     // chunk delete keeps this about which types are accepted, not query order.
     const chunkDeletes = db.queries.filter(({ sql: statement }) => statement.includes('DELETE FROM "knowledge_chunks"'))
     expect(chunkDeletes.map(({ params }) => params[0])).toEqual([
-      'post', 'project', 'profile', 'interview', 'github',
-      'github-private', 'github-profile', 'github-contrib', 'github-contrib-private', 'wakatime',
+      'post',
+      'project',
+      'profile',
+      'interview',
+      'services',
+      'github',
+      'github-private',
+      'github-profile',
+      'github-contrib',
+      'github-contrib-private',
+      'wakatime',
     ])
   })
 
   it('lists structured owned repositories and preserves private visibility', async () => {
     const db = createDatabase([
       {
-        source_type: 'github', source_id: 'lst97/public-tool', title: 'public-tool', url: 'https://github.com/lst97/public-tool', is_public: true,
-        summary: 'Public purpose.', created_at: null, updated_at: null, stars: null, forks: null,
-        primary_language: null, languages: [], software_kinds: [], github_topics: [], curated_topics: [], time_spent_seconds: null, most_starred: false, matching_total: 2,
+        source_type: 'github',
+        source_id: 'lst97/public-tool',
+        title: 'public-tool',
+        url: 'https://github.com/lst97/public-tool',
+        is_public: true,
+        summary: 'Public purpose.',
+        created_at: null,
+        updated_at: null,
+        stars: null,
+        forks: null,
+        primary_language: null,
+        languages: [],
+        software_kinds: [],
+        github_topics: [],
+        curated_topics: [],
+        time_spent_seconds: null,
+        most_starred: false,
+        matching_total: 2,
       },
       {
-        source_type: 'github-private', source_id: 'lst97/private-tool', title: 'private-tool', url: 'https://github.com/lst97/private-tool', is_public: false,
-        summary: 'Private purpose.', created_at: null, updated_at: null, stars: null, forks: null,
-        primary_language: null, languages: [], software_kinds: [], github_topics: [], curated_topics: [], time_spent_seconds: null, most_starred: false, matching_total: 2,
+        source_type: 'github-private',
+        source_id: 'lst97/private-tool',
+        title: 'private-tool',
+        url: 'https://github.com/lst97/private-tool',
+        is_public: false,
+        summary: 'Private purpose.',
+        created_at: null,
+        updated_at: null,
+        stars: null,
+        forks: null,
+        primary_language: null,
+        languages: [],
+        software_kinds: [],
+        github_topics: [],
+        curated_topics: [],
+        time_spent_seconds: null,
+        most_starred: false,
+        matching_total: 2,
       },
     ])
     const repository = createKnowledgeIndexRepository(db)
 
     const result = await repository.listOwnedProjects({
-      ...projectCatalogFiltersSchema.parse({}), exclude_source_ids: [], first_batch: false,
+      ...projectCatalogFiltersSchema.parse({}),
+      exclude_source_ids: [],
+      first_batch: false,
     })
 
     expect(db.queries[0]?.sql).toContain('FROM "knowledge_projects"')
-    expect(db.queries[0]?.sql).toContain('p."source_type" IN (\'github\', \'github-private\')')
+    expect(db.queries[0]?.sql).toContain("p.\"source_type\" IN ('github', 'github-private')")
     expect(db.queries[0]?.sql).not.toContain('github-contrib')
     expect(result.projects.map(({ sourceId, isPublic }) => [sourceId, isPublic])).toEqual([
-      ['lst97/public-tool', true], ['lst97/private-tool', false],
+      ['lst97/public-tool', true],
+      ['lst97/private-tool', false],
     ])
     expect(result.hasMore).toBe(false)
   })
 
   it('filters the structured owned-project catalogue and joins exact WakaTime project totals', async () => {
-    const db = createDatabase([{
-      source_type: 'github', source_id: 'lst97/python-tool', title: 'python-tool',
-      url: 'https://github.com/lst97/python-tool', is_public: true,
-      summary: 'A Python command line app.', created_at: '2024-01-10T00:00:00.000Z',
-      updated_at: '2026-09-10T00:00:00.000Z', stars: 4, forks: 2,
-      primary_language: 'Python', languages: ['Python', 'Rust'],
-      software_kinds: ['cli_tool'], github_topics: ['cli'], curated_topics: ['developer-tool'],
-      time_spent_seconds: 7_200, most_starred: true, matching_total: 1,
-    }])
+    const db = createDatabase([
+      {
+        source_type: 'github',
+        source_id: 'lst97/python-tool',
+        title: 'python-tool',
+        url: 'https://github.com/lst97/python-tool',
+        is_public: true,
+        summary: 'A Python command line app.',
+        created_at: '2024-01-10T00:00:00.000Z',
+        updated_at: '2026-09-10T00:00:00.000Z',
+        stars: 4,
+        forks: 2,
+        primary_language: 'Python',
+        languages: ['Python', 'Rust'],
+        software_kinds: ['cli_tool'],
+        github_topics: ['cli'],
+        curated_topics: ['developer-tool'],
+        time_spent_seconds: 7_200,
+        most_starred: true,
+        matching_total: 1,
+      },
+    ])
     const repository = createKnowledgeIndexRepository(db)
     const filters = projectCatalogFiltersSchema.parse({
-      languages: ['Python'], kinds: ['cli_tool'], topics: ['developer-tool'],
-      min_stars: 1, time_spent_from: '2024-01-01', sort_by: 'time_spent', limit: 5,
+      languages: ['Python'],
+      kinds: ['cli_tool'],
+      topics: ['developer-tool'],
+      min_stars: 1,
+      time_spent_from: '2024-01-01',
+      sort_by: 'time_spent',
+      limit: 5,
     })
 
     const results = await repository.listOwnedProjects({
-      ...filters, exclude_source_ids: ['lst97/already-listed'], first_batch: false,
+      ...filters,
+      exclude_source_ids: ['lst97/already-listed'],
+      first_batch: false,
     })
 
     const statement = db.queries[0]?.sql ?? ''
@@ -172,33 +248,51 @@ describe('KnowledgeIndexRepository', () => {
     expect(db.queries[0]?.params).toContain('developer-tool')
     expect(db.queries[0]?.params).toContain('2024-01-01')
     expect(results.projects[0]).toMatchObject({
-      sourceId: 'lst97/python-tool', languages: ['Python', 'Rust'], kinds: ['cli_tool'],
-      timeSpentSeconds: 7_200, mostStarred: true,
+      sourceId: 'lst97/python-tool',
+      languages: ['Python', 'Rust'],
+      kinds: ['cli_tool'],
+      timeSpentSeconds: 7_200,
+      mostStarred: true,
     })
   })
 
   it('computes a filter-aware total and a deduped breakdown alongside the page', async () => {
-    const db = createDatabase([{
-      source_type: 'github', source_id: 'lst97/python-tool', title: 'python-tool',
-      url: 'https://github.com/lst97/python-tool', is_public: true,
-      summary: 'A Python command line app.', created_at: null, updated_at: null, stars: 4, forks: 2,
-      primary_language: 'Python', languages: ['Python'],
-      software_kinds: ['cli_tool'],
-      // The same topic in both arrays must count once, not twice.
-      github_topics: ['cli', 'cantonese'], curated_topics: ['cli'],
-      time_spent_seconds: null, most_starred: true, matching_total: 111,
-      breakdown: [
-        { dimension: 'visibility', key: 'true', count: 89 },
-        { dimension: 'visibility', key: 'false', count: 22 },
-        { dimension: 'topic', key: 'cantonese', count: 7 },
-        { dimension: 'kind', key: 'cli_tool', count: 18 },
-      ],
-    }])
+    const db = createDatabase([
+      {
+        source_type: 'github',
+        source_id: 'lst97/python-tool',
+        title: 'python-tool',
+        url: 'https://github.com/lst97/python-tool',
+        is_public: true,
+        summary: 'A Python command line app.',
+        created_at: null,
+        updated_at: null,
+        stars: 4,
+        forks: 2,
+        primary_language: 'Python',
+        languages: ['Python'],
+        software_kinds: ['cli_tool'],
+        // The same topic in both arrays must count once, not twice.
+        github_topics: ['cli', 'cantonese'],
+        curated_topics: ['cli'],
+        time_spent_seconds: null,
+        most_starred: true,
+        matching_total: 111,
+        breakdown: [
+          { dimension: 'visibility', key: 'true', count: 89 },
+          { dimension: 'visibility', key: 'false', count: 22 },
+          { dimension: 'topic', key: 'cantonese', count: 7 },
+          { dimension: 'kind', key: 'cli_tool', count: 18 },
+        ],
+      },
+    ])
     const repository = createKnowledgeIndexRepository(db)
     const filters = projectCatalogFiltersSchema.parse({ limit: 5 })
 
     const result = await repository.listOwnedProjects({
-      ...filters, exclude_source_ids: [], first_batch: false,
+      ...filters,
+      exclude_source_ids: [],
+      first_batch: false,
     })
 
     const statement = db.queries[0]?.sql ?? ''
@@ -206,7 +300,7 @@ describe('KnowledgeIndexRepository', () => {
     expect(statement).toContain('COUNT(*) OVER () AS "matching_total"')
     // Topics are deduped per project and counted by distinct project, not by unnest row.
     expect(statement).toContain('ARRAY(SELECT DISTINCT unnest(p."github_topics" || p."curated_topics"))')
-    expect(statement).toContain("COUNT(DISTINCT p.\"source_id\")::int")
+    expect(statement).toContain('COUNT(DISTINCT p."source_id")::int')
     expect(result.matchingTotal).toBe(111)
     expect(result.breakdown).toEqual([
       { dimension: 'visibility', key: 'true', count: 89 },
@@ -219,19 +313,37 @@ describe('KnowledgeIndexRepository', () => {
   })
 
   it('returns totals and no projects for the count op', async () => {
-    const db = createDatabase([{
-      source_type: 'github', source_id: 'lst97/lst97', title: 'lst97',
-      url: 'https://github.com/lst97/lst97', is_public: true, summary: 'Profile.',
-      created_at: null, updated_at: null, stars: null, forks: null, primary_language: null,
-      languages: [], software_kinds: [], github_topics: [], curated_topics: [],
-      time_spent_seconds: null, most_starred: false, matching_total: 111,
-      breakdown: [{ dimension: 'visibility', key: 'true', count: 89 }],
-    }])
+    const db = createDatabase([
+      {
+        source_type: 'github',
+        source_id: 'lst97/lst97',
+        title: 'lst97',
+        url: 'https://github.com/lst97/lst97',
+        is_public: true,
+        summary: 'Profile.',
+        created_at: null,
+        updated_at: null,
+        stars: null,
+        forks: null,
+        primary_language: null,
+        languages: [],
+        software_kinds: [],
+        github_topics: [],
+        curated_topics: [],
+        time_spent_seconds: null,
+        most_starred: false,
+        matching_total: 111,
+        breakdown: [{ dimension: 'visibility', key: 'true', count: 89 }],
+      },
+    ])
     const repository = createKnowledgeIndexRepository(db)
     const filters = projectCatalogFiltersSchema.parse({})
 
     const result = await repository.listOwnedProjects({
-      ...filters, exclude_source_ids: [], first_batch: false, op: 'count',
+      ...filters,
+      exclude_source_ids: [],
+      first_batch: false,
+      op: 'count',
     })
 
     expect(result).toEqual({
@@ -248,7 +360,10 @@ describe('KnowledgeIndexRepository', () => {
     const filters = projectCatalogFiltersSchema.parse({ query: 'no-such-project' })
 
     const result = await repository.listOwnedProjects({
-      ...filters, exclude_source_ids: [], first_batch: true, op: 'count',
+      ...filters,
+      exclude_source_ids: [],
+      first_batch: true,
+      op: 'count',
     })
 
     expect(result).toEqual({ projects: [], hasMore: false, matchingTotal: 0, breakdown: [] })
@@ -264,7 +379,8 @@ describe('KnowledgeIndexRepository', () => {
       const repository = createKnowledgeIndexRepository(db)
       await repository.listOwnedProjects({
         ...projectCatalogFiltersSchema.parse({ time_spent_range: range }),
-        exclude_source_ids: [], first_batch: false,
+        exclude_source_ids: [],
+        first_batch: false,
       })
       expect(db.queries[0]?.sql).toContain(sqlWindow)
       expect(db.queries[0]?.sql).toContain('wakatime_daily_projects')
@@ -274,15 +390,27 @@ describe('KnowledgeIndexRepository', () => {
   it('refreshes catalogue metadata in one database transaction without re-embedding report chunks', async () => {
     const db = createDatabase()
     const repository = createKnowledgeIndexRepository(db)
-    await repository.upsertOwnedProjectCatalogEntries([{
-      sourceType: 'github', sourceId: 'lst97/python-tool', title: 'python-tool',
-      url: 'https://github.com/lst97/python-tool', isPublic: true,
-      metadata: {
-        summary: 'A Python command line app.', createdAt: '2024-01-10T00:00:00.000Z', updatedAt: null,
-        stars: 4, forks: 2, primaryLanguage: 'Python', languages: ['Python'], kinds: ['cli_tool'],
-        githubTopics: [], curatedTopics: ['developer-tool'],
+    await repository.upsertOwnedProjectCatalogEntries([
+      {
+        sourceType: 'github',
+        sourceId: 'lst97/python-tool',
+        title: 'python-tool',
+        url: 'https://github.com/lst97/python-tool',
+        isPublic: true,
+        metadata: {
+          summary: 'A Python command line app.',
+          createdAt: '2024-01-10T00:00:00.000Z',
+          updatedAt: null,
+          stars: 4,
+          forks: 2,
+          primaryLanguage: 'Python',
+          languages: ['Python'],
+          kinds: ['cli_tool'],
+          githubTopics: [],
+          curatedTopics: ['developer-tool'],
+        },
       },
-    }])
+    ])
 
     expect(db.transactionCount).toBe(1)
     expect(db.queries).toHaveLength(1)
@@ -294,16 +422,18 @@ describe('KnowledgeIndexRepository', () => {
   })
 
   it('searches all chunks by cosine distance, carries visibility, and caps candidates at ten', async () => {
-    const db = createDatabase([{
-      source_type: 'post',
-      source_id: 'post-1',
-      chunk_index: 0,
-      title: 'Typed APIs',
-      url: 'https://example.test/blog/typed-apis',
-      content: 'I wrote about safe APIs.',
-      is_public: true,
-      distance: 0.12,
-    }])
+    const db = createDatabase([
+      {
+        source_type: 'post',
+        source_id: 'post-1',
+        chunk_index: 0,
+        title: 'Typed APIs',
+        url: 'https://example.test/blog/typed-apis',
+        content: 'I wrote about safe APIs.',
+        is_public: true,
+        distance: 0.12,
+      },
+    ])
     const repository = createKnowledgeIndexRepository(db)
 
     const result = await repository.search(chunks[0]!.embedding, 50)
@@ -312,35 +442,46 @@ describe('KnowledgeIndexRepository', () => {
     expect(db.queries[0]?.sql).toContain('"embedding" <=>')
     expect(db.queries[0]?.sql).toContain('LIMIT $2')
     expect(db.queries[0]?.params.at(-1)).toBe(10)
-    expect(result).toEqual([{
-      id: 'post:post-1:0',
-      text: 'I wrote about safe APIs.',
-      isPublic: true,
-      source: chunks[0]!.source,
-    }])
+    expect(result).toEqual([
+      {
+        id: 'post:post-1:0',
+        text: 'I wrote about safe APIs.',
+        isPublic: true,
+        source: chunks[0]!.source,
+      },
+    ])
   })
 
   it('returns private chunks with visibility preserved instead of filtering them out', async () => {
-    const db = createDatabase([{
-      source_type: 'github-private',
-      source_id: 'lst97/secret-tool',
-      chunk_index: 0,
-      title: 'secret-tool',
-      url: 'https://github.com/lst97/secret-tool',
-      content: 'A sanitized private project summary.',
-      is_public: false,
-    }])
+    const db = createDatabase([
+      {
+        source_type: 'github-private',
+        source_id: 'lst97/secret-tool',
+        chunk_index: 0,
+        title: 'secret-tool',
+        url: 'https://github.com/lst97/secret-tool',
+        content: 'A sanitized private project summary.',
+        is_public: false,
+      },
+    ])
     const repository = createKnowledgeIndexRepository(db)
 
     const result = await repository.search(chunks[0]!.embedding, 10)
 
     expect(db.queries[0]?.sql).not.toContain('WHERE "is_public" = true')
-    expect(result).toEqual([{
-      id: 'github-private:lst97/secret-tool:0',
-      text: 'A sanitized private project summary.',
-      isPublic: false,
-      source: { type: 'github-private', sourceId: 'lst97/secret-tool', title: 'secret-tool', url: 'https://github.com/lst97/secret-tool' },
-    }])
+    expect(result).toEqual([
+      {
+        id: 'github-private:lst97/secret-tool:0',
+        text: 'A sanitized private project summary.',
+        isPublic: false,
+        source: {
+          type: 'github-private',
+          sourceId: 'lst97/secret-tool',
+          title: 'secret-tool',
+          url: 'https://github.com/lst97/secret-tool',
+        },
+      },
+    ])
   })
 
   it('rejects vectors with the wrong dimension or non-finite values before querying', async () => {
@@ -356,8 +497,9 @@ describe('KnowledgeIndexRepository', () => {
     const db = createDatabase()
     const repository = createKnowledgeIndexRepository(db)
 
-    await expect(repository.upsertSourceChunks(chunks[0]!.source, [{ ...chunks[0]!, embedding: [1, 2] }]))
-      .rejects.toThrow('1024 finite values')
+    await expect(
+      repository.upsertSourceChunks(chunks[0]!.source, [{ ...chunks[0]!, embedding: [1, 2] }]),
+    ).rejects.toThrow('1024 finite values')
     expect(db.transactionCount).toBe(0)
   })
 })
@@ -380,11 +522,11 @@ describe.skipIf(!testDatabaseUrl)('KnowledgeIndexRepository with pgvector Postgr
 
       const visible: KnowledgeChunk = {
         ...chunks[0]!,
-        embedding: Array.from({ length: 1024 }, (_, index) => index === 0 ? 1 : 0),
+        embedding: Array.from({ length: 1024 }, (_, index) => (index === 0 ? 1 : 0)),
       }
       const hidden: KnowledgeChunk = {
         ...chunks[1]!,
-        embedding: Array.from({ length: 1024 }, (_, index) => index === 1 ? 1 : 0),
+        embedding: Array.from({ length: 1024 }, (_, index) => (index === 1 ? 1 : 0)),
         isPublic: false,
       }
       await repository.upsertSourceChunks(visible.source, [visible, hidden])
@@ -395,11 +537,15 @@ describe.skipIf(!testDatabaseUrl)('KnowledgeIndexRepository with pgvector Postgr
         ['post:post-1:1', false],
       ])
 
-      await pool.query(`ALTER TABLE "knowledge_chunks" ADD CONSTRAINT "test_no_force_rollback" CHECK (content <> 'force rollback')`)
-      await expect(repository.upsertSourceChunks(visible.source, [
-        { ...visible, text: 'replacement that must roll back' },
-        { ...hidden, text: 'force rollback', isPublic: true },
-      ])).rejects.toThrow()
+      await pool.query(
+        `ALTER TABLE "knowledge_chunks" ADD CONSTRAINT "test_no_force_rollback" CHECK (content <> 'force rollback')`,
+      )
+      await expect(
+        repository.upsertSourceChunks(visible.source, [
+          { ...visible, text: 'replacement that must roll back' },
+          { ...hidden, text: 'force rollback', isPublic: true },
+        ]),
+      ).rejects.toThrow()
 
       const afterRollback = await repository.search(visible.embedding, 10)
       expect(afterRollback.map(({ text }) => text).sort()).toEqual([visible.text, hidden.text].sort())
