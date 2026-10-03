@@ -303,20 +303,18 @@
 
 /* Width containment for the diagram panel.
 
-   `.mermaid-diagram` now keeps its natural size (see below), which is what
-   makes a wide figure legible instead of silently downscaled. The cost is that
-   its min-content now propagates up: through `.rich-text`, `.article-body`,
-   `.window-content`, and the window frame, widening the whole panel to ~1470px
-   on a 760px viewport. `max-width: 100%` on those ancestors does NOT fix it —
-   each one's percentage resolves against a parent already sized by the same
-   content, so the rule is circular.
+   `.mermaid-diagram` keeps its natural size (see below), which is what makes a
+   wide figure legible instead of silently downscaled. The cost is that its
+   min-content propagates up and widens every ancestor, until the right-hand
+   side of the figure is clipped by the shell's `overflow: hidden`.
 
-   The bound therefore belongs on the one box that actually scrolls: the Radix
-   viewport. As a flex item its default `min-width: auto` resolves to the
-   figure's natural width; zeroing it lets the figure overflow here, where the
-   horizontal scrollbar lives, and nothing propagates upward. The intermediate
-   rules are belt-and-braces for the same chain in case this element is ever
-   restructured out of it. */
+   `contain: inline-size` on the shell is the boundary: it makes the panel size
+   as if it had no contents, so it takes the article body's width, and the
+   figure overflows the ScrollArea viewport below — which scrolls horizontally
+   because the component mounts `scrollbars="both"`. The figure is therefore
+   reachable rather than cut off. `min-width: 0` alone was not enough on the
+   viewport: as a flex item its automatic minimum resolved to the figure's
+   natural width and it kept absorbing it. */
 
 /* The ScrollArea root is the scroll box, so it carries the height cap; the
    viewport is the element that scrolls and takes the pan handlers. */
@@ -328,6 +326,7 @@
 
 .mermaid-diagram-shell,
 .mermaid-diagram-shell > [data-slot="scroll-area"] {
+  contain: inline-size;
   min-width: 0;
   max-width: 100%;
 }
