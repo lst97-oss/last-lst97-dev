@@ -1,0 +1,28 @@
+# How the abuse controls layer, and where each one is chosen to fail closed
+
+- **Category:** Security Engineering
+- **Source ID:** last-os-security-and-abuse
+- **URL:** https://www.lst97.dev/projects/last-os
+- **Visibility:** Public
+
+A public AI endpoint is a public endpoint that happens to be expensive, so the controls are layered rather than concentrated in one place: input validation, rate limiting, Cloudflare Turnstile, semantic moderation, tool restrictions, and bounded timeouts. Each covers a failure the others cannot.
+
+Validation happens at the HTTP boundary with Zod, on the request bodies for chat, contact actions and the contact form, and again inside the agent tool runner on every tool call against its own fixed schema. The double validation is intentional: the first rejects malformed requests before any work starts, and the second means a hallucinated or corrupted tool call cannot reach a source even if it somehow got past the boundary.
+
+**Turnstile actions are separate per workflow.** A chat message, a contact form screening step, and the final send use distinct action types, so a token earned for one operation cannot be replayed for another. Verification is fail-closed: a missing verifier, an unreachable Siteverify endpoint, or an invalid token all stop the request before any model call happens. It is worth being precise about why screening is gated ahead of the work rather than only at the send — screening a form submission costs two model calls, so gating only the send would leave the expensive path reachable without a verified human.
+
+**Rate limits use separate buckets** for chat and contact. Screening consumes the contact budget, which is the point: leaving screening on the chat bucket made the most expensive operation in the system the cheapest one to drive. The limiter is a Postgres-backed window rather than in-process state, so the limit survives a restart and holds across instances.
+
+**Moderation is treated as an engineering trade-off, not a switch.** Jev classifies chat scope, chat safety, contact intent, contact safety and template fit. The system fails closed when a high-risk classification cannot be resolved confidently — an uncertain verdict on something that matters stops the action rather than defaulting to allow. At the same time the thresholds are tuned to avoid rejecting legitimate enquiries, because a moderation layer that blocks real customers is a product bug even though every individual decision it makes is defensible. Both directions are being optimised, which is why this reads as calibration work rather than configuration.
+
+**Signed conversation context** closes the gap where the browser holds server state. The state is serialised and HMAC-signed before it reaches the client, and verified before it may influence any trusted workflow state, so a visitor editing the token in devtools changes nothing. The signature covers the workflow phase, not just the message list, which is what makes a signed "normal conversation" token unusable as a signed "contact session" token.
+
+**Transactional workflows fail closed hardest**, because those are the paths where an error has an effect outside the application. Contact delivery requires a persistent one-time approval claim in Postgres; if the claim cannot be made, the message is not sent. There is deliberately no in-memory fallback for that claim, because a fallback that works in development and fails open in production is strictly worse than no fallback. The same reasoning applies to the review approval: the visitor approves an exact original/refined pair, and an HMAC proof binds that exact pair to the final send action, so a later model call cannot change what the user agreed to.
+
+Prompts treat retrieval output, tool results, conversation history and visitor input as untrusted data rather than instructions, and diagnostics exclude contact content entirely — only request identifiers, status categories, decision labels, model and version, and provider-reported usage are recorded. Provider usage is preserved exactly when reported and marked unreported otherwise, never inferred, because an inferred token count is a fabricated number in a record someone will later trust.
+
+Time bounds are explicit because a provider cannot be assumed responsive: every tool call, every provider request, and the whole chat stream each carry their own limit. A visitor gets an error message on a defined schedule rather than an indefinite spinner.
+
+On the CMS side, several defaults were tightened for the same reason. GraphQL is disabled outright — nothing needed it, so an unused introspection surface is removed rather than exposed. Relationship depth is capped at five, since deeper population costs request time and this application has no use for it. Public API user creation is disabled, because this is a single-operator CMS and a registration endpoint on an editorial backend is an account-creation system nobody asked for. Login attempts lock after five failures for ten minutes. Media goes through an S3-compatible adapter when configured, rather than writing uploads to local disk.
+
+Finally, configuration is validated as a security property. Payload's `serverURL` drives cookie and CORS behaviour, so a loopback origin in production, an HTTP-only origin, or an unparseable URL is rejected at boot instead of running insecurely. The public site origin is likewise production-critical: compile the wrong domain into canonical URLs and the site looks perfect while search engines are told the canonical address is somewhere else.

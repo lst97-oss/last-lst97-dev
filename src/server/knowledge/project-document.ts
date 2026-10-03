@@ -22,6 +22,10 @@ const PROJECTS_DIRECTORY = 'projects'
  * defaulted, because a wrong label is worse than a failed index run.
  */
 const PROJECT_LABELS = {
+  // LAST//OS is the portfolio platform itself, public at
+  // https://github.com/lst97-oss/last-lst97-dev and served at
+  // https://www.lst97.dev.
+  'last-os': 'LAST//OS',
   'gnaf-address-autocomplete': 'G-NAF Address Autocomplete',
   'smartplay-hk-oss': 'SmartPlay HK OSS',
   'wat-wat-new-zealand': 'Wat Wat New Zealand',
@@ -44,6 +48,7 @@ export function isProjectDocProject(value: string): value is ProjectDocProject {
  * index run instead of silently publishing or mislabelling a private project.
  */
 const PRIVATE_PROJECT_LABELS: Readonly<Record<ProjectDocProject, string>> = {
+  'last-os': 'Public',
   'gnaf-address-autocomplete': 'Public',
   'smartplay-hk-oss': 'Public',
   'wat-wat-new-zealand': 'Private',

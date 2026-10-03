@@ -14,7 +14,7 @@ import { parseProjectDocument } from '../../src/server/knowledge/project-documen
  */
 const PROJECT_GLOB = 'src/data/projects/*/*.md'
 
-const EXPECTED_PROJECTS = ['gnaf-address-autocomplete', 'smartplay-hk-oss', 'wat-wat-new-zealand'] as const
+const EXPECTED_PROJECTS = ['last-os', 'gnaf-address-autocomplete', 'smartplay-hk-oss', 'wat-wat-new-zealand'] as const
 
 async function readCorpus() {
   const entries: { relativePath: string; text: string }[] = []
