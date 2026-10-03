@@ -1,11 +1,10 @@
 import type { CollectionConfig } from 'payload'
-
+import { createKnowledgeAfterChangeHook, createKnowledgeAfterDeleteHook } from '../server/knowledge/payload-hooks'
 import { authenticatedAccess, publishedAccess } from './access'
 import { contentEditor } from './fields/content-editor'
 import { seoField } from './fields/seo'
 import { ensureContentSlug } from './hooks/content-slug'
 import { ensurePublicationDate } from './hooks/publication-date'
-import { createKnowledgeAfterChangeHook, createKnowledgeAfterDeleteHook } from '../server/knowledge/payload-hooks'
 
 export const Projects: CollectionConfig = {
   slug: 'projects',
@@ -54,7 +53,10 @@ export const Projects: CollectionConfig = {
       type: 'richText',
       editor: contentEditor,
       required: true,
-      admin: { description: 'Use Markdown shortcuts for headings, lists, tables, and fenced code. Insert images through the Media upload control.' },
+      admin: {
+        description:
+          'Use Markdown shortcuts for headings, lists, tables, and fenced code. Insert images through the Media upload control.',
+      },
     },
     {
       name: 'gallery',
@@ -66,13 +68,26 @@ export const Projects: CollectionConfig = {
       // document's own `alt` (required in the Media collection) is what the
       // gallery and the viewer show, so the text is written once at upload.
       admin: {
-        description: 'Screenshots and photos. Add as many as you like, then drag to reorder. The caption shown in the viewer is the image’s alt text.',
+        description:
+          'Screenshots and photos. Add as many as you like, then drag to reorder. The caption shown in the viewer is the image’s alt text.',
       },
     },
     {
       name: 'technologies',
       type: 'array',
       fields: [{ name: 'technology', type: 'text', required: true }],
+    },
+    {
+      name: 'topics',
+      type: 'relationship',
+      relationTo: 'topics',
+      hasMany: true,
+    },
+    {
+      name: 'tags',
+      type: 'relationship',
+      relationTo: 'tags',
+      hasMany: true,
     },
     {
       name: 'role',
