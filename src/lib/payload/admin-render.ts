@@ -1,5 +1,5 @@
-import { createServerFn } from '@tanstack/react-start'
 import configPromise from '@payload-config'
+import { createServerFn } from '@tanstack/react-start'
 import { buildAdminRenderParams } from './admin-route'
 
 // Bun-native: Web APIs only. Renders an /admin subpath to HTML on the server

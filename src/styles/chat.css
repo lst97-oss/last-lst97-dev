@@ -117,7 +117,7 @@
 }
 .os-chat-contact-template-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -133,6 +133,18 @@
   background: #20202b;
   box-shadow: 3px 3px 0 var(--os-ink);
   cursor: pointer;
+}
+
+/*
+ * An odd number of templates in this two-column grid would leave the last card
+ * alone on a half row. It takes the full width instead, so the picker never
+ * shows a card at half the width of the ones above it. `:nth-child(odd)` on the
+ * last child matches only while the count is odd, so an even count returns to a
+ * plain 2-column grid with no change here. The one-column breakpoint in
+ * responsive.css makes `1 / -1` a no-op.
+ */
+.os-chat-contact-template:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .os-chat-contact-template strong {
@@ -222,12 +234,167 @@
   font-size: 11px;
   line-height: 1.45;
 }
+.os-chat-contact-count {
+  margin: 5px 0 0;
+  color: #51515b;
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: right;
+}
+/* The example and the limit are two facts about one field, so they read on one
+   line: the note takes the slack and wraps, the count never wraps and never
+   shrinks, so a long note cannot slide under it. `min-width: 0` is what stops
+   an unbroken token (a long URL) from pushing the count off the row. */
+.os-chat-contact-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 5px 0 0;
+}
+.os-chat-contact-hint .os-chat-contact-example {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+.os-chat-contact-hint .os-chat-contact-count {
+  flex: none;
+  margin: 0;
+  text-align: right;
+  white-space: nowrap;
+}
 .os-chat-contact-field .form-error {
   margin-top: 8px;
 }
 
-.os-chat-contact-notice,
-.os-chat-contact-discard {
+
+/*
+ * Choice controls. The ui/ wrappers ship rounded-md, 1px borders and soft
+ * shadows, but every rule in this file is unlayered and therefore outranks the
+ * Tailwind utilities those wrappers pass through cn(). These rules restore the
+ * site's own contract: square corners, a 2px ink border, monospace, and a 3px
+ * coral focus outline. The dropdown list is portalled to <body>, so it cannot
+ * be styled by a descendant of .os-chat-contact-field and needs its own.
+ */
+.os-chat-contact-select {
+  box-sizing: border-box;
+  display: flex;
+  /* SelectTrigger ships `data-[size=default]:h-9`, which pins the trigger to
+     36px while the inputs beside it compute to 43.5px from their own content
+     box. `auto` lets this rule's padding and font produce the same box. */
+  height: auto;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 2px solid var(--os-ink);
+  border-radius: 0;
+  padding: 10px 11px;
+  color: var(--os-ink);
+  background: #fff;
+  font:
+    13px / 1.5 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  text-align: left;
+  cursor: pointer;
+}
+.os-chat-contact-select[data-placeholder] {
+  color: #51515b;
+}
+.os-chat-contact-select:focus-visible {
+  outline: 3px solid var(--os-coral);
+  outline-offset: 2px;
+}
+.os-chat-contact-select:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+.os-chat-contact-select[aria-invalid="true"] {
+  border-color: #b42318;
+}
+.os-chat-contact-select > svg {
+  flex: none;
+  color: var(--os-ink);
+}
+
+.os-chat-contact-select-content {
+  border: 2px solid var(--os-ink);
+  border-radius: 0;
+  background: var(--os-paper);
+  color: var(--os-ink);
+  font:
+    13px / 1.5 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  box-shadow: 4px 4px 0 var(--os-ink);
+}
+.os-chat-contact-select-content [data-slot="select-item"] {
+  border-radius: 0;
+  color: var(--os-ink);
+}
+.os-chat-contact-select-content [data-slot="select-item"][data-highlighted] {
+  background: var(--os-yellow);
+  color: var(--os-ink);
+  outline: none;
+}
+.os-chat-contact-select-content [data-slot="select-item"][data-state="checked"] {
+  font-weight: 900;
+  background: var(--os-teal-soft);
+}
+
+.os-chat-contact-choices {
+  display: grid;
+  gap: 8px;
+  border: 2px solid var(--os-ink);
+  border-radius: 0;
+  padding: 10px 11px;
+  background: #fff;
+}
+.os-chat-contact-choices[aria-invalid="true"] {
+  border-color: #b42318;
+}
+.os-chat-contact-choice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.os-chat-contact-choice label {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: var(--os-ink);
+  font:
+    13px / 1.45 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  cursor: pointer;
+}
+.os-chat-contact-checkbox {
+  border: 2px solid var(--os-ink);
+  border-radius: 0;
+  background: #fff;
+  color: var(--os-ink);
+}
+.os-chat-contact-checkbox:focus-visible {
+  outline: 3px solid var(--os-coral);
+  outline-offset: 2px;
+}
+.os-chat-contact-checkbox[data-state="checked"] {
+  border-color: var(--os-ink);
+  background: var(--os-teal);
+  color: var(--os-ink);
+}
+.os-chat-contact-checkbox:disabled {
+  opacity: 0.7;
+}
+
+.os-chat-contact-notice {
   border-left: 4px solid var(--os-coral);
   padding: 10px 12px;
   background: #fff4ba;
@@ -236,8 +403,7 @@
   line-height: 1.55;
 }
 
-.os-chat-contact-notice p,
-.os-chat-contact-discard p {
+.os-chat-contact-notice p {
   margin: 0;
 }
 .os-chat-contact-notice p + p {
@@ -249,9 +415,28 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+/* The discard action is destructive, not a notice: it wears no yellow box so it
+   cannot be mistaken for the primary action, and the confirmation sentence
+   reads as plain alert text. */
 .os-chat-contact-discard {
   display: grid;
   gap: 10px;
+  color: var(--os-ink);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.os-chat-contact-discard p {
+  margin: 0;
+}
+
+/* An outline button reads as destructive because the coral fill is gone; the
+   unlayered rule wins against the Tailwind `border-border` utility the shared
+   pixelButtonVariants base passes through cn(). */
+.os-chat-contact-discard-button {
+  border-color: var(--os-coral);
+}
+.os-chat-contact-discard-button:hover:not(:disabled) {
+  background: var(--error-muted);
 }
 
 .os-chat-contact-actions {
@@ -327,9 +512,6 @@
 .os-chat-contact-actions .pixel-button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
-}
-.os-chat-contact-actions .pixel-button.danger {
-  background: var(--os-coral);
 }
 
 .chat-pipeline-contact {
@@ -569,9 +751,19 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  align-items: stretch;
+  /* Prevent a tall draft from stretching the button; `.os-chat-send` centers
+     itself against the textarea in this row. */
+  align-items: flex-start;
   gap: 10px;
   margin-top: 16px;
+}
+
+.os-chat-send-label {
+  display: none;
+}
+
+.os-chat-send {
+  align-self: center;
 }
 
 .os-chat-input-group {
@@ -606,6 +798,32 @@
   outline: none;
 }
 
+/* The composer is a textarea so a draft can span several lines.
+   CHAT_INPUT_MAX_HEIGHT_PX (chat-composer.tsx) is the single source of truth for
+   the height and the cap: it measures scrollHeight and writes both, because a
+   percentage or `dvh` cap cannot resolve inside this flex row. This block owns
+   only what the script cannot: padding and wrapping. The `rows={1}` attribute
+   is the fallback before the first layout effect. The bar itself is the global
+   `textarea` rule in forms.css. */
+.os-chat-input {
+  /* The Textarea base sets `field-sizing-content`, which sizes the box to its
+     widest line. Inside this flex row a single long unbroken token then drags
+     the textarea, the InputGroup, and the window frame wider than the screen —
+     the SEND button is pushed out of view. `fixed` makes the control honour the
+     rows/height the composer computes, and `min-width: 0` lets it shrink inside
+     the flex row at all. */
+  field-sizing: fixed;
+  min-width: 0;
+  padding-inline: 16px;
+  overflow-y: auto;
+  /* A bar appearing at the cap would otherwise reflow the text horizontally on
+     every line that crosses it, so the gutter is reserved from the start. */
+  scrollbar-gutter: stable;
+  /* A long unbroken token (a URL, a pasted tag) would otherwise widen the whole
+     flex row and push the SEND button out of the frame. */
+  overflow-wrap: anywhere;
+}
+
 .os-chat-notices {
   display: grid;
   gap: 6px;
@@ -616,3 +834,12 @@
 }
 
 /* Legacy single-line form removed — chat-composer.tsx owns the form. */
+
+/*
+ * A checkbox group is a list, not a single input: two columns of eight options
+ * would put a label and its checkbox on separate visual rows. Let it span the
+ * grid so it reads as one block.
+ */
+.os-chat-contact-field--wide {
+  grid-column: 1 / -1;
+}

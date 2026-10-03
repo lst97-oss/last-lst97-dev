@@ -8,7 +8,8 @@ function sanitizeChunks(chunks: string[]): string {
 }
 
 describe('assistant reply sanitizer', () => {
-  const leakedReply = "I'll look up details.\n<tool_call>search_knowledge<arg_key>query</arg_key><arg_value>demo</arg_value></tool_call>Here is the answer."
+  const leakedReply =
+    "I'll look up details.\n<tool_call>search_knowledge<arg_key>query</arg_key><arg_value>demo</arg_value></tool_call>Here is the answer."
 
   it('removes progress narration and tool syntax from a complete reply', () => {
     expect(sanitizeAssistantReply(leakedReply)).toBe('Here is the answer.')

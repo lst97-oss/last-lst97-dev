@@ -84,3 +84,23 @@
 }
 
 /* Count badges live in os-ui CountBadge via Tailwind. */
+
+/* Card titles are `h2` on the index routes (for heading order) but must NOT
+   inherit the page-level `h2` scale. `globals.css` sizes a bare `h2` at
+   clamp(25px, 3vw, 40px) as an UNLAYERED element rule, which outranks
+   Tailwind's `text-2xl` in the `utilities` layer — so the utility on
+   `cardTitleClass` silently lost on desktop and cards rendered at the 40px
+   ceiling, where a title like "G-NAF Address Autocomplete" wrapped to three
+   lines and spilled past the card's inner edge.
+
+   Scoped to `.card-title` so every other `h2` on the site is untouched, and
+   fixed px rather than a clamp: these are 3-across masonry columns whose
+   width does not track the viewport, so a vw-based size would scale the title
+   independently of the box that has to contain it — the exact coupling that
+   caused the overflow. */
+.card-title {
+  margin-bottom: 8px;
+  font-size: 20px;
+  line-height: 1.15;
+  overflow-wrap: break-word;
+}

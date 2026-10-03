@@ -1,43 +1,46 @@
-import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { s3Storage } from '@payloadcms/storage-s3'
 import nodemailer from 'nodemailer'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
 
 import { denyUserCreation } from './src/collections/access'
-import { Media } from './src/collections/Media'
 import { Changelogs } from './src/collections/Changelogs'
+import { contentEditor } from './src/collections/fields/content-editor'
+import { Media } from './src/collections/Media'
 import { Posts } from './src/collections/Posts'
 import { Projects } from './src/collections/Projects'
+import { Tags } from './src/collections/Tags'
 import { Topics } from './src/collections/Topics'
-import { contentEditor } from './src/collections/fields/content-editor'
 import { HomePage } from './src/globals/HomePage'
+import { migrations } from './src/migrations'
 import { getServerEnv } from './src/server/env'
-import { buildR2StorageOptions } from './src/server/storage/r2-storage-config'
 import { knowledgePayloadTasks } from './src/server/knowledge/payload-tasks'
 import { resolvePayloadServerUrl } from './src/server/security/payload-server-url'
-import { migrations } from './src/migrations'
+import { buildR2StorageOptions } from './src/server/storage/r2-storage-config'
 
 const env = getServerEnv()
 const r2StorageOptions = buildR2StorageOptions(env)
-const projectDirectory = typeof Bun !== 'undefined'
-  ? import.meta.dir
-  : import.meta.dirname ?? decodeURIComponent(new URL('.', import.meta.url).pathname).replace(/\/$/, '')
+const projectDirectory =
+  typeof Bun !== 'undefined'
+    ? import.meta.dir
+    : (import.meta.dirname ?? decodeURIComponent(new URL('.', import.meta.url).pathname).replace(/\/$/, ''))
 const projectPath = (relativePath: string) => `${projectDirectory}/${relativePath.replace(/^\.\//, '')}`
-const payloadEmailAdapter = env.SMTP_USER && env.SMTP_APP_PASSWORD
-  ? nodemailerAdapter({
-      defaultFromAddress: env.EMAIL_FROM ?? env.SMTP_USER,
-      defaultFromName: env.EMAIL_FROM_NAME,
-      skipVerify: true,
-      transport: nodemailer.createTransport({
-        auth: { pass: env.SMTP_APP_PASSWORD, user: env.SMTP_USER },
-        host: 'smtp.gmail.com',
-        port: 465,
-        secure: true,
-      }),
-    })
-  : undefined
+const payloadEmailAdapter =
+  env.SMTP_USER && env.SMTP_APP_PASSWORD
+    ? nodemailerAdapter({
+        defaultFromAddress: env.EMAIL_FROM ?? env.SMTP_USER,
+        defaultFromName: env.EMAIL_FROM_NAME,
+        skipVerify: true,
+        transport: nodemailer.createTransport({
+          auth: { pass: env.SMTP_APP_PASSWORD, user: env.SMTP_USER },
+          host: 'smtp.gmail.com',
+          port: 465,
+          secure: true,
+        }),
+      })
+    : undefined
 
 export default buildConfig({
   // Nothing in this app queries GraphQL — the site reads content over REST via
@@ -88,6 +91,7 @@ export default buildConfig({
     Posts,
     Projects,
     Topics,
+    Tags,
   ],
   globals: [HomePage],
   db: postgresAdapter({

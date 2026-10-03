@@ -35,7 +35,11 @@ describe('createJevKnowledgeRelevanceGate', () => {
       })
     })
 
-    const scores = await gate.assess({ query: 'What does the direct project do?', candidate, onModelCall: (call) => modelCalls.push(call) })
+    const scores = await gate.assess({
+      query: 'What does the direct project do?',
+      candidate,
+      onModelCall: (call) => modelCalls.push(call),
+    })
 
     expect(requestUrl).toEndWith('/v1/systemone')
     expect(requestBody).toMatchObject({ model: 'jev-latest' })
@@ -47,9 +51,16 @@ describe('createJevKnowledgeRelevanceGate', () => {
       'is_relevant',
       'contains_answer_evidence',
     ])
-    expect(modelCalls).toEqual([{
-      provider: 'jev', operation: 'rag_relevance', model: 'jev-1.13', status: 'succeeded', inputTokens: 1, outputTokens: 1,
-    }])
+    expect(modelCalls).toEqual([
+      {
+        provider: 'jev',
+        operation: 'rag_relevance',
+        model: 'jev-1.13',
+        status: 'succeeded',
+        inputTokens: 1,
+        outputTokens: 1,
+      },
+    ])
     expect(requestBody?.state).toEqual({
       query: 'What does the direct project do?',
       document: {
@@ -100,20 +111,30 @@ describe('createJevKnowledgeRelevanceGate', () => {
       { is_relevant: { type: 'choice', choice: 'yes' }, contains_answer_evidence: { type: 'noul', noul: 0.9 } },
       { is_relevant: { type: 'noul', noul: 0.9 } },
     ]) {
-      const gate = createJevKnowledgeRelevanceGate({ apiKey: 'test-server-key' }, async () => response({
-        model: 'jev-latest',
-        answers,
-        usage: { input_tokens: 1, output_tokens: 1 },
-      }))
+      const gate = createJevKnowledgeRelevanceGate({ apiKey: 'test-server-key' }, async () =>
+        response({
+          model: 'jev-latest',
+          answers,
+          usage: { input_tokens: 1, output_tokens: 1 },
+        }),
+      )
 
-      await expect(gate.assess({ query: 'question', candidate })).rejects.toThrow('Jev knowledge relevance decision failed')
+      await expect(gate.assess({ query: 'question', candidate })).rejects.toThrow(
+        'Jev knowledge relevance decision failed',
+      )
     }
   })
 
   it('sanitizes provider failures and rejects an empty API key', async () => {
-    const gate = createJevKnowledgeRelevanceGate({ apiKey: 'test-server-key' }, async () => response({ private: 'provider detail' }, 503))
+    const gate = createJevKnowledgeRelevanceGate({ apiKey: 'test-server-key' }, async () =>
+      response({ private: 'provider detail' }, 503),
+    )
 
-    await expect(gate.assess({ query: 'question', candidate })).rejects.toThrow('Jev knowledge relevance decision failed')
-    expect(() => createJevKnowledgeRelevanceGate({ apiKey: '  ' })).toThrow('Missing required server environment variable: TYPESAFE_API_KEY')
+    await expect(gate.assess({ query: 'question', candidate })).rejects.toThrow(
+      'Jev knowledge relevance decision failed',
+    )
+    expect(() => createJevKnowledgeRelevanceGate({ apiKey: '  ' })).toThrow(
+      'Missing required server environment variable: TYPESAFE_API_KEY',
+    )
   })
 })

@@ -69,8 +69,15 @@ describe('createContentReader', () => {
         listPublishedByTopic: async () => ({ items: [post], page: 1, totalPages: 1, totalDocs: 1 }),
         getPublishedBySlug: async () => null,
       },
-      projects: { listPublished: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }), listAll: async () => [], getPublishedBySlug: async () => null },
-      changelogs: { listPublished: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }), getPublishedBySlug: async () => null },
+      projects: {
+        listPublished: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
+        listAll: async () => [],
+        getPublishedBySlug: async () => null,
+      },
+      changelogs: {
+        listPublished: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
+        getPublishedBySlug: async () => null,
+      },
       topics: {
         listPublished: async () => [topic],
         getPublishedBySlug: async () => topic,

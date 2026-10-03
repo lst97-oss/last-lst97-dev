@@ -17,10 +17,11 @@
     width: 72px;
     font-size: 9px;
   }
+  /* Width/height only: the art box now holds an inline SVG sized by Tailwind
+     `size-*`, so the old `font-size` scaling for text glyphs is dead. */
   .shortcut-art {
     width: 38px;
     height: 38px;
-    font-size: 20px;
   }
   /* Hero / dashboard / about grids live in components via Tailwind
      (base single column, multi-column at sm:/lg:). */
@@ -125,6 +126,17 @@
     flex-direction: column;
     flex-wrap: nowrap;
   }
+  .os-chat-send {
+    width: 100%;
+    min-height: 44px;
+    margin-left: 0;
+  }
+  .os-chat-send-icon {
+    display: none;
+  }
+  .os-chat-send-label {
+    display: inline;
+  }
   .os-chat-scroller {
     height: min(62dvh, 480px);
     max-height: 62dvh;
@@ -135,11 +147,6 @@
   .os-chat-input-group {
     min-height: 48px;
     box-shadow: 3px 3px 0 var(--os-ink);
-  }
-  .os-chat-send {
-    width: 100%;
-    min-height: 44px;
-    margin-left: 0;
   }
   .os-chat-turn-meta {
     flex-wrap: wrap;

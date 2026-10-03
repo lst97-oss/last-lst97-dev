@@ -1,17 +1,22 @@
 import { describe, expect, it } from 'bun:test'
-
-import { createChatContextSigner } from '../../src/server/chat/context-signer'
-import { createChatContactWorkflow } from '../../src/server/contact/chat/workflow'
 import type { ChatContactSubmission } from '../../src/lib/chat-contact'
+import { createChatContextSigner } from '../../src/server/chat/context-signer'
 import type { ChatContactActionRequest } from '../../src/server/chat/events'
+import { createChatContactWorkflow } from '../../src/server/contact/chat/workflow'
 
 const secret = 'a-secret-key-with-at-least-32-characters'
 const originalBug: ChatContactSubmission = {
   template: 'bug_report',
   fields: {
-    name: 'Alex', email: 'alex@example.com', summary: 'Filter dont work',
-    expectedBehaviour: 'Only selected projects show.', stepsToReproduce: '1. Open projects.\n2. Click filter.',
-    evidence: '', impact: '', extraContext: '', environment: '',
+    name: 'Alex',
+    email: 'alex@example.com',
+    summary: 'Filter dont work',
+    expectedBehaviour: 'Only selected projects show.',
+    stepsToReproduce: '1. Open projects.\n2. Click filter.',
+    evidence: '',
+    impact: '',
+    extraContext: '',
+    environment: '',
   },
 }
 const refinedBug: ChatContactSubmission = {
@@ -24,8 +29,18 @@ const refinedBug: ChatContactSubmission = {
   },
 }
 
-function request(action: ChatContactActionRequest['action'], contextToken: string, extra: Record<string, unknown> = {}): ChatContactActionRequest {
-  return { action, contextToken, expectedHostname: 'example.com', requestId: 'request-1', ...extra } as ChatContactActionRequest
+function request(
+  action: ChatContactActionRequest['action'],
+  contextToken: string,
+  extra: Record<string, unknown> = {},
+): ChatContactActionRequest {
+  return {
+    action,
+    contextToken,
+    expectedHostname: 'example.com',
+    requestId: 'request-1',
+    ...extra,
+  } as ChatContactActionRequest
 }
 
 function createWorkflow(overrides: Record<string, unknown> = {}) {
@@ -60,7 +75,8 @@ describe('chat contact workflow controller', () => {
   it('starts a context-free contact session only after the pending confirmation', async () => {
     const { contextSigner, workflow } = createWorkflow()
     const pending = await contextSigner.sign({
-      messages: [{ role: 'user', content: 'Normal private chat detail' }], topicAnchors: [],
+      messages: [{ role: 'user', content: 'Normal private chat detail' }],
+      topicAnchors: [],
       workflow: { mode: 'normal', phase: 'contact_confirmation' },
     })
 
@@ -77,15 +93,24 @@ describe('chat contact workflow controller', () => {
 
   it('screens and locks the selected template, then sends only refined content with original PDF source data', async () => {
     const { contextSigner, workflow, jevInputs, refinerInputs, submitted } = createWorkflow()
-    const pending = await contextSigner.sign({ messages: [], topicAnchors: [], workflow: { mode: 'normal', phase: 'contact_confirmation' } })
+    const pending = await contextSigner.sign({
+      messages: [],
+      topicAnchors: [],
+      workflow: { mode: 'normal', phase: 'contact_confirmation' },
+    })
     const started = await workflow.handle(request('start_contact', pending))
     if (!started.ok || started.event.type !== 'contact_started') throw new Error('contact did not start')
-    const selected = await workflow.handle(request('select_template', started.event.contextToken, { template: 'bug_report' }))
-    if (!selected.ok || selected.event.type !== 'contact_template_selected') throw new Error('template was not selected')
+    const selected = await workflow.handle(
+      request('select_template', started.event.contextToken, { template: 'bug_report' }),
+    )
+    if (!selected.ok || selected.event.type !== 'contact_template_selected')
+      throw new Error('template was not selected')
     expect(jevInputs[0]).toMatchObject({ phase: 'template', template: 'bug_report', fields: {} })
     expect(JSON.stringify(jevInputs)).not.toContain('Normal private chat detail')
 
-    const reviewed = await workflow.handle(request('submit_form', selected.event.contextToken, { fields: originalBug.fields }))
+    const reviewed = await workflow.handle(
+      request('submit_form', selected.event.contextToken, { fields: originalBug.fields }),
+    )
     expect(reviewed.ok).toBe(true)
     if (!reviewed.ok || reviewed.event.type !== 'contact_review') return
     expect(refinerInputs).toEqual([originalBug])
@@ -95,68 +120,171 @@ describe('chat contact workflow controller', () => {
     expect(reviewContext?.messages).toEqual([])
     expect(JSON.stringify(reviewContext)).not.toContain('Filter dont work')
 
-    const changed = await workflow.handle(request('confirm_send', reviewed.event.contextToken, {
-      refinedSubmission: { ...refinedBug, fields: { ...refinedBug.fields, summary: 'Changed after review' } },
-      originalSubmission: originalBug,
-      turnstileToken: 'valid-token',
-    }))
+    const changed = await workflow.handle(
+      request('confirm_send', reviewed.event.contextToken, {
+        refinedSubmission: { ...refinedBug, fields: { ...refinedBug.fields, summary: 'Changed after review' } },
+        originalSubmission: originalBug,
+        turnstileToken: 'valid-token',
+      }),
+    )
     expect(changed).toMatchObject({ ok: false, reason: 'invalid_review' })
     expect(submitted).toHaveLength(0)
 
-    const delivered = await workflow.handle(request('confirm_send', reviewed.event.contextToken, {
-      refinedSubmission: refinedBug,
-      originalSubmission: originalBug,
-      turnstileToken: 'valid-token',
-    }))
+    const delivered = await workflow.handle(
+      request('confirm_send', reviewed.event.contextToken, {
+        refinedSubmission: refinedBug,
+        originalSubmission: originalBug,
+        turnstileToken: 'valid-token',
+      }),
+    )
     expect(delivered.ok).toBe(true)
     if (!delivered.ok || delivered.event.type !== 'contact_delivery') return
     expect(delivered.event.receiptStatus).toBe('sent')
     expect(submitted).toEqual([expect.objectContaining({ submission: refinedBug, originalSubmission: originalBug })])
-    expect((await contextSigner.verify(delivered.event.contextToken))?.workflow).toEqual({ mode: 'contact', phase: 'delivered', template: 'bug_report' })
+    expect((await contextSigner.verify(delivered.event.contextToken))?.workflow).toEqual({
+      mode: 'contact',
+      phase: 'delivered',
+      template: 'bug_report',
+    })
   })
 
   it('keeps template and phase locked when Jev says the new content is out of scope', async () => {
     const { contextSigner, workflow } = createWorkflow({
       moderation: {
-        checkContactWorkflow: async ({ phase }: { phase: string }) => phase === 'template'
-          ? { allowed: true, missingFields: [], invalidFields: [] }
-          : { allowed: false, reason: 'out_of_scope' },
+        checkContactWorkflow: async ({ phase }: { phase: string }) =>
+          phase === 'template'
+            ? { allowed: true, missingFields: [], invalidFields: [] }
+            : { allowed: false, reason: 'out_of_scope' },
       },
     })
-    const pending = await contextSigner.sign({ messages: [], topicAnchors: [], workflow: { mode: 'normal', phase: 'contact_confirmation' } })
+    const pending = await contextSigner.sign({
+      messages: [],
+      topicAnchors: [],
+      workflow: { mode: 'normal', phase: 'contact_confirmation' },
+    })
     const started = await workflow.handle(request('start_contact', pending))
     if (!started.ok || started.event.type !== 'contact_started') throw new Error('contact did not start')
-    const selected = await workflow.handle(request('select_template', started.event.contextToken, { template: 'bug_report' }))
-    if (!selected.ok || selected.event.type !== 'contact_template_selected') throw new Error('template was not selected')
-    const outOfScope = await workflow.handle(request('submit_form', selected.event.contextToken, { fields: originalBug.fields }))
+    const selected = await workflow.handle(
+      request('select_template', started.event.contextToken, { template: 'bug_report' }),
+    )
+    if (!selected.ok || selected.event.type !== 'contact_template_selected')
+      throw new Error('template was not selected')
+    const outOfScope = await workflow.handle(
+      request('submit_form', selected.event.contextToken, { fields: originalBug.fields }),
+    )
 
-    expect(outOfScope).toMatchObject({ ok: true, event: { type: 'contact_out_of_scope', contextToken: selected.event.contextToken } })
-    expect((await contextSigner.verify(selected.event.contextToken))?.workflow).toEqual({ mode: 'contact', phase: 'filling', template: 'bug_report' })
+    expect(outOfScope).toMatchObject({
+      ok: true,
+      event: { type: 'contact_out_of_scope', contextToken: selected.event.contextToken },
+    })
+    expect((await contextSigner.verify(selected.event.contextToken))?.workflow).toEqual({
+      mode: 'contact',
+      phase: 'filling',
+      template: 'bug_report',
+    })
   })
 
   it('does not refine or send a safety-rejected form and only discards on explicit confirmation', async () => {
     const { contextSigner, workflow, refinerInputs, submitted } = createWorkflow({
       moderation: {
-        checkContactWorkflow: async ({ phase }: { phase: string }) => phase === 'template'
-          ? { allowed: true, missingFields: [], invalidFields: [] }
-          : { allowed: false, reason: 'unsafe' },
+        checkContactWorkflow: async ({ phase }: { phase: string }) =>
+          phase === 'template'
+            ? { allowed: true, missingFields: [], invalidFields: [] }
+            : { allowed: false, reason: 'unsafe' },
       },
     })
-    const pending = await contextSigner.sign({ messages: [], topicAnchors: [], workflow: { mode: 'normal', phase: 'contact_confirmation' } })
+    const pending = await contextSigner.sign({
+      messages: [],
+      topicAnchors: [],
+      workflow: { mode: 'normal', phase: 'contact_confirmation' },
+    })
     const started = await workflow.handle(request('start_contact', pending))
     if (!started.ok || started.event.type !== 'contact_started') throw new Error('contact did not start')
-    const selected = await workflow.handle(request('select_template', started.event.contextToken, { template: 'bug_report' }))
+    const selected = await workflow.handle(
+      request('select_template', started.event.contextToken, { template: 'bug_report' }),
+    )
     expect(selected).toMatchObject({ ok: true, event: { type: 'contact_template_selected' } })
     if (!selected.ok || selected.event.type !== 'contact_template_selected') return
-    const attempted = await workflow.handle(request('submit_form', selected.event.contextToken, { fields: originalBug.fields }))
+    const attempted = await workflow.handle(
+      request('submit_form', selected.event.contextToken, { fields: originalBug.fields }),
+    )
     expect(attempted).toMatchObject({ ok: true, event: { type: 'contact_blocked' } })
     expect(refinerInputs).toHaveLength(0)
     expect(submitted).toHaveLength(0)
-    expect(await workflow.handle(request('discard_contact', selected.event.contextToken, { confirmed: false }))).toMatchObject({ ok: false, reason: 'invalid_transition' })
-    const discarded = await workflow.handle(request('discard_contact', selected.event.contextToken, { confirmed: true }))
+    expect(
+      await workflow.handle(request('discard_contact', selected.event.contextToken, { confirmed: false })),
+    ).toMatchObject({ ok: false, reason: 'invalid_transition' })
+    const discarded = await workflow.handle(
+      request('discard_contact', selected.event.contextToken, { confirmed: true }),
+    )
     expect(discarded).toMatchObject({ ok: true, event: { type: 'contact_discarded' } })
     if (discarded.ok && discarded.event.type === 'contact_discarded') {
-      expect(await contextSigner.verify(discarded.event.contextToken)).toMatchObject({ messages: [], workflow: { mode: 'normal', phase: 'conversation' } })
+      expect(await contextSigner.verify(discarded.event.contextToken)).toMatchObject({
+        messages: [],
+        workflow: { mode: 'normal', phase: 'conversation' },
+      })
     }
+  })
+
+  it('selects, screens, reviews, and delivers a quotation through the shared contact workflow', async () => {
+    const { contextSigner, workflow, submitted, jevInputs } = createWorkflow()
+    const signed = await contextSigner.sign({
+      messages: [{ role: 'user', content: 'I need a quote.' }],
+      topicAnchors: [],
+      projectListState: { clarificationAsked: false, shownProjectIds: [] },
+      workflow: { mode: 'normal', phase: 'contact_confirmation' },
+    })
+    const started = await workflow.handle(request('start_contact', signed))
+    if (!started.ok || started.event.type !== 'contact_started') throw new Error('contact did not start')
+
+    const selected = await workflow.handle(
+      request('select_template', started.event.contextToken, { template: 'quotation' }),
+    )
+    // Narrowing on the event type is what gives `contextToken` a `string`; an
+    // `ok` check alone leaves it `string | undefined`.
+    if (!selected.ok || selected.event.type !== 'contact_template_selected')
+      throw new Error('template was not selected')
+    expect(jevInputs.at(-1)).toMatchObject({ phase: 'template', template: 'quotation' })
+    // A signed context naming the new template has to survive verification, or
+    // the visitor is dropped out of the workflow the moment they choose it.
+    expect((await contextSigner.verify(selected.event.contextToken))?.workflow).toEqual({
+      mode: 'contact',
+      phase: 'filling',
+      template: 'quotation',
+    })
+
+    const reviewed = await workflow.handle(
+      request('submit_form', selected.event.contextToken, {
+        fields: {
+          name: 'Alex',
+          email: 'alex@example.com',
+          businessName: 'Bright Lane',
+          packageInterest: 'Business — from A$2,200 (recommended)',
+          requiredPages: 'Home, About, Contact',
+          requiredFeatures: 'Contact or enquiry form',
+          otherFeatures: '',
+          cmsRequirements: '',
+          designReferences: '',
+          integrations: '',
+          contentAvailability: '',
+          targetTimeline: 'One to three months',
+        },
+      }),
+    )
+    if (!reviewed.ok || reviewed.event.type !== 'contact_review') throw new Error('expected a review')
+
+    const delivered = await workflow.handle(
+      request('confirm_send', reviewed.event.contextToken, {
+        refinedSubmission: reviewed.event.refinedSubmission,
+        originalSubmission: reviewed.event.originalSubmission,
+        turnstileToken: 'token',
+      }),
+    )
+    if (!delivered.ok) throw new Error('expected delivery')
+    expect(delivered.event).toMatchObject({ type: 'contact_delivery', template: 'quotation', receiptStatus: 'sent' })
+    expect(submitted).toHaveLength(1)
+    expect(submitted[0]).toMatchObject({
+      submission: { template: 'quotation', fields: { businessName: 'Bright Lane' } },
+    })
   })
 })

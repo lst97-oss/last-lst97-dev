@@ -1,6 +1,8 @@
 import type { JSXConverterArgs, JSXConverters } from '@payloadcms/richtext-lexical/react'
 import { defaultJSXConverters, RichText as PayloadRichText } from '@payloadcms/richtext-lexical/react'
 import { ChecklistItem } from '@/components/site/content/checklist-item'
+import { CodeBlockView } from '@/components/site/content/code-block-view'
+import { MermaidDiagram } from '@/components/site/content/mermaid-diagram'
 import { type MediaViewerItem, ProseImage, uploadToMediaItem } from '@/components/site/share/media'
 import { safeAssetHref, safeContentHref } from '@/lib/content/url'
 import { parseLexicalContent } from '@/server/content/types'
@@ -43,20 +45,18 @@ function renderRelationship({ node }: JSXConverterArgs<ConverterNode>) {
   const value = node.value
   if (!isRecord(value) || typeof value.slug !== 'string' || !value.slug.trim()) return null
 
-  const href = node.relationTo === 'posts'
-    ? `/blog/${encodeURIComponent(value.slug)}`
-    : node.relationTo === 'projects'
-      ? `/projects/${encodeURIComponent(value.slug)}`
-      : null
+  const href =
+    node.relationTo === 'posts'
+      ? `/blog/${encodeURIComponent(value.slug)}`
+      : node.relationTo === 'projects'
+        ? `/projects/${encodeURIComponent(value.slug)}`
+        : null
   if (!href) return null
 
   const collectionName = node.relationTo === 'posts' ? 'NOTE' : 'PROJECT'
   const title = typeof value.title === 'string' ? value.title : value.slug
-  const description = typeof value.excerpt === 'string'
-    ? value.excerpt
-    : typeof value.summary === 'string'
-      ? value.summary
-      : null
+  const description =
+    typeof value.excerpt === 'string' ? value.excerpt : typeof value.summary === 'string' ? value.summary : null
 
   return (
     <a className="rich-relationship" href={href}>
@@ -93,6 +93,43 @@ function collectProseImages(editorState: unknown): MediaViewerItem[] {
 }
 
 /**
+ * The accessible name for each `mermaid` code block, taken from the nearest
+ * preceding heading so a screen reader announces "Architecture flowchart"
+ * rather than a bare "Flowchart". A block with no heading before it falls back
+ * to the generic name.
+ */
+function collectDiagramLabels(editorState: unknown): (string | null)[] {
+  const labels: (string | null)[] = []
+  let heading: string | null = null
+
+  const plainText = (node: unknown): string => {
+    if (!isRecord(node)) return ''
+    if (typeof node.text === 'string') return node.text
+    if (!Array.isArray(node.children)) return ''
+    return node.children.map(plainText).join('')
+  }
+
+  if (isRecord(editorState) && isRecord(editorState.root) && Array.isArray(editorState.root.children)) {
+    for (const node of editorState.root.children) {
+      if (!isRecord(node)) continue
+      if (node.type === 'heading') {
+        heading = plainText(node).trim() || heading
+        continue
+      }
+      if (node.type !== 'block') continue
+      const fields = isRecord(node.fields) ? node.fields : {}
+      if (fields.language === 'mermaid') labels.push(heading)
+    }
+  }
+
+  return labels
+}
+
+function diagramLabel(heading: string | null): string {
+  return heading ? `${heading} flowchart` : 'Flowchart'
+}
+
+/**
  * `JSXConverters` only receives the node, so the article's image list and a
  * document-order cursor are captured in this closure instead of passed in.
  * The cursor is what keeps the viewer's list aligned with the rendered nodes:
@@ -110,17 +147,17 @@ function proseImageConverter(proseImages: MediaViewerItem[]) {
     if (!src) return null
 
     const fields = isRecord(node.fields) ? node.fields : {}
-    const alt = typeof fields.alt === 'string'
-      ? fields.alt
-      : typeof value.alt === 'string'
-        ? value.alt
-        : ''
+    const alt = typeof fields.alt === 'string' ? fields.alt : typeof value.alt === 'string' ? value.alt : ''
     const width = typeof value.width === 'number' ? value.width : undefined
     const height = typeof value.height === 'number' ? value.height : undefined
 
     if (typeof value.mimeType !== 'string' || !value.mimeType.startsWith('image/')) {
       const filename = typeof value.filename === 'string' ? value.filename : 'Open attached file'
-      return <a href={src} rel="noopener noreferrer" target="_blank">{filename}</a>
+      return (
+        <a href={src} rel="noopener noreferrer" target="_blank">
+          {filename}
+        </a>
+      )
     }
 
     // Reuse the one srcset builder so prose images get the same aspect-checked
@@ -134,7 +171,18 @@ function proseImageConverter(proseImages: MediaViewerItem[]) {
     // as a plain image and must NOT consume a slot, or every later image
     // would open the wrong entry in the viewer.
     if (!proseImages[cursor]) {
-      return <img alt={alt} decoding="async" height={height} loading="lazy" sizes="(min-width: 1024px) 768px, 100vw" src={src} srcSet={srcSet} width={width} />
+      return (
+        <img
+          alt={alt}
+          decoding="async"
+          height={height}
+          loading="lazy"
+          sizes="(min-width: 1024px) 768px, 100vw"
+          src={src}
+          srcSet={srcSet}
+          width={width}
+        />
+      )
     }
 
     const index = cursor
@@ -168,7 +216,12 @@ function renderListItem(args: JSXConverterArgs<ConverterNode>) {
   )
 }
 
-function buildConverters(proseImages: MediaViewerItem[]): JSXConverters {
+function buildConverters(proseImages: MediaViewerItem[], diagramLabels: (string | null)[]): JSXConverters {
+  // A cursor, not an index from the converter args: the args carry no position,
+  // and the renderer walks the document in the same order `collectDiagramLabels`
+  // did. Fresh per render, for the same reason the image cursor is.
+  let diagramIndex = 0
+
   return {
     ...defaultJSXConverters,
     autolink: renderSafeLink,
@@ -176,18 +229,38 @@ function buildConverters(proseImages: MediaViewerItem[]): JSXConverters {
     listitem: renderListItem,
     relationship: renderRelationship,
     upload: proseImageConverter(proseImages),
-    table: ({ node, nodesToJSX }: JSXConverterArgs<ConverterNode>) => <table><tbody>{nodesToJSX({ nodes: Array.isArray(node.children) ? node.children : [] })}</tbody></table>,
-    tablerow: ({ node, nodesToJSX }: JSXConverterArgs<ConverterNode>) => <tr>{nodesToJSX({ nodes: Array.isArray(node.children) ? node.children : [] })}</tr>,
+    table: ({ node, nodesToJSX }: JSXConverterArgs<ConverterNode>) => (
+      <table>
+        <tbody>{nodesToJSX({ nodes: Array.isArray(node.children) ? node.children : [] })}</tbody>
+      </table>
+    ),
+    tablerow: ({ node, nodesToJSX }: JSXConverterArgs<ConverterNode>) => (
+      <tr>{nodesToJSX({ nodes: Array.isArray(node.children) ? node.children : [] })}</tr>
+    ),
     tablecell: ({ node, nodesToJSX }: JSXConverterArgs<ConverterNode>) => {
       const TagName = node.headerState ? 'th' : 'td'
-      return <TagName colSpan={typeof node.colSpan === 'number' ? node.colSpan : undefined}>{nodesToJSX({ nodes: Array.isArray(node.children) ? node.children : [] })}</TagName>
+      return (
+        <TagName colSpan={typeof node.colSpan === 'number' ? node.colSpan : undefined}>
+          {nodesToJSX({ nodes: Array.isArray(node.children) ? node.children : [] })}
+        </TagName>
+      )
     },
-    blocks: { Code: ({ node }: JSXConverterArgs<ConverterNode>) => {
-      const fields = isRecord(node.fields) ? node.fields : {}
-      const code = typeof fields.code === 'string' ? fields.code : ''
-      const language = typeof fields.language === 'string' ? fields.language : 'text'
-      return <pre><code data-language={language}>{code}</code></pre>
-    } },
+    blocks: {
+      Code: ({ node }: JSXConverterArgs<ConverterNode>) => {
+        const fields = isRecord(node.fields) ? node.fields : {}
+        const code = typeof fields.code === 'string' ? fields.code : ''
+        const language = typeof fields.language === 'string' ? fields.language : 'plaintext'
+        if (language !== 'mermaid') return <CodeBlockView code={code} language={language} />
+
+        const heading = diagramLabels[diagramIndex] ?? null
+        diagramIndex += 1
+        // `node.id` is stable across renders, so React keeps the same mermaid
+        // instance (and the same render id) instead of remounting on every pass.
+        // The index is the fallback for a block saved without one.
+        const id = typeof node.id === 'string' && node.id ? `block-${node.id}` : `block-${diagramIndex}`
+        return <MermaidDiagram id={id} source={code} label={diagramLabel(heading)} />
+      },
+    },
   }
 }
 
@@ -203,7 +276,7 @@ export function RichText({ value }: { value: unknown }) {
   return (
     <PayloadRichText
       className="rich-text"
-      converters={buildConverters(collectProseImages(editorState))}
+      converters={buildConverters(collectProseImages(editorState), collectDiagramLabels(editorState))}
       data={editorState}
     />
   )

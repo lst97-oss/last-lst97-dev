@@ -47,11 +47,36 @@ describe('media item conversion', () => {
     expect(toMediaItem(withSizes)?.srcSet).toBe('/media/one-800.png 800w')
   })
 
-  test('drops a derivative whose aspect ratio disagrees with the original', () => {
+  test('offers 16:9 derivatives even when the original is not 16:9', () => {
+    // Covers and gallery tiles are `aspect-video` boxes that crop with
+    // `object-cover`, so the RENDERED ratio is 16:9 whatever was uploaded.
+    // Judging candidates against the original instead of the box left every
+    // square or 3:2 upload with an empty candidate list, so no `srcset` was
+    // emitted and the browser fell back to the full-resolution original.
+    for (const [width, height] of [
+      [800, 800],
+      [1800, 1200],
+      [1000, 1250],
+    ]) {
+      const nonSixteenByNine = cover({
+        width,
+        height,
+        sizes: {
+          thumbnail: { url: '/media/one-320.png', width: 320, height: 240 },
+          card: { url: '/media/one-768.png', width: 768, height: 432 },
+          hero: { url: '/media/one-1600.png', width: 1600, height: 900 },
+        },
+      })
+
+      // The 4:3 `thumbnail` is still excluded: it does not match the box.
+      expect(coverSrcSet(nonSixteenByNine)).toBe('/media/one-768.png 768w, /media/one-1600.png 1600w')
+    }
+  })
+
+  test('drops a derivative whose aspect ratio disagrees with the layout box', () => {
     // Payload's imageSizes are fixed-aspect crops, so a 4:3 `thumbnail` is not
-    // a valid stand-in for a 16:9 original. Offering it in a `w`-descriptor
-    // srcset makes the browser fetch it and then lay it out at the original's
-    // ratio, which distorts it.
+    // a valid stand-in for a 16:9 box. Offering it in a `w`-descriptor srcset
+    // makes the browser fetch it and then lay it out for the box, distorting it.
     const mismatched = cover({
       sizes: {
         thumbnail: { url: '/media/one-320.png', width: 320, height: 240 },
@@ -62,16 +87,40 @@ describe('media item conversion', () => {
     expect(coverSrcSet(mismatched)).toBe('/media/one-768.png 768w')
   })
 
+  test('keeps prose images on the original-aspect rule so they are never cropped', () => {
+    // Prose images render inside `.media-trigger`, which sets no aspect ratio
+    // and no `object-fit`, so the image is painted at its intrinsic ratio. A
+    // 16:9 derivative of a square upload would arrive stretched.
+    const square = {
+      url: '/media/one.png',
+      alt: 'First image',
+      width: 800,
+      height: 800,
+      sizes: {
+        card: { url: '/media/one-768.png', width: 768, height: 432 },
+        hero: { url: '/media/one-1600.png', width: 1600, height: 900 },
+      },
+    }
+
+    expect(coverSrcSet(square, 'original')).toBeUndefined()
+    // The same image in an aspect-video box does get the derivatives.
+    expect(coverSrcSet(square, 'box')).toBe('/media/one-768.png 768w, /media/one-1600.png 1600w')
+  })
+
   test('offers no candidate when the original has no dimensions to compare', () => {
-    // Without the original's ratio nothing can be proven, so a possibly
-    // distorted derivative must not be offered.
+    // Without the original's ratio nothing can be proven for an intrinsic-size
+    // render, so a possibly distorted derivative must not be offered. A box
+    // reference is unaffected: the box's ratio is known from CSS.
     const unknown = cover({
       width: null,
       height: null,
       sizes: { card: { url: '/media/one-768.png', width: 768, height: 432 } },
     })
 
-    expect(coverSrcSet(unknown)).toBeUndefined()
+    expect(coverSrcSet(unknown, 'original')).toBeUndefined()
+    // The card grid still gets its candidates even with unknown dimensions,
+    // because the rendered box is 16:9 regardless of the upload.
+    expect(coverSrcSet(unknown, 'box')).toBe('/media/one-768.png 768w')
   })
 
   test('routes the filmstrip to the thumbnail derivative, not the original', () => {
@@ -191,5 +240,4 @@ describe('media viewer', () => {
       ),
     ).toBe('')
   })
-
 })

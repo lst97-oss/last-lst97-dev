@@ -1,12 +1,26 @@
 import PDFDocument from 'pdfkit'
 
-import { CHAT_CONTACT_TEMPLATES, type ChatContactSubmission } from '../../lib/chat-contact'
+import { CHAT_CONTACT_TEMPLATES, type ChatContactSubmission, type ChatContactTemplate } from '../../lib/chat-contact'
 
 const COLORS = {
   ink: '#17171f',
   paper: '#fffdf3',
   yellow: '#ffd34e',
   coral: '#ff7969',
+}
+
+type ReportSubmission = Exclude<ChatContactSubmission, { template: 'email' }>
+
+/**
+ * The heading printed on both the text and PDF renderings. A ternary chain
+ * silently mislabels the next non-email template, so the titles are keyed by
+ * template and exhaustiveness is checked at compile time.
+ */
+const REPORT_TITLE: Record<Exclude<ChatContactTemplate, 'email'>, string> = {
+  bug_report: 'ORIGINAL BUG REPORT',
+  feature_request: 'ORIGINAL FEATURE REQUEST',
+  quotation: 'ORIGINAL QUOTATION REQUEST',
+  support_plan: 'ORIGINAL SUPPORT PLAN REQUEST',
 }
 
 function pdfSafeText(value: string): string {
@@ -22,9 +36,7 @@ function pdfSafeText(value: string): string {
   }).join('')
 }
 
-function originalReportFields(
-  submission: Exclude<ChatContactSubmission, { template: 'email' }>,
-): Array<{ label: string; value: string }> {
+function originalReportFields(submission: ReportSubmission): Array<{ label: string; value: string }> {
   const definitions = CHAT_CONTACT_TEMPLATES[submission.template].fields.filter(
     (field) => field.key !== 'name' && field.key !== 'email',
   )
@@ -32,10 +44,8 @@ function originalReportFields(
   return definitions.map((field) => ({ label: field.label, value: fields[field.key]?.trim() ?? '' }))
 }
 
-export function renderOriginalChatContactReportText(
-  submission: Exclude<ChatContactSubmission, { template: 'email' }>,
-): string {
-  const title = submission.template === 'bug_report' ? 'ORIGINAL BUG REPORT' : 'ORIGINAL FEATURE REQUEST'
+export function renderOriginalChatContactReportText(submission: ReportSubmission): string {
+  const title = REPORT_TITLE[submission.template]
   return [
     `LAST//OS - ${title}`,
     'Submitted wording before clarity refinement',
@@ -76,13 +86,9 @@ export async function renderOriginalChatContactReportPdf(submission: ChatContact
     .font('Helvetica-Bold')
     .fontSize(10)
     .text('LAST//OS  -  ORIGINAL REPORT', 54, 22, { characterSpacing: 1.2 })
-  document
-    .fillColor(COLORS.ink)
-    .font('Helvetica-Bold')
-    .fontSize(22)
-    .text(`ORIGINAL ${submission.template === 'bug_report' ? 'BUG REPORT' : 'FEATURE REQUEST'}`, 54, 100, {
-      width: 490,
-    })
+  document.fillColor(COLORS.ink).font('Helvetica-Bold').fontSize(22).text(REPORT_TITLE[submission.template], 54, 100, {
+    width: 490,
+  })
   document
     .fillColor(COLORS.coral)
     .font('Helvetica-Bold')

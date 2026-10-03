@@ -13,6 +13,10 @@ const homeStyles = await Bun.file(new URL('../src/styles/home.css', import.meta.
 const globalStyles = await Bun.file(new URL('../src/styles/globals.css', import.meta.url)).text()
 const changelogRoute = await Bun.file(new URL('../src/routes/_site.changelog.index.tsx', import.meta.url)).text()
 const siteStyles = await Bun.file(new URL('../src/styles.css', import.meta.url)).text()
+const wakatimeService = await Bun.file(new URL('../src/server/wakatime/service.ts', import.meta.url)).text()
+// JSX text wraps across lines in the source, so any assertion about prose that
+// is not itself short enough to fit on one line has to read the collapsed form.
+const aboutRouteFlat = aboutRoute.replace(/\s+/g, ' ')
 
 // The home route composes section components; the markup these tests describe lives in those
 // components, so read both the route and the sections it renders.
@@ -75,9 +79,13 @@ describe('home operator profile', () => {
   test('places language shares below the profile description and lets JSON fill the right column', () => {
     // The profile panel is a single Tailwind flex column, so DOM order is the layout contract:
     // identity, bio, language card, JSON snapshot, read link.
-    const order = ['profile-identity', 'profile-expanded-bio', 'profile-coding-details', 'profile-json-details', 'profile-read-link'].map(
-      (className) => operatorProfile.indexOf(className),
-    )
+    const order = [
+      'profile-identity',
+      'profile-expanded-bio',
+      'profile-coding-details',
+      'profile-json-details',
+      'profile-read-link',
+    ].map((className) => operatorProfile.indexOf(className))
     expect(order.every((position) => position >= 0)).toBe(true)
     expect(order).toEqual([...order].sort((a, b) => a - b))
 
@@ -91,24 +99,22 @@ describe('home operator profile', () => {
 
   test('uses a distinct soft teal language card and emphasizes compact coding time', () => {
     // Soft teal now comes from the shared semantic token instead of a hard-coded hex.
-    const languageCard = operatorProfile
-      .split('\n')
-      .find((line) => line.includes('profile-coding-details'))
+    const languageCard = operatorProfile.split('\n').find((line) => line.includes('profile-coding-details'))
     expect(languageCard).toContain('bg-success-muted')
     expect(globalStyles).toContain('--os-teal-soft: #d8f4ee;')
     expect(globalStyles).toContain('--success-muted: var(--os-teal-soft);')
 
     // `text-base` is Tailwind's 1rem/16px step — the old hard-coded `font-size: 16px`.
-    const compactCodingTime = operatorProfile
-      .split('\n')
-      .find((line) => line.includes('profile-total-coding-time'))
+    const compactCodingTime = operatorProfile.split('\n').find((line) => line.includes('profile-total-coding-time'))
     expect(compactCodingTime).toContain('text-base')
     expect(compactCodingTime).toContain('font-black')
   })
 
   test('shows the all-time WakaTime total in the compact profile as text', () => {
     expect(operatorProfile).toContain('profile-total-coding-time')
-    expect(homeRoute).toContain('wakatimeSnapshot?.stats.data.grand_total.human_readable_total_including_other_language')
+    expect(homeRoute).toContain(
+      'wakatimeSnapshot?.stats.data.grand_total.human_readable_total_including_other_language',
+    )
     expect(operatorProfile).toContain('{totalCodingTime} coded')
   })
 
@@ -121,8 +127,12 @@ describe('home operator profile', () => {
   test('adds formatted WakaTime public-share JSON in the expanded profile', () => {
     expect(operatorProfile).toContain('profile-json-details')
     expect(operatorProfile).toContain('RAW WAKATIME JSON')
-    expect(homeRoute).toContain('beautify.js(wakatimeSnapshot.rawJson')
-    expect(operatorProfile).toContain('<JsonCodeView code={formattedSnapshot} />')
+    expect(homeRoute).toContain('wakatimeSnapshot?.formattedJson')
+    // The formatting happens server-side: the home route used to run
+    // `js-beautify` during render, which put ~97 kB of beautifier on the client
+    // bundle's critical path just to indent one blob.
+    expect(wakatimeService).toContain('formattedJson: JSON.stringify(payload, null, 2)')
+    expect(operatorProfile).toContain('<CodeBlockView code={formattedSnapshot} language="json" label="JSON" />')
   })
 
   test('lists changelog entries as adaptive cards instead of a timeline', () => {
@@ -136,14 +146,12 @@ describe('home operator profile', () => {
 describe('about page introduction', () => {
   test('describes the operator as an open-source builder focused on useful tools', () => {
     expect(aboutRoute).toContain('I build useful tools.')
-    expect(aboutRoute).toContain(
-      'Melbourne-based developer building practical web apps and open-source tools.',
-    )
-    expect(aboutRoute).toContain(
+    expect(aboutRoute).toContain('Melbourne-based developer building practical web apps and open-source tools.')
+    expect(aboutRouteFlat).toContain(
       'based in Melbourne, Australia, building modern web applications and open-source tools that solve practical problems',
     )
     expect(aboutRoute).toContain('My work focuses on React, TypeScript, and Next.js,')
-    expect(aboutRoute).toContain('turning ideas into useful, well-crafted software for the developer community')
+    expect(aboutRouteFlat).toContain('turning ideas into useful, well-crafted software for the developer community')
     expect(aboutRoute).toContain('system architecture')
     expect(aboutRoute).toContain('thoughtful collaborations and open-source work')
   })

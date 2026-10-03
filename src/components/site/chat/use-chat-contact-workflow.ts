@@ -1,7 +1,8 @@
 import type { Dispatch } from 'react'
 
 import type { ChatContactField, ChatContactFieldValues, ChatContactTemplate } from '../../../lib/chat-contact'
-import type { ChatContactAction, ChatContactEvent } from '../../../server/chat/events'
+import type { ChatContactAction, ChatContactActionResponse } from '../../../server/chat/events'
+import { chatContactActionResponseSchema } from '../../../server/chat/events'
 import type { ChatSessionAction, ChatSessionState } from './chat-session-state'
 import type { ChatContactWorkflowViewModel } from './chat-types'
 
@@ -10,30 +11,44 @@ interface UseChatContactWorkflowOptions {
   dispatch: Dispatch<ChatSessionAction>
 }
 
-export function useChatContactWorkflow({ state, dispatch }: UseChatContactWorkflowOptions): ChatContactWorkflowViewModel {
+export function useChatContactWorkflow({
+  state,
+  dispatch,
+}: UseChatContactWorkflowOptions): ChatContactWorkflowViewModel {
   const { contact, conversation } = state
   const contextToken = conversation.contextToken
 
   async function postAction(action: ChatContactAction) {
     dispatch({ type: 'status/set-pending', pending: true })
     dispatch({ type: 'status/clear-error' })
-    dispatch({ type: 'status/set-tool', toolStatus: action.action === 'confirm_send' ? 'SENDING REVIEWED EMAIL…' : 'SCREENING CONTACT REQUEST…' })
+    dispatch({
+      type: 'status/set-tool',
+      toolStatus: action.action === 'confirm_send' ? 'SENDING REVIEWED EMAIL…' : 'SCREENING CONTACT REQUEST…',
+    })
     try {
       const response = await fetch('/api/site/chat', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(action),
       })
-      const data = (await response.json().catch(() => null)) as { error?: string; event?: ChatContactEvent } | null
+      const parsed = chatContactActionResponseSchema.safeParse(await response.json().catch(() => null))
+      const data: ChatContactActionResponse | null = parsed.success ? parsed.data : null
       if (!response.ok || !data?.event) {
         if (response.status === 400 && data?.error?.includes('expired')) {
-          dispatch({ type: 'conversation/reset', message: 'That contact session expired. Start a fresh conversation and I’ll be ready.' })
+          dispatch({
+            type: 'conversation/reset',
+            message: 'That contact session expired. Start a fresh conversation and I’ll be ready.',
+          })
         }
         throw new Error(data?.error ?? 'The contact workflow is temporarily unavailable.')
       }
       dispatch({ type: 'contact/event', event: data.event })
     } catch (requestError) {
-      dispatch({ type: 'status/set-error', error: requestError instanceof Error ? requestError.message : 'The contact workflow is temporarily unavailable.' })
+      dispatch({
+        type: 'status/set-error',
+        error:
+          requestError instanceof Error ? requestError.message : 'The contact workflow is temporarily unavailable.',
+      })
     } finally {
       dispatch({ type: 'status/set-pending', pending: false })
       dispatch({ type: 'status/set-tool', toolStatus: null })
@@ -56,8 +71,14 @@ export function useChatContactWorkflow({ state, dispatch }: UseChatContactWorkfl
 
   function submitForm(fields: ChatContactFieldValues) {
     if (!contextToken || contact.state?.phase !== 'filling') return
+    // Screening spends model calls, so an unverified submission never leaves the
+    // browser. The server rejects a missing token with 403 regardless.
+    if (!contact.screeningTurnstileToken) {
+      dispatch({ type: 'status/set-error', error: 'Complete the security check to screen your request.' })
+      return
+    }
     dispatch({ type: 'contact/set-field-errors', fieldErrors: { missingFields: [], invalidFields: [] } })
-    void postAction({ action: 'submit_form', contextToken, fields })
+    void postAction({ action: 'submit_form', contextToken, fields, turnstileToken: contact.screeningTurnstileToken })
   }
 
   function chooseTemplate(template: ChatContactTemplate) {
@@ -110,6 +131,7 @@ export function useChatContactWorkflow({ state, dispatch }: UseChatContactWorkfl
       discard,
       startBlankChat,
       setTurnstileToken: (token) => dispatch({ type: 'contact/set-turnstile-token', token }),
+      setScreeningTurnstileToken: (token) => dispatch({ type: 'contact/set-screening-turnstile-token', token }),
       setDiscardConfirmation: (confirmed) => dispatch({ type: 'contact/set-discard-confirmation', confirmed }),
     },
   }

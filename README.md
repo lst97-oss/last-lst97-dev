@@ -88,7 +88,7 @@ Full architecture, tool contracts, and change checklist: [`src/server/chat/AGENT
 
 | Document | Contents |
 | --- | --- |
-| [`docs/knowledge-rag.md`](docs/knowledge-rag.md) | RAG setup, retrieval pipeline, WakaTime tools, owned-project catalogue |
+| [`AGENTS.md`](AGENTS.md) | RAG setup, retrieval pipeline, WakaTime tools, owned-project catalogue |
 | [`docs/wakatime-history.md`](docs/wakatime-history.md) | Heartbeat warehouse schema, rollups, privacy |
 | [`docs/security/vercel-ingress.md`](docs/security/vercel-ingress.md) | Vercel ingress and client-IP trust |
 | [`CONTEXT.md`](CONTEXT.md) | Ubiquitous language for content domains |

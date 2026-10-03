@@ -16,10 +16,27 @@ export function ChatContactConfirmationPhase({
 }) {
   return (
     <div className="os-chat-contact-card">
-      <p>Starting clears the current conversation. Jev will screen this new contact session without the earlier chat context, and none of those earlier messages will be included in your email.</p>
+      <p>
+        Starting clears the current conversation. Jev will screen this new contact session without the earlier chat
+        context, and none of those earlier messages will be included in your email.
+      </p>
       <div className="os-chat-contact-actions">
-        <button className={cn(pixelButtonVariants({ tone: 'coral' }))} disabled={pending || !hasContextToken} onClick={onStart} type="button">START CONTACT SESSION</button>
-        <button className={cn(pixelButtonVariants())} disabled={pending || !hasContextToken} onClick={onDecline} type="button">KEEP CHATTING</button>
+        <button
+          className={cn(pixelButtonVariants({ tone: 'coral' }))}
+          disabled={pending || !hasContextToken}
+          onClick={onStart}
+          type="button"
+        >
+          START CONTACT SESSION
+        </button>
+        <button
+          className={cn(pixelButtonVariants())}
+          disabled={pending || !hasContextToken}
+          onClick={onDecline}
+          type="button"
+        >
+          KEEP CHATTING
+        </button>
       </div>
     </div>
   )
@@ -36,7 +53,10 @@ export function ChatContactTemplateSelectionPhase({
 }) {
   return (
     <div className="os-chat-contact-card">
-      <p>Select one template. It stays locked for this session; choosing a different one requires discarding this request and starting again.</p>
+      <p>
+        Select one template. It stays locked for this session; choosing a different one requires discarding this request
+        and starting again.
+      </p>
       <div className="os-chat-contact-template-grid" role="group" aria-label="Contact templates">
         {(Object.keys(CHAT_CONTACT_TEMPLATES) as ChatContactTemplate[]).map((template) => (
           <button

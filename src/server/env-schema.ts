@@ -122,7 +122,11 @@ export function createServerEnv(source: ServerEnvSource) {
         .enum(['true', 'false'])
         .default('false')
         .transform((value) => value === 'true'),
-      MODERATION_MIN_CONFIDENCE: z.coerce.number().min(0).max(1).default(0.75),
+      // Gates every Jev safety and contact-intent decision. Lowered from 0.75 on
+      // 2026-10-02 after calibration work made the contact questions reliable at
+      // the low end; hostile payloads still score 0.99-1.0, so the reduced floor
+      // buys tolerance for unusual-but-genuine enquiries without admitting them.
+      MODERATION_MIN_CONFIDENCE: z.coerce.number().min(0).max(1).default(0.6),
       NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
       OPENROUTER_API_KEY: z.string().min(1).optional(),
       OPENROUTER_APP_TITLE: z.string().default('Personal OS Portfolio'),

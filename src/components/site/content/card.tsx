@@ -23,21 +23,51 @@ const summaryClass = 'mb-4 line-clamp-3 text-muted-foreground'
 
 const metaClass = 'mt-3 text-xs font-black tracking-wider text-muted-foreground uppercase'
 
-export function PostCard({ post }: { post: PostSummary }) {
+/**
+ * Heading level for the card title. A card is not always one level below the
+ * page's `h1`: on the index routes it follows `PageHeading`'s `h1` directly,
+ * while on the home page it sits under a section `h2`. Getting this wrong
+ * produces a `h1 → h3` skip, which is an OpenSEO `heading-order-skip`.
+ * Defaults to 3, the deeper home-page level.
+ */
+type CardHeadingProps = { headingLevel?: 2 | 3 }
+
+// `card-title` is load-bearing: the `h2`/`h3` choice in each card below makes
+// these headings, and a bare `h2` picks up the page-level clamp from
+// globals.css, which outranks `text-2xl`. See `.card-title` in
+// styles/content-cards.css.
+const cardTitleClass = 'card-title mb-2 text-2xl'
+
+export function PostCard({ post, headingLevel = 3 }: { post: PostSummary } & CardHeadingProps) {
+  const Title = headingLevel === 2 ? 'h2' : 'h3'
   return (
     <Link className={cardClass} to="/blog/$slug" params={{ slug: post.slug }}>
       <div className={kickerClass}>
         <PixelIcon glyph="✎" /> NOTE / {formatPublishedDate(post.publishedAt)}
       </div>
-      <ContentCover className={COVER_CLASS} fallback={<PlaceholderArt label={post.title} seed={post.slug} />} image={post.coverImage} />
-      <h3 className="mb-2 text-2xl">{post.title}</h3>
+      <ContentCover
+        className={COVER_CLASS}
+        fallback={<PlaceholderArt label={post.title} seed={post.slug} />}
+        image={post.coverImage}
+      />
+      <Title className={cardTitleClass}>{post.title}</Title>
       <p className={summaryClass}>{post.excerpt}</p>
       {post.tags.length > 0 ? (
         <TagRow className="mb-3">
-          {post.tags.slice(0, 4).map((tag) => <Tag key={tag}>{tag}</Tag>)}
+          {post.tags.slice(0, 4).map((tag) => (
+            <Tag key={tag}>{tag}</Tag>
+          ))}
         </TagRow>
       ) : null}
-      {post.topics && post.topics.length > 0 ? <TagRow className="mb-3">{post.topics.slice(0, 3).map((topic) => <span key={topic.slug}><Tag>{topic.title}</Tag></span>)}</TagRow> : null}
+      {post.topics && post.topics.length > 0 ? (
+        <TagRow className="mb-3">
+          {post.topics.slice(0, 3).map((topic) => (
+            <span key={topic.slug}>
+              <Tag>{topic.title}</Tag>
+            </span>
+          ))}
+        </TagRow>
+      ) : null}
       <CardLink>READ NOTE →</CardLink>
     </Link>
   )
@@ -53,16 +83,22 @@ export function PostCard({ post }: { post: PostSummary }) {
 export function ProjectCard({
   project,
   featured = false,
+  headingLevel = 3,
 }: {
   project: ProjectSummary
   featured?: boolean
-}) {
+} & CardHeadingProps) {
+  const Title = headingLevel === 2 ? 'h2' : 'h3'
   const lifecycle = getProjectLifecycleLabel(project.projectStatus)
   const timeframe = formatProjectTimeframe(project.projectStatus, project.startDate, project.endDate)
   const updated = contentCardDate(null, project.updatedAt)
 
   return (
-    <Link className={cn(cardClass, 'project-card', featured && 'project-card--featured')} to="/projects/$slug" params={{ slug: project.slug }}>
+    <Link
+      className={cn(cardClass, 'project-card', featured && 'project-card--featured')}
+      to="/projects/$slug"
+      params={{ slug: project.slug }}
+    >
       <div className={kickerClass}>
         <PixelIcon glyph="▤" /> PROJECT / {project.featured ? 'FEATURED' : 'ARCHIVE'}
       </div>
@@ -70,6 +106,11 @@ export function ProjectCard({
         className={featured ? 'content-cover project-card-cover' : COVER_CLASS}
         fallback={<PlaceholderArt label={project.title} seed={project.slug} />}
         image={project.coverImage}
+        // The featured card is the largest above-the-fold image on the home
+        // page and is the likely LCP element, so it loads eagerly with high
+        // priority. Grid cards stay lazy; one eager image per listing is the
+        // documented budget, and this is that one.
+        priority={featured}
         // The window is a 3/5 column of a max-w-6xl page with its own padding,
         // so the cover tops out near 480px rather than tracking the viewport.
         sizes={featured ? '(min-width: 1024px) 480px, 100vw' : undefined}
@@ -81,7 +122,7 @@ export function ProjectCard({
         </div>
       ) : null}
       {updated ? <span className={metaClass}>UPDATED / {updated}</span> : null}
-      <h3 className="mb-2 text-2xl">{project.title}</h3>
+      <Title className={cardTitleClass}>{project.title}</Title>
       <p className={summaryClass}>{project.summary}</p>
       <TagRow className="mb-3">
         {project.technologies.slice(0, 4).map((technology) => (
@@ -93,24 +134,35 @@ export function ProjectCard({
   )
 }
 
-export function ChangelogCard({ entry }: { entry: ChangelogSummary }) {
+export function ChangelogCard({ entry, headingLevel = 3 }: { entry: ChangelogSummary } & CardHeadingProps) {
+  const Title = headingLevel === 2 ? 'h2' : 'h3'
   return (
     <Link className={cn(cardClass, 'changelog-card')} to="/changelog/$slug" params={{ slug: entry.slug }}>
       <div className={kickerClass}>
         <PixelIcon glyph="↻" /> CHANGELOG / {formatPublishedDate(entry.publishedAt)}
       </div>
-      <ContentCover className={COVER_CLASS} fallback={<PlaceholderArt label={entry.title} seed={entry.slug} />} image={entry.coverImage} />
-      {entry.version ? <ProjectStatus className="changelog-version mb-3 self-start">{entry.version}</ProjectStatus> : null}
+      <ContentCover
+        className={COVER_CLASS}
+        fallback={<PlaceholderArt label={entry.title} seed={entry.slug} />}
+        image={entry.coverImage}
+      />
+      {entry.version ? (
+        <ProjectStatus className="changelog-version mb-3 self-start">{entry.version}</ProjectStatus>
+      ) : null}
       {entry.changeTypes.length > 0 ? (
         <TagRow className="mb-3">
-          {entry.changeTypes.map((type) => <ProjectStatus key={type}>{CHANGELOG_CHANGE_TYPE_LABELS[type]}</ProjectStatus>)}
+          {entry.changeTypes.map((type) => (
+            <ProjectStatus key={type}>{CHANGELOG_CHANGE_TYPE_LABELS[type]}</ProjectStatus>
+          ))}
         </TagRow>
       ) : null}
-      <h3 className="mb-2 text-2xl">{entry.title}</h3>
+      <Title className={cardTitleClass}>{entry.title}</Title>
       <p className={summaryClass}>{entry.excerpt}</p>
       {entry.tags.length > 0 ? (
         <TagRow className="mb-3">
-          {entry.tags.slice(0, 4).map((tag) => <Tag key={tag}>{tag}</Tag>)}
+          {entry.tags.slice(0, 4).map((tag) => (
+            <Tag key={tag}>{tag}</Tag>
+          ))}
         </TagRow>
       ) : null}
       <CardLink>READ ENTRY →</CardLink>

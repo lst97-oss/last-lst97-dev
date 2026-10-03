@@ -17,8 +17,14 @@ export function createModerationService(classifier: ModerationClassifier, minimu
     try {
       const finding = await classifier.classify({ channel: 'contact', message })
       if (finding.channel !== 'contact') return { allowed: false }
+      // Intent is judged first so a spam submission is never described to the
+      // safety model at all. Both questions must clear independently: a
+      // legitimate intent says nothing about whether the text is safe.
+      if (finding.intent.label !== 'legitimate') return { allowed: false }
       if (!isConfident(finding.intent.confidence, minimumConfidence)) return { allowed: false }
-      return finding.intent.label === 'legitimate' ? { allowed: true } : { allowed: false }
+      if (finding.safety.label !== 'safe') return { allowed: false }
+      if (!isConfident(finding.safety.confidence, minimumConfidence)) return { allowed: false }
+      return { allowed: true }
     } catch {
       return { unavailable: true }
     }
@@ -114,6 +120,7 @@ export function createModerationService(classifier: ModerationClassifier, minimu
         'owner_goals',
         'on_behalf',
         'assistant_usage',
+        'service_offer',
         'technical_question',
       ].includes(finding.scope.label)
       const safetyAllowed = finding.safety.label === 'safe'

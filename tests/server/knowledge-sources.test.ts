@@ -17,7 +17,11 @@ describe('Payload knowledge source', () => {
         status: 'published',
         publishedAt: '2026-09-22T00:00:00Z',
         updatedAt: '2026-09-22T12:00:00Z',
-        content: { root: { children: [{ type: 'paragraph', children: [{ type: 'text', text: 'Retries improve resilience.' }] }] } },
+        content: {
+          root: {
+            children: [{ type: 'paragraph', children: [{ type: 'text', text: 'Retries improve resilience.' }] }],
+          },
+        },
       }),
     })
 
@@ -102,7 +106,7 @@ describe('curated profile knowledge source', () => {
       'Kmart Tyre & Auto Services',
       'Jul 2019–Jan 2020',
       'expense-management',
-      'SplitTab is Nelson\'s expense-management app for splitting shared costs.',
+      "SplitTab is Nelson's expense-management app for splitting shared costs.",
       'GNAF Autocomplete demo: https://gnaf.lst97.dev',
       'Smartplay HK OSS demo: https://sphkoss.lst97.dev',
       'Best Maker website: https://www.bestmaker.com.au',

@@ -10,6 +10,7 @@ import type {
   ProjectLifecycle,
   ProjectSummary,
   SEOOverrides,
+  TagSummary,
   TopicSummary,
 } from './types'
 
@@ -102,6 +103,33 @@ function topicSummaries(value: unknown): TopicSummary[] {
   })
 }
 
+/**
+ * A `hasMany` relationship read at `depth: 0` hands back bare ids, so this
+ * accepts either a populated document or an id and always returns the same
+ * shape. An unpopulated entry still carries its id, so the row renders with the
+ * id as its label rather than disappearing.
+ */
+function labelSummaries(value: unknown): TagSummary[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    const id = typeof item === 'string' || typeof item === 'number' ? item : null
+    const label = typeof item === 'object' && item !== null ? (item as Record<string, unknown>) : null
+    const recordId = label && (typeof label.id === 'string' || typeof label.id === 'number') ? label.id : id
+    if (recordId === null || !label || typeof label.slug !== 'string') {
+      return typeof recordId === 'string' || typeof recordId === 'number'
+        ? [{ id: recordId, title: String(recordId), slug: String(recordId) }]
+        : []
+    }
+    return [
+      {
+        id: recordId,
+        title: stringValue(label.title, label.slug),
+        slug: label.slug,
+      },
+    ]
+  })
+}
+
 const CHANGE_TYPES = new Set<ChangelogChangeType>([
   'feature',
   'improvement',
@@ -182,6 +210,8 @@ export function mapProjectSummary(document: PayloadDocument): ProjectSummary {
     title: stringValue(document.title, 'Untitled project'),
     summary: stringValue(document.summary),
     technologies: stringArray(document.technologies),
+    topics: topicSummaries(document.topics),
+    tags: labelSummaries(document.tags),
     gallery: projectGallery(document.gallery),
     featured: document.featured === true,
     coverImage: coverImage(document.coverImage),

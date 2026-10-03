@@ -10,7 +10,7 @@ export const Route = createFileRoute('/_site/chat')({
       pathname: '/chat',
       title: 'Chat',
       description:
-        'Start a conversation with the LAST//OS assistant — ask about projects, notes, or the work behind the system.',
+        'Start a conversation with Zita, the LAST//OS assistant for Nelson — ask about projects, notes, or the work behind the system.',
       // Session-scoped, no shareable content to index.
       noindex: true,
     }),

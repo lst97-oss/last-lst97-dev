@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'bun:test'
 
 import { createIndexKnowledgeSource } from '../../src/server/knowledge/index-source'
-import type { KnowledgeDocument, KnowledgeSource } from '../../src/server/knowledge/source-types'
 import type { KnowledgeChunk } from '../../src/server/knowledge/repository'
+import type { KnowledgeDocument, KnowledgeSource } from '../../src/server/knowledge/source-types'
 import type { EmbeddingPort, KnowledgeSourceReference } from '../../src/server/knowledge/types'
 
 const sourceRef: KnowledgeSourceReference = {
-  type: 'post', sourceId: 'post-7', title: 'Reliable services', url: 'https://example.test/blog/reliable-services',
+  type: 'post',
+  sourceId: 'post-7',
+  title: 'Reliable services',
+  url: 'https://example.test/blog/reliable-services',
 }
 const publishedDocument: KnowledgeDocument = {
   source: sourceRef,
@@ -14,20 +17,46 @@ const publishedDocument: KnowledgeDocument = {
   isPublic: true,
   sourceUpdatedAt: new Date('2026-09-22T00:00:00Z'),
 }
-const vector = Array.from({ length: 1024 }, (_, index) => index === 0 ? 1 : 0)
+const vector = Array.from({ length: 1024 }, (_, index) => (index === 0 ? 1 : 0))
 
-function dependencies(overrides: Partial<{
-  document: KnowledgeDocument | null
-  sourceType: KnowledgeDocument['source']['type']
-  embed: EmbeddingPort['embed']
-}> = {}) {
-  const calls: { embedded: string[]; upserts: KnowledgeChunk[][]; catalogEntries: unknown[]; removed: string[]; logs: string[]; loggedSourceIds: unknown[] } = {
-    embedded: [], upserts: [], catalogEntries: [], removed: [], logs: [], loggedSourceIds: [],
+function dependencies(
+  overrides: Partial<{
+    document: KnowledgeDocument | null
+    sourceType: KnowledgeDocument['source']['type']
+    embed: EmbeddingPort['embed']
+  }> = {},
+) {
+  const calls: {
+    embedded: string[]
+    upserts: KnowledgeChunk[][]
+    catalogEntries: unknown[]
+    removed: string[]
+    logs: string[]
+    loggedSourceIds: unknown[]
+  } = {
+    embedded: [],
+    upserts: [],
+    catalogEntries: [],
+    removed: [],
+    logs: [],
+    loggedSourceIds: [],
   }
-  const source: KnowledgeSource = { type: overrides.sourceType ?? 'post', fetch: async () => overrides.document === undefined ? publishedDocument : overrides.document }
+  const source: KnowledgeSource = {
+    type: overrides.sourceType ?? 'post',
+    fetch: async () => (overrides.document === undefined ? publishedDocument : overrides.document),
+  }
   const repository = {
-    upsertSourceChunks: async (_source: KnowledgeSourceReference, chunks: KnowledgeChunk[], projectCatalog?: unknown) => { calls.upserts.push(chunks); calls.catalogEntries.push(projectCatalog) },
-    removeSource: async (_type: string, sourceId: string) => { calls.removed.push(sourceId) },
+    upsertSourceChunks: async (
+      _source: KnowledgeSourceReference,
+      chunks: KnowledgeChunk[],
+      projectCatalog?: unknown,
+    ) => {
+      calls.upserts.push(chunks)
+      calls.catalogEntries.push(projectCatalog)
+    },
+    removeSource: async (_type: string, sourceId: string) => {
+      calls.removed.push(sourceId)
+    },
     listSourceIds: async () => [],
     listOwnedProjects: async () => ({ projects: [], hasMore: false, matchingTotal: 0, breakdown: [] }),
     upsertOwnedProjectCatalogEntries: async () => {},
@@ -93,9 +122,16 @@ describe('IndexKnowledgeSource', () => {
       isPublic: true,
       sourceUpdatedAt: null,
       projectCatalog: {
-        summary: 'A command line tool.', createdAt: '2024-01-01T00:00:00Z', updatedAt: null,
-        stars: 3, forks: 1, primaryLanguage: 'Rust', languages: ['Rust'], kinds: ['cli_tool'],
-        githubTopics: ['cli'], curatedTopics: ['developer-tool'],
+        summary: 'A command line tool.',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: null,
+        stars: 3,
+        forks: 1,
+        primaryLanguage: 'Rust',
+        languages: ['Rust'],
+        kinds: ['cli_tool'],
+        githubTopics: ['cli'],
+        curatedTopics: ['developer-tool'],
       },
     }
 
@@ -130,7 +166,11 @@ describe('IndexKnowledgeSource', () => {
   })
 
   it('keeps last-known-good chunks when any embedding fails', async () => {
-    const failing = dependencies({ embed: async () => { throw new Error('provider secret details') } })
+    const failing = dependencies({
+      embed: async () => {
+        throw new Error('provider secret details')
+      },
+    })
     const indexer = createIndexKnowledgeSource(failing)
 
     await expect(indexer.execute('post-7')).rejects.toThrow('Knowledge source embedding failed')

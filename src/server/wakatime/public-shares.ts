@@ -248,6 +248,12 @@ export function createWakaTimeStatsClient(dependencies: WakaTimeShareClientConfi
   const cacheTtlMs = dependencies.cacheTtlMs ?? 30 * 60_000
   const failureCacheTtlMs = dependencies.failureCacheTtlMs ?? 60_000
   const now = dependencies.now ?? (() => new Date())
+  // One in-flight request per URL, so a burst of concurrent misses for the same
+  // share (the agent loop batches tool calls) collapses to a single upstream
+  // call instead of one per caller. TTLs read the injected `now` rather than
+  // `Date.now()`, so the windows are drivable in tests.
+  const clockMs = (): number => now().getTime()
+  const inFlight = new Map<string, Promise<CodingStatsResult | null>>()
   const cache = new Map<string, CachedWakaTimeShare>()
 
   async function loadPayload(url: string): Promise<unknown> {
@@ -283,52 +289,63 @@ export function createWakaTimeStatsClient(dependencies: WakaTimeShareClientConfi
       if (!request) return null
       const url = wakaTimeShareUrl(request.category, request.range)
       const cached = cache.get(url)
-      if (cached && Date.now() - cached.at < (cached.result === null ? failureCacheTtlMs : cacheTtlMs))
+      if (cached && clockMs() - cached.at < (cached.result === null ? failureCacheTtlMs : cacheTtlMs))
         return cached.result
 
-      let result: CodingStatsResult | null = null
-      try {
-        const payload = await loadPayload(url)
-        const retrievedAtUtc = now().toISOString()
-        if (request.category === 'activity') {
-          result = makeActivityResult(parseActivitySnapshot(payload, request.range), retrievedAtUtc)
-        } else if (request.category === 'categories') {
-          const [categoryPayload, activityPayload] = await Promise.all([
-            payload,
-            loadPayload(wakaTimeShareUrl('activity', request.range)),
-          ])
-          const parsed = shareItemResponseSchema.safeParse(categoryPayload)
-          if (!parsed.success) throw new Error('WakaTime share response is invalid')
-          const activity = parseActivitySnapshot(activityPayload, request.range)
-          const items: CodingStatsCategoryItem[] = normalizeItems(parsed.data.data).map((item) => {
-            const estimatedSeconds = Math.round((activity.breakdownSeconds * item.percent) / 100)
-            return { ...item, estimatedSeconds, humanReadableEstimate: formatHours(estimatedSeconds) }
-          })
-          const categoryResult: CodingCategoryStats = {
-            category: 'categories',
-            period: activity.period,
-            retrievedAtUtc,
-            items,
-          }
-          result = categoryResult
-        } else {
-          const parsed = shareItemResponseSchema.safeParse(payload)
-          if (!parsed.success) throw new Error('WakaTime share response is invalid')
-          const breakdownResult: CodingBreakdownStats = {
-            category: request.category,
-            period: { range: request.range, start: null, end: null },
-            retrievedAtUtc,
-            items: normalizeItems(parsed.data.data),
-          }
-          result = breakdownResult
-        }
-      } catch {
-        dependencies.logger.warn('wakatime.public_share.failed', { category: request.category, range: request.range })
-        result = null
-      }
+      const pending = inFlight.get(url)
+      if (pending) return pending
 
-      cache.set(url, { at: Date.now(), result })
-      return result
+      // Register the promise synchronously so concurrent callers for the same
+      // share join this request instead of starting their own.
+      const load = (async () => {
+        let result: CodingStatsResult | null = null
+        try {
+          const payload = await loadPayload(url)
+          const retrievedAtUtc = now().toISOString()
+          if (request.category === 'activity') {
+            result = makeActivityResult(parseActivitySnapshot(payload, request.range), retrievedAtUtc)
+          } else if (request.category === 'categories') {
+            const [categoryPayload, activityPayload] = await Promise.all([
+              payload,
+              loadPayload(wakaTimeShareUrl('activity', request.range)),
+            ])
+            const parsed = shareItemResponseSchema.safeParse(categoryPayload)
+            if (!parsed.success) throw new Error('WakaTime share response is invalid')
+            const activity = parseActivitySnapshot(activityPayload, request.range)
+            const items: CodingStatsCategoryItem[] = normalizeItems(parsed.data.data).map((item) => {
+              const estimatedSeconds = Math.round((activity.breakdownSeconds * item.percent) / 100)
+              return { ...item, estimatedSeconds, humanReadableEstimate: formatHours(estimatedSeconds) }
+            })
+            const categoryResult: CodingCategoryStats = {
+              category: 'categories',
+              period: activity.period,
+              retrievedAtUtc,
+              items,
+            }
+            result = categoryResult
+          } else {
+            const parsed = shareItemResponseSchema.safeParse(payload)
+            if (!parsed.success) throw new Error('WakaTime share response is invalid')
+            const breakdownResult: CodingBreakdownStats = {
+              category: request.category,
+              period: { range: request.range, start: null, end: null },
+              retrievedAtUtc,
+              items: normalizeItems(parsed.data.data),
+            }
+            result = breakdownResult
+          }
+        } catch {
+          dependencies.logger.warn('wakatime.public_share.failed', { category: request.category, range: request.range })
+          result = null
+        }
+
+        cache.set(url, { at: clockMs(), result })
+        inFlight.delete(url)
+        return result
+      })()
+
+      inFlight.set(url, load)
+      return load
     },
   }
 }

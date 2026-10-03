@@ -1,10 +1,16 @@
-import { CHAT_CONTACT_TEMPLATES, type ChatContactField, type ChatContactFieldValues, createEmptyChatContactFields } from '../../../lib/chat-contact'
+import {
+  CHAT_CONTACT_TEMPLATES,
+  type ChatContactField,
+  type ChatContactFieldValues,
+  createEmptyChatContactFields,
+} from '../../../lib/chat-contact'
 import { MAX_CHAT_TURNS, nextCompletedChatTurnCount } from '../../../lib/chat-limits'
 import type { ChatContactEvent } from '../../../server/chat/events'
 import type { PublicCitation } from '../../../server/knowledge/retrieve'
 import type { ChatContactFieldErrors, ChatContactReview, ChatContactUiState, ChatViewMessage } from './chat-types'
 
-export const CHAT_WELCOME_MESSAGE = 'I’m Nelson’s portfolio assistant. Ask about his background, projects, open-source contributions, goals, or coding activity. I can search verified information from this site and explain what I can help with; I’m not a general-purpose assistant.'
+export const CHAT_WELCOME_MESSAGE =
+  'I’m Zita, Nelson’s portfolio assistant. Ask about his background, projects, open-source contributions, goals, or coding activity, or what services he offers. I can search verified information from this site and help you start an email, bug report, feature request, quotation, or support plan request to him; I’m not a general-purpose assistant.'
 
 export interface ChatSessionState {
   conversation: {
@@ -21,6 +27,8 @@ export interface ChatSessionState {
     fieldErrors: ChatContactFieldErrors
     review: ChatContactReview | null
     turnstileToken: string | null
+    screeningTurnstileToken: string | null
+    screeningTurnstileResetCount: number
     turnstileResetCount: number
     discardConfirmation: boolean
   }
@@ -39,7 +47,13 @@ export type ChatSessionAction =
   | { type: 'conversation/stream-token'; delta: string }
   | { type: 'conversation/stream-citations'; citations: PublicCitation[] }
   | { type: 'conversation/knowledge-unavailable' }
-  | { type: 'conversation/reply'; reply: string; contextToken?: string; citations?: PublicCitation[]; knowledgeUnavailable?: boolean }
+  | {
+      type: 'conversation/reply'
+      reply: string
+      contextToken?: string
+      citations?: PublicCitation[]
+      knowledgeUnavailable?: boolean
+    }
   | { type: 'conversation/context-token'; contextToken?: string }
   | { type: 'conversation/turn-completed' }
   | { type: 'conversation/turn-limit-reached' }
@@ -51,6 +65,7 @@ export type ChatSessionAction =
   | { type: 'contact/set-field-errors'; fieldErrors: ChatContactFieldErrors }
   | { type: 'contact/clear-field-error'; field: ChatContactField }
   | { type: 'contact/set-turnstile-token'; token: string | null }
+  | { type: 'contact/set-screening-turnstile-token'; token: string | null }
   | { type: 'contact/set-discard-confirmation'; confirmed: boolean }
   | { type: 'status/set-pending'; pending: boolean }
   | { type: 'status/set-tool'; toolStatus: string | null }
@@ -75,6 +90,8 @@ export function createInitialChatSessionState(): ChatSessionState {
       fieldErrors: emptyFieldErrors(),
       review: null,
       turnstileToken: null,
+      screeningTurnstileToken: null,
+      screeningTurnstileResetCount: 0,
       turnstileResetCount: 0,
       discardConfirmation: false,
     },
@@ -100,6 +117,8 @@ function resetSession(state: ChatSessionState, message: string, contextToken?: s
       fieldErrors: emptyFieldErrors(),
       review: null,
       turnstileToken: null,
+      screeningTurnstileToken: null,
+      screeningTurnstileResetCount: state.contact.screeningTurnstileResetCount + 1,
       discardConfirmation: false,
     },
     status: { ...state.status, toolStatus: null, error: '' },
@@ -135,9 +154,10 @@ function applyContactEvent(state: ChatSessionState, event: ChatContactEvent): Ch
 
   let next: ChatSessionState = {
     ...state,
-    conversation: 'contextToken' in event && event.contextToken
-      ? { ...state.conversation, contextToken: event.contextToken }
-      : state.conversation,
+    conversation:
+      'contextToken' in event && event.contextToken
+        ? { ...state.conversation, contextToken: event.contextToken }
+        : state.conversation,
     status: { ...state.status, error: '' },
   }
 
@@ -164,7 +184,11 @@ function applyContactEvent(state: ChatSessionState, event: ChatContactEvent): Ch
     case 'contact_started':
       next = {
         ...next,
-        conversation: { ...next.conversation, history: [{ role: 'assistant', content: event.text }], completedTurns: 0 },
+        conversation: {
+          ...next.conversation,
+          history: [{ role: 'assistant', content: event.text }],
+          completedTurns: 0,
+        },
         contact: {
           ...next.contact,
           state: { phase: 'template_selection' },
@@ -185,12 +209,18 @@ function applyContactEvent(state: ChatSessionState, event: ChatContactEvent): Ch
           fieldErrors: emptyFieldErrors(),
         },
       }
-      next = appendAssistantMessage(next, `${CHAT_CONTACT_TEMPLATES[event.template].label} selected. This template stays locked for this contact session.`)
+      next = appendAssistantMessage(
+        next,
+        `${CHAT_CONTACT_TEMPLATES[event.template].label} selected. This template stays locked for this contact session.`,
+      )
       break
     case 'contact_form_incomplete':
       next = {
         ...next,
-        contact: { ...next.contact, fieldErrors: { missingFields: event.missingFields, invalidFields: event.invalidFields } },
+        contact: {
+          ...next.contact,
+          fieldErrors: { missingFields: event.missingFields, invalidFields: event.invalidFields },
+        },
       }
       break
     case 'contact_out_of_scope':
@@ -217,8 +247,10 @@ function applyContactEvent(state: ChatSessionState, event: ChatContactEvent): Ch
           review: event,
           state: { phase: 'review', template: event.template },
           fieldErrors: emptyFieldErrors(),
-          turnstileToken: null,
-          turnstileResetCount: next.contact.turnstileResetCount + 1,
+          // Screening tokens are single-use: spent here so the widget re-arms
+          // for a resubmitted edit rather than reusing a spent token.
+          screeningTurnstileToken: null,
+          screeningTurnstileResetCount: next.contact.screeningTurnstileResetCount + 1,
         },
       }
       break
@@ -232,6 +264,7 @@ function applyContactEvent(state: ChatSessionState, event: ChatContactEvent): Ch
           state: { phase: 'filling', template: event.template },
           fieldErrors: emptyFieldErrors(),
           turnstileToken: null,
+          screeningTurnstileToken: null,
         },
       }
       break
@@ -241,9 +274,12 @@ function applyContactEvent(state: ChatSessionState, event: ChatContactEvent): Ch
         ...next,
         contact: { ...next.contact, state: { phase: 'delivered', template: event.template } },
       }
-      next = appendAssistantMessage(next, event.receiptStatus === 'sent'
-        ? 'Your email has been sent. A short receipt was sent to your reply address.'
-        : 'Your email has been sent. The owner notification was delivered, but the receipt email could not be sent.')
+      next = appendAssistantMessage(
+        next,
+        event.receiptStatus === 'sent'
+          ? 'Your email has been sent. A short receipt was sent to your reply address.'
+          : 'Your email has been sent. The owner notification was delivered, but the receipt email could not be sent.',
+      )
       break
     default:
       break
@@ -288,12 +324,15 @@ export function chatSessionReducer(state: ChatSessionState, action: ChatSessionA
         conversation: {
           ...state.conversation,
           message: '',
-          history: [...state.conversation.history, {
-            role: 'assistant',
-            content: action.reply,
-            ...(action.citations ? { citations: action.citations } : {}),
-            ...(action.knowledgeUnavailable ? { knowledgeUnavailable: true } : {}),
-          }],
+          history: [
+            ...state.conversation.history,
+            {
+              role: 'assistant',
+              content: action.reply,
+              ...(action.citations ? { citations: action.citations } : {}),
+              ...(action.knowledgeUnavailable ? { knowledgeUnavailable: true } : {}),
+            },
+          ],
           contextToken: action.contextToken,
           completedTurns: nextCompletedChatTurnCount(state.conversation.completedTurns),
         },
@@ -303,7 +342,10 @@ export function chatSessionReducer(state: ChatSessionState, action: ChatSessionA
     case 'conversation/turn-completed':
       return {
         ...state,
-        conversation: { ...state.conversation, completedTurns: nextCompletedChatTurnCount(state.conversation.completedTurns) },
+        conversation: {
+          ...state.conversation,
+          completedTurns: nextCompletedChatTurnCount(state.conversation.completedTurns),
+        },
         status: { ...state.status, toolStatus: null },
       }
     case 'conversation/turn-limit-reached':
@@ -315,15 +357,17 @@ export function chatSessionReducer(state: ChatSessionState, action: ChatSessionA
         conversation: {
           ...state.conversation,
           message: action.message,
-          history: last?.role === 'user' && last.content === action.message
-            ? state.conversation.history.slice(0, -1)
-            : state.conversation.history,
+          history:
+            last?.role === 'user' && last.content === action.message
+              ? state.conversation.history.slice(0, -1)
+              : state.conversation.history,
         },
       }
     }
     case 'conversation/remove-empty-draft': {
       const last = state.conversation.history.at(-1)
-      if (!last || last.role !== 'assistant' || last.content || last.citations || last.knowledgeUnavailable) return state
+      if (!last || last.role !== 'assistant' || last.content || last.citations || last.knowledgeUnavailable)
+        return state
       return { ...state, conversation: { ...state.conversation, history: state.conversation.history.slice(0, -1) } }
     }
     case 'conversation/set-turnstile-token':
@@ -354,6 +398,8 @@ export function chatSessionReducer(state: ChatSessionState, action: ChatSessionA
       }
     case 'contact/set-turnstile-token':
       return { ...state, contact: { ...state.contact, turnstileToken: action.token } }
+    case 'contact/set-screening-turnstile-token':
+      return { ...state, contact: { ...state.contact, screeningTurnstileToken: action.token } }
     case 'contact/set-discard-confirmation':
       return { ...state, contact: { ...state.contact, discardConfirmation: action.confirmed } }
     case 'status/set-pending':

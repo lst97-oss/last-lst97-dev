@@ -24,8 +24,12 @@ export function ChatContactPanel({ workflow, pending, siteKey }: ChatContactPane
   return (
     <section className="os-chat-contact-panel grid gap-3" aria-labelledby="chat-contact-panel-title">
       <div className="os-chat-contact-panel-heading border-3 border-border bg-primary p-4 shadow-os-sm">
-        <Eyebrow className="m-0 mb-2"><PixelIcon glyph="@" /> CONTACT / {state.phase.replaceAll('_', ' ').toUpperCase()}</Eyebrow>
-        <h2 id="chat-contact-panel-title" className="m-0 text-2xl leading-snug text-foreground">{getContactHeading(state)}</h2>
+        <Eyebrow className="m-0 mb-2">
+          <PixelIcon glyph="@" /> CONTACT / {state.phase.replaceAll('_', ' ').toUpperCase()}
+        </Eyebrow>
+        <h2 id="chat-contact-panel-title" className="m-0 text-2xl leading-snug text-foreground">
+          {getContactHeading(state)}
+        </h2>
       </div>
       <ContactPhaseContent workflow={workflow} state={state} pending={pending} siteKey={siteKey} />
       {state.phase !== 'confirmation' && state.phase !== 'delivered' ? (
@@ -73,6 +77,10 @@ function ContactPhaseContent({
     case 'filling':
       return (
         <ChatContactFormPhase
+          siteKey={siteKey}
+          turnstileToken={workflow.screeningTurnstileToken}
+          turnstileResetCount={workflow.screeningTurnstileResetCount}
+          onSetTurnstileToken={workflow.actions.setScreeningTurnstileToken}
           initialValues={workflow.draft}
           onFieldChange={workflow.actions.clearFieldError}
           onSubmit={workflow.actions.submitForm}

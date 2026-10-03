@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { cn } from "cn"
+import { cn } from 'cn'
 import { useIsMobile } from '@/components/hooks/use-mobile'
 import type { WindowMode } from '@/lib/os-store'
 import { closeWindow, toggleMaximizeWindow, toggleMinimizeWindow } from '@/lib/os-store'
@@ -21,13 +21,7 @@ interface WindowControlsProps {
 const controlClass =
   'grid size-6 place-items-center border-2 border-border bg-transparent p-0 align-middle font-mono text-base leading-none font-black text-foreground hover:bg-accent'
 
-export function WindowControls({
-  title,
-  windowId,
-  windowMode,
-  closeHref,
-  controls,
-}: WindowControlsProps) {
+export function WindowControls({ title, windowId, windowMode, closeHref, controls }: WindowControlsProps) {
   const isMobile = useIsMobile()
   // Mobile has no window chrome: all minimize / maximize / close controls removed.
   if (isMobile) return null
@@ -37,7 +31,10 @@ export function WindowControls({
   if (!showMinimize && !showMaximize && !showClose) return null
 
   return (
-    <span className="window-controls inline-flex items-center gap-1.5 text-base leading-none" aria-label="Window controls">
+    <span
+      className="window-controls inline-flex items-center gap-1.5 text-base leading-none"
+      aria-label="Window controls"
+    >
       {showMinimize ? (
         <button
           aria-label={`${windowMode === 'minimized' ? 'Restore' : 'Minimize'} ${title}`}

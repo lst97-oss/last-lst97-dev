@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { createEditor } from 'lexical'
-import { $getRoot } from 'lexical'
 import { $convertFromMarkdownString, $convertToMarkdownString } from '@lexical/markdown'
 import { $createUploadNode, UploadNode } from '@payloadcms/richtext-lexical/client'
+import { $getRoot, createEditor } from 'lexical'
 
 import { UPLOAD_MARKDOWN_TRANSFORMER } from '../src/collections/fields/upload-markdown-transformer'
 
@@ -71,7 +70,9 @@ describe('upload markdown transformer', () => {
       { discrete: true },
     )
 
-    expect(editor.getEditorState().read(() => $convertToMarkdownString([UPLOAD_MARKDOWN_TRANSFORMER]))).toBe('![media:7]()')
+    expect(editor.getEditorState().read(() => $convertToMarkdownString([UPLOAD_MARKDOWN_TRANSFORMER]))).toBe(
+      '![media:7]()',
+    )
   })
 
   test('re-imports the placeholder as an upload node so the round trip is lossless', () => {

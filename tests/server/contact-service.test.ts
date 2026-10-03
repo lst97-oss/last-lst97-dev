@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 
 import { submitContactMessage } from '../../src/server/contact/service'
-import type { ContactMessage } from '../../src/server/contact/types'
+import type { ContactMessage, TurnstileVerifier } from '../../src/server/contact/types'
 import type { ContactEmailService } from '../../src/server/email/types'
-import type { Logger, LogFields } from '../../src/server/observability/logger'
-import type { TurnstileVerifier } from '../../src/server/contact/types'
 import type { ModerationService } from '../../src/server/moderation/service'
+import type { LogFields, Logger } from '../../src/server/observability/logger'
 
 const validInput = {
   name: 'Ada Lovelace',
@@ -24,12 +23,14 @@ function createLogger(events: Array<{ level: string; event: string; fields?: Log
   }
 }
 
-function createDependencies(options: {
-  emailService?: ContactEmailService
-  verifier?: TurnstileVerifier
-  moderation?: ModerationService
-  events?: Array<{ level: string; event: string; fields?: LogFields }>
-} = {}) {
+function createDependencies(
+  options: {
+    emailService?: ContactEmailService
+    verifier?: TurnstileVerifier
+    moderation?: ModerationService
+    events?: Array<{ level: string; event: string; fields?: LogFields }>
+  } = {},
+) {
   const calls: Array<{ method: string; contact: ContactMessage }> = []
   const emailService: ContactEmailService = options.emailService ?? {
     sendOperatorNotification: async (contact) => {
@@ -45,7 +46,12 @@ function createDependencies(options: {
     dependencies: {
       emailService,
       verifier: options.verifier ?? { verify: async () => true },
-      moderation: options.moderation ?? { checkContact: async () => ({ allowed: true }), checkChat: async () => ({ allowed: true }) } as ModerationService,
+      moderation:
+        options.moderation ??
+        ({
+          checkContact: async () => ({ allowed: true }),
+          checkChat: async () => ({ allowed: true }),
+        } as ModerationService),
       expectedHostname: 'portfolio.example',
       requestId: 'request-1',
       logger: createLogger(options.events),
@@ -61,8 +67,12 @@ describe('submitContactMessage', () => {
     const { dependencies } = createDependencies({
       events: logEvents,
       emailService: {
-        sendOperatorNotification: async () => { deliveryOrder.push('operator') },
-        sendReceivedConfirmation: async () => { deliveryOrder.push('receipt') },
+        sendOperatorNotification: async () => {
+          deliveryOrder.push('operator')
+        },
+        sendReceivedConfirmation: async () => {
+          deliveryOrder.push('receipt')
+        },
       },
       verifier: {
         verify: async (token, hostname) => {
@@ -96,8 +106,12 @@ describe('submitContactMessage', () => {
     let receiptSent = false
     const { dependencies } = createDependencies({
       emailService: {
-        sendOperatorNotification: async () => { throw new Error('SMTP unavailable') },
-        sendReceivedConfirmation: async () => { receiptSent = true },
+        sendOperatorNotification: async () => {
+          throw new Error('SMTP unavailable')
+        },
+        sendReceivedConfirmation: async () => {
+          receiptSent = true
+        },
       },
     })
 
@@ -111,7 +125,9 @@ describe('submitContactMessage', () => {
       events,
       emailService: {
         sendOperatorNotification: async () => {},
-        sendReceivedConfirmation: async () => { throw new Error('SMTP response included ada@example.com') },
+        sendReceivedConfirmation: async () => {
+          throw new Error('SMTP response included ada@example.com')
+        },
       },
     })
 
@@ -147,7 +163,10 @@ describe('submitContactMessage', () => {
 
   it('rejects spam after Turnstile and before sending any email', async () => {
     const { calls, dependencies } = createDependencies({
-      moderation: { checkContact: async () => ({ allowed: false }), checkChat: async () => ({ allowed: true }) } as ModerationService,
+      moderation: {
+        checkContact: async () => ({ allowed: false }),
+        checkChat: async () => ({ allowed: true }),
+      } as ModerationService,
     })
     await expect(submitContactMessage(validInput, dependencies)).resolves.toEqual({ ok: false, reason: 'moderation' })
     expect(calls).toHaveLength(0)
@@ -155,9 +174,15 @@ describe('submitContactMessage', () => {
 
   it('fails closed when moderation is unavailable', async () => {
     const { calls, dependencies } = createDependencies({
-      moderation: { checkContact: async () => ({ unavailable: true }), checkChat: async () => ({ allowed: true }) } as ModerationService,
+      moderation: {
+        checkContact: async () => ({ unavailable: true }),
+        checkChat: async () => ({ allowed: true }),
+      } as ModerationService,
     })
-    await expect(submitContactMessage(validInput, dependencies)).resolves.toEqual({ ok: false, reason: 'moderation_unavailable' })
+    await expect(submitContactMessage(validInput, dependencies)).resolves.toEqual({
+      ok: false,
+      reason: 'moderation_unavailable',
+    })
     expect(calls).toHaveLength(0)
   })
 

@@ -1,4 +1,5 @@
 import { cn } from 'cn'
+import { BrowserCapabilityBoundary } from '@/components/site/browser-capability-boundary'
 import { ChatComposer } from '@/components/site/chat/chat-composer'
 import { ChatContactPanel } from '@/components/site/chat/chat-contact-panel'
 import { ChatHelpDialog } from '@/components/site/chat/chat-help-dialog'
@@ -8,6 +9,7 @@ import { useChatSession } from '@/components/site/chat/use-chat-session'
 import { CountBadge, formErrorClass, PageHeading, PageStack } from '@/components/site/os-ui'
 import { useSiteHealthStatus } from '@/components/site/site-health-provider'
 import { WindowFrame } from '@/components/site/window-frame'
+import { CHAT_BROWSER_REQUIREMENTS } from '@/lib/browser-capabilities'
 import { getChatPrivacyNotice } from '@/lib/chat-privacy-notice'
 import { siteHealthLabel } from '@/lib/site-health'
 
@@ -22,38 +24,62 @@ export function ChatPage({ siteKey }: ChatPageProps) {
 
   return (
     <PageStack>
-      <WindowFrame title="assistant.shell" icon=">" className="chat-window" scrollable>
-        <PageHeading
-          icon=">"
-          eyebrow="CHAT / LIVE"
-          title="Ask the operator’s assistant."
-          badge={(
-            <div className="chat-heading-tools mt-4 flex flex-wrap items-center gap-2.5">
-              <CountBadge data-health={healthStatus} role="status" aria-live="polite">
-                <span aria-hidden="true" className="size-2 rounded-full bg-foreground group-data-[health=checking]:bg-warning group-data-[health=offline]:bg-error" />
-                {siteHealthLabel(healthStatus)}
-              </CountBadge>
-              <ChatHelpDialog privacyNotice={privacyNotice} />
-            </div>
-          )}
-        />
-
-        <ChatTranscript
-          messages={session.conversation.history}
-          pending={session.status.pending}
-          toolStatus={session.status.toolStatus}
-        />
-        <ChatContactPanel workflow={session.contact} pending={session.status.pending} siteKey={siteKey} />
-        {session.status.error ? <div className="os-chat-error-slot mt-4"><p className={cn(formErrorClass)} role="alert">{session.status.error}</p></div> : null}
-        {!session.contact.state ? (
+      <WindowFrame
+        title="zita.shell"
+        icon=">"
+        className="chat-window"
+        scrollable
+        footer={
+          session.contact.state ? null : (
+            <>
+              <ChatComposer conversation={session.conversation} pending={session.status.pending} siteKey={siteKey} />
+              <div className="os-chat-notices">
+                <p className="form-note">
+                  AI can make mistakes or hallucinate. Verify important information with reliable sources.
+                </p>
+              </div>
+            </>
+          )
+        }
+      >
+        <BrowserCapabilityBoundary feature="Chat" requirements={CHAT_BROWSER_REQUIREMENTS}>
           <>
-            <ChatPromptSuggestions conversation={session.conversation} pending={session.status.pending} />
-            <ChatComposer conversation={session.conversation} pending={session.status.pending} siteKey={siteKey} />
+            <PageHeading
+              icon=">"
+              eyebrow="CHAT / LIVE"
+              title="Ask Zita about Nelson’s work."
+              badge={
+                <div className="chat-heading-tools mt-4 flex flex-wrap items-center gap-2.5">
+                  <CountBadge data-health={healthStatus} role="status" aria-live="polite">
+                    <span
+                      aria-hidden="true"
+                      className="size-2 rounded-full bg-foreground group-data-[health=checking]:bg-warning group-data-[health=offline]:bg-error"
+                    />
+                    {siteHealthLabel(healthStatus)}
+                  </CountBadge>
+                  <ChatHelpDialog privacyNotice={privacyNotice} />
+                </div>
+              }
+            />
+
+            <ChatTranscript
+              messages={session.conversation.history}
+              pending={session.status.pending}
+              toolStatus={session.status.toolStatus}
+            />
+            <ChatContactPanel workflow={session.contact} pending={session.status.pending} siteKey={siteKey} />
+            {session.status.error ? (
+              <div className="os-chat-error-slot mt-4">
+                <p className={cn(formErrorClass)} role="alert">
+                  {session.status.error}
+                </p>
+              </div>
+            ) : null}
+            {!session.contact.state ? (
+              <ChatPromptSuggestions conversation={session.conversation} pending={session.status.pending} />
+            ) : null}
           </>
-        ) : null}
-        <div className="os-chat-notices">
-          <p className="form-note">AI can make mistakes or hallucinate. Verify important information with reliable sources.</p>
-        </div>
+        </BrowserCapabilityBoundary>
       </WindowFrame>
     </PageStack>
   )

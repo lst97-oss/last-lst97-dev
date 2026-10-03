@@ -34,9 +34,18 @@ export function NotFoundPage() {
             className="not-found-window"
             closeHref="/"
             windowId={NOT_FOUND_WINDOW_ID}
+            // Every other non-home window scrolls through the themed
+            // ScrollArea. A long requested path would otherwise grow this
+            // frame, and below 650px the shell clamp is only re-applied for
+            // `window-frame--scroll`, so the overflow would leak onto <body>.
+            scrollable
           >
-            <Eyebrow><PixelIcon glyph="⚠" /> ERROR / 404</Eyebrow>
-            <h1>404<span>.exe not found.</span></h1>
+            <Eyebrow>
+              <PixelIcon glyph="⚠" /> ERROR / 404
+            </Eyebrow>
+            <h1>
+              404<span>.exe not found.</span>
+            </h1>
             <p className="lead-copy mt-4">This path does not exist on the system.</p>
             <p className="not-found-path mt-4">
               <Tag>REQUESTED: {pathname}</Tag>

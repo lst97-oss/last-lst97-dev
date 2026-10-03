@@ -5,7 +5,10 @@ export function siteHealthLabel(status: SiteHealthStatus): string {
   return status.toUpperCase()
 }
 
-export async function fetchSiteHealthStatus(fetcher: FetchLike = fetch, signal?: AbortSignal): Promise<Exclude<SiteHealthStatus, 'checking'>> {
+export async function fetchSiteHealthStatus(
+  fetcher: FetchLike = fetch,
+  signal?: AbortSignal,
+): Promise<Exclude<SiteHealthStatus, 'checking'>> {
   try {
     const response = await fetcher('/api/site/health', {
       cache: 'no-store',

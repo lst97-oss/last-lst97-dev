@@ -16,11 +16,15 @@ export function ChecklistItem({ checked, hasSubLists, value, children }: Checkli
       style={{ listStyleType: 'none' }}
       value={value}
     >
-      {hasSubLists ? children : <>
-        <input checked={checked} id={id} readOnly type="checkbox" />
-        <label htmlFor={id}>{children}</label>
-        <br />
-      </>}
+      {hasSubLists ? (
+        children
+      ) : (
+        <>
+          <input checked={checked} id={id} readOnly type="checkbox" />
+          <label htmlFor={id}>{children}</label>
+          <br />
+        </>
+      )}
     </li>
   )
 }

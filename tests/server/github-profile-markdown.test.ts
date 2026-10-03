@@ -11,14 +11,16 @@ describe('GitHub profile Markdown', () => {
       wakaTimeSourceUrl: 'https://wakatime.com/share/@lst97/example.json',
     })
 
-    expect(markdown).toBe([
-      '# GitHub profile\nNelson',
-      '## Owner-provided profile summary',
-      'Nelson is LST97.',
-      '## Public coding-activity snapshot',
-      'Coding total: 3,260 hrs 21 mins.',
-      'Source: https://wakatime.com/share/@lst97/example.json',
-    ].join('\n\n'))
+    expect(markdown).toBe(
+      [
+        '# GitHub profile\nNelson',
+        '## Owner-provided profile summary',
+        'Nelson is LST97.',
+        '## Public coding-activity snapshot',
+        'Coding total: 3,260 hrs 21 mins.',
+        'Source: https://wakatime.com/share/@lst97/example.json',
+      ].join('\n\n'),
+    )
   })
 
   it('omits the WakaTime section when no public snapshot is available', () => {

@@ -30,6 +30,7 @@ let contactWorkflow: ReturnType<typeof createChatContactWorkflow> | undefined
 let diagnosticsSink: ChatDiagnosticsSink | undefined
 let diagnosticsSinkResolved = false
 let chatTurnstileVerifier: TurnstileVerifier | undefined
+let contactScreeningTurnstileVerifier: TurnstileVerifier | undefined
 
 export function verifyChatTurnstile(token: string, expectedHostname: string): Promise<boolean> {
   chatTurnstileVerifier ??= createTurnstileVerifier({
@@ -37,6 +38,19 @@ export function verifyChatTurnstile(token: string, expectedHostname: string): Pr
     action: TURNSTILE_ACTIONS.chatMessage,
   })
   return chatTurnstileVerifier.verify(token, expectedHostname)
+}
+
+/**
+ * Screening runs two model calls (Jev, then the OpenRouter refiner) before the
+ * visitor ever reaches review, so it is gated like any other paid work: a
+ * separate action means a `chat_message` token cannot be replayed here.
+ */
+export function verifyContactScreeningTurnstile(token: string, expectedHostname: string): Promise<boolean> {
+  contactScreeningTurnstileVerifier ??= createTurnstileVerifier({
+    secret: requiredServerEnv('TURNSTILE_SECRET_KEY'),
+    action: TURNSTILE_ACTIONS.contactScreening,
+  })
+  return contactScreeningTurnstileVerifier.verify(token, expectedHostname)
 }
 
 function getChatDiagnosticsSink(): ChatDiagnosticsSink | undefined {

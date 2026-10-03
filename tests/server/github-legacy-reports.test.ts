@@ -13,8 +13,13 @@ describe('superseded GitHub reports', () => {
 
     const result = await removeSupersededGithubReports({
       candidates: [...files.keys()].filter((path) => path.endsWith('.md.md')),
-      async read(path) { return files.get(path) ?? '' },
-      async remove(path) { removed.push(path); files.delete(path) },
+      async read(path) {
+        return files.get(path) ?? ''
+      },
+      async remove(path) {
+        removed.push(path)
+        files.delete(path)
+      },
     })
 
     expect(result).toEqual({ removedCount: 1, retainedCount: 1 })
@@ -29,8 +34,12 @@ describe('superseded GitHub reports', () => {
     ])
     const result = await removeSupersededGithubReports({
       candidates: ['/data/public/demo.md.md'],
-      async read(path) { return files.get(path) ?? '' },
-      async remove(path) { files.delete(path) },
+      async read(path) {
+        return files.get(path) ?? ''
+      },
+      async remove(path) {
+        files.delete(path)
+      },
     })
 
     expect(result).toEqual({ removedCount: 0, retainedCount: 1 })

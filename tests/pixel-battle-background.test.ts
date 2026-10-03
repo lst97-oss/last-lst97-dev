@@ -1,6 +1,6 @@
+import { describe, expect, test } from 'bun:test'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, test } from 'bun:test'
 
 import { battleVisualsSettled, PixelBattleBackground } from '../src/components/site/battle/pixel-battle-background'
 import type { BattleUnit } from '../src/components/site/battle/pixel-battle-sim'

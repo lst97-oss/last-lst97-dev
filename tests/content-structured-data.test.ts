@@ -2,9 +2,12 @@ import { describe, expect, it } from 'bun:test'
 
 import { createContentMeta } from '../src/lib/content/meta'
 import {
+  createBreadcrumbStructuredData,
+  createChangelogStructuredData,
   createCollectionStructuredData,
   createPostStructuredData,
   createProjectStructuredData,
+  withBreadcrumbs,
 } from '../src/lib/content/structured-data'
 import type { CoverImage, SEOOverrides } from '../src/server/content/types'
 
@@ -162,5 +165,87 @@ describe('collection structured data', () => {
     expect(list['@type']).toBe('ItemList')
     expect(list.itemListElement.map((entry) => entry.position)).toEqual([1, 2])
     expect(list.itemListElement[0]?.url).toContain('/blog/newest')
+  })
+})
+
+describe('changelog structured data', () => {
+  it('describes a release as a versioned web application', () => {
+    const data = createChangelogStructuredData({
+      title: 'v1.3.0 launch',
+      summary: 'New skeletons.',
+      slug: 'demo-v1-3-0',
+      version: 'v1.3.0',
+      publishedTime: '2026-09-28T00:00:00.000Z',
+      tags: ['layout'],
+    })
+
+    expect(data['@type']).toBe('SoftwareApplication')
+    expect(data.softwareVersion).toBe('v1.3.0')
+    // A release of the site is a web app, not a developer tool.
+    expect(data.applicationCategory).toBe('WebApplication')
+    expect(data.keywords).toBe('layout')
+    expect(String(data.url)).toContain('/changelog/demo-v1-3-0')
+  })
+
+  it('omits the version when a release has none', () => {
+    const data = createChangelogStructuredData({ title: 'x', summary: 'y', slug: 'x', version: null })
+
+    expect(data.softwareVersion).toBeUndefined()
+  })
+
+  it('drops a non-http image rather than emitting invalid schema', () => {
+    const data = createChangelogStructuredData({
+      title: 'x',
+      summary: 'y',
+      slug: 'x',
+      imageUrl: 'javascript:alert(1)',
+    })
+
+    expect(data.image).toBeUndefined()
+  })
+})
+
+describe('breadcrumb structured data', () => {
+  it('numbers crumbs from one and leaves the current page without an item url', () => {
+    const data = createBreadcrumbStructuredData([
+      { name: 'Home', path: '/' },
+      { name: 'Blog', path: '/blog' },
+      { name: 'Post', path: '/blog/post' },
+    ])
+    const list = data.itemListElement as Array<{ position: number; name: string; item?: string }>
+
+    expect(data['@type']).toBe('BreadcrumbList')
+    expect(list.map((entry) => entry.position)).toEqual([1, 2, 3])
+    expect(list[0]?.item).toContain('/')
+    expect(list[1]?.item).toContain('/blog')
+    // The last crumb is the page being viewed; a URL there is redundant.
+    expect(list[2]).not.toHaveProperty('item')
+    expect(list[2]?.name).toBe('Post')
+  })
+})
+
+describe('schema composition', () => {
+  it('carries an entity and its breadcrumb trail in one graph', () => {
+    const data = withBreadcrumbs({ '@type': 'BlogPosting' }, [
+      { name: 'Home', path: '/' },
+      { name: 'Blog', path: '/blog' },
+    ])
+    const graph = data['@graph'] as Array<Record<string, unknown>>
+
+    expect(graph).toHaveLength(2)
+    expect(graph[0]?.['@type']).toBe('BlogPosting')
+    expect(graph[1]?.['@type']).toBe('BreadcrumbList')
+  })
+
+  it('serialises as a single ld+json script through createContentMeta', () => {
+    // createContentMeta emits one script, so composing into one graph is what
+    // keeps a detail page from shipping two separate entities.
+    const meta = contentMeta({
+      structuredData: withBreadcrumbs({ '@type': 'BlogPosting' }, [{ name: 'Home', path: '/' }]),
+    })
+
+    expect(meta.scripts).toHaveLength(1)
+    const parsed = JSON.parse(meta.scripts?.[0]?.children ?? '{}') as { '@graph'?: unknown[] }
+    expect(parsed['@graph']).toHaveLength(2)
   })
 })

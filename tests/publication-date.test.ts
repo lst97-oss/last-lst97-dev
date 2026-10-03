@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { Changelogs } from '../src/collections/Changelogs'
+import { ensurePublicationDate, resolvePublicationDate } from '../src/collections/hooks/publication-date'
 import { Posts } from '../src/collections/Posts'
 import { Projects } from '../src/collections/Projects'
-import { ensurePublicationDate, resolvePublicationDate } from '../src/collections/hooks/publication-date'
 
 const NOW = new Date('2026-09-30T06:00:00.000Z')
 
@@ -56,7 +56,8 @@ describe('publication date', () => {
     expect(Date.parse(String(stamped))).toBeGreaterThanOrEqual(before)
     expect(Date.parse(String(stamped))).toBeLessThanOrEqual(Date.now())
     expect(
-      ensurePublicationDate(hookArgs({ status: 'published' }, { publishedAt: '2026-03-03T00:00:00.000Z' }))?.publishedAt,
+      ensurePublicationDate(hookArgs({ status: 'published' }, { publishedAt: '2026-03-03T00:00:00.000Z' }))
+        ?.publishedAt,
     ).toBe('2026-03-03T00:00:00.000Z')
     expect(ensurePublicationDate(hookArgs({ status: 'draft' }))?.publishedAt).toBeNull()
   })

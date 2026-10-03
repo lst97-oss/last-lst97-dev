@@ -18,6 +18,7 @@ export const CHAT_TOOL_NAMES = [
   'coding_stats',
   'coding_history',
   'site_content',
+  'services',
 ] as const
 
 export type ChatToolName = (typeof CHAT_TOOL_NAMES)[number]

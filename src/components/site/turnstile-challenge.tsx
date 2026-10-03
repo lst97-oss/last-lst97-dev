@@ -104,7 +104,11 @@ export function TurnstileChallenge({
   return (
     <div className="turnstile-challenge" aria-live="polite">
       <div ref={containerRef} />
-      {loadFailed ? <p className="turnstile-unavailable" role="status">The security check could not load. Please refresh and try again.</p> : null}
+      {loadFailed ? (
+        <p className="turnstile-unavailable" role="status">
+          The security check could not load. Please refresh and try again.
+        </p>
+      ) : null}
     </div>
   )
 }

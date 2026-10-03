@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 
-import { inspectGithubRepository, type GithubCommandRunner } from '../../src/server/knowledge/github/repository-inspector'
+import {
+  type GithubCommandRunner,
+  inspectGithubRepository,
+} from '../../src/server/knowledge/github/repository-inspector'
 
 describe('GitHub repository inspector', () => {
   it('uses a temporary shallow clone, reads only allowlisted files, and cleans up', async () => {
@@ -12,9 +15,17 @@ describe('GitHub repository inspector', () => {
         if (command === 'gh') return ''
         if (command === 'git' && args.includes('ls-tree')) {
           return [
-            'README.md', 'package.json', 'src/index.ts', 'tests/index.test.ts',
-            '.env', 'secrets/token.txt', 'node_modules/pkg/index.js', 'dist/app.js',
-            'assets/logo.png', 'server.key', 'debug.log',
+            'README.md',
+            'package.json',
+            'src/index.ts',
+            'tests/index.test.ts',
+            '.env',
+            'secrets/token.txt',
+            'node_modules/pkg/index.js',
+            'dist/app.js',
+            'assets/logo.png',
+            'server.key',
+            'debug.log',
           ].join('\n')
         }
         if (command === 'git' && args.includes('show')) {
@@ -28,17 +39,36 @@ describe('GitHub repository inspector', () => {
         return ''
       },
     }
-    const snapshot = await inspectGithubRepository({ fullName: 'someone/demo', url: 'https://github.com/someone/demo', isPrivate: false }, '/tmp', runner)
+    const snapshot = await inspectGithubRepository(
+      { fullName: 'someone/demo', url: 'https://github.com/someone/demo', isPrivate: false },
+      '/tmp',
+      runner,
+    )
 
     expect(calls.find(([command]) => command === 'gh')).toEqual([
-      'gh', 'repo', 'clone', 'someone/demo', '/tmp/github-inspect.abc', '--',
-      '--depth', '1', '--filter=blob:none', '--no-checkout',
+      'gh',
+      'repo',
+      'clone',
+      'someone/demo',
+      '/tmp/github-inspect.abc',
+      '--',
+      '--depth',
+      '1',
+      '--filter=blob:none',
+      '--no-checkout',
     ])
     expect(snapshot.trackedPaths).toContain('src/index.ts')
-    expect(snapshot.files.map((file) => file.path)).toEqual(['README.md', 'package.json', 'src/index.ts', 'tests/index.test.ts'])
-    expect(calls.filter(([command, ...args]) => command === 'git' && args.includes('show')).map(([, ...args]) => args.at(-1))).toEqual([
-      'HEAD:README.md', 'HEAD:package.json', 'HEAD:src/index.ts', 'HEAD:tests/index.test.ts',
+    expect(snapshot.files.map((file) => file.path)).toEqual([
+      'README.md',
+      'package.json',
+      'src/index.ts',
+      'tests/index.test.ts',
     ])
+    expect(
+      calls
+        .filter(([command, ...args]) => command === 'git' && args.includes('show'))
+        .map(([, ...args]) => args.at(-1)),
+    ).toEqual(['HEAD:README.md', 'HEAD:package.json', 'HEAD:src/index.ts', 'HEAD:tests/index.test.ts'])
     expect(calls.at(-1)).toEqual(['rm', '-rf', '/tmp/github-inspect.abc'])
   })
 
@@ -54,7 +84,13 @@ describe('GitHub repository inspector', () => {
       },
     }
 
-    await expect(inspectGithubRepository({ fullName: 'someone/demo', url: 'https://github.com/someone/demo', isPrivate: true }, '/tmp', runner)).rejects.toThrow('Repository inspection failed')
+    await expect(
+      inspectGithubRepository(
+        { fullName: 'someone/demo', url: 'https://github.com/someone/demo', isPrivate: true },
+        '/tmp',
+        runner,
+      ),
+    ).rejects.toThrow('Repository inspection failed')
     expect(calls.at(-1)).toEqual(['rm', '-rf', '/tmp/github-inspect.fail'])
   })
 
@@ -68,8 +104,13 @@ describe('GitHub repository inspector', () => {
       },
     }
 
-    await expect(inspectGithubRepository({ fullName: 'someone/empty', url: 'https://github.com/someone/empty', isPrivate: false }, '/tmp', runner))
-      .resolves.toEqual({ trackedPaths: [], files: [] })
+    await expect(
+      inspectGithubRepository(
+        { fullName: 'someone/empty', url: 'https://github.com/someone/empty', isPrivate: false },
+        '/tmp',
+        runner,
+      ),
+    ).resolves.toEqual({ trackedPaths: [], files: [] })
   })
 
   it('prioritizes application source over benchmark and test files within the inspection cap', async () => {
@@ -92,9 +133,15 @@ describe('GitHub repository inspector', () => {
       },
     }
 
-    const snapshot = await inspectGithubRepository({
-      fullName: 'someone/demo', url: 'https://github.com/someone/demo', isPrivate: false,
-    }, '/tmp', runner)
+    const snapshot = await inspectGithubRepository(
+      {
+        fullName: 'someone/demo',
+        url: 'https://github.com/someone/demo',
+        isPrivate: false,
+      },
+      '/tmp',
+      runner,
+    )
 
     expect(snapshot.files.map(({ path }) => path)).toContain('src/main.rs')
     expect(readPaths).not.toContain('benches/000.rs')

@@ -6,12 +6,14 @@ import { ChecklistItem } from '../src/components/site/content/checklist-item'
 
 describe('rich text checklist item', () => {
   test('uses a native checkbox without assigning checkbox semantics to the list item', () => {
-    const markup = renderToStaticMarkup(createElement(ChecklistItem, {
-      checked: true,
-      hasSubLists: false,
-      value: 1,
-      children: 'Complete the task',
-    }))
+    const markup = renderToStaticMarkup(
+      createElement(ChecklistItem, {
+        checked: true,
+        hasSubLists: false,
+        value: 1,
+        children: 'Complete the task',
+      }),
+    )
 
     expect(markup).toContain('<li')
     expect(markup).not.toContain('role="checkbox"')

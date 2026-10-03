@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 const buildScript = await Bun.file(new URL('../package.json', import.meta.url)).text()
 const build = JSON.parse(buildScript).scripts.build as string
-const deployMigrate = await Bun.file(new URL('../scripts/deploy-migrate.ts', import.meta.url)).text()
+const deployMigrate = await Bun.file(new URL('../scripts/database/deploy-migrate.ts', import.meta.url)).text()
 const entrypoint = await Bun.file(new URL('../docker-entrypoint.sh', import.meta.url)).text()
 const dockerfile = await Bun.file(new URL('../Dockerfile', import.meta.url)).text()
 

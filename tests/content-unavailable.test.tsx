@@ -6,10 +6,12 @@ import { ContentUnavailablePanel } from '../src/components/site/content/unavaila
 
 describe('content unavailable state', () => {
   test('offers a retry without exposing backend error details', () => {
-    const markup = renderToStaticMarkup(createElement(ContentUnavailablePanel, {
-      message: 'The content service is temporarily unavailable.',
-      onRetry: () => {},
-    }))
+    const markup = renderToStaticMarkup(
+      createElement(ContentUnavailablePanel, {
+        message: 'The content service is temporarily unavailable.',
+        onRetry: () => {},
+      }),
+    )
 
     expect(markup).toContain('role="alert"')
     expect(markup).toContain('The content service is temporarily unavailable.')

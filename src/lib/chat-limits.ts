@@ -2,8 +2,8 @@ export const MAX_CHAT_TURNS = 20
 export const MAX_CHAT_CONTEXT_MESSAGES = MAX_CHAT_TURNS * 2
 export const MAX_CHAT_CONTEXT_TOKEN_CHARS = 1_500_000
 export const MAX_CHAT_REQUEST_BODY_BYTES = 2 * 1024 * 1024
-export const CHAT_TURN_LIMIT_MESSAGE = 'This chat has reached its 20-turn limit. Clear the chat to start a new conversation.'
-
+export const CHAT_TURN_LIMIT_MESSAGE =
+  'This chat has reached its 20-turn limit. Clear the chat to start a new conversation.'
 
 /**
  * Messages the server writes for the visitor. `src/server/chat/service.ts`
@@ -15,7 +15,7 @@ export const CHAT_TURN_LIMIT_MESSAGE = 'This chat has reached its 20-turn limit.
  * message the server never sends must not be renderable, and a message the
  * server does send must not be silently replaced with generic copy.
  */
-export const CHAT_OFFLINE_MESSAGE = 'The assistant is offline right now.'
+export const CHAT_OFFLINE_MESSAGE = 'Zita is offline right now.'
 
 export const CHAT_EXPIRED_MESSAGE = 'This conversation has expired. Please start a new conversation.'
 

@@ -1,0 +1,24 @@
+# How retrieval is staged from vector candidates to gated evidence
+
+- **Category:** Retrieval Architecture
+- **Source ID:** last-os-knowledge-retrieval
+- **URL:** https://www.lst97.dev/projects/last-os
+- **Visibility:** Public
+
+Retrieval is a pipeline with a budget at every stage, not a single similarity query. The sequence is: embed the query, search pgvector, take a small candidate set, rerank it semantically, apply a relevance gate, and only then build responder context.
+
+The initial vector search returns 10 candidates. That is deliberately small, because the next stage exists to fix exactly the ordering problem that a small candidate set creates. Vector distance alone does not identify the best passage — it identifies a passage that is nearby in embedding space, which correlates with topical similarity but not with actually answering the question. So candidates go through a dedicated semantic reranker, which reads the query and each candidate together and produces a relevance ordering. Both the vector search and the reranker are capped at 10, so reranking reorders the candidate set rather than widening it.
+
+The **Jev relevance gate** then runs on the top 3 reranked candidates and is a genuinely separate decision from retrieval: it asks whether this document is direct support for the question, not merely related. A document only reaches the prompt when both direct-support probabilities are at least 0.60. This is the stage that stops the model from citing a chunk that matched the words but does not contain the answer — the failure mode that makes a RAG system sound confident and wrong.
+
+The gate fails soft in a specific way: a single Jev failure leaves that document in the set as a reranker fallback and marks the result degraded, rather than discarding evidence the visitor asked for. Degradation is reported to the browser only as a generic indicator — the browser receives citation titles and URLs, never chunk text and never provider scores. The retrieval boundary is the same one the privacy boundary depends on: what the model sees and what the visitor sees are deliberately different sets.
+
+Embeddings are split by workload, because bulk ingestion and online queries have opposite requirements. Document indexing runs against a local `llama-server` serving Qwen3-Embedding-0.6B, which means adding documents costs no per-document cloud API call and does not depend on an external provider being available during an index run. Query embeddings are handled separately and may use SiliconFlow, because online latency matters in a way bulk ingestion does not. Both write 1024-dimension vectors into the same HNSW cosine index.
+
+**Retrieval runs after moderation, never before.** A request is screened for scope and safety before any embedding work is done. Screening first means a rejected request never reaches the retrieval path at all, which matters because retrieval is the expensive part of the turn.
+
+The corpus is much broader than the visible site. It includes Payload posts and projects, the curated developer profile, GitHub repository and contribution reports, interview Q&A, service documentation, project deep-dive documents, and WakaTime-derived information. Because the corpus is assembled from sources that are updated independently of each other, a published post and a GitHub report can both be current and disagree; the answer to "how many projects are there" therefore cannot come from retrieval at all, which is the subject of the next decision.
+
+**RAG is optional and off by default** behind `KNOWLEDGE_RAG_ENABLED`. With it disabled, a chat turn runs its ordinary moderation and response flow: no model file, no embedding sidecar, no pgvector query. When retrieval is unavailable the turn degrades to a normal reply rather than failing, so the portfolio never depends on AI infrastructure being up. The same reasoning applies to local development — `bun run dev` does not start `llama-server`, so each embed attempt burns the full embedding timeout and `search_knowledge` times out. A turn that degrades to the offline message in just under the tool timeout is the signature of an *unreachable sidecar*, not a slow model, and the first thing to check is whether the dependency is running at all.
+
+One design point that is easy to get backwards: evidence is wrapped as untrusted data before it reaches a prompt. A portfolio necessarily contains Markdown, source code, copied documentation, repository content, and visitor-controlled text, any of which can contain instruction-like sentences. Retrieval output, tool results, conversation history and visitor input are all treated as data to be reasoned about, never as instructions to follow. That is the prompt-injection boundary, and it is why the evidence wrapper exists rather than passing a raw concatenation of chunks.

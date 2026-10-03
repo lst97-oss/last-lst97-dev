@@ -16,7 +16,11 @@ const activityResult: CodingActivityStats = {
 
 describe('agent planner', () => {
   it('parses typed WakaTime tool-call and final-answer plans', () => {
-    expect(parseAgentPlan('{"action":"tool_calls","calls":[{"id":"1","name":"coding_stats","arguments":{"category":"languages","range":"last_30_days"}}]}')).toEqual({
+    expect(
+      parseAgentPlan(
+        '{"action":"tool_calls","calls":[{"id":"1","name":"coding_stats","arguments":{"category":"languages","range":"last_30_days"}}]}',
+      ),
+    ).toEqual({
       kind: 'tool_calls',
       calls: [{ id: '1', name: 'coding_stats', arguments: { category: 'languages', range: 'last_30_days' } }],
     })
@@ -32,15 +36,22 @@ describe('agent planner', () => {
       'coding_stats',
       'coding_history',
       'site_content',
+      'services',
     ])
 
     for (const name of CHAT_TOOL_NAMES) {
-      expect(parseAgentPlan(JSON.stringify({
-        action: 'tool_calls',
-        calls: [{ id: 'registry-check', name, arguments: {} }],
-      }))?.kind).toBe('tool_calls')
+      expect(
+        parseAgentPlan(
+          JSON.stringify({
+            action: 'tool_calls',
+            calls: [{ id: 'registry-check', name, arguments: {} }],
+          }),
+        )?.kind,
+      ).toBe('tool_calls')
     }
-    expect(parseAgentPlan('{"action":"tool_calls","calls":[{"id":"bad","name":"unknown_tool","arguments":{}}]}')).toBeNull()
+    expect(
+      parseAgentPlan('{"action":"tool_calls","calls":[{"id":"bad","name":"unknown_tool","arguments":{}}]}'),
+    ).toBeNull()
   })
 })
 
@@ -73,7 +84,23 @@ describe('agent tool runner', () => {
     content: null,
     seo: { title: null, description: null, image: { url: null, alt: null } },
   }
-  const projectEntry = { slug: 'demo-app', title: 'Demo App', summary: 'A demo showcase app', technologies: ['Next.js'], featured: false, coverImage: { url: null, alt: null }, gallery: [], role: null, projectStatus: 'completed' as const, startDate: null, endDate: null, updatedAt: '2026-01-01T00:00:00.000Z', createdAt: '2025-12-31T00:00:00.000Z' }
+  const projectEntry = {
+    slug: 'demo-app',
+    title: 'Demo App',
+    summary: 'A demo showcase app',
+    technologies: ['Next.js'],
+    topics: [],
+    tags: [],
+    featured: false,
+    coverImage: { url: null, alt: null },
+    gallery: [],
+    role: null,
+    projectStatus: 'completed' as const,
+    startDate: null,
+    endDate: null,
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdAt: '2025-12-31T00:00:00.000Z',
+  }
   const runner = {
     knowledgeEnabled: false,
     codingStatsEnabled: true,
@@ -93,7 +120,30 @@ describe('agent tool runner', () => {
     logger: { warn() {} },
     siteContent: {
       listProjectsPage: async () => ({ items: [projectEntry], page: 1, totalPages: 1, totalDocs: 1 }),
-      getProject: async (slug: string) => slug === 'demo-app' ? { slug: 'demo-app', title: 'Demo App', summary: 'A demo showcase app', technologies: ['Next.js'], featured: false, coverImage: { url: null, alt: null }, gallery: [], role: null, projectStatus: 'completed' as const, startDate: null, endDate: null, updatedAt: '2026-01-01T00:00:00.000Z', createdAt: '2025-12-31T00:00:00.000Z', content: null, repositoryUrl: 'https://github.com/lst97/demo-app', liveUrl: 'https://demo.lst97.dev', seo: { title: null, description: null, image: { url: null, alt: null } } } : null,
+      getProject: async (slug: string) =>
+        slug === 'demo-app'
+          ? {
+              slug: 'demo-app',
+              title: 'Demo App',
+              summary: 'A demo showcase app',
+              technologies: ['Next.js'],
+              topics: [],
+              tags: [],
+              featured: false,
+              coverImage: { url: null, alt: null },
+              gallery: [],
+              role: null,
+              projectStatus: 'completed' as const,
+              startDate: null,
+              endDate: null,
+              updatedAt: '2026-01-01T00:00:00.000Z',
+              createdAt: '2025-12-31T00:00:00.000Z',
+              content: null,
+              repositoryUrl: 'https://github.com/lst97/demo-app',
+              liveUrl: 'https://demo.lst97.dev',
+              seo: { title: null, description: null, image: { url: null, alt: null } },
+            }
+          : null,
       listPosts: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
       getPost: async () => null,
       listChangelogs: async () => ({ items: [changelogEntry], page: 1, totalPages: 1, totalDocs: 1 }),
@@ -102,6 +152,42 @@ describe('agent tool runner', () => {
       getTopic: async (slug: string) => (slug === topicEntry.slug ? topicEntry : null),
     },
   }
+
+  it('returns every published tier from the services tool within the responder evidence budget', async () => {
+    // The 600-char agent-loop cap cut this output mid-sentence after the
+    // Starter tier, and the answer model invented two packages that do not
+    // exist. The full tier list has to survive to the responder.
+    const published = [
+      'The Starter package starts from A$1,000.',
+      'The Business package starts from A$2,200.',
+      'The Business+ package starts from A$3,500.',
+    ]
+    const evidence = published.map((text, index) => ({
+      citationId: `K${index + 1}`,
+      source: {
+        type: 'services' as const,
+        sourceId: 'packages-and-pricing',
+        title: 'How much does a website cost?',
+        url: 'https://www.lst97.dev/services',
+      },
+      text,
+      score: 0.9,
+    }))
+
+    const result = await runAgentTool({ id: 'svc', name: 'services', arguments: {} }, {
+      ...runner,
+      knowledgeEnabled: true,
+      knowledge: { execute: async () => ({ evidence, citations: [], degraded: false }) },
+    } as never)
+
+    expect(result.status).toBe('completed')
+    expect(result.output).toContain('Service scope results:')
+    for (const tier of published) expect(result.output).toContain(tier)
+    expect(result.output).toContain('A$3,500')
+    // Anything past 600 characters is dropped before the responder sees it.
+    expect(result.output.length).toBeLessThan(6_000)
+    expect(result.retrieval?.evidence).toHaveLength(3)
+  })
 
   it('rejects unexpected arguments at each tool boundary', async () => {
     for (const name of CHAT_TOOL_NAMES) {
@@ -132,64 +218,99 @@ describe('agent tool runner', () => {
       timeSpentSeconds: 7200,
       mostStarred: true,
     }
-    const result = await runAgentTool({
-      id: 'catalogue', name: 'list_owned_projects',
-      arguments: { languages: ['Python'], kinds: ['cli_tool'], min_stars: 2, limit: 4 },
-    }, {
-      ...runner,
-      knowledgeEnabled: true,
-      projectListState: { clarificationAsked: false, shownProjectIds: ['lst97/already-listed'], shortlistStarted: true },
-      knowledge: {
-        execute: async () => ({ evidence: [], citations: [], degraded: false }),
-        listOwnedProjects: async (input) => {
-          received = input
-          return { projects: [project], hasMore: false, matchingTotal: 1, breakdown: [] }
+    const result = await runAgentTool(
+      {
+        id: 'catalogue',
+        name: 'list_owned_projects',
+        arguments: { languages: ['Python'], kinds: ['cli_tool'], min_stars: 2, limit: 4 },
+      },
+      {
+        ...runner,
+        knowledgeEnabled: true,
+        projectListState: {
+          clarificationAsked: false,
+          shownProjectIds: ['lst97/already-listed'],
+          shortlistStarted: true,
+        },
+        knowledge: {
+          execute: async () => ({ evidence: [], citations: [], degraded: false }),
+          listOwnedProjects: async (input) => {
+            received = input
+            return { projects: [project], hasMore: false, matchingTotal: 1, breakdown: [] }
+          },
         },
       },
-    })
+    )
 
-    expect(received).toMatchObject({ languages: ['Python'], kinds: ['cli_tool'], min_stars: 2, limit: 4, first_batch: false, exclude_source_ids: ['lst97/already-listed'] })
+    expect(received).toMatchObject({
+      languages: ['Python'],
+      kinds: ['cli_tool'],
+      min_stars: 2,
+      limit: 4,
+      first_batch: false,
+      exclude_source_ids: ['lst97/already-listed'],
+    })
     expect(result.status).toBe('completed')
     expect(result.output).toContain('python-tool')
     expect(result.output).toContain('Python, Rust')
     expect(result.output).toContain('CLI tool')
     expect(result.output).toContain('2 hrs')
     expect(result.retrieval?.projectSourceIds).toEqual(['lst97/python-tool'])
-    expect(result.retrieval?.citations).toEqual([{ id: 'K1', title: 'python-tool', url: 'https://github.com/lst97/python-tool', isPublic: true }])
+    expect(result.retrieval?.citations).toEqual([
+      { id: 'K1', title: 'python-tool', url: 'https://github.com/lst97/python-tool', isPublic: true },
+    ])
   })
 
   it('answers a count question with server-computed totals and no citations', async () => {
     let received: unknown
     const project = {
-      sourceType: 'github' as const, sourceId: 'lst97/lst97', title: 'lst97',
-      url: 'https://github.com/lst97/lst97', isPublic: true, summary: 'Profile.',
-      createdAt: null, updatedAt: null, stars: null, forks: null, primaryLanguage: null,
-      languages: [], kinds: [], githubTopics: [], curatedTopics: [], timeSpentSeconds: null, mostStarred: false,
+      sourceType: 'github' as const,
+      sourceId: 'lst97/lst97',
+      title: 'lst97',
+      url: 'https://github.com/lst97/lst97',
+      isPublic: true,
+      summary: 'Profile.',
+      createdAt: null,
+      updatedAt: null,
+      stars: null,
+      forks: null,
+      primaryLanguage: null,
+      languages: [],
+      kinds: [],
+      githubTopics: [],
+      curatedTopics: [],
+      timeSpentSeconds: null,
+      mostStarred: false,
     }
-    const result = await runAgentTool({
-      id: 'catalogue-count', name: 'list_owned_projects', arguments: { op: 'count' },
-    }, {
-      ...runner,
-      knowledgeEnabled: true,
-      projectListState: { clarificationAsked: false, shownProjectIds: [], shortlistStarted: true },
-      knowledge: {
-        execute: async () => ({ evidence: [], citations: [], degraded: false }),
-        listOwnedProjects: async (input) => {
-          received = input
-          return {
-            projects: [project],
-            hasMore: false,
-            matchingTotal: 111,
-            breakdown: [
-              { dimension: 'visibility' as const, key: 'true', count: 89 },
-              { dimension: 'visibility' as const, key: 'false', count: 22 },
-              { dimension: 'kind' as const, key: 'cli_tool', count: 18 },
-              { dimension: 'topic' as const, key: 'coursework', count: 14 },
-            ],
-          }
+    const result = await runAgentTool(
+      {
+        id: 'catalogue-count',
+        name: 'list_owned_projects',
+        arguments: { op: 'count' },
+      },
+      {
+        ...runner,
+        knowledgeEnabled: true,
+        projectListState: { clarificationAsked: false, shownProjectIds: [], shortlistStarted: true },
+        knowledge: {
+          execute: async () => ({ evidence: [], citations: [], degraded: false }),
+          listOwnedProjects: async (input) => {
+            received = input
+            return {
+              projects: [project],
+              hasMore: false,
+              matchingTotal: 111,
+              breakdown: [
+                { dimension: 'visibility' as const, key: 'true', count: 89 },
+                { dimension: 'visibility' as const, key: 'false', count: 22 },
+                { dimension: 'kind' as const, key: 'cli_tool', count: 18 },
+                { dimension: 'topic' as const, key: 'coursework', count: 14 },
+              ],
+            }
+          },
         },
       },
-    })
+    )
 
     // The model may send server-owned fields, and they must still be replaced by
     // server values: `op` must not let it choose its own exclusion list.
@@ -206,21 +327,29 @@ describe('agent tool runner', () => {
 
   it('keeps server-owned exclusions when the model sends its own', async () => {
     let received: unknown
-    const result = await runAgentTool({
-      id: 'catalogue-injection', name: 'list_owned_projects',
-      arguments: { exclude_source_ids: ['lst97/attacker-choice'], first_batch: false },
-    }, {
-      ...runner,
-      knowledgeEnabled: true,
-      projectListState: { clarificationAsked: false, shownProjectIds: ['lst97/server-shown'], shortlistStarted: true },
-      knowledge: {
-        execute: async () => ({ evidence: [], citations: [], degraded: false }),
-        listOwnedProjects: async (input) => {
-          received = input
-          return { projects: [], hasMore: false, matchingTotal: 111, breakdown: [] }
+    const result = await runAgentTool(
+      {
+        id: 'catalogue-injection',
+        name: 'list_owned_projects',
+        arguments: { exclude_source_ids: ['lst97/attacker-choice'], first_batch: false },
+      },
+      {
+        ...runner,
+        knowledgeEnabled: true,
+        projectListState: {
+          clarificationAsked: false,
+          shownProjectIds: ['lst97/server-shown'],
+          shortlistStarted: true,
+        },
+        knowledge: {
+          execute: async () => ({ evidence: [], citations: [], degraded: false }),
+          listOwnedProjects: async (input) => {
+            received = input
+            return { projects: [], hasMore: false, matchingTotal: 111, breakdown: [] }
+          },
         },
       },
-    })
+    )
 
     expect(result.status).toBe('completed')
     // The model must never choose which already-shown projects to exclude.
@@ -229,30 +358,35 @@ describe('agent tool runner', () => {
 
   it('counts the whole inventory rather than the unshown remainder', async () => {
     let received: { exclude_source_ids?: string[] } | undefined
-    const result = await runAgentTool({
-      id: 'catalogue-count-after-page', name: 'list_owned_projects', arguments: { op: 'count' },
-    }, {
-      ...runner,
-      knowledgeEnabled: true,
-      // Ten projects were already listed earlier in the conversation.
-      projectListState: {
-        clarificationAsked: false,
-        shownProjectIds: Array.from({ length: 10 }, (_, index) => `lst97/shown-${index}`),
-        shortlistStarted: true,
+    const result = await runAgentTool(
+      {
+        id: 'catalogue-count-after-page',
+        name: 'list_owned_projects',
+        arguments: { op: 'count' },
       },
-      knowledge: {
-        execute: async () => ({ evidence: [], citations: [], degraded: false }),
-        listOwnedProjects: async (input) => {
-          received = input
-          return {
-            projects: [],
-            hasMore: false,
-            matchingTotal: 111,
-            breakdown: [{ dimension: 'visibility', key: 'true', count: 89 }],
-          }
+      {
+        ...runner,
+        knowledgeEnabled: true,
+        // Ten projects were already listed earlier in the conversation.
+        projectListState: {
+          clarificationAsked: false,
+          shownProjectIds: Array.from({ length: 10 }, (_, index) => `lst97/shown-${index}`),
+          shortlistStarted: true,
+        },
+        knowledge: {
+          execute: async () => ({ evidence: [], citations: [], degraded: false }),
+          listOwnedProjects: async (input) => {
+            received = input
+            return {
+              projects: [],
+              hasMore: false,
+              matchingTotal: 111,
+              breakdown: [{ dimension: 'visibility', key: 'true', count: 89 }],
+            }
+          },
         },
       },
-    })
+    )
 
     // The exclusion list is a paging artifact. If count mode carried it, the total
     // would report 101 and the visibility breakdown would drop to 79 public.
@@ -288,7 +422,11 @@ describe('agent tool runner', () => {
 
   it('runs project_time against the warehouse with SSE labels', async () => {
     const result = await runAgentTool(
-      { id: '1', name: 'coding_history', arguments: { op: 'project_time', from: '2025-01-01', to: '2025-12-31', project: 'best-maker-web' } },
+      {
+        id: '1',
+        name: 'coding_history',
+        arguments: { op: 'project_time', from: '2025-01-01', to: '2025-12-31', project: 'best-maker-web' },
+      },
       runner,
     )
 
@@ -305,7 +443,10 @@ describe('agent tool runner', () => {
         ...runner,
         codingHistory: {
           ...runner.codingHistory,
-          byProject: async (range) => { receivedRange = range; return [{ name: 'project-a', seconds: 3600, heartbeats: 10 }] },
+          byProject: async (range) => {
+            receivedRange = range
+            return [{ name: 'project-a', seconds: 3600, heartbeats: 10 }]
+          },
         },
       },
     )
@@ -326,10 +467,7 @@ describe('agent tool runner', () => {
   })
 
   it('lists live projects with demo links', async () => {
-    const result = await runAgentTool(
-      { id: '1', name: 'site_content', arguments: { op: 'list_projects' } },
-      runner,
-    )
+    const result = await runAgentTool({ id: '1', name: 'site_content', arguments: { op: 'list_projects' } }, runner)
 
     expect(result.sseName).toBe('site_content')
     expect(result.sseLabel).toBe('BROWSING SITE CONTENT…')
@@ -337,10 +475,7 @@ describe('agent tool runner', () => {
   })
 
   it('rejects get_project without a slug', async () => {
-    const result = await runAgentTool(
-      { id: '1', name: 'site_content', arguments: { op: 'get_project' } },
-      runner,
-    )
+    const result = await runAgentTool({ id: '1', name: 'site_content', arguments: { op: 'get_project' } }, runner)
 
     expect(result.output).toContain('requires { slug }')
   })
@@ -362,7 +497,13 @@ describe('agent tool runner', () => {
   it('returns clickable public URLs for posts, projects, changelogs, and topics', async () => {
     const posts = await runAgentTool(
       { id: 'posts', name: 'site_content', arguments: { op: 'list_posts' } },
-      { ...runner, siteContent: { ...runner.siteContent, listPosts: async () => ({ items: [postEntry], page: 1, totalPages: 1, totalDocs: 1 }) } },
+      {
+        ...runner,
+        siteContent: {
+          ...runner.siteContent,
+          listPosts: async () => ({ items: [postEntry], page: 1, totalPages: 1, totalDocs: 1 }),
+        },
+      },
     )
     const projects = await runAgentTool(
       { id: 'projects', name: 'site_content', arguments: { op: 'list_projects' } },
@@ -391,28 +532,35 @@ describe('agent tool runner', () => {
   })
 
   it('lists the site sections with a purpose and a link, without needing a CMS', async () => {
-    const result = await runAgentTool({ id: 'pages', name: 'site_content', arguments: { op: 'list_pages' } }, {
-      ...runner,
-      siteContent: undefined,
-    })
+    const result = await runAgentTool(
+      { id: 'pages', name: 'site_content', arguments: { op: 'list_pages' } },
+      {
+        ...runner,
+        siteContent: undefined,
+      },
+    )
 
     expect(result.status).toBe('completed')
-    expect(result.output).toContain('Site sections (7):')
+    expect(result.output).toContain('Site sections (8):')
     expect(result.output).toContain('- Contact (/contact) —')
     // URLs live in the citations; the text stays inside the 600-char tool budget.
     expect(result.output).not.toContain('URL:')
-    // The agent loop truncates tool output to 600 chars before the responder sees
-    // it, so a longer list would silently drop its last sections.
-    expect(result.output.length).toBeLessThan(600)
-    expect(result.output).toContain('- Chat (/chat)')
+    // Two budgets apply, and the SSE one is the tighter: `agent-loop.ts:166` gives
+    // the responder 600 characters of tool output, while `agent-loop.ts:359` puts
+    // only the first 400 into the `tool_result` summary the chat-service test
+    // reads. Passing the first and failing the second drops the tail section
+    // (Chat) from every site-orientation answer while the tool itself looks green.
+    expect(result.output.length).toBeLessThanOrEqual(400)
+    expect(result.output).toContain('- Services (/services)')
     expect(result.retrieval?.citations).toEqual([
       { id: 'K1', title: 'Home', url: 'https://www.lst97.dev/', isPublic: true },
       { id: 'K2', title: 'About', url: 'https://www.lst97.dev/about', isPublic: true },
-      { id: 'K3', title: 'Projects', url: 'https://www.lst97.dev/projects', isPublic: true },
-      { id: 'K4', title: 'Blog', url: 'https://www.lst97.dev/blog', isPublic: true },
-      { id: 'K5', title: 'Changelog', url: 'https://www.lst97.dev/changelog', isPublic: true },
-      { id: 'K6', title: 'Contact', url: 'https://www.lst97.dev/contact', isPublic: true },
-      { id: 'K7', title: 'Chat', url: 'https://www.lst97.dev/chat', isPublic: true },
+      { id: 'K3', title: 'Services', url: 'https://www.lst97.dev/services', isPublic: true },
+      { id: 'K4', title: 'Projects', url: 'https://www.lst97.dev/projects', isPublic: true },
+      { id: 'K5', title: 'Blog', url: 'https://www.lst97.dev/blog', isPublic: true },
+      { id: 'K6', title: 'Changelog', url: 'https://www.lst97.dev/changelog', isPublic: true },
+      { id: 'K7', title: 'Contact', url: 'https://www.lst97.dev/contact', isPublic: true },
+      { id: 'K8', title: 'Chat', url: 'https://www.lst97.dev/chat', isPublic: true },
     ])
   })
 
@@ -471,10 +619,7 @@ describe('agent tool runner', () => {
       { id: '1', name: 'site_content', arguments: { op: 'get_changelog', slug: 'v1-2-0' } },
       runner,
     )
-    const missing = await runAgentTool(
-      { id: '1', name: 'site_content', arguments: { op: 'get_changelog' } },
-      runner,
-    )
+    const missing = await runAgentTool({ id: '1', name: 'site_content', arguments: { op: 'get_changelog' } }, runner)
 
     expect(found.status).toBe('completed')
     expect(found.output).toContain('Version: 1.2.0')
@@ -506,7 +651,13 @@ describe('agent tool runner', () => {
   it('reports an empty changelog or topic list without borrowing another collection', async () => {
     const changelogs = await runAgentTool(
       { id: '1', name: 'site_content', arguments: { op: 'list_changelogs' } },
-      { ...runner, siteContent: { ...runner.siteContent, listChangelogs: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }) } },
+      {
+        ...runner,
+        siteContent: {
+          ...runner.siteContent,
+          listChangelogs: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
+        },
+      },
     )
     const topics = await runAgentTool(
       { id: '1', name: 'site_content', arguments: { op: 'list_topics' } },
@@ -547,7 +698,13 @@ describe('agent tool runner', () => {
   it('records empty successful tool results as completed', async () => {
     const result = await runAgentTool(
       { id: '1', name: 'site_content', arguments: { op: 'list_projects' } },
-      { ...runner, siteContent: { ...runner.siteContent, listProjectsPage: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }) } },
+      {
+        ...runner,
+        siteContent: {
+          ...runner.siteContent,
+          listProjectsPage: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
+        },
+      },
     )
 
     expect(result.output).toBe('No published projects found.')
@@ -569,7 +726,11 @@ describe('agent tool runner', () => {
     )
     const timeout = await runAgentTool(
       { id: '1', name: 'coding_history', arguments: { op: 'summary', from: '2026-01-01', to: '2026-01-31' } },
-      { ...runner, toolTimeoutMs: 1, codingHistory: { ...runner.codingHistory, summary: async () => new Promise<never>(() => {}) } },
+      {
+        ...runner,
+        toolTimeoutMs: 1,
+        codingHistory: { ...runner.codingHistory, summary: async () => new Promise<never>(() => {}) },
+      },
     )
 
     expect(disabled.status).toBe('rejected')

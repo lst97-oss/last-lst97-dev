@@ -85,7 +85,9 @@ describe('createTurnstileVerifier', () => {
   it('replaces provider/network errors with a safe generic error', async () => {
     const verifier = createTurnstileVerifier({
       secret: 'test-secret',
-      fetcher: async () => { throw new Error('request failed for test-token') },
+      fetcher: async () => {
+        throw new Error('request failed for test-token')
+      },
     })
 
     await expect(verifier.verify('test-token', 'portfolio.example')).rejects.toThrow(

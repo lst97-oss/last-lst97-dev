@@ -10,14 +10,25 @@ export function HomeHeroSection() {
     <WindowFrame title="welcome.exe" icon="◆" className="hero-window" controls={homeWindowControls}>
       <div className="hero-grid grid items-center gap-7 lg:grid-cols-5 lg:gap-20">
         <div className="lg:col-span-3">
-          <Eyebrow><PixelIcon glyph="●" /> SYSTEM MESSAGE / 001</Eyebrow>
-          <h1>Hi there, I’m Nelson.<br /><span>Full-stack developer based in Melbourne, Australia.</span></h1>
+          <Eyebrow>
+            <PixelIcon glyph="●" /> SYSTEM MESSAGE / 001
+          </Eyebrow>
+          <h1>
+            Hi there, I’m Nelson.
+            <br />
+            <span>Full-stack developer based in Melbourne, Australia.</span>
+          </h1>
           <p className="hero-copy mb-7 max-w-2xl text-base text-muted-foreground">
-            I build modern full-stack applications and open-source tools for the developer community. Right now, I’m focused on TanStack Start, React, and TypeScript.
+            I build modern full-stack applications and open-source tools for the developer community. Right now, I’m
+            focused on TanStack Start, React, and TypeScript.
           </p>
           <div className="button-row flex flex-wrap items-center gap-3">
-            <Link className={cn(pixelButtonVariants({ tone: 'coral' }))} to="/projects">EXPLORE PROJECTS <span>→</span></Link>
-            <Link className={cn(pixelButtonVariants())} to="/about">ABOUT THE OPERATOR</Link>
+            <Link className={cn(pixelButtonVariants({ tone: 'coral' }))} to="/projects">
+              EXPLORE PROJECTS <span>→</span>
+            </Link>
+            <Link className={cn(pixelButtonVariants())} to="/about">
+              ABOUT THE OPERATOR
+            </Link>
           </div>
         </div>
         <div className="hero-terminal-col flex min-w-0 flex-col items-center lg:col-span-2">
@@ -39,12 +50,29 @@ export function HomeHeroSection() {
             src="/assets/me-pixel-art.webp"
             width={640}
           />
-          <div className="hero-terminal box-border min-h-56 w-full border-3 border-border bg-foreground p-4.5 text-xs text-background shadow-os-coral" aria-label="System status">
-            <div className="terminal-top mb-6 flex justify-between text-xs font-black tracking-widest text-primary"><span>STATUS.LOG</span><span>● REC</span></div>
-            <p><span className="terminal-prompt text-secondary">&gt;</span> booting personal system...</p>
-            <p><span className="terminal-prompt text-secondary">&gt;</span> loading curiosity <span className="terminal-ok text-secondary">[OK]</span></p>
-            <p><span className="terminal-prompt text-secondary">&gt;</span> shipping small things <span className="terminal-ok text-secondary">[OK]</span></p>
-            <p><span className="terminal-prompt text-secondary">&gt;</span> waiting for a good question<span className="blink">_</span></p>
+          <div
+            className="hero-terminal box-border min-h-56 w-full border-3 border-border bg-foreground p-4.5 text-xs text-background shadow-os-coral"
+            aria-label="System status"
+          >
+            <div className="terminal-top mb-6 flex justify-between text-xs font-black tracking-widest text-primary">
+              <span>STATUS.LOG</span>
+              <span>● REC</span>
+            </div>
+            <p>
+              <span className="terminal-prompt text-secondary">&gt;</span> booting personal system...
+            </p>
+            <p>
+              <span className="terminal-prompt text-secondary">&gt;</span> loading curiosity{' '}
+              <span className="terminal-ok text-secondary">[OK]</span>
+            </p>
+            <p>
+              <span className="terminal-prompt text-secondary">&gt;</span> shipping small things{' '}
+              <span className="terminal-ok text-secondary">[OK]</span>
+            </p>
+            <p>
+              <span className="terminal-prompt text-secondary">&gt;</span> waiting for a good question
+              <span className="blink">_</span>
+            </p>
           </div>
         </div>
       </div>

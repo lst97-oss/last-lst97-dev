@@ -19,7 +19,9 @@ describe('GitHub contribution inventory', () => {
             url: 'https://github.com/community/tool',
             isPrivate: false,
             counts: { commits: 2, pullRequests: 1, issues: 0, reviews: 1 },
-            pullRequests: [{ title: 'Add a useful feature', url: 'https://github.com/community/tool/pull/7', state: 'MERGED' }],
+            pullRequests: [
+              { title: 'Add a useful feature', url: 'https://github.com/community/tool/pull/7', state: 'MERGED' },
+            ],
             issues: [],
           },
           {
@@ -42,7 +44,9 @@ describe('GitHub contribution inventory', () => {
             url: 'https://github.com/community/tool',
             isPrivate: false,
             counts: { commits: 2, pullRequests: 0, issues: 0, reviews: 0 },
-            pullRequests: [{ title: 'Add a useful feature', url: 'https://github.com/community/tool/pull/7', state: 'MERGED' }],
+            pullRequests: [
+              { title: 'Add a useful feature', url: 'https://github.com/community/tool/pull/7', state: 'MERGED' },
+            ],
             issues: [],
           },
         ],
@@ -50,15 +54,19 @@ describe('GitHub contribution inventory', () => {
     ])
 
     expect(inventory).toEqual({
-      repositories: [{
-        fullName: 'community/tool',
-        owner: 'community',
-        url: 'https://github.com/community/tool',
-        isPrivate: false,
-        counts: { commits: 4, pullRequests: 1, issues: 0, reviews: 1 },
-        pullRequests: [{ title: 'Add a useful feature', url: 'https://github.com/community/tool/pull/7', state: 'MERGED' }],
-        issues: [],
-      }],
+      repositories: [
+        {
+          fullName: 'community/tool',
+          owner: 'community',
+          url: 'https://github.com/community/tool',
+          isPrivate: false,
+          counts: { commits: 4, pullRequests: 1, issues: 0, reviews: 1 },
+          pullRequests: [
+            { title: 'Add a useful feature', url: 'https://github.com/community/tool/pull/7', state: 'MERGED' },
+          ],
+          issues: [],
+        },
+      ],
       complete: true,
       incompleteReasons: [],
     })
@@ -70,14 +78,16 @@ describe('GitHub contribution inventory', () => {
         year: 2025,
         complete: true,
         incompleteReasons: [],
-        repositories: [{
-          fullName: 'community/tool',
-          url: 'https://github.com/community/tool',
-          isPrivate: false,
-          counts: { commits: 1, pullRequests: 0, issues: 0, reviews: 0 },
-          pullRequests: [],
-          issues: [],
-        }],
+        repositories: [
+          {
+            fullName: 'community/tool',
+            url: 'https://github.com/community/tool',
+            isPrivate: false,
+            counts: { commits: 1, pullRequests: 0, issues: 0, reviews: 0 },
+            pullRequests: [],
+            issues: [],
+          },
+        ],
       },
       { year: 2026, complete: false, incompleteReasons: ['contribution_api_unavailable'], repositories: [] },
     ])
@@ -95,20 +105,46 @@ describe('GitHub contribution inventory', () => {
           return { data: { user: { contributionsCollection: { contributionYears: [2025] } } } }
         }
         return {
-          data: { user: { contributionsCollection: {
-            commitContributionsByRepository: [{
-              repository: { nameWithOwner: 'community/tool', url: 'https://github.com/community/tool', isPrivate: false },
-              contributions: { totalCount: 1, nodes: [{ commitCount: 4, isRestricted: false }] },
-            }],
-            pullRequestContributionsByRepository: [{
-              repository: { nameWithOwner: 'community/tool', url: 'https://github.com/community/tool', isPrivate: false },
-              contributions: { totalCount: 1, nodes: [{ isRestricted: false, pullRequest: {
-                title: 'Add feature', url: 'https://github.com/community/tool/pull/7', state: 'MERGED',
-              } }] },
-            }],
-            issueContributionsByRepository: [],
-            pullRequestReviewContributionsByRepository: [],
-          } } },
+          data: {
+            user: {
+              contributionsCollection: {
+                commitContributionsByRepository: [
+                  {
+                    repository: {
+                      nameWithOwner: 'community/tool',
+                      url: 'https://github.com/community/tool',
+                      isPrivate: false,
+                    },
+                    contributions: { totalCount: 1, nodes: [{ commitCount: 4, isRestricted: false }] },
+                  },
+                ],
+                pullRequestContributionsByRepository: [
+                  {
+                    repository: {
+                      nameWithOwner: 'community/tool',
+                      url: 'https://github.com/community/tool',
+                      isPrivate: false,
+                    },
+                    contributions: {
+                      totalCount: 1,
+                      nodes: [
+                        {
+                          isRestricted: false,
+                          pullRequest: {
+                            title: 'Add feature',
+                            url: 'https://github.com/community/tool/pull/7',
+                            state: 'MERGED',
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+                issueContributionsByRepository: [],
+                pullRequestReviewContributionsByRepository: [],
+              },
+            },
+          },
         }
       },
     }
@@ -123,21 +159,25 @@ describe('GitHub contribution inventory', () => {
 
   it('marks the discovery incomplete and retains successful years when a year query fails', async () => {
     const inventory = await discoverGithubContributions({
-      async getContributionYears() { return [2025, 2026] },
+      async getContributionYears() {
+        return [2025, 2026]
+      },
       async getContributionsForYear(year) {
         if (year === 2026) throw new Error('raw private API response must not escape')
         return {
           year,
           complete: true,
           incompleteReasons: [],
-          repositories: [{
-            fullName: 'community/tool',
-            url: 'https://github.com/community/tool',
-            isPrivate: false,
-            counts: { commits: 1, pullRequests: 0, issues: 0, reviews: 0 },
-            pullRequests: [],
-            issues: [],
-          }],
+          repositories: [
+            {
+              fullName: 'community/tool',
+              url: 'https://github.com/community/tool',
+              isPrivate: false,
+              counts: { commits: 1, pullRequests: 0, issues: 0, reviews: 0 },
+              pullRequests: [],
+              issues: [],
+            },
+          ],
         }
       },
     })

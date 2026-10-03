@@ -1,8 +1,7 @@
+import { TanStackRouterAdapter } from '@payloadcms/tanstack-start/client'
 import { RootProvider } from '@payloadcms/ui'
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import type React from 'react'
-import '@payloadcms/ui/css/app.css'
-import { TanStackRouterAdapter } from '@payloadcms/tanstack-start/client'
 import payloadAdminCss from '@/styles/payload-admin.css?url'
 import { type PayloadLayoutData, toRootProviderProps } from '../lib/payload/layout'
 import { payloadLayoutServerFn, payloadServerFn } from '../lib/payload/server-fns'
@@ -27,7 +26,8 @@ function PayloadLayout() {
       {...toRootProviderProps(data)}
       RouterAdapter={TanStackRouterAdapter}
       serverFunction={({ name, args }: { name: string; args: Record<string, unknown> }) =>
-        payloadServerFn({ data: { args, name } })}
+        payloadServerFn({ data: { args, name } })
+      }
       highContrastMode={false}
     >
       <Outlet />

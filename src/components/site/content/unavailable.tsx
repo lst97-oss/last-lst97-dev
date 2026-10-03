@@ -10,25 +10,19 @@ export function ContentUnavailablePanel({ message, onRetry }: { message: string;
       <PixelIcon glyph="◇" className="text-2xl" />
       <h2 className="m-0">Connection interrupted.</h2>
       <p className="m-0">{message}</p>
-      <button className={cn(pixelButtonVariants())} onClick={onRetry} type="button">RETRY CONNECTION</button>
+      <button className={cn(pixelButtonVariants())} onClick={onRetry} type="button">
+        RETRY CONNECTION
+      </button>
     </EmptyPanel>
   )
 }
 
-export function ContentUnavailableRoute({
-  title,
-  icon,
-  message,
-}: {
-  title: string
-  icon: string
-  message: string
-}) {
+export function ContentUnavailableRoute({ title, icon, message }: { title: string; icon: string; message: string }) {
   const router = useRouter()
 
   return (
     <PageStack>
-      <WindowFrame title={title} icon={icon}>
+      <WindowFrame title={title} icon={icon} scrollable>
         <ContentUnavailablePanel message={message} onRetry={() => void router.invalidate()} />
       </WindowFrame>
     </PageStack>

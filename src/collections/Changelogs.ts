@@ -59,7 +59,10 @@ export const Changelogs: CollectionConfig = {
       type: 'richText',
       editor: contentEditor,
       required: true,
-      admin: { description: 'Use Markdown shortcuts for headings, lists, tables, and fenced code. Insert images through the Media upload control.' },
+      admin: {
+        description:
+          'Use Markdown shortcuts for headings, lists, tables, and fenced code. Insert images through the Media upload control.',
+      },
     },
     {
       name: 'tags',

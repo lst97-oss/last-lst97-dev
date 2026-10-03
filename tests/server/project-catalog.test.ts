@@ -32,8 +32,12 @@ describe('project catalogue filters', () => {
   it('rejects unknown software kinds, oversized batches, and inverted ranges', () => {
     expect(projectCatalogFiltersSchema.safeParse({ kinds: ['website'] }).success).toBe(false)
     expect(projectCatalogFiltersSchema.safeParse({ limit: 11 }).success).toBe(false)
-    expect(projectCatalogFiltersSchema.safeParse({ created_after: '2025-01-01', created_before: '2024-01-01' }).success).toBe(false)
+    expect(
+      projectCatalogFiltersSchema.safeParse({ created_after: '2025-01-01', created_before: '2024-01-01' }).success,
+    ).toBe(false)
     expect(projectCatalogFiltersSchema.safeParse({ min_stars: 8, max_stars: 2 }).success).toBe(false)
-    expect(projectCatalogFiltersSchema.safeParse({ time_spent_range: 'last_7_days', time_spent_from: '2026-09-01' }).success).toBe(false)
+    expect(
+      projectCatalogFiltersSchema.safeParse({ time_spent_range: 'last_7_days', time_spent_from: '2026-09-01' }).success,
+    ).toBe(false)
   })
 })

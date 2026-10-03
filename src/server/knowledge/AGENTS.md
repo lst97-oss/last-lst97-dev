@@ -4,9 +4,9 @@
 
 Read path (chat, wired in `server/chat/runtime.ts`): message → `query-resolution` → `embedding-client` (query) → `repository.search` (pgvector over all rows) → `siliconflow-reranker` → dedupe/top-3 → `jev-relevance-gate` (per-document direct-support decision) → evidence budget → `prompt-evidence` (untrusted block) → citations to the browser. `retrieve.ts` is the only entry the chat calls (`RetrieveKnowledge.execute`).
 
-Write path (worker/jobs/CLIs): `*-source.ts` → `chunking` → `index-source` (embed document) → `repository.upsertSourceChunks`. Triggered by Payload hooks/tasks (`payload-hooks`, `payload-tasks`, `payload-runtime`, `jobs`) and by `scripts/sync-knowledge`, `sync-github-knowledge`, `reindex-github-reports`, `index-interview-knowledge`, `migrate-knowledge`, `import-wakatime-history`.
+Write path (worker/jobs/CLIs): `*-source.ts` → `chunking` → `index-source` (embed document) → `repository.upsertSourceChunks`. Triggered by Payload hooks/tasks (`payload-hooks`, `payload-tasks`, `payload-runtime`, `jobs`) and by the CLIs in `scripts/knowledge/` (`sync-knowledge`, `sync-github-knowledge`, `reindex-github-reports`, `index-interview-knowledge`, `index-services-knowledge`, `migrate-knowledge`, `import-wakatime-history`).
 
-Store: `database.ts` (pool), `database-migration.ts` (schema), `repository.ts` (upsert/remove/list/search facade and stable port), and `repository/` (chunk and catalogue persistence internals). `types.ts` holds the ports (`EmbeddingPort`, `RerankerPort`, `KnowledgeRelevancePort`) and row shapes. Sources: `payload-source` (posts/projects), `profile-source` (curated bio), `wakatime-source` (public share JSON), `github/source.ts` (currently unwired lightweight API), `github/contributions.ts` (API inventory). `interview-document.ts` parses the public interview Q&A corpus in `src/data/interview/` (34 files, one per question) into `interview` documents; it is script-indexed by `knowledge:interview:index` and is deliberately not a `KnowledgeSource`, so nothing in `src/server` reads that directory at runtime. The parser embeds the category and question headings into `document.text` because `chunking` embeds text only — the `title` column is never embedded. GitHub deep pipeline: `github/repository-inspector.ts` (shallow clone, allowlisted reads) → `github/repository-analysis.ts` (evidence facts) → `github/summary-markdown.ts` → `github/knowledge-sync.ts` (+ `github/markdown.ts`, `github/profile-markdown.ts`, `github/profile-sync.ts`, `github/report-document.ts`, `github/legacy-reports.ts`, `github/owner-provided-project-sites.ts`, `github/content-safety.ts`).
+Store: `database.ts` (pool), `database-migration.ts` (schema), `repository.ts` (upsert/remove/list/search facade and stable port), and `repository/` (chunk and catalogue persistence internals). `types.ts` holds the ports (`EmbeddingPort`, `RerankerPort`, `KnowledgeRelevancePort`) and row shapes. Sources: `payload-source` (posts/projects), `profile-source` (curated bio — **generator only, not indexed**; its text is merged into `github-profile`/`lst97-profile` by `renderGithubProfileMarkdown`, so indexing it separately stored the same biography under two identities), `wakatime-source` (public share JSON), `github/source.ts` (currently unwired lightweight API), `github/contributions.ts` (API inventory).
 
 Note: `database-migration.ts` also owns the WakaTime heartbeat/rollup tables because they share the knowledge DB.
 
@@ -31,6 +31,27 @@ Note: `database-migration.ts` also owns the WakaTime heartbeat/rollup tables bec
 - Dedupe is by source identity (`type:sourceId`), not chunk id — several chunks of one post would otherwise surface as K1/K2/K3 with the same title/URL.
 - Cron and retry policy live in `payload-tasks.ts` (`KNOWLEDGE_SYNC_CRON` in `jobs.ts`); `payload.config.ts` registers the tasks and auto-run queue.
 - RAG is opt-in: `KNOWLEDGE_RAG_ENABLED=false` by default. `chat` degrades (`knowledgeUnavailable`) when retrieval fails; it must never block a reply.
+
+- **Project deep-dive documents carry their project in every chunk.** `src/data/projects/<project>/*.md` is
+  one hand-authored document per topic per project, for the three projects that get asked about in depth
+  (`gnaf-address-autocomplete`, `smartplay-hk-oss`, `wat-wat-new-zealand`). The folder is the only source of
+  truth for which project a document belongs to and for whether that project is public — `parseProjectDocument`
+  rejects an unknown folder, and rejects a `**Visibility:**` line that disagrees with the folder, rather than
+  defaulting either. Both matter: every chunk prefix states the project, and `isPublic` decides whether the
+  citation is marked private, so a wrong folder attributes a chunk to the wrong build or invites the responder
+  to imply a private repository is viewable. `sourceId` stays the bare file name, so `source_id` rows are
+  unchanged by adding or removing a topic. Adding a project folder is a four-file change: `PROJECT_LABELS` and
+  `PRIVATE_PROJECT_LABELS` in `project-document.ts` stay in lockstep, and the source type must satisfy the DB
+  `CHECK` list. The corpus is authored, not derived: no script generates or rewrites it.
+
+- **Services documents carry their offering in every chunk.** `src/data/services/<offering>/*.md`
+  is split into `packages/` (new website builds) and `support/` (Go Support Plan). The folder is
+  the only source of truth for a document's offering — never infer it from prose — and
+  `parseServicesDocument` rejects an unknown folder instead of defaulting, so a mistyped path
+  fails the index run rather than silently merging both offerings. The label is emitted as the
+  FIRST line of the chunk prefix, because `chunking` is a heading-unaware sliding window and any
+  later chunk loses the body headers. `sourceId` stays the bare file name, so `source_id` rows
+  are unchanged by the split and no stale-row purge is needed.
 
 ## Do not "fix" without a change request
 

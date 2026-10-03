@@ -15,7 +15,7 @@ export type ContactWorkflowFinding =
   | { phase: 'form'; safety: ClassificationDecision; templateFit: ClassificationDecision }
 
 export type ModerationFinding =
-  | { channel: 'contact'; intent: ClassificationDecision }
+  | { channel: 'contact'; intent: ClassificationDecision; safety: ClassificationDecision }
   | {
       channel: 'chat'
       scope: ClassificationDecision

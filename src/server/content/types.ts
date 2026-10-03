@@ -28,6 +28,13 @@ export interface TopicSummary {
   description: string
 }
 
+/** Same shape as a topic, minus the editorial description. */
+export interface TagSummary {
+  id: string | number
+  title: string
+  slug: string
+}
+
 export type ProjectLifecycle = 'planned' | 'in_progress' | 'completed' | 'archived'
 export type ChangelogChangeType =
   | 'feature'
@@ -136,6 +143,8 @@ export interface ProjectSummary {
   title: string
   summary: string
   technologies: string[]
+  topics: TopicSummary[]
+  tags: TagSummary[]
   gallery: CoverImage[]
   featured: boolean
   coverImage: CoverImage

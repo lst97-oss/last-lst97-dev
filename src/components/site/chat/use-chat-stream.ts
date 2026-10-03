@@ -1,9 +1,13 @@
 import { type Dispatch, type FormEvent, useEffect, useRef } from 'react'
 
 import { CHAT_OFFLINE_MESSAGE, isChatTurnLimitReached, safeChatFailureMessage } from '../../../lib/chat-limits'
-import type { ChatContactEvent } from '../../../server/chat/events'
-import { chatStatusLabel, parseEventFrame, splitEventFrames } from '../../../server/chat/events'
-import type { PublicCitation } from '../../../server/knowledge/retrieve'
+import type { ChatJsonResponse } from '../../../server/chat/events'
+import {
+  chatJsonResponseSchema,
+  chatStatusLabel,
+  parseChatStreamFrame,
+  splitEventFrames,
+} from '../../../server/chat/events'
 import type { ChatSessionAction, ChatSessionState } from './chat-session-state'
 import { CHAT_WELCOME_MESSAGE } from './chat-session-state'
 
@@ -11,7 +15,6 @@ interface UseChatStreamOptions {
   state: ChatSessionState
   dispatch: Dispatch<ChatSessionAction>
 }
-
 
 export function useChatStream({ state, dispatch }: UseChatStreamOptions) {
   const abortRef = useRef<AbortController | null>(null)
@@ -25,12 +28,14 @@ export function useChatStream({ state, dispatch }: UseChatStreamOptions) {
 
   function failDraft(message: string) {
     if (message.includes('expired')) {
-      dispatch({ type: 'conversation/reset', message: 'That conversation expired. Start a fresh conversation and I’ll be ready.' })
+      dispatch({
+        type: 'conversation/reset',
+        message: 'That conversation expired. Start a fresh conversation and I’ll be ready.',
+      })
       return
     }
     dispatch({ type: 'status/set-error', error: message })
   }
-
 
   async function readStream(response: Response) {
     const reader = response.body?.getReader()
@@ -45,42 +50,41 @@ export function useChatStream({ state, dispatch }: UseChatStreamOptions) {
         const { frames, rest } = splitEventFrames(buffer)
         buffer = rest
         for (const frame of frames) {
-          const parsed = parseEventFrame(frame)
-          if (!parsed) continue
-          const data = parsed.data as Record<string, unknown>
-          switch (parsed.name) {
+          const event = parseChatStreamFrame(frame)
+          if (!event) continue
+          switch (event.type) {
             case 'status': {
-              const label = chatStatusLabel(data.status)
+              const label = chatStatusLabel(event.status)
               if (label) dispatch({ type: 'status/set-tool', toolStatus: label })
               break
             }
             case 'token':
-              dispatch({ type: 'conversation/stream-token', delta: String(data.delta ?? '') })
+              dispatch({ type: 'conversation/stream-token', delta: event.delta })
               break
             case 'tool_start':
-              dispatch({ type: 'status/set-tool', toolStatus: String(data.label ?? 'WORKING…') })
+              dispatch({ type: 'status/set-tool', toolStatus: event.label })
               break
             case 'tool_result':
               // Keep the last tool label through consecutive tool calls.
               break
             case 'citations':
-              dispatch({ type: 'conversation/stream-citations', citations: data.citations as PublicCitation[] })
+              dispatch({ type: 'conversation/stream-citations', citations: event.citations })
               break
             case 'knowledge_note':
               dispatch({ type: 'conversation/knowledge-unavailable' })
               break
             case 'done':
-              dispatch({ type: 'conversation/context-token', contextToken: data.contextToken as string | undefined })
+              dispatch({ type: 'conversation/context-token', contextToken: event.contextToken })
               dispatch({ type: 'conversation/turn-completed' })
               break
             case 'contact_confirmation':
-              dispatch({ type: 'contact/event', event: data as unknown as Extract<ChatContactEvent, { type: 'contact_confirmation' }> })
+              dispatch({ type: 'contact/event', event })
               dispatch({ type: 'status/set-tool', toolStatus: null })
               break
             case 'error':
               dispatch({ type: 'conversation/remove-empty-draft' })
-              if (data.code === 'turn_limit') dispatch({ type: 'conversation/turn-limit-reached' })
-              failDraft(String(data.message ?? CHAT_OFFLINE_MESSAGE))
+              if (event.code === 'turn_limit') dispatch({ type: 'conversation/turn-limit-reached' })
+              failDraft(event.message)
               break
             default:
           }
@@ -124,21 +128,18 @@ export function useChatStream({ state, dispatch }: UseChatStreamOptions) {
         await readStream(response)
         return
       }
-      const data = (await response.json().catch(() => null)) as {
-        reply?: string
-        error?: string
-        contextToken?: string
-        citations?: PublicCitation[]
-        knowledgeUnavailable?: boolean
-        code?: string
-      } | null
+      const parsed = chatJsonResponseSchema.safeParse(await response.json().catch(() => null))
+      const data: ChatJsonResponse | null = parsed.success ? parsed.data : null
       if (!response.ok || !data?.reply) {
         if (data?.code === 'turn_limit') dispatch({ type: 'conversation/turn-limit-reached' })
         if (data?.code === 'turnstile_invalid' || data?.code === 'turnstile_unavailable' || response.status === 429) {
           dispatch({ type: 'conversation/restore-submission', message: nextMessage })
         }
         if (response.status === 400 && data?.error?.includes('expired')) {
-          dispatch({ type: 'conversation/reset', message: 'That conversation expired. Start a fresh conversation and I’ll be ready.' })
+          dispatch({
+            type: 'conversation/reset',
+            message: 'That conversation expired. Start a fresh conversation and I’ll be ready.',
+          })
         }
         throw new Error(data?.error ?? CHAT_OFFLINE_MESSAGE)
       }

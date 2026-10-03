@@ -19,7 +19,8 @@ describe('chat timeout helper', () => {
   })
 
   it('rejects with the caller supplied timeout message', async () => {
-    await expect(withTimeout(new Promise(() => {}), 1, 'planner request timed out'))
-      .rejects.toThrow('planner request timed out')
+    await expect(withTimeout(new Promise(() => {}), 1, 'planner request timed out')).rejects.toThrow(
+      'planner request timed out',
+    )
   })
 })

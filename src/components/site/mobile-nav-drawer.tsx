@@ -1,17 +1,20 @@
 import { Link, useLocation } from '@tanstack/react-router'
 import { cn } from 'cn'
+import type { LucideIcon } from 'lucide-react'
+import { AtSign, FolderOpen, House, LayoutGrid, MessageSquare, Pencil, RefreshCw, User } from 'lucide-react'
 import { useEffect } from 'react'
 import { PixelIcon } from '@/components/site/pixel-icon'
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer'
 
-export const mobileNavShortcuts = [
-  { href: '/', label: 'Home', glyph: '⌂' },
-  { href: '/about', label: 'About', glyph: '☺' },
-  { href: '/blog', label: 'Blog', glyph: '✎' },
-  { href: '/projects', label: 'Projects', glyph: '▤' },
-  { href: '/changelog', label: 'Changes', glyph: '↻' },
-  { href: '/chat', label: 'Chat', glyph: '>' },
-  { href: '/contact', label: 'Contact', glyph: '@' },
+export const mobileNavShortcuts: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: '/', label: 'Home', icon: House },
+  { href: '/services', label: 'Services', icon: LayoutGrid },
+  { href: '/about', label: 'About', icon: User },
+  { href: '/blog', label: 'Blog', icon: Pencil },
+  { href: '/projects', label: 'Projects', icon: FolderOpen },
+  { href: '/changelog', label: 'Changes', icon: RefreshCw },
+  { href: '/chat', label: 'Chat', icon: MessageSquare },
+  { href: '/contact', label: 'Contact', icon: AtSign },
 ]
 
 function isCurrent(pathname: string, href: string): boolean {
@@ -34,13 +37,18 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
 
   return (
     <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
-      <DrawerContent id="mobile-nav-drawer" className="os-mobile-nav-content border-t-3 border-border bg-card text-foreground" aria-label="Site navigation">
+      <DrawerContent
+        id="mobile-nav-drawer"
+        className="os-mobile-nav-content border-t-3 border-border bg-card text-foreground"
+        aria-label="Site navigation"
+      >
         <DrawerTitle className="os-mobile-nav-title m-0 flex items-center justify-center gap-2 px-4 pt-3 text-xs font-black tracking-widest uppercase">
           <PixelIcon glyph="◆" className="text-foreground" /> NAVIGATE
         </DrawerTitle>
         <nav className="os-mobile-dock-grid grid grid-cols-3 gap-2.5 p-3.5 pb-5" aria-label="Site shortcuts">
           {mobileNavShortcuts.map((shortcut) => {
             const active = isCurrent(location.pathname, shortcut.href)
+            const ShortcutIcon = shortcut.icon
             return (
               <Link
                 key={shortcut.href}
@@ -52,11 +60,16 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
                   active && 'is-active border-border bg-primary shadow-os-sm',
                 )}
               >
-                <span className="shortcut-art os-mobile-dock-art grid size-10 place-items-center border-3 border-border bg-card text-2xl shadow-os-sm" aria-hidden="true">
-                  <PixelIcon glyph={shortcut.glyph} />
+                <span
+                  className="shortcut-art os-mobile-dock-art grid size-10 place-items-center border-3 border-border bg-card shadow-os-sm"
+                  aria-hidden="true"
+                >
+                  <ShortcutIcon className="size-5 shrink-0 text-accent" strokeWidth={2.5} />
                 </span>
                 <span className="os-mobile-dock-label leading-tight">{shortcut.label}</span>
-                {active ? <span className="os-mobile-dock-current text-xs font-black tracking-widest text-success">OPEN</span> : null}
+                {active ? (
+                  <span className="os-mobile-dock-current text-xs font-black tracking-widest text-success">OPEN</span>
+                ) : null}
               </Link>
             )
           })}

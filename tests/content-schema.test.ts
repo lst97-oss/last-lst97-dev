@@ -45,10 +45,7 @@ describe('Payload editorial schemas', () => {
       relationTo: 'topics',
       hasMany: true,
     })
-    expect(field(Posts.fields, 'status')?.options?.map(({ value }) => value)).toEqual([
-      'draft',
-      'published',
-    ])
+    expect(field(Posts.fields, 'status')?.options?.map(({ value }) => value)).toEqual(['draft', 'published'])
   })
 
   test('projects separate optional lifecycle and timeframe from publication status', () => {
@@ -68,12 +65,7 @@ describe('Payload editorial schemas', () => {
     const lifecycle = field(Projects.fields, 'projectStatus')
     expect(lifecycle?.required).not.toBe(true)
     expect(lifecycle?.defaultValue).toBeUndefined()
-    expect(lifecycle?.options?.map(({ value }) => value)).toEqual([
-      'planned',
-      'in_progress',
-      'completed',
-      'archived',
-    ])
+    expect(lifecycle?.options?.map(({ value }) => value)).toEqual(['planned', 'in_progress', 'completed', 'archived'])
 
     for (const name of ['startDate', 'endDate']) {
       expect(field(Projects.fields, name)).toMatchObject({
@@ -83,10 +75,7 @@ describe('Payload editorial schemas', () => {
       expect(field(Projects.fields, name)?.required).not.toBe(true)
     }
 
-    expect(field(Projects.fields, 'status')?.options?.map(({ value }) => value)).toEqual([
-      'draft',
-      'published',
-    ])
+    expect(field(Projects.fields, 'status')?.options?.map(({ value }) => value)).toEqual(['draft', 'published'])
   })
 
   test('changelogs keep version optional while requiring excerpt, content, and publication status', () => {
@@ -100,12 +89,15 @@ describe('Payload editorial schemas', () => {
     expect(field(Changelogs.fields, 'tags')?.type).toBe('array')
     expect(field(Changelogs.fields, 'changeTypes')).toMatchObject({ type: 'select', hasMany: true })
     expect(field(Changelogs.fields, 'changeTypes')?.options?.map(({ value }) => value)).toEqual([
-      'feature', 'improvement', 'bug_fix', 'security', 'breaking_change', 'maintenance', 'documentation',
+      'feature',
+      'improvement',
+      'bug_fix',
+      'security',
+      'breaking_change',
+      'maintenance',
+      'documentation',
     ])
-    expect(field(Changelogs.fields, 'status')?.options?.map(({ value }) => value)).toEqual([
-      'draft',
-      'published',
-    ])
+    expect(field(Changelogs.fields, 'status')?.options?.map(({ value }) => value)).toEqual(['draft', 'published'])
   })
 
   test('media generates responsive image sizes and keeps accessible alt text required', () => {

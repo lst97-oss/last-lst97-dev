@@ -21,7 +21,6 @@ export function contentCardDate(publishedAt: string | null | undefined, updatedA
   return null
 }
 
-
 /** Average silent reading speed. 900 CJK characters or ~200 words per minute. */
 const CHARACTERS_PER_MINUTE = 900
 

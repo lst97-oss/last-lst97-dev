@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
-
-import { createContentMeta } from '../src/lib/content/meta'
 import { formatPublishedDate } from '../src/lib/content/date'
+import { createContentMeta } from '../src/lib/content/meta'
 import { formatProjectTimeframe, getProjectLifecycleLabel } from '../src/lib/content/project-display'
 import { getSiteUrl } from '../src/lib/seo/site-seo'
 
@@ -45,9 +44,7 @@ describe('content presentation helpers', () => {
 
     // The canonical must match the public pathname, not the internal route id,
     // so query-string duplicates collapse onto one URL.
-    expect(overridden.links).toEqual([
-      { rel: 'canonical', href: `${getSiteUrl()}/blog/build-notes` },
-    ])
+    expect(overridden.links).toEqual([{ rel: 'canonical', href: `${getSiteUrl()}/blog/build-notes` }])
 
     const fallback = createContentMeta({
       title: 'Project title',

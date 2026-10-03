@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 
-import { githubRepositoryDocument, normalizeGithubRepositoryCliRecord, renderGithubRepositoryMarkdown, renderPersonalGithubProfileMarkdown } from '../../src/server/knowledge/github/markdown'
+import {
+  githubRepositoryDocument,
+  normalizeGithubRepositoryCliRecord,
+  renderGithubRepositoryMarkdown,
+  renderPersonalGithubProfileMarkdown,
+} from '../../src/server/knowledge/github/markdown'
 
 const repository = {
   nameWithOwner: 'lst97/example-tool',
@@ -13,7 +18,10 @@ const repository = {
   createdAt: '2024-01-02T00:00:00Z',
   updatedAt: '2026-09-20T00:00:00Z',
   primaryLanguage: { name: 'TypeScript' },
-  languages: [{ name: 'TypeScript', size: 1000 }, { name: 'Shell', size: 250 }],
+  languages: [
+    { name: 'TypeScript', size: 1000 },
+    { name: 'Shell', size: 250 },
+  ],
   repositoryTopics: [{ name: 'developer-tools' }],
   homepageUrl: 'https://example.test',
   defaultBranchRef: { name: 'main' },
@@ -51,7 +59,10 @@ describe('GitHub Markdown knowledge documents', () => {
   })
 
   it('assigns private repos a separate non-public RAG source type', () => {
-    const document = githubRepositoryDocument({ ...repository, isPrivate: true, visibility: 'PRIVATE' as const }, '# Internal')
+    const document = githubRepositoryDocument(
+      { ...repository, isPrivate: true, visibility: 'PRIVATE' as const },
+      '# Internal',
+    )
 
     expect(document.source.type).toBe('github-private')
     expect(document.source.sourceId).toBe('lst97/example-tool')

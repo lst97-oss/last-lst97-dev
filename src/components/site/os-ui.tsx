@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from "cn"
+import { cn } from 'cn'
 import type { ReactNode } from 'react'
 import { useMasonryRows } from '@/components/site/masonry-rows'
 import { PixelIcon } from '@/components/site/pixel-icon'
@@ -31,13 +31,19 @@ type PixelButtonProps = {
 export function PixelButton({ children, className, tone, as, ...rest }: PixelButtonProps) {
   if (as === 'span') {
     return (
-      <span className={cn(pixelButtonVariants({ tone }), className)} {...(rest as React.HTMLAttributes<HTMLSpanElement>)}>
+      <span
+        className={cn(pixelButtonVariants({ tone }), className)}
+        {...(rest as React.HTMLAttributes<HTMLSpanElement>)}
+      >
         {children}
       </span>
     )
   }
   return (
-    <button className={cn(pixelButtonVariants({ tone }), className)} {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}>
+    <button
+      className={cn(pixelButtonVariants({ tone }), className)}
+      {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+    >
       {children}
     </button>
   )
@@ -53,7 +59,12 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
 
 export function Tag({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <span className={cn('inline-block border-2 border-border bg-primary px-1.5 py-0.5 text-xs font-black text-foreground', className)}>
+    <span
+      className={cn(
+        'inline-block border-2 border-border bg-primary px-1.5 py-0.5 text-xs font-black text-foreground',
+        className,
+      )}
+    >
       {children}
     </span>
   )
@@ -77,9 +88,7 @@ export function CardGrid({ children, className }: { children: ReactNode; classNa
 }
 
 export function PageStack({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={cn('mx-auto flex w-full max-w-6xl flex-col gap-6', className)}>{children}</div>
-  )
+  return <div className={cn('mx-auto flex w-full max-w-6xl flex-col gap-6', className)}>{children}</div>
 }
 
 export function CountBadge({
@@ -91,7 +100,13 @@ export function CountBadge({
   className?: string
 } & React.HTMLAttributes<HTMLSpanElement>) {
   return (
-    <span className={cn('group inline-flex items-center gap-1.5 border-2 border-border bg-secondary px-2 py-1 text-xs font-black whitespace-nowrap', className)} {...rest}>
+    <span
+      className={cn(
+        'group inline-flex items-center gap-1.5 border-2 border-border bg-secondary px-2 py-1 text-xs font-black whitespace-nowrap',
+        className,
+      )}
+      {...rest}
+    >
       {children}
     </span>
   )
@@ -113,9 +128,16 @@ export function PageHeading({
   className?: string
 }) {
   return (
-    <div className={cn('page-heading mb-7 flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-stretch', className)}>
+    <div
+      className={cn(
+        'page-heading mb-7 flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-stretch',
+        className,
+      )}
+    >
       <div>
-        <Eyebrow><PixelIcon glyph={icon} /> {eyebrow}</Eyebrow>
+        <Eyebrow>
+          <PixelIcon glyph={icon} /> {eyebrow}
+        </Eyebrow>
         <h1 className="mb-0">{title}</h1>
         {lead ? <p className="lead-copy mt-4">{lead}</p> : null}
       </div>
@@ -125,16 +147,17 @@ export function PageHeading({
 }
 
 export function CardLink({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <span className={cn('mt-auto pt-3 text-xs font-black tracking-wider text-accent', className)}>
-      {children}
-    </span>
-  )
+  return <span className={cn('mt-auto pt-3 text-xs font-black tracking-wider text-accent', className)}>{children}</span>
 }
 
 export function ProjectStatus({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <span className={cn('inline-flex border-2 border-border bg-success-muted px-1.5 py-1 text-xs font-black tracking-wider text-foreground', className)}>
+    <span
+      className={cn(
+        'inline-flex border-2 border-border bg-success-muted px-1.5 py-1 text-xs font-black tracking-wider text-foreground',
+        className,
+      )}
+    >
       {children}
     </span>
   )
@@ -149,7 +172,13 @@ export function EmptyPanel({
   className?: string
 } & React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('flex min-h-36 flex-col items-start justify-center gap-1.5 border-3 border-dashed border-muted-foreground p-6 text-muted-foreground', className)} {...rest}>
+    <div
+      className={cn(
+        'flex min-h-36 flex-col items-start justify-center gap-1.5 border-3 border-dashed border-muted-foreground p-6 text-muted-foreground',
+        className,
+      )}
+      {...rest}
+    >
       {children}
     </div>
   )

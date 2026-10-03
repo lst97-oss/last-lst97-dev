@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 
-import { assertSafeGithubMarkdown, inspectSensitivePath, sanitizeEvidenceText } from '../../src/server/knowledge/github/content-safety'
+import {
+  assertSafeGithubMarkdown,
+  inspectSensitivePath,
+  sanitizeEvidenceText,
+} from '../../src/server/knowledge/github/content-safety'
 
 describe('GitHub Markdown content safety', () => {
   it('blocks sensitive paths and sanitizes credential-bearing lines without returning secret values', () => {
@@ -8,7 +12,9 @@ describe('GitHub Markdown content safety', () => {
     expect(inspectSensitivePath('config/server.key')).toBe(true)
     expect(inspectSensitivePath('src/index.ts')).toBe(false)
 
-    const result = sanitizeEvidenceText('Safe description.\nTOKEN=ghp_abcdefghijklmnopqrstuvwxyz1234567890\nAnother safe line.')
+    const result = sanitizeEvidenceText(
+      'Safe description.\nTOKEN=ghp_abcdefghijklmnopqrstuvwxyz1234567890\nAnother safe line.',
+    )
     expect(result.text).toContain('Safe description.')
     expect(result.text).toContain('Another safe line.')
     expect(result.text).not.toContain('ghp_')
@@ -31,8 +37,9 @@ describe('GitHub Markdown content safety', () => {
   })
 
   it('fails closed on any remaining secret pattern with a generic error', () => {
-    expect(() => assertSafeGithubMarkdown('# Summary\n\nOPENROUTER_API_KEY=sk-or-v1-abcdefghijklmnopqrstuvwxyz123456'))
-      .toThrow('GitHub summary failed the content safety check')
+    expect(() =>
+      assertSafeGithubMarkdown('# Summary\n\nOPENROUTER_API_KEY=sk-or-v1-abcdefghijklmnopqrstuvwxyz123456'),
+    ).toThrow('GitHub summary failed the content safety check')
   })
 
   it('keeps every committed private-repository report free of secrets before it can be published', async () => {

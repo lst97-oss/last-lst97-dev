@@ -1,15 +1,15 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
+  ageTrail,
+  cellAt,
   GRID_TRAIL_MAX_ALPHA,
   GRID_TRAIL_STEP_MS,
   GRID_TRAIL_STEPS,
-  ageTrail,
-  cellAt,
   lightTrail,
+  type TrailField,
   trailAlpha,
   trailKey,
-  type TrailField,
 } from '../src/components/site/battle/pointer-grid-trail'
 
 function lit(): TrailField {
