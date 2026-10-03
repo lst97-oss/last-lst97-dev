@@ -18,8 +18,8 @@ src/components/site/ Site components (shell, chat, contact, content, home, windo
 src/components/ui/   61 shadcn-style wrappers over Base UI primitives. Generated-style code.
 src/lib/             Client-safe shared code: os-store, chat limits, SEO, Payload admin bridge.
 src/collections/     Payload collections + fields/ + access.ts.
-src/migrations/      Committed Payload migrations (10 registered in index.ts).
-src/data/            Content corpora (168 .md): interview/, github/{public,private,contributions/public}/, profile.md.
+src/migrations/      Committed Payload migrations (11 registered in index.ts).
+src/data/            Content corpora (201 .md): interview/, services/, projects/, github/{public,private,contributions/public}/, profile.md.
 src/styles/          14 CSS partials imported by the src/styles.css entry.
 src/integrations/    TanStack Query provider wiring.
 vendor/              Vendored Payload TanStack Vite plugins + two module shims. See below.
@@ -40,7 +40,7 @@ scripts/seeding/     Content seeds, one directory per collection
                      discovers and runs them sequentially; each seed file is
                      self-executing and slug-keyed against its collection.
                      Empty directories are skipped, not an error.
-tests/               124 test files (52 flat + 72 under tests/server/), plus
+tests/               146 test files (67 flat + 79 under tests/server/), plus
                      tests/site-stylesheet.ts, the shared CSS loader.
 docs/                Operational docs, research, and dated superpowers specs/plans.
 ```
@@ -135,13 +135,19 @@ The container passes `--bun` (Payload must run on the Bun runtime) and `--disabl
 **separate** variables on purpose: one quoted variable lands in a single argv slot that bunx cannot
 split, which silently drops the flags.
 
-**`docker build` currently fails, and it is not this script's fault.** `resolvePayloadServerUrl`
-(`src/server/security/payload-server-url.ts:57`) rejects a loopback origin when `NODE_ENV=production`,
-and the build stage sets `NODE_ENV=production` at the `base` image while `DATABASE_URL` points at
-`localhost`. `generate:types` loads `payload.config.ts`, so the guard fires. Verified pre-existing:
-the Dockerfile at `0838098` fails with the identical `PayloadServerUrlError`. Fixing it means giving
-the build stage a non-loopback `PAYLOAD_PUBLIC_SERVER_URL` (it is compile-time only and never
-reaches the image), not relaxing the guard.
+**`docker build` succeeds, and the build stage is why.** `resolvePayloadServerUrl`
+(`src/server/security/payload-server-url.ts`) rejects a loopback origin when `NODE_ENV=production`, and the
+build stage *is* production. The Dockerfile therefore exports a non-loopback
+`PAYLOAD_PUBLIC_SERVER_URL` (the real public origin) for that single `RUN` layer. It is compile-time only
+and never re-declared as `ENV`, so it never reaches the image; the container resolves the real origin at
+boot from the runtime environment. **Do not relax the guard to make a build pass** — the guard is correct
+for the running server, and only the build-time load is being satisfied.
+
+Verified 2026-10-03 at `32dab15`: `docker build -t lastos-verify:local .` exits 0 through the whole
+`bun run build` chain including `generate:types`, the produced image boots, the container reports `healthy`,
+and `GET /api/site/health` returns `{"status":"ok"}`. Note that booting the image with a *loopback*
+`PAYLOAD_PUBLIC_SERVER_URL` fails by design with `PayloadServerUrlError` — that is the guard working, not
+a regression.
 
 ## RAG & Knowledge Operations
 
@@ -264,7 +270,7 @@ rather than classes; validate at the boundary with zod, then trust the parsed va
 constants near the top; durations named `timeoutMs`; timing logs as
 `durationMs: Math.max(0, Math.round(now() - startedAt))`; throw fixed, sanitized messages.
 
-**Tests:** 109 files under `tests/` (27 `.ts` + 11 `.tsx` at the root, 71 in `tests/server/`), never
+**Tests:** 146 files under `tests/` (67 at the root, 79 in `tests/server/`), never
 co-located with source. Filename mirrors the module basename; a module at `src/server/knowledge/foo.ts`
 is tested by `tests/server/foo.test.ts`. Fakes are **ports, not module mocks** — `mock.module` is used
 zero times. The house fakes to copy are `scriptedPlanner` / `baseDependencies` / `streamingResponder`
@@ -309,11 +315,13 @@ These produce *confidently wrong* results rather than obvious errors. Each has b
   stash (including `-u`), run the suite, and diff normalized test names before concluding you broke
   something. Per-test timing suffixes differ between runs and make every test look new.
 - **BOXES IN `docs/superpowers/plans/**` ARE NOT A COMPLETION SIGNAL.** Several shipped plans still have
-  every checkbox unticked. The code and the per-directory `AGENTS.md` files are authoritative; those docs
-  are a historical record. Known-stale: the `.cn` SiliconFlow host in the 2026-09-24 embeddings
+  every checkbox unticked, and only one carries a `Status:` header. The code and the per-directory
+  `AGENTS.md` files are authoritative; those docs are a historical record — see
+  `docs/superpowers/plans/README.md`. Known-stale: the `.cn` SiliconFlow host in the 2026-09-24 embeddings
   spec/plan (code uses `https://api.siliconflow.com/v1`), and the 12-message/60,000-char transcript caps
-  in the 2026-09-24 multiturn spec/plan (code uses `MAX_CHAT_TURNS = 20`,
-  `MAX_CHAT_CONTEXT_MESSAGES = 40`).
+  in the 2026-09-24 multiturn spec/plan (code uses `MAX_CHAT_TURNS = 20` and
+  `MAX_CHAT_CONTEXT_MESSAGES = MAX_CHAT_TURNS * 2`, both in `src/lib/chat-limits.ts` — **not** in
+  `src/server/chat/types.ts`).
 
 ## Git & Commit Conventions
 
@@ -334,10 +342,8 @@ and do not re-wire the unwired `src/server/knowledge/github/source.ts`.
   values from `.env` or `.env.local`.
 - `PUBLIC_SITE_URL` must be the real public origin in production; meta tags, canonical links, `og:url`,
   `sitemap.xml`, `robots.txt`, and `security.txt` are all baked from it at build time.
-- `OPENROUTER_SYSTEM_PROMPT` is declared in `.env.example` and `src/server/env-schema.ts` but is
-  **missing from the allowlist** in `src/server/env.ts`'s `readRuntimeEnv()`, so
-  `src/server/chat/openrouter-responder.ts` always falls back to `DEFAULT_SYSTEM_PROMPT`. Setting it has
-  no effect today.
+- `OPENROUTER_SYSTEM_PROMPT` is optional: `openrouter-responder.ts` reads `env.OPENROUTER_SYSTEM_PROMPT ??
+  DEFAULT_SYSTEM_PROMPT`, so leaving it unset uses the built-in prompt. Setting it **does** override it.
 - `CLOUDFLARE_R2_API_TOKEN` exists in local `.env` but is referenced by no code and no schema. It is dead
   config, not a requirement.
 - Turnstile tokens are single-use control data: never pass them into a model, signed context, or
@@ -354,7 +360,9 @@ and do not re-wire the unwired `src/server/knowledge/github/source.ts`.
 | `vendor/payload-tanstack-vite/README.md` | Why the Vite plugins are vendored and when to re-copy them |
 | `payload.config.ts` | Adapter, collections, `importMapFile`, jobs, conditional email/storage |
 | `src/server/env-schema.ts` | The zod env contract and every default |
-| `src/server/chat/types.ts` | `CHAT_TOOL_NAMES`, `ChatWorkflowContext`, `MAX_CHAT_TURNS` neighbours |
+| `src/server/chat/types.ts` | `CHAT_TOOL_NAMES`, `ChatWorkflowContext`, and the tool tuple every agent path reads |
+| `src/lib/services/packages.ts` | Authoritative prices, add-ons, process, and tech for both `/services` and the services RAG corpus |
+| `scripts/project-root.ts` | Depth-independent repo root for every CLI script; use it instead of re-deriving |
 | `src/server/chat/events.ts` | The SSE wire protocol plus every `/api/site/chat` request/response schema, shared with the browser |
 | `src/server/knowledge/AGENTS.md` | RAG invariants, dedupe rules, "do not fix without a request" list |
 | `src/server/chat/AGENTS.md` | Chat module map, model responsibilities, contact workflow, change checklist |
@@ -365,7 +373,7 @@ and do not re-wire the unwired `src/server/knowledge/github/source.ts`.
 
 ## Subdirectory AGENTS.md
 
-Two per-directory files exist and own their subsystems. Read them before editing those areas; do not
+Three per-directory files exist and own their subsystems. Read them before editing those areas; do not
 duplicate their content here.
 
 - `src/server/knowledge/AGENTS.md` — RAG module: pipeline position, invariants, conventions, and an
@@ -373,3 +381,4 @@ duplicate their content here.
   public-only vs `allowPrivate` split, worker caps, tracked private summaries).
 - `src/server/chat/AGENTS.md` — chat and moderation: module map, Jev/planner/responder responsibilities,
   request flow, contact state machine, source boundaries, diagnostics, change checklist.
+- `src/server/moderation/AGENTS.md` — Jev, TypeSafe, and the tool-routing contract shared with chat.
