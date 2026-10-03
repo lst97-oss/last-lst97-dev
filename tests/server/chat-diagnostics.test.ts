@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 
 import {
+  type ChatDiagnosticsRecord,
   createChatDiagnosticsCapture,
   createDiscordDiagnosticsSink,
   redactDiagnosticsText,
-  type ChatDiagnosticsRecord,
 } from '../../src/server/observability/chat-diagnostics'
 
 describe('chat diagnostics', () => {
@@ -28,9 +28,7 @@ describe('chat diagnostics', () => {
   })
 
   it('redacts IP addresses and credentials embedded in URLs', () => {
-    const result = redactDiagnosticsText(
-      'IP 127.0.0.1, IPv6 2001:db8::1, and https://alice:S3cr3t@internal/db',
-    )
+    const result = redactDiagnosticsText('IP 127.0.0.1, IPv6 2001:db8::1, and https://alice:S3cr3t@internal/db')
 
     expect(result).not.toContain('127.0.0.1')
     expect(result).not.toContain('2001:db8::1')
@@ -41,15 +39,26 @@ describe('chat diagnostics', () => {
 
   it('captures only bounded recent context and redacted excerpts', () => {
     let submitted: ChatDiagnosticsRecord | undefined
-    const capture = createChatDiagnosticsCapture({
-      traceId: 'turn-1',
-      message: 'Bearer abcdefghijklmnop user@example.com',
-      history: Array.from({ length: 8 }, (_, index) => ({ role: 'user' as const, content: `message ${index}` })),
-      startedAtMs: 10,
-    }, { enqueue: (record) => { submitted = record } }, () => 25)
+    const capture = createChatDiagnosticsCapture(
+      {
+        traceId: 'turn-1',
+        message: 'Bearer abcdefghijklmnop user@example.com',
+        history: Array.from({ length: 8 }, (_, index) => ({ role: 'user' as const, content: `message ${index}` })),
+        startedAtMs: 10,
+      },
+      {
+        enqueue: (record) => {
+          submitted = record
+        },
+      },
+      () => 25,
+    )
 
     capture.addModelCall({ provider: 'openrouter', operation: 'response', status: 'succeeded' })
-    capture.addJevDecision({ stage: 'tool_routing', decisions: { search_knowledge: { label: 'use', confidence: 0.9 } } })
+    capture.addJevDecision({
+      stage: 'tool_routing',
+      decisions: { search_knowledge: { label: 'use', confidence: 0.9 } },
+    })
     capture.finish({ outcome: 'complete', response: 'Assistant response' })
 
     expect(submitted?.history).toHaveLength(6)
@@ -65,7 +74,14 @@ describe('chat diagnostics', () => {
   it('sends bounded webhook messages without enabling mentions', async () => {
     const payloads: Array<{
       allowed_mentions: { parse: string[] }
-      embeds: Array<{ title?: string; description?: string; fields?: Array<{ name: string; value: string }>; color?: number; timestamp?: string; footer?: { text: string } }>
+      embeds: Array<{
+        title?: string
+        description?: string
+        fields?: Array<{ name: string; value: string }>
+        color?: number
+        timestamp?: string
+        footer?: { text: string }
+      }>
     }> = []
     const sink = createDiscordDiagnosticsSink({
       webhookUrl: 'https://discord.com/api/webhooks/123456/secret-token',
@@ -92,21 +108,23 @@ describe('chat diagnostics', () => {
       response: 'Try the formatted diagnostic view.',
       modelCalls: [],
       jevDecisions: [],
-      ragRetrievals: [{
-        query: 'token debugging',
-        degraded: false,
-        candidates: Array.from({ length: 10 }, (_, index) => ({
-          id: `candidate-${index}`,
-          sourceId: `repo-${index}`,
-          sourceType: 'github_repository',
-          title: `Candidate ${index}`,
-          isPublic: true,
-          excerpt: 'x'.repeat(300),
-          retrievedRank: index + 1,
-          outcome: 'accepted' as const,
-          finalSelected: index < 3,
-        })),
-      }],
+      ragRetrievals: [
+        {
+          query: 'token debugging',
+          degraded: false,
+          candidates: Array.from({ length: 10 }, (_, index) => ({
+            id: `candidate-${index}`,
+            sourceId: `repo-${index}`,
+            sourceType: 'github_repository',
+            title: `Candidate ${index}`,
+            isPublic: true,
+            excerpt: 'x'.repeat(300),
+            retrievedRank: index + 1,
+            outcome: 'accepted' as const,
+            finalSelected: index < 3,
+          })),
+        },
+      ],
     }
 
     sink.enqueue(record)
@@ -116,17 +134,22 @@ describe('chat diagnostics', () => {
     expect(payloads.length).toBeGreaterThan(1)
     expect(payloads.every(({ allowed_mentions }) => allowed_mentions.parse.length === 0)).toBe(true)
     expect(payloads.every(({ embeds }) => embeds.length === 1)).toBe(true)
-    expect(payloads.every(({ embeds }) => {
-      const embed = embeds[0]!
-      const total = (embed.title?.length ?? 0)
-        + (embed.description?.length ?? 0)
-        + (embed.footer?.text.length ?? 0)
-        + (embed.fields ?? []).reduce((sum, field) => sum + field.name.length + field.value.length, 0)
-      return total <= 6_000
-        && (embed.title?.length ?? 0) <= 256
-        && (embed.description?.length ?? 0) <= 4_096
-        && (embed.fields ?? []).every((field) => field.name.length <= 256 && field.value.length <= 1_024)
-    })).toBe(true)
+    expect(
+      payloads.every(({ embeds }) => {
+        const embed = embeds[0]!
+        const total =
+          (embed.title?.length ?? 0) +
+          (embed.description?.length ?? 0) +
+          (embed.footer?.text.length ?? 0) +
+          (embed.fields ?? []).reduce((sum, field) => sum + field.name.length + field.value.length, 0)
+        return (
+          total <= 6_000 &&
+          (embed.title?.length ?? 0) <= 256 &&
+          (embed.description?.length ?? 0) <= 4_096 &&
+          (embed.fields ?? []).every((field) => field.name.length <= 256 && field.value.length <= 1_024)
+        )
+      }),
+    ).toBe(true)
     expect(JSON.stringify(payloads)).toContain('Chat turn · complete')
     expect(JSON.stringify(payloads)).toContain('USER QUERY')
     expect(JSON.stringify(payloads)).toContain('RAG candidate')
@@ -140,7 +163,9 @@ describe('chat diagnostics', () => {
     const warnings: Array<{ event: string; fields?: Record<string, unknown> }> = []
     const sink = createDiscordDiagnosticsSink({
       webhookUrl: 'https://discord.com/api/webhooks/123456/secret-token',
-      fetcher: async () => { throw new Error('private transport detail') },
+      fetcher: async () => {
+        throw new Error('private transport detail')
+      },
       wait: async () => {},
       logger: { warn: (event, fields) => warnings.push({ event, fields }) },
     })
@@ -173,7 +198,9 @@ describe('chat diagnostics', () => {
           ? new Response('', { status: 429, headers: { 'retry-after': '0.02' } })
           : new Response('', { status: 204 })
       },
-      wait: async (durationMs) => { waits.push(durationMs) },
+      wait: async (durationMs) => {
+        waits.push(durationMs)
+      },
     })
     const record: ChatDiagnosticsRecord = {
       traceId: 'turn-4',

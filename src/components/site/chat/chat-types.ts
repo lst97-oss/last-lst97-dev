@@ -30,6 +30,8 @@ export interface ChatContactWorkflowViewModel {
   review: ChatContactReview | null
   turnstileToken: string | null
   turnstileResetCount: number
+  screeningTurnstileToken: string | null
+  screeningTurnstileResetCount: number
   discardConfirmation: boolean
   hasContextToken: boolean
   actions: {
@@ -43,6 +45,7 @@ export interface ChatContactWorkflowViewModel {
     discard: () => void
     startBlankChat: () => void
     setTurnstileToken: (token: string | null) => void
+    setScreeningTurnstileToken: (token: string | null) => void
     setDiscardConfirmation: (confirmed: boolean) => void
   }
 }

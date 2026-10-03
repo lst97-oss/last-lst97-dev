@@ -4,13 +4,7 @@ import type { ChatViewMessage } from '@/components/site/chat/chat-types'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Bubble, BubbleContent } from '@/components/ui/bubble'
 import { Marker, MarkerContent, MarkerIcon } from '@/components/ui/marker'
-import {
-  Message,
-  MessageAvatar,
-  MessageContent,
-  MessageFooter,
-  MessageHeader,
-} from '@/components/ui/message'
+import { Message, MessageAvatar, MessageContent, MessageFooter, MessageHeader } from '@/components/ui/message'
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -31,7 +25,10 @@ export function ChatTranscript({ messages, pending, toolStatus }: ChatTranscript
   return (
     <MessageScrollerProvider autoScroll defaultScrollPosition="last-anchor" scrollPreviousItemPeek={48}>
       <MessageScroller className="os-chat-scroller h-150 border-3 border-border bg-foreground">
-        <MessageScrollerViewport aria-label="Conversation with the assistant" className="os-chat-viewport">
+        <MessageScrollerViewport
+          aria-label="Conversation with Zita, Nelson’s portfolio assistant"
+          className="os-chat-viewport"
+        >
           <MessageScrollerContent aria-busy={pending} className="os-chat-content gap-4 p-4 sm:gap-6 sm:p-6">
             {messages.map((item, index) => {
               const isUser = item.role === 'user'
@@ -84,7 +81,7 @@ export function ChatTranscript({ messages, pending, toolStatus }: ChatTranscript
                         <BubbleContent
                           className={
                             isUser
-                              ? 'rounded-none border-3 border-border bg-primary px-3 py-2 font-mono text-sm leading-relaxed whitespace-pre-wrap text-foreground shadow-os-sm'
+                              ? 'rounded-none border-3 border-border bg-primary px-3 py-2 font-mono text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere text-foreground shadow-os-sm'
                               : 'rounded-none bg-transparent px-0 py-0 font-mono text-sm leading-relaxed text-background'
                           }
                         >
@@ -122,7 +119,16 @@ export function ChatTranscript({ messages, pending, toolStatus }: ChatTranscript
                         <Spinner className="size-4 text-primary" />
                       </MarkerIcon>
                       <MarkerContent className="font-mono text-xs font-bold tracking-wide">
-                        {toolStatus ?? <>thinking<span className="loading-dots"><span>.</span><span>.</span><span>.</span></span></>}
+                        {toolStatus ?? (
+                          <>
+                            thinking
+                            <span className="loading-dots">
+                              <span>.</span>
+                              <span>.</span>
+                              <span>.</span>
+                            </span>
+                          </>
+                        )}
                       </MarkerContent>
                     </Marker>
                   </MessageContent>

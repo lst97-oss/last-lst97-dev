@@ -163,7 +163,12 @@ export function createChatAgentLoop(
       )
       state.toolObservations.push({ name: call.name, arguments: arguments_, status: result.status })
     }
-    let text = result.output.slice(0, result.retrieval?.projectSourceIds ? 6_000 : 600)
+    // The 600-char cap fits a compact single-answer op. The services tool
+    // returns the three published tiers with their prices, and 600 characters
+    // cuts it mid-sentence after Starter, which is how the answer model ended
+    // up inventing two packages that do not exist. A closed, publisher-owned
+    // corpus is exactly the case that deserves the full budget.
+    let text = result.output.slice(0, result.retrieval?.projectSourceIds || call.name === 'services' ? 6_000 : 600)
     if ((call.name === 'search_knowledge' || call.name === 'list_owned_projects') && result.retrieval) {
       const citationIdMap = new Map<string, string>()
       let nextCitationNumber =
@@ -227,7 +232,7 @@ export function createChatAgentLoop(
       state.evidence = state.evidence
         ? `${state.evidence}\nLive WakaTime public share: ${text}`
         : `Live WakaTime public share: ${text}`
-    } else if (call.name === 'coding_history' || call.name === 'site_content') {
+    } else if (call.name === 'coding_history' || call.name === 'site_content' || call.name === 'services') {
       state.evidence = state.evidence ? `${state.evidence}\n${text}` : text
     }
   }

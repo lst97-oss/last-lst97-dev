@@ -9,8 +9,14 @@ import type { AgentTurnState } from './agent-loop'
 
 const PERSONAL_KNOWLEDGE_FACT =
   /\b(?:nelson|lst97|handle|username|profile|education|educational|degree|qualification|study|school|experience|employment|career|professional|skills?|background|contributions?|contact|email|linkedin|repositories|repository|repos?|projects?|website|codebase|technology|tech stack)\b/i
+/**
+ * Vocabulary for a question about the assistant itself. "What services do you
+ * provide?" is deliberately absent: commercial service questions belong to
+ * Nelson, and the prompt answers them in his first person. Phrases that name
+ * the assistant (chat/portfolio assistant, Zita) or ask how it works stay here.
+ */
 const ASSISTANT_USAGE_REQUEST =
-  /\b(?:chat assistant|portfolio assistant|what can you help|your capabilities|how do you (?:decide|work|process|handle|choose)|how does (?:this|your) chat|what services do you provide)\b/i
+  /\b(?:chat assistant|portfolio assistant|\bzita\b|what can you help|your capabilities|how do you (?:decide|work|process|handle|choose)|how does (?:this|your) chat)\b/i
 /**
  * Software-development vocabulary that the interview Q&A corpus answers from Nelson's own
  * recorded experience. Bare "ai" and "machine learning" are deliberately absent so general
@@ -20,6 +26,26 @@ const SOFTWARE_DEVELOPMENT_TOPIC =
   /\b(?:react|next\.js|typescript|javascript|node\.js|deno|bun|sql|postgresql|mysql|mongodb|redis|database|index|indexes|indexing|query|queries|orm|rest|restful|api|apis|http|https|graphql|websocket|authentication|authorization|idempotency|promise|async|await|middleware|component|components|state management|server|backend|frontend|full stack|fullstack|microservices|cache|caching|cdn|latency|throughput|scalability|optimization|optimisation|memory leak|security|owasp|encryption|reverse engineering|assembly|compiler|operating system|linux|kernel|regex|code review|technical debt|design pattern|architecture|scale|scaling|system design|observability|monitoring|metrics|logging|tracing|incident|email delivery|webhook|retrieval augmented|rag|vector search|embedding|prompt engineering)\b/i
 const TECHNICAL_QUESTION_FRAME =
   /\b(?:how|why|what|when|where|which|explain|describe|difference|best|should|would you|do you|can you|tell me|walk me)\b/i
+/**
+ * Commercial-offer vocabulary that only the indexed `services` documents can
+ * answer: pricing, package contents, add-ons, process, and quotes. A bare
+ * "website" is deliberately absent so "how is this website built?" keeps
+ * routing to search_knowledge; only an explicit "website design/development/
+ * build/project" phrase reaches the offer source.
+ */
+/**
+ * The service offering is one published page with two halves: the build
+ * packages and the Go Support Plan.
+ *
+ * Two shapes are load-bearing here. A bare "web site" token was removed
+ * because it matched "how is this website built?", which must stay on
+ * search_knowledge — the site_content-adjacent build question is pinned as a
+ * negative case in jev-tool-routing-cases.ts. And the support alternation is
+ * built only from multi-word phrases, because a bare "site", "app", "code",
+ * "fix", or "support" would swallow it the same way.
+ */
+const SERVICE_SCOPE_REQUEST =
+  /\b(?:services?|pricing|price[sd]?|cost|costs|quote|quotation|package[sd]?|packages|how much|rates?|fees?|add-?ons?|revision[sd]?|scope|enquir(?:y|ies)|hire|book(?:ing)?|web ?design|website (?:design|development|build|project)|support plan|technical consultation|production readiness|vibe code|deploy(?:ment|ing)? (?:help|support|fix|rescue)|deployment rescue|broken deploy(?:ment)?|build (?:error|failing)|per[- ]?hour|hourly)\b/i
 
 export function createChatToolSelection(dependencies: ChatServiceDependencies) {
   function diagnosticsObserver(capture: ChatDiagnosticsCapture | undefined) {
@@ -34,6 +60,7 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
   function availableToolNames(): AgentToolName[] {
     return [
       ...(dependencies.knowledgeEnabled === true && dependencies.knowledge ? ['search_knowledge' as const] : []),
+      ...(dependencies.knowledgeEnabled === true && dependencies.knowledge ? ['services' as const] : []),
       ...(dependencies.knowledgeEnabled === true && typeof dependencies.knowledge?.listOwnedProjects === 'function'
         ? ['list_owned_projects' as const]
         : []),
@@ -174,6 +201,9 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
         name: 'list_owned_projects',
         arguments: asksForCount ? { op: 'count' } : {},
       })
+    }
+    if (selected.has('services') && SERVICE_SCOPE_REQUEST.test(message)) {
+      calls.push({ id: 'services', name: 'services', arguments: {} })
     }
     if (selected.has('search_knowledge')) {
       const knowledge = matchKnowledgeRequest(message)
@@ -483,6 +513,11 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
             ) ||
             /\b(?:published|featured)\b/i.test(input.message))))
     if (isSiteScopedRequest && !jevApprovedTools.includes('site_content')) jevApprovedTools.push('site_content')
+    // Offer-scope guard: a pricing, package, process or quote question has exactly
+    // one source, and it is not the project catalogue, the published Payload
+    // content, or Nelson's implementation notes.
+    const asksForServiceScope = availableTools.includes('services') && SERVICE_SCOPE_REQUEST.test(input.message)
+    if (asksForServiceScope && !jevApprovedTools.includes('services')) jevApprovedTools.push('services')
     if (requiredQuery && !jevApprovedTools.includes('search_knowledge')) jevApprovedTools.push('search_knowledge')
     // A catalogue-plus-details request stays sequential: the catalogue runs
     // first, then the detail lookup gets its own fresh Jev decision. Collapse
@@ -651,6 +686,7 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
       search_knowledge: 'SEARCHING MY NOTES…',
       coding_stats: 'CHECKING WAKATIME PUBLIC SHARE…',
       site_content: 'BROWSING SITE CONTENT…',
+      services: 'LOOKING UP SERVICE SCOPE…',
       coding_history: 'SEARCHING CODING HISTORY…',
     }
     return {

@@ -4,6 +4,7 @@ import type { AgentToolCall, AgentToolResult, AgentToolRunner } from './agent-to
 import { resolveCodingHistoryRange, runCodingHistoryTool } from './coding-history-tool'
 import { codingStatsLabel, parseCodingStatsToolArguments, runCodingStatsTool } from './coding-stats-tool'
 import { runOwnedProjectsTool } from './owned-projects-tool'
+import { runServicesTool, servicesArgsSchema } from './services-tool'
 import { runSiteContentTool, siteContentArgsSchema } from './site-content-tool'
 import {
   invalidToolResult as invalid,
@@ -135,6 +136,13 @@ export async function runAgentTool(call: AgentToolCall, runner: AgentToolRunner)
     const parsed = siteContentArgsSchema.safeParse(call.arguments)
     if (!parsed.success) return invalid(call, 'expected { op[, slug, limit, page] }', runner)
     return runSiteContentTool(call, runner, parsed.data)
+  }
+
+  if (call.name === 'services') {
+    const parsed = servicesArgsSchema.safeParse(call.arguments)
+    if (!parsed.success) return invalid(call, 'expected {}', runner)
+    if (runner.knowledgeEnabled !== true) return invalid(call, 'service scope lookup is disabled', runner)
+    return runServicesTool(call, runner, parsed.data)
   }
   const parsed = codingHistoryArgs.safeParse(call.arguments)
   if (!parsed.success) return invalid(call, 'expected { op, range } or { op, from, to[, project] }', runner)

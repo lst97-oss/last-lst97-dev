@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import {
   CHAT_EXPIRED_MESSAGE,
   CHAT_INVALID_MESSAGE_MESSAGE,
@@ -7,7 +6,6 @@ import {
   CHAT_REQUEST_TOO_LARGE_MESSAGE,
   CHAT_TURN_LIMIT_MESSAGE,
   CHAT_TURNSTILE_REQUIRED_MESSAGE,
-  MAX_CHAT_CONTEXT_TOKEN_CHARS,
   MAX_CHAT_REQUEST_BODY_BYTES,
 } from '../../lib/chat-limits'
 import { jsonResponse, readJsonBody, requestIdFrom } from '../http/request'
@@ -15,45 +13,9 @@ import type { PublicCitation } from '../knowledge/retrieve'
 import type { ChatModerationRejectionReason } from '../moderation/types'
 import type { ChatDiagnosticsMetadata } from '../observability/chat-diagnostics'
 import type { Logger } from '../observability/logger'
-import type { ChatContactActionRequest, ChatStreamEvent } from './events'
-import { encodeChatEvent } from './events'
+import type { ChatContactActionBody, ChatContactActionRequest, ChatMessageRequest, ChatStreamEvent } from './events'
+import { chatContactActionSchema, chatMessageRequestSchema, encodeChatEvent } from './events'
 import { chatModerationRejectionMessage } from './moderation-rejection'
-
-const chatRequestSchema = z
-  .object({
-    message: z.string().trim().min(1).max(2_000),
-    contextToken: z.string().max(MAX_CHAT_CONTEXT_TOKEN_CHARS).optional(),
-    turnstileToken: z.string().max(2_048).optional(),
-  })
-  .strict()
-
-const contextTokenSchema = z.string().min(1).max(MAX_CHAT_CONTEXT_TOKEN_CHARS)
-const chatContactActionSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('start_contact'), contextToken: contextTokenSchema }).strict(),
-  z.object({ action: z.literal('decline_contact'), contextToken: contextTokenSchema }).strict(),
-  z
-    .object({
-      action: z.literal('select_template'),
-      contextToken: contextTokenSchema,
-      template: z.enum(['email', 'bug_report', 'feature_request']),
-    })
-    .strict(),
-  z.object({ action: z.literal('submit_form'), contextToken: contextTokenSchema, fields: z.unknown() }).strict(),
-  z.object({ action: z.literal('edit_form'), contextToken: contextTokenSchema }).strict(),
-  z
-    .object({
-      action: z.literal('confirm_send'),
-      contextToken: contextTokenSchema,
-      refinedSubmission: z.unknown(),
-      originalSubmission: z.unknown(),
-      turnstileToken: z.string().min(1).max(2_048),
-    })
-    .strict(),
-  z
-    .object({ action: z.literal('discard_contact'), contextToken: contextTokenSchema, confirmed: z.literal(true) })
-    .strict(),
-  z.object({ action: z.literal('start_new_chat'), contextToken: contextTokenSchema }).strict(),
-])
 
 export interface ChatPostHandlerDependencies {
   send(input: { message: string; contextToken?: string; diagnosticsMetadata?: ChatDiagnosticsMetadata }): Promise<
@@ -75,6 +37,7 @@ export interface ChatPostHandlerDependencies {
   rateLimit(request: Request): Promise<{ allowed: boolean; remaining: number; retryAfterSeconds: number }>
   verifyChatTurnstile?(token: string, expectedHostname: string): Promise<boolean>
   contactRateLimit?(request: Request): Promise<{ allowed: boolean; remaining: number; retryAfterSeconds: number }>
+  verifyContactScreeningTurnstile?(token: string, expectedHostname: string): Promise<boolean>
   handleContactAction?(
     input: ChatContactActionRequest,
   ): Promise<
@@ -88,8 +51,6 @@ export interface ChatPostHandlerDependencies {
   ): AsyncGenerator<ChatStreamEvent>
   streamMaxMs?: number | (() => number)
 }
-
-type ParsedChatRequest = z.infer<typeof chatRequestSchema>
 
 export function createChatPostHandler(dependencies: ChatPostHandlerDependencies) {
   return async function POST({ request }: { request: Request }): Promise<Response> {
@@ -117,7 +78,7 @@ export function createChatPostHandler(dependencies: ChatPostHandlerDependencies)
       return handleContactActionRequest(request, requestId, action.data, dependencies)
     }
 
-    const parsed = chatRequestSchema.safeParse(body.value)
+    const parsed = chatMessageRequestSchema.safeParse(body.value)
     if (!parsed.success) return jsonResponse(requestId, { error: CHAT_INVALID_MESSAGE_MESSAGE, requestId }, 400)
     return handleChatMessageRequest(request, requestId, startedAt, parsed.data, dependencies)
   }
@@ -138,7 +99,7 @@ async function rateLimitResponse(
 async function handleContactActionRequest(
   request: Request,
   requestId: string,
-  action: z.infer<typeof chatContactActionSchema>,
+  action: ChatContactActionBody,
   dependencies: ChatPostHandlerDependencies,
 ): Promise<Response> {
   if (!dependencies.handleContactAction) {
@@ -149,18 +110,29 @@ async function handleContactActionRequest(
     const rateLimited = await rateLimitResponse(request, requestId, dependencies)
     if (rateLimited) return rateLimited
 
-    if (action.action === 'confirm_send' && dependencies.contactRateLimit) {
-      const limit = await dependencies.contactRateLimit(request)
-      if (!limit.allowed) {
+    // Every contact action draws on the contact budget, not just the send.
+    // `submit_form` triggers screening — two model calls — so leaving it on the
+    // 60/hour chat bucket made the most expensive path the cheapest to drive.
+    if (dependencies.contactRateLimit) {
+      const contactLimit = await dependencies.contactRateLimit(request)
+      if (!contactLimit.allowed) {
         return jsonResponse(
           requestId,
           { error: 'Too many contact submissions. Please try again later.', requestId },
           429,
           {
-            'retry-after': String(limit.retryAfterSeconds),
+            'retry-after': String(contactLimit.retryAfterSeconds),
           },
         )
       }
+    }
+
+    // Screening must be proven human before it runs, not only before the send.
+    // Verified here rather than inside the workflow so an unverified submission
+    // never reaches Jev or the refiner.
+    if (action.action === 'submit_form') {
+      const screeningError = await verifyContactScreeningToken(request, requestId, action.turnstileToken, dependencies)
+      if (screeningError) return screeningError
     }
 
     const result = await dependencies.handleContactAction({
@@ -243,11 +215,71 @@ async function verifyChatToken(
   )
 }
 
+/**
+ * Fail-closed check for the screening step. Mirrors `verifyChatToken`: a
+ * missing verifier, an unreachable siteverify, or an invalid token all stop the
+ * request before any model call. Only the log event and copy differ, because
+ * this gates form screening rather than chat messages.
+ */
+async function verifyContactScreeningToken(
+  request: Request,
+  requestId: string,
+  token: string,
+  dependencies: ChatPostHandlerDependencies,
+): Promise<Response | undefined> {
+  if (!dependencies.verifyContactScreeningTurnstile) {
+    dependencies.logger.error('chat.contact_screening_turnstile_unavailable', {
+      requestId,
+      failureCategory: 'verifier_missing',
+    })
+    return jsonResponse(
+      requestId,
+      {
+        error: 'The contact security check is temporarily unavailable.',
+        code: 'turnstile_unavailable',
+        requestId,
+      },
+      503,
+    )
+  }
+
+  let verified = false
+  try {
+    verified = await dependencies.verifyContactScreeningTurnstile(token, new URL(request.url).hostname)
+  } catch {
+    dependencies.logger.error('chat.contact_screening_turnstile_unavailable', {
+      requestId,
+      failureCategory: 'siteverify_failed',
+    })
+    return jsonResponse(
+      requestId,
+      {
+        error: 'The contact security check is temporarily unavailable.',
+        code: 'turnstile_unavailable',
+        requestId,
+      },
+      503,
+    )
+  }
+  if (verified) return undefined
+
+  dependencies.logger.warn('chat.contact_screening_turnstile_rejected', { requestId, reason: 'token_invalid' })
+  return jsonResponse(
+    requestId,
+    {
+      error: 'The security check expired or could not be verified. Complete it again to screen your request.',
+      code: 'turnstile_invalid',
+      requestId,
+    },
+    403,
+  )
+}
+
 async function handleChatMessageRequest(
   request: Request,
   requestId: string,
   startedAt: number,
-  parsed: ParsedChatRequest,
+  parsed: ChatMessageRequest,
   dependencies: ChatPostHandlerDependencies,
 ): Promise<Response> {
   const { turnstileToken, ...chatRequest } = parsed

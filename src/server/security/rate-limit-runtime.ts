@@ -7,6 +7,10 @@ const store = createPostgresRateLimitStore()
 
 export async function checkEndpointLimit(request: Request, bucket: 'chat' | 'contact') {
   const env = getServerEnv()
+  if (env.NODE_ENV === 'development') {
+    return { allowed: true, remaining: Number.MAX_SAFE_INTEGER, retryAfterSeconds: 0 }
+  }
+
   const production = env.NODE_ENV === 'production'
   const clientKey = await clientKeyFromRequest(
     request,

@@ -10,6 +10,22 @@ describe('chat pipeline diagram', () => {
     expect(CHAT_PIPELINE_DIAGRAM).toContain('COLLECT ACCEPTED KNOWLEDGE')
   })
 
+  it('gives the commercial offer its own source branch rather than routing prices through RAG', () => {
+    // The services tool is a sixth source with no arguments, so it cannot be
+    // distinguished from the others by its argument shape in the diagram.
+    expect(CHAT_PIPELINE_DIAGRAM).toContain('COMMERCIAL OFFER')
+    expect(CHAT_PIPELINE_DIAGRAM).toContain('Go Support Plan')
+    expect(CHAT_PIPELINE_DIAGRAM).toContain('dispatch -->|No arguments| offers')
+    expect(CHAT_PIPELINE_DIAGRAM).toContain('offers --> evidence')
+    // A package price read from indexed project material would be an invention.
+    expect(CHAT_PIPELINE_DIAGRAM).toContain('never come from RAG')
+  })
+
+  it('shows that RAG spans every indexed corpus, including the project deep dives', () => {
+    expect(CHAT_PIPELINE_DIAGRAM).toContain('pgvector search across every corpus')
+    expect(CHAT_PIPELINE_DIAGRAM).toContain('deep dives')
+  })
+
   it('shows one constrained argument repair followed by schema revalidation', () => {
     expect(CHAT_PIPELINE_DIAGRAM).toContain('One repair attempt')
     expect(CHAT_PIPELINE_DIAGRAM).toContain('Same approved tool name + call id')
@@ -55,7 +71,7 @@ describe('chat pipeline diagram', () => {
   })
 
   it('refines only bug and feature content and shows both versions before sending', () => {
-    expect(CHAT_CONTACT_FLOW_DIAGRAM).toContain('BUG OR FEATURE CONTENT?')
+    expect(CHAT_CONTACT_FLOW_DIAGRAM).toContain('BUG, FEATURE, OR QUOTATION CONTENT?')
     expect(CHAT_CONTACT_FLOW_DIAGRAM).toContain('OPENROUTER REFINEMENT')
     expect(CHAT_CONTACT_FLOW_DIAGRAM).toContain('Meaning-preserving clarity edit')
     expect(CHAT_CONTACT_FLOW_DIAGRAM).toContain('Email is sent as written')
@@ -72,11 +88,23 @@ describe('chat pipeline diagram', () => {
   })
 
   it('numbers only the normal chat pipeline and leaves the separate contact flow unnumbered', () => {
-    const stepPattern = new RegExp(`(\\d{2}) ${String.fromCharCode(0xB7)} `, 'g')
+    const stepPattern = new RegExp(`(\\d{2}) ${String.fromCharCode(0xb7)} `, 'g')
     // Source order is not stage order: "11 · RESULTS FOR THIS TURN" is declared
     // next to the Jev routing branch, so assert the set, not the sequence.
-    const numbers = [...CHAT_PIPELINE_DIAGRAM.matchAll(stepPattern)].map((match) => Number(match[1])).sort((a, b) => a - b)
+    const numbers = [...CHAT_PIPELINE_DIAGRAM.matchAll(stepPattern)]
+      .map((match) => Number(match[1]))
+      .sort((a, b) => a - b)
     expect(numbers).toEqual(Array.from({ length: 15 }, (_, index) => index + 1))
     expect(CHAT_CONTACT_FLOW_DIAGRAM).not.toMatch(stepPattern)
+  })
+
+  it('offers every contact template and routes the refined ones through the PDF attachment', () => {
+    // The list must name all five templates: this is the assertion that a new
+    // template reached the diagram, which is otherwise easy to forget because
+    // the diagram is a hand-written string rather than a derived one.
+    expect(CHAT_CONTACT_FLOW_DIAGRAM).toContain('Email · Bug report · Feature request · Quotation · Support plan')
+    expect(CHAT_CONTACT_FLOW_DIAGRAM).toContain(
+      'Bug / feature / quotation / support plan: refined fields + original report PDF',
+    )
   })
 })

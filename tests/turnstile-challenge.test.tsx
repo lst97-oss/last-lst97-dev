@@ -2,7 +2,16 @@ import { afterAll, afterEach, beforeEach, describe, expect, test } from 'bun:tes
 import { Window as BrowserWindow } from 'happy-dom'
 
 const browserWindow = new BrowserWindow({ url: 'http://localhost/' })
-const globalKeys = ['window', 'document', 'navigator', 'Element', 'HTMLElement', 'Node', 'MutationObserver', 'IS_REACT_ACT_ENVIRONMENT'] as const
+const globalKeys = [
+  'window',
+  'document',
+  'navigator',
+  'Element',
+  'HTMLElement',
+  'Node',
+  'MutationObserver',
+  'IS_REACT_ACT_ENVIRONMENT',
+] as const
 const originalGlobalDescriptors = new Map(
   globalKeys.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]),
 )
@@ -34,16 +43,20 @@ function ConditionalSuspension({ shouldSuspend }: { shouldSuspend: boolean }) {
 }
 
 function challengeTree(onToken: (token: string | null) => void, shouldSuspend: boolean) {
-  return React.createElement(React.Suspense, { fallback: 'loading' }, React.createElement(React.Fragment, null, [
-    React.createElement(TurnstileChallenge, {
-      key: 'challenge',
-      action: 'contact',
-      siteKey: 'test-site-key',
-      resetCount: 0,
-      onToken,
-    }),
-    React.createElement(ConditionalSuspension, { key: 'suspender', shouldSuspend }),
-  ]))
+  return React.createElement(
+    React.Suspense,
+    { fallback: 'loading' },
+    React.createElement(React.Fragment, null, [
+      React.createElement(TurnstileChallenge, {
+        key: 'challenge',
+        action: 'contact',
+        siteKey: 'test-site-key',
+        resetCount: 0,
+        onToken,
+      }),
+      React.createElement(ConditionalSuspension, { key: 'suspender', shouldSuspend }),
+    ]),
+  )
 }
 
 beforeEach(() => {

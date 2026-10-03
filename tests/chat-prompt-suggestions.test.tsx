@@ -75,9 +75,7 @@ describe('ChatPromptSuggestions', () => {
   it('collapses the moment a send starts, not when the reply lands', () => {
     // pending flips synchronously on submit, before the request resolves, so the
     // panel is gone the moment the visitor commits to a turn.
-    const sending = renderToStaticMarkup(
-      <ChatPromptSuggestions conversation={conversation()} pending={true} />,
-    )
+    const sending = renderToStaticMarkup(<ChatPromptSuggestions conversation={conversation()} pending={true} />)
 
     expect(sending).toContain('os-chat-suggestions--closed')
     expect(sending).toContain('aria-expanded="false"')

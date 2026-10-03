@@ -1,8 +1,9 @@
 import { describe, expect, it, spyOn } from 'bun:test'
 
+import { contactResponseSchema } from '../../src/server/contact/contract'
 import { createContactPostHandler } from '../../src/server/contact/http-handler'
+import type { LogFields, Logger } from '../../src/server/observability/logger'
 import { JsonLogger } from '../../src/server/observability/logger'
-import type { Logger, LogFields } from '../../src/server/observability/logger'
 
 function captureLogger(events: Array<{ level: string; event: string; fields?: LogFields }>): Logger {
   return {
@@ -19,13 +20,18 @@ describe('contact POST handler', () => {
   it('rejects oversized JSON before invoking the submission workflow', async () => {
     let submitted = false
     const handler = createContactPostHandler({
-      submitContact: async () => { submitted = true; return { ok: true, receiptStatus: 'sent' } },
+      submitContact: async () => {
+        submitted = true
+        return { ok: true, receiptStatus: 'sent' }
+      },
       logger: captureLogger([]),
       rateLimit: allowRateLimit,
     })
     const response = await handler({
       request: new Request('https://portfolio.example/api/site/contact', {
-        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: 'x'.repeat(17_000) }),
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ message: 'x'.repeat(17_000) }),
       }),
     })
     expect(response.status).toBe(413)
@@ -40,7 +46,9 @@ describe('contact POST handler', () => {
     })
     const response = await handler({
       request: new Request('https://portfolio.example/api/site/contact', {
-        method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}',
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
       }),
     })
     expect(response.status).toBe(429)
@@ -57,9 +65,13 @@ describe('contact POST handler', () => {
         logger: captureLogger([]),
         rateLimit: allowRateLimit,
       })
-      const response = await handler({ request: new Request('https://portfolio.example/api/site/contact', {
-        method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}',
-      }) })
+      const response = await handler({
+        request: new Request('https://portfolio.example/api/site/contact', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: '{}',
+        }),
+      })
       expect(response.status).toBe(result.reason === 'moderation' ? 422 : 503)
       const body = await response.text()
       expect(body).not.toContain(result.reason)
@@ -131,7 +143,9 @@ describe('contact POST handler', () => {
     for (const failure of sensitiveValues) {
       const write = spyOn(console, 'error').mockImplementation(() => {})
       const handler = createContactPostHandler({
-        submitContact: async () => { throw failure },
+        submitContact: async () => {
+          throw failure
+        },
         logger: new JsonLogger('debug'),
         rateLimit: allowRateLimit,
       })
@@ -153,5 +167,39 @@ describe('contact POST handler', () => {
         write.mockRestore()
       }
     }
+  })
+
+  it('emits response bodies the browser contract accepts', async () => {
+    // The contact form parses error bodies with `contactResponseSchema` rather
+    // than a cast, so every status it can render has to survive that parse.
+    const accepted = createContactPostHandler({
+      submitContact: async () => ({ ok: true, receiptStatus: 'sent' }),
+      logger: new JsonLogger('debug'),
+      rateLimit: allowRateLimit,
+    })
+    const acceptedResponse = await accepted({
+      request: new Request('https://portfolio.example/api/site/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{"name":"Ada"}',
+      }),
+    })
+    expect(contactResponseSchema.safeParse(await acceptedResponse.json()).success).toBe(true)
+
+    const invalid = createContactPostHandler({
+      submitContact: async () => ({ ok: false, issues: ['name', 'email'] }),
+      logger: new JsonLogger('debug'),
+      rateLimit: allowRateLimit,
+    })
+    const invalidResponse = await invalid({
+      request: new Request('https://portfolio.example/api/site/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{"name":"A"}',
+      }),
+    })
+    const parsed = contactResponseSchema.safeParse(await invalidResponse.json())
+    expect(parsed.success).toBe(true)
+    expect(parsed.success && parsed.data.fields).toEqual(['name', 'email'])
   })
 })

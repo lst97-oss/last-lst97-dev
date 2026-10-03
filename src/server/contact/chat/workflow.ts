@@ -185,6 +185,9 @@ export function createChatContactWorkflow(dependencies: {
       refinement = { ok: false, reason: 'unavailable' }
     }
     if (!refinement.ok) {
+      // Only a provider fault reaches here: a model that answered with unusable
+      // JSON is retried inside the refiner and then falls back to the visitor's
+      // own words, so this no longer fires for a formatting problem.
       recordOutcome('unavailable')
       return {
         ok: true,
@@ -195,6 +198,10 @@ export function createChatContactWorkflow(dependencies: {
         },
       }
     }
+    // Unrefined is a valid outcome, not a failure. The submission is the one
+    // already validated above, so the review screen must show it as the
+    // original rather than claiming a refined version exists.
+    const wasRefined = refinement.refined
     if (
       refinement.submission.template !== template ||
       !validateChatContactDraft(template, refinement.submission.fields).ok
@@ -244,6 +251,7 @@ export function createChatContactWorkflow(dependencies: {
         template,
         originalSubmission: validation.submission,
         refinedSubmission: refinement.submission,
+        refined: wasRefined,
         contextToken,
       },
     }

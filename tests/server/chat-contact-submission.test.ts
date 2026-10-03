@@ -1,21 +1,17 @@
 import { describe, expect, it } from 'bun:test'
-
-import { submitChatContactEmail } from '../../src/server/contact/chat/submission'
 import type { ChatContactSubmission } from '../../src/lib/chat-contact'
+import { submitChatContactEmail } from '../../src/server/contact/chat/submission'
 import type { ChatContactEmailService } from '../../src/server/email/types'
-import type { Logger, LogFields } from '../../src/server/observability/logger'
+import type { LogFields, Logger } from '../../src/server/observability/logger'
 
 const submission: ChatContactSubmission = {
   template: 'email',
   fields: { name: 'Ada', email: 'ada@example.com', message: 'Please contact me about the portfolio.' },
 }
 
-function createDependencies(options: {
-  tokenAccepted?: boolean
-  claimAccepted?: boolean
-  notificationError?: Error
-  receiptError?: Error
-} = {}) {
+function createDependencies(
+  options: { tokenAccepted?: boolean; claimAccepted?: boolean; notificationError?: Error; receiptError?: Error } = {},
+) {
   const order: string[] = []
   const logs: Array<{ level: string; event: string; fields?: LogFields }> = []
   const emailService: ChatContactEmailService = {
@@ -41,10 +37,12 @@ function createDependencies(options: {
     logs,
     dependencies: {
       emailService,
-      verifier: { verify: async (token: string, hostname: string) => {
-        order.push(`turnstile:${token}:${hostname}`)
-        return options.tokenAccepted ?? true
-      } },
+      verifier: {
+        verify: async (token: string, hostname: string) => {
+          order.push(`turnstile:${token}:${hostname}`)
+          return options.tokenAccepted ?? true
+        },
+      },
       claimApproval: async () => {
         order.push('claim')
         return options.claimAccepted ?? true
@@ -82,7 +80,9 @@ describe('chat contact email submission', () => {
   })
 
   it('accepts operator delivery when the short receipt fails without logging contact content', async () => {
-    const { order, logs, dependencies } = createDependencies({ receiptError: new Error('ada@example.com private message') })
+    const { order, logs, dependencies } = createDependencies({
+      receiptError: new Error('ada@example.com private message'),
+    })
     const result = await submitChatContactEmail(submission, 'turnstile-token', 'approval-1', dependencies)
 
     expect(result).toEqual({ ok: true, receiptStatus: 'failed' })
@@ -92,7 +92,9 @@ describe('chat contact email submission', () => {
   })
 
   it('fails safely when operator notification fails after consuming the approval', async () => {
-    const { order, dependencies } = createDependencies({ notificationError: new Error('SMTP error includes ada@example.com') })
+    const { order, dependencies } = createDependencies({
+      notificationError: new Error('SMTP error includes ada@example.com'),
+    })
     const result = await submitChatContactEmail(submission, 'turnstile-token', 'approval-1', dependencies)
 
     expect(result).toEqual({ ok: false, reason: 'delivery' })

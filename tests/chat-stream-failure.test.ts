@@ -41,9 +41,7 @@ describe('chat stream failure messages', () => {
     // call site: `use-chat-stream.ts` rendered `requestError.message`
     // directly. Only a source-level assertion catches that specific
     // regression, so pin the dispatch and forbid the raw form.
-    const source = await Bun.file(
-      new URL('../src/components/site/chat/use-chat-stream.ts', import.meta.url),
-    ).text()
+    const source = await Bun.file(new URL('../src/components/site/chat/use-chat-stream.ts', import.meta.url)).text()
 
     expect(source).toContain('error: safeChatFailureMessage(requestError)')
     expect(source).not.toMatch(/error: requestError instanceof Error \? requestError\.message/)

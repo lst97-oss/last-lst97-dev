@@ -56,23 +56,20 @@ function lexicalTextLength(value: unknown): number {
  * ops. Kept beside the tool rather than in the SEO sitemap module because the
  * visitor-facing wording is chat-specific, and `/chat` is deliberately not in
  * the crawlable sitemap.
+ * Purpose strings are short by necessity: `agent-loop.ts` slices the tool
+ * output to 600 characters for the responder and the SSE `tool_result` summary
+ * to 400 (`agent-loop.ts:359`). With eight sections the whole list measures 396,
+ * so every entry must survive the shorter of the two.
  */
 const SITE_SECTIONS = [
   { path: '/', title: 'Home', purpose: 'Overview and recent notes.' },
   { path: '/about', title: 'About', purpose: 'Background, skills, focus.' },
+  { path: '/services', title: 'Services', purpose: 'Packages and pricing.' },
   { path: '/projects', title: 'Projects', purpose: 'Shipped products and tools.' },
   { path: '/blog', title: 'Blog', purpose: 'Notes and experiments.' },
   { path: '/changelog', title: 'Changelog', purpose: 'Release notes and updates.' },
-  {
-    path: '/contact',
-    title: 'Contact',
-    purpose: 'Reach Nelson, report a bug, request a feature.',
-  },
-  {
-    path: '/chat',
-    title: 'Chat',
-    purpose: 'This assistant: Nelson, projects, coding, site.',
-  },
+  { path: '/contact', title: 'Contact', purpose: 'Reach Nelson, report a bug.' },
+  { path: '/chat', title: 'Chat', purpose: 'Ask about Nelson or the site.' },
 ] as const
 
 /** Public pathname for each collection, matching the site routes. */
@@ -207,7 +204,7 @@ export async function runSiteContentTool(
       return completed(
         call,
         args,
-        `${project.title} (${project.slug}): ${project.summary.slice(0, 400)} Technologies: ${project.technologies.join(', ') || 'none'}. Demo: ${project.liveUrl ?? 'none'}. Repo: ${project.repositoryUrl ?? 'none'}. Page: ${entryUrl(runner, 'projects', project.slug)}.`,
+        `${project.title} (${project.slug}): ${project.summary.slice(0, 400)} Technologies: ${project.technologies.join(', ') || 'none'}. Topics: ${project.topics.map((topic) => topic.title).join(', ') || 'none'}. Tags: ${project.tags.map((tag) => tag.title).join(', ') || 'none'}. Demo: ${project.liveUrl ?? 'none'}. Repo: ${project.repositoryUrl ?? 'none'}. Page: ${entryUrl(runner, 'projects', project.slug)}.`,
         [siteCitation('K1', project.title, entryUrl(runner, 'projects', project.slug))],
       )
     }

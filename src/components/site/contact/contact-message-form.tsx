@@ -2,8 +2,11 @@ import { useForm } from '@tanstack/react-form'
 import { cn } from 'cn'
 import { type ChangeEvent, useRef, useState } from 'react'
 import { z } from 'zod'
+import { BrowserCapabilityBoundary } from '@/components/site/browser-capability-boundary'
 import { formErrorClass, pixelButtonVariants } from '@/components/site/os-ui'
 import { TurnstileChallenge } from '@/components/site/turnstile-challenge'
+import { CONTACT_BROWSER_REQUIREMENTS } from '@/lib/browser-capabilities'
+import { contactResponseSchema } from '@/server/contact/contract'
 import { contactSchema } from '@/server/contact/validation'
 
 type ContactFormValues = {
@@ -15,12 +18,26 @@ type ContactFormValues = {
 
 const initialForm: ContactFormValues = { name: '', email: '', message: '', website: '' }
 
+/**
+ * The server enforces this cap in `contactSchema`; sharing one constant keeps
+ * the visible counter and the enforced limit from ever disagreeing.
+ */
+const CONTACT_MESSAGE_MAX_LENGTH = 4_000
+
 // Field-level validator for the honeypot. The shared schema gives this field a
 // default, which widens its input type beyond the form value, so this mirrors
 // that rule without the default (same pattern as the chat contact fields).
 const websiteSchema = z.string().trim().max(200, 'Keep this field under 200 characters.')
 
 export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
+  return (
+    <BrowserCapabilityBoundary feature="Contact form" requirements={CONTACT_BROWSER_REQUIREMENTS}>
+      <ContactMessageFormContent siteKey={siteKey} />
+    </BrowserCapabilityBoundary>
+  )
+}
+
+function ContactMessageFormContent({ siteKey }: { siteKey: string | null }) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [error, setError] = useState('')
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
@@ -43,8 +60,8 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
           body: JSON.stringify({ ...value, turnstileToken }),
         })
         if (!response.ok) {
-          const data = (await response.json().catch(() => null)) as { error?: string } | null
-          throw new Error(data?.error ?? 'Could not send the message.')
+          const parsed = contactResponseSchema.safeParse(await response.json().catch(() => null))
+          throw new Error(parsed.success && parsed.data.error ? parsed.data.error : 'Could not send the message.')
         }
         setStatus('sent')
         form.reset()
@@ -62,18 +79,25 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
 
   if (status === 'sent') {
     return (
-      <div className="success-panel flex min-h-75 flex-col items-center justify-center gap-1.5 border-3 border-border bg-secondary p-6 text-center" role="status">
-        <span className="success-mark grid size-15 place-items-center border-3 border-border bg-primary text-3xl font-black">✓</span>
+      <div
+        className="success-panel flex min-h-75 flex-col items-center justify-center gap-1.5 border-3 border-border bg-secondary p-6 text-center"
+        role="status"
+      >
+        <span className="success-mark grid size-15 place-items-center border-3 border-border bg-primary text-3xl font-black">
+          ✓
+        </span>
         <h2 className="mb-0">Message delivered.</h2>
         <p className="m-0">Thanks for reaching out. The operator will get back to you soon.</p>
-        <button className={cn(pixelButtonVariants())} onClick={() => setStatus('idle')} type="button">SEND ANOTHER</button>
+        <button className={cn(pixelButtonVariants())} onClick={() => setStatus('idle')} type="button">
+          SEND ANOTHER
+        </button>
       </div>
     )
   }
 
   return (
     <form
-      className="contact-form flex w-full flex-col gap-4.5"
+      className="contact-form mt-6 flex w-full flex-col gap-4.5"
       noValidate
       onSubmit={(event) => {
         event.preventDefault()
@@ -97,7 +121,11 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
                   required
                   value={fieldApi.state.value}
                 />
-                {errorText ? <p className={cn(formErrorClass)} id="contact-name-error" role="alert">{errorText}</p> : null}
+                {errorText ? (
+                  <p className={cn(formErrorClass)} id="contact-name-error" role="alert">
+                    {errorText}
+                  </p>
+                ) : null}
               </label>
             )
           }}
@@ -119,7 +147,11 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
                   type="email"
                   value={fieldApi.state.value}
                 />
-                {errorText ? <p className={cn(formErrorClass)} id="contact-email-error" role="alert">{errorText}</p> : null}
+                {errorText ? (
+                  <p className={cn(formErrorClass)} id="contact-email-error" role="alert">
+                    {errorText}
+                  </p>
+                ) : null}
               </label>
             )
           }}
@@ -132,23 +164,38 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
             <label htmlFor="contact-message">
               <span className="mb-2 block text-xs font-black tracking-widest text-accent">MESSAGE</span>
               <textarea
-                aria-describedby={errorText ? 'contact-message-error' : undefined}
+                aria-describedby={[errorText ? 'contact-message-error' : undefined, 'contact-message-count']
+                  .filter(Boolean)
+                  .join(' ')}
                 aria-invalid={Boolean(errorText)}
                 id="contact-message"
-                maxLength={4_000}
+                maxLength={CONTACT_MESSAGE_MAX_LENGTH}
                 onBlur={fieldApi.handleBlur}
                 onChange={(event: ChangeEvent<HTMLTextAreaElement>) => fieldApi.handleChange(event.target.value)}
                 required
                 rows={7}
                 value={fieldApi.state.value}
               />
-              {errorText ? <p className={cn(formErrorClass)} id="contact-message-error" role="alert">{errorText}</p> : null}
+              <p
+                className="contact-char-count m-0 mt-2 text-right text-xs text-muted-foreground"
+                id="contact-message-count"
+              >
+                {fieldApi.state.value.length.toLocaleString('en-US')} /{' '}
+                {CONTACT_MESSAGE_MAX_LENGTH.toLocaleString('en-US')}
+              </p>
+              {errorText ? (
+                <p className={cn(formErrorClass)} id="contact-message-error" role="alert">
+                  {errorText}
+                </p>
+              ) : null}
             </label>
           )
         }}
       </form.Field>
       <div className="turnstile-field" role="group" aria-labelledby="contact-form-turnstile-label">
-        <span className="turnstile-label sr-only" id="contact-form-turnstile-label">Security check before sending contact message</span>
+        <span className="turnstile-label sr-only" id="contact-form-turnstile-label">
+          Security check before sending contact message
+        </span>
         {siteKey ? (
           <TurnstileChallenge
             action="contact"
@@ -157,7 +204,9 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
             onToken={setTurnstileToken}
           />
         ) : (
-          <p className="turnstile-unavailable" role="status">The security check is not configured yet.</p>
+          <p className="turnstile-unavailable" role="status">
+            The security check is not configured yet.
+          </p>
         )}
       </div>
       <form.Field name="website" validators={{ onChange: websiteSchema }}>
@@ -173,8 +222,23 @@ export function ContactMessageForm({ siteKey }: { siteKey: string | null }) {
           </label>
         )}
       </form.Field>
-      {status === 'error' ? <p className={cn(formErrorClass)} role="alert">{error}</p> : null}
-      <div className="form-actions flex flex-wrap items-center gap-3"><p className="form-note m-0 text-xs text-muted-foreground">Messages are sent directly to the operator’s inbox.</p><button className={cn(pixelButtonVariants({ tone: 'coral' }))} disabled={status === 'sending' || !siteKey || !turnstileToken} type="submit">{status === 'sending' ? 'SENDING...' : 'TRANSMIT MESSAGE →'}</button></div>
+      {status === 'error' ? (
+        <p className={cn(formErrorClass)} role="alert">
+          {error}
+        </p>
+      ) : null}
+      <div className="form-actions flex flex-wrap items-center gap-3">
+        <p className="form-note m-0 text-xs text-muted-foreground">
+          Messages are sent directly to the operator’s inbox.
+        </p>
+        <button
+          className={cn(pixelButtonVariants({ tone: 'coral' }))}
+          disabled={status === 'sending' || !siteKey || !turnstileToken}
+          type="submit"
+        >
+          {status === 'sending' ? 'SENDING...' : 'TRANSMIT MESSAGE →'}
+        </button>
+      </div>
     </form>
   )
 }
