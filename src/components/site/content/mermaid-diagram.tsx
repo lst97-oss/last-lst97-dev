@@ -121,6 +121,20 @@ export function MermaidDiagram({ id, source, label }: MermaidDiagramProps) {
         if (!active) return
         if (target) {
           target.innerHTML = svg
+
+          // Mermaid emits `<svg width="100%" style="max-width:<natural>px">`.
+          // That percentage resolves against the container, so a diagram wider
+          // than the panel is squeezed into it — CSS cannot recover the natural
+          // width from a percentage child, so the value is written here from the
+          // viewBox mermaid measured. CSS alone collapses these diagrams (to
+          // 300px under `width: max-content`, to the panel width otherwise).
+          // The panel becomes scrollable rather than shrinking the figure.
+          const figure = target.querySelector('svg')
+          const naturalWidth = figure?.getAttribute('viewBox')?.split(' ')[2]
+          if (figure && naturalWidth) {
+            figure.setAttribute('width', naturalWidth)
+            figure.style.removeProperty('max-width')
+          }
           setStatus('ready')
         }
       } catch {
@@ -152,6 +166,11 @@ export function MermaidDiagram({ id, source, label }: MermaidDiagramProps) {
       <ScrollArea
         className="mermaid-diagram-scroll"
         type="always"
+        // "both": a diagram wider than the panel now keeps its natural size and
+        // scrolls sideways. With the default "vertical", Radix mounts no
+        // horizontal bar and the viewport clips the overflow, so the excess
+        // would simply disappear instead of being reachable.
+        scrollbars="both"
         viewportProps={{
           id: viewportId,
           className: 'mermaid-diagram-viewport',

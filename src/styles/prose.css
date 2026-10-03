@@ -15,6 +15,45 @@
   max-width: none;
 }
 
+/* A figure inside the body must not size the body.
+
+   `.mermaid-diagram` now keeps its natural width (see chat-tools.css), so its
+   min-content propagates up through `.rich-text` and `.article-body`. Those sit
+   inside the window scroller's `display: table` wrapper, whose own
+   `min-width: 100%` is itself content-driven — so every `max-width: 100%` above
+   them is circular, and the panel grew to ~1470px on a 760px viewport instead
+   of the diagram scrolling.
+
+   `width: 100%` (not the default `auto`) is the unlink: the block takes the
+   scroller's width outright rather than deriving it from its contents. */
+.rich-text,
+.article-body {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+/* Radix ScrollArea writes `display: table; min-width: 100%` as an INLINE style
+   on the scroller's direct child, and a `table` box sizes to its contents. That
+   is the circularity that has to be broken: the table is as wide as the widest
+   descendant, and the descendants' `max-width: 100%` resolve against it. With a
+   diagram at its natural 1428px the table grew to 1152px, the window frame grew
+   with it, and the whole page ran off to the right instead of the diagram
+   scrolling inside the window's own vertical scroller.
+
+   `!important` is required and not a shortcut: this must beat Radix's inline
+   style, and no ordinary stylesheet rule can. The `.os-site` prefix keeps this
+   off the Payload admin, whose panes have their own sizing.
+
+   The descendant selector is deliberately loose rather than pinned to
+   `.window-content--scroll`: the detail body's Radix viewport is nested inside
+   `.desktop-main`, so requiring that parent matched nothing — verified with
+   `Element.matches`, which returned false while the width stayed broken. */
+.os-site [data-slot="scroll-area-viewport"] > * {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
 .rich-text > *:last-child {
   margin-bottom: 0;
 }

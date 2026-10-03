@@ -224,7 +224,7 @@
 .chat-pipeline-diagram .label,
 .chat-pipeline-diagram .edgeLabel {
   color: var(--os-ink) !important;
-  font-family: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Consolas, monospace !important;
+  font-family: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
   font-size: 12px !important;
   font-weight: 700;
 }
@@ -301,13 +301,40 @@
   color: var(--os-ink-soft);
 }
 
+/* Width containment for the diagram panel.
+
+   `.mermaid-diagram` now keeps its natural size (see below), which is what
+   makes a wide figure legible instead of silently downscaled. The cost is that
+   its min-content now propagates up: through `.rich-text`, `.article-body`,
+   `.window-content`, and the window frame, widening the whole panel to ~1470px
+   on a 760px viewport. `max-width: 100%` on those ancestors does NOT fix it —
+   each one's percentage resolves against a parent already sized by the same
+   content, so the rule is circular.
+
+   The bound therefore belongs on the one box that actually scrolls: the Radix
+   viewport. As a flex item its default `min-width: auto` resolves to the
+   figure's natural width; zeroing it lets the figure overflow here, where the
+   horizontal scrollbar lives, and nothing propagates upward. The intermediate
+   rules are belt-and-braces for the same chain in case this element is ever
+   restructured out of it. */
+
 /* The ScrollArea root is the scroll box, so it carries the height cap; the
    viewport is the element that scrolls and takes the pan handlers. */
 .mermaid-diagram-scroll {
   max-height: min(68vh, 760px);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.mermaid-diagram-shell,
+.mermaid-diagram-shell > [data-slot="scroll-area"] {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .mermaid-diagram-viewport {
+  min-width: 0;
+  max-width: 100%;
   padding: 18px;
   cursor: grab;
   touch-action: none;
@@ -319,8 +346,15 @@
 }
 
 .mermaid-diagram {
-  width: min(100%, 780px);
-  min-width: 0;
+  /* The component writes the natural width onto the <svg> from mermaid's own
+     viewBox (mermaid-diagram.tsx). CSS cannot do this: mermaid ships
+     `width="100%"`, and a percentage child gives this wrapper no intrinsic
+     width to resolve against — measured, `max-content` collapsed the figure to
+     the panel's 300px minimum. The wrapper only centres the figure and holds
+     the minimum height; the horizontal overflow is handled by the scrollbar the
+     component mounts, so a wide diagram stays legible instead of shrinking. */
+  width: max-content;
+  min-width: 100%;
   min-height: 280px;
   margin-inline: auto;
   transform-origin: center top;
@@ -329,7 +363,6 @@
 
 .mermaid-diagram svg {
   display: block;
-  width: 100%;
   max-width: none;
   height: auto;
   overflow: visible;
@@ -353,7 +386,7 @@
 .mermaid-diagram .label,
 .mermaid-diagram .edgeLabel {
   color: var(--os-ink) !important;
-  font-family: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Consolas, monospace !important;
+  font-family: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
   font-size: 12px !important;
   font-weight: 700;
 }
