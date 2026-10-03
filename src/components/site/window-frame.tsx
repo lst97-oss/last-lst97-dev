@@ -1,5 +1,5 @@
 import { useStore } from '@tanstack/react-store'
-import { cn } from "cn"
+import { cn } from 'cn'
 import type { ReactNode } from 'react'
 import { useIsMobile } from '@/components/hooks/use-mobile'
 import { PixelIcon } from '@/components/site/pixel-icon'
@@ -32,6 +32,13 @@ type WindowFrameProps = {
    * clipped shell.
    */
   scrollable?: boolean
+  /**
+   * Pinned content rendered below the ScrollArea, outside its scrollable
+   * viewport. Used by chat to keep the composer reachable while the
+   * transcript scrolls. Ignored unless `scrollable` is set, because there is
+   * no separate scroller to keep it out of.
+   */
+  footer?: ReactNode
 }
 
 export function WindowFrame({
@@ -43,6 +50,7 @@ export function WindowFrame({
   className = '',
   controls,
   scrollable = false,
+  footer,
 }: WindowFrameProps) {
   const windowMode = useStore(osStore, (state) => state.windowModes[windowId] ?? 'normal')
   const isActive = useStore(osStore, (state) => state.activeWindowId === windowId)
@@ -89,15 +97,25 @@ export function WindowFrame({
           windowMode={effectiveMode}
         />
       </div>
-      <div className={cn('window-content p-6 sm:p-8 lg:p-12', useThemedScroll && 'window-content--scroll')} aria-hidden={effectiveMode === 'minimized'}>
-        {useThemedScroll
-          ? <ScrollArea
+      <div
+        className={cn('window-content p-6 sm:p-8 lg:p-12', useThemedScroll && 'window-content--scroll')}
+        aria-hidden={effectiveMode === 'minimized'}
+      >
+        {useThemedScroll ? (
+          <ScrollArea
             className="min-h-0 min-w-0 flex-1"
             viewportProps={{ className: 'px-6 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-12' }}
           >
             {children}
           </ScrollArea>
-          : children}
+        ) : (
+          children
+        )}
+        {useThemedScroll && footer ? (
+          <div className="window-footer shrink-0 border-t-3 border-border bg-card px-6 py-4 sm:px-8 lg:px-12">
+            {footer}
+          </div>
+        ) : null}
       </div>
     </section>
   )

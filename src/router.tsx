@@ -1,9 +1,8 @@
 import { createRouter as createTanStackRouter } from '@tanstack/react-router'
-import { routeTree } from './routeTree.gen'
-import { NotFoundPage } from '@/components/site/not-found-page'
-
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
+import { NotFoundPage } from '@/components/site/not-found-page'
 import { getContext } from './integrations/tanstack-query/root-provider'
+import { routeTree } from './routeTree.gen'
 
 export function getRouter() {
   const context = getContext()
@@ -14,6 +13,12 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
+    // Content loaders await a real `createServerFn` round trip, so a client
+    // navigation has no visible progress between the click and the response.
+    // 100ms keeps fast navigations clean; 150ms is the floor below which a
+    // skeleton is worse than the outgoing page.
+    defaultPendingMs: 100,
+    defaultPendingMinMs: 150,
     defaultNotFoundComponent: () => <NotFoundPage />,
   })
 

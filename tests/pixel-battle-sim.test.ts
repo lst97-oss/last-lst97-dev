@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
+  type BattleState,
+  type BattleTeam,
+  type BattleUnitKind,
   battleCaps,
   battleDistance,
   battleTick,
   createBattle,
   resizeBattle,
-  type BattleState,
-  type BattleTeam,
-  type BattleUnitKind,
 } from '../src/components/site/battle/pixel-battle-sim'
 
 function emptyState(cols = 40, rows = 24): BattleState {
@@ -171,10 +171,12 @@ describe('pixel battle sim', () => {
     }
     const caps = battleCaps(10, 8)
     for (const team of ['blue', 'red', 'green'] as const) {
-      expect(state.units.filter((unit) => unit.team === team && unit.kind === 'melee').length)
-        .toBeLessThanOrEqual(caps.melee)
-      expect(state.units.filter((unit) => unit.team === team && unit.kind === 'ranged').length)
-        .toBeLessThanOrEqual(caps.ranged)
+      expect(state.units.filter((unit) => unit.team === team && unit.kind === 'melee').length).toBeLessThanOrEqual(
+        caps.melee,
+      )
+      expect(state.units.filter((unit) => unit.team === team && unit.kind === 'ranged').length).toBeLessThanOrEqual(
+        caps.ranged,
+      )
     }
   })
 

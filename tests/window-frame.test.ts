@@ -87,12 +87,13 @@ describe('window frame controls', () => {
     focusWindow(customWindowId)
 
     const customRoute = createRootRoute({
-      component: () => React.createElement(WindowFrame, {
-        title: customWindowId,
-        windowId: customWindowId,
-        controls: { close: false },
-        children: 'Welcome content',
-      }),
+      component: () =>
+        React.createElement(WindowFrame, {
+          title: customWindowId,
+          windowId: customWindowId,
+          controls: { close: false },
+          children: 'Welcome content',
+        }),
     })
     const customRouter = createRouter({
       routeTree: customRoute,
@@ -122,7 +123,10 @@ describe('window frame controls', () => {
 
     await act(async () => {
       restoreControl?.dispatchEvent(
-        new browserWindow.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }) as unknown as PointerEvent,
+        new browserWindow.PointerEvent('pointerdown', {
+          bubbles: true,
+          pointerType: 'mouse',
+        }) as unknown as PointerEvent,
       )
       restoreControl?.focus()
       restoreControl?.dispatchEvent(
@@ -139,12 +143,13 @@ describe('window frame controls', () => {
     expect(container.querySelector('.window-content')?.textContent).toBe('Profile content')
 
     const scrollRoute = createRootRoute({
-      component: () => React.createElement(WindowFrame, {
-        title: 'note.detail',
-        windowId: 'note.detail',
-        scrollable: true,
-        children: 'Detail body',
-      }),
+      component: () =>
+        React.createElement(WindowFrame, {
+          title: 'note.detail',
+          windowId: 'note.detail',
+          scrollable: true,
+          children: 'Detail body',
+        }),
     })
     const scrollRouter = createRouter({
       routeTree: scrollRoute,
@@ -180,12 +185,13 @@ describe('window frame controls', () => {
     Object.defineProperty(browserWindow, 'innerWidth', { configurable: true, value: 390 })
 
     const mobileRoute = createRootRoute({
-      component: () => React.createElement(WindowFrame, {
-        title: 'note.mobile',
-        windowId: 'note.mobile',
-        scrollable: true,
-        children: 'Long article body',
-      }),
+      component: () =>
+        React.createElement(WindowFrame, {
+          title: 'note.mobile',
+          windowId: 'note.mobile',
+          scrollable: true,
+          children: 'Long article body',
+        }),
     })
     const mobileRouter = createRouter({
       routeTree: mobileRoute,

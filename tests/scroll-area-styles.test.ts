@@ -32,7 +32,9 @@ describe('scroll area styles', () => {
   test('the bar has no fill, so the surface behind it shows through', () => {
     appendScrollArea()
 
-    expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"]', 'background')).toBe('transparent')
+    expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"]', 'background')).toBe(
+      'transparent',
+    )
     expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"]', 'border-top-width')).toBe('0px')
   })
 
@@ -42,8 +44,18 @@ describe('scroll area styles', () => {
     // .os-chat-viewport::-webkit-scrollbar is 10px, and its thumb is inset 2px
     // per side by a border that matches the track. Here the bar's own padding
     // produces that same 2px inset around a transparent track.
-    expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"][data-orientation="vertical"]', 'width')).toBe('10px')
-    expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"][data-orientation="horizontal"]', 'height')).toBe('10px')
+    expect(
+      declaration(
+        '[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"][data-orientation="vertical"]',
+        'width',
+      ),
+    ).toBe('10px')
+    expect(
+      declaration(
+        '[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"][data-orientation="horizontal"]',
+        'height',
+      ),
+    ).toBe('10px')
     expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"]', 'padding')).toBe('2px')
     expect(browser.getComputedStyle(bar).width).toBe('10px')
   })
@@ -55,20 +67,31 @@ describe('scroll area styles', () => {
     // ungrabbable bar, because Radix already sizes the thumb to the content box.
     expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-thumb"]', 'margin')).toBe('')
     expect(browser.getComputedStyle(thumb).marginTop).toBe('')
-    expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-thumb"]', 'background')).toBe('var(--os-yellow)')
+    expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-thumb"]', 'background')).toBe(
+      'var(--os-yellow)',
+    )
     expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-thumb"]', 'border-radius')).toBe('0px')
     // Radix does not put data-orientation on the thumb, so the resize cursor is
     // selected through the orientation-bearing bar that contains it.
-    expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"][data-orientation="vertical"] [data-slot="scroll-area-thumb"]', 'cursor')).toBe('ns-resize')
+    expect(
+      declaration(
+        '[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"][data-orientation="vertical"] [data-slot="scroll-area-thumb"]',
+        'cursor',
+      ),
+    ).toBe('ns-resize')
   })
 
   test('no dialog-scoped override paints a track, which would darken the surface', () => {
     // The dialog contains nested diagram ScrollAreas, so a descendant rule here
     // would repaint their tracks too.
-    expect(declaration('.chat-pipeline-dialog [data-dialog-scroll] > [data-slot="scroll-area-scrollbar"]', 'background')).toBeUndefined()
+    expect(
+      declaration('.chat-pipeline-dialog [data-dialog-scroll] > [data-slot="scroll-area-scrollbar"]', 'background'),
+    ).toBeUndefined()
   })
 
   test('the dialog viewport keeps its own padding instead of the diagram padding', () => {
-    expect(declaration('.chat-pipeline-dialog [data-dialog-scroll] > [data-slot="scroll-area-viewport"]', 'padding')).toBe('24px')
+    expect(
+      declaration('.chat-pipeline-dialog [data-dialog-scroll] > [data-slot="scroll-area-viewport"]', 'padding'),
+    ).toBe('24px')
   })
 })

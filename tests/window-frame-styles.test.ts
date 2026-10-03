@@ -1,5 +1,62 @@
 import { describe, expect, test } from 'bun:test'
+import { build } from 'vite'
 import { createSiteStyleWindow } from './site-stylesheet'
+
+/**
+ * Runs CSS through the project's real production minifier and returns the
+ * minified text. `cssMinify: 'lightningcss'` is stated explicitly rather than
+ * inherited from Vite's default: the defect IS Lightning CSS's declaration
+ * ordering, so the test must name the minifier it is pinning rather than
+ * silently following a future Vite default change.
+ *
+ * The CSS is written to a temp file because a Vite build takes a real entry
+ * path, and the minified result is read off the rollup output rather than
+ * from disk so nothing needs cleaning up beyond the directory.
+ */
+/**
+ * A unique scratch directory under the OS temp dir. Bun has no `mkdtemp`, so
+ * this composes the same guarantee from `crypto.randomUUID()`: the name is
+ * unpredictable, so two concurrent runs cannot collide on it.
+ */
+async function makeScratchDir(): Promise<string> {
+  const base = (Bun.env.TMPDIR ?? '/tmp').replace(/[/\\]+$/, '')
+  const root = `${base}/lastos-css-minify-${crypto.randomUUID()}`
+  await Bun.write(`${root}/fixture.css`, '')
+  return root
+}
+
+async function minifyCss(css: string): Promise<string> {
+  const root = await makeScratchDir()
+  const entry = `${root}/fixture.css`
+  try {
+    await Bun.write(entry, css)
+    const outputs = await build({
+      root,
+      logLevel: 'silent',
+      build: {
+        cssMinify: 'lightningcss',
+        write: false,
+        rollupOptions: { input: entry },
+      },
+    })
+    // `build` is typed as `RolldownOutput | RolldownOutput[] | RolldownWatcher`;
+    // only the outputs carry `output`, so a watcher result is filtered out by
+    // shape rather than asserted away.
+    const results = Array.isArray(outputs) ? outputs : [outputs]
+    const assets = results
+      .filter((result): result is Extract<typeof result, { output: unknown }> => 'output' in result)
+      .flatMap((result) => result.output)
+      .filter((output) => output.type === 'asset')
+    const minified = assets.map((asset) => String(asset.source)).join('')
+
+    if (!minified) throw new Error('vite build produced no CSS asset')
+    return minified
+  } finally {
+    // Bun 1.4 has no `rm`, and this repo spawns `rm` directly elsewhere
+    // (`sync-github-knowledge.ts`), so it matches that rather than shelling.
+    Bun.spawnSync(['rm', '-rf', root])
+  }
+}
 
 const shellSource = await Bun.file(new URL('../src/components/site/shell.tsx', import.meta.url)).text()
 
@@ -64,6 +121,24 @@ describe('window frame styles', () => {
     frame.remove()
   })
 
+  test('a minimized scrollable window still collapses its content box', () => {
+    // Every non-home route renders a `scrollable` frame, and its content box is
+    // three-class `display: flex` — the SAME specificity as the minimize rule's
+    // `display: none`. Without a `:not(.is-minimized)` guard the later rule won
+    // and minimize did nothing at all outside the home dashboard, where frames
+    // are not scrollable. The store and the button were never at fault.
+    const frame = browser.document.createElement('section')
+    frame.className = 'window-frame is-minimized window-frame--scroll'
+    const content = browser.document.createElement('div')
+    content.className = 'window-content window-content--scroll'
+    frame.append(content)
+    browser.document.body.append(frame)
+
+    expect(browser.getComputedStyle(content).display).toBe('none')
+
+    frame.remove()
+  })
+
   test('a scrollable frame is height-capped so its scroll viewport can resolve', () => {
     const frame = browser.document.createElement('section')
     frame.className = 'window-frame is-normal window-frame--scroll'
@@ -95,8 +170,10 @@ describe('window frame styles', () => {
     // own ScrollArea. Resetting the cap here (`max-height: none`) let the frame
     // grow past the viewport into a clipped shell, which is what made long
     // detail pages impossible to scroll on a phone.
-    const responsive = (await Bun.file(new URL('../src/styles/responsive.css', import.meta.url)).text())
-      .replace(/\/\*[\s\S]*?\*\//g, '')
+    const responsive = (await Bun.file(new URL('../src/styles/responsive.css', import.meta.url)).text()).replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    )
     const mobileStart = responsive.indexOf('@media (max-width: 650px) {')
     expect(mobileStart).toBeGreaterThan(-1)
 
@@ -107,25 +184,21 @@ describe('window frame styles', () => {
     expect(reset === '' || !reset.includes('max-height: none')).toBe(true)
   })
 
+  test.each(['is-normal', 'is-maximized'])('the scrollable content box never shows a native scrollbar (%s)', (mode) => {
+    const frame = browser.document.createElement('section')
+    frame.className = `window-frame ${mode} window-frame--scroll`
+    const content = browser.document.createElement('div')
+    content.className = 'window-content window-content--scroll'
+    frame.append(content)
+    browser.document.body.append(frame)
 
-  test.each(['is-normal', 'is-maximized'])(
-    'the scrollable content box never shows a native scrollbar (%s)',
-    (mode) => {
-      const frame = browser.document.createElement('section')
-      frame.className = `window-frame ${mode} window-frame--scroll`
-      const content = browser.document.createElement('div')
-      content.className = 'window-content window-content--scroll'
-      frame.append(content)
-      browser.document.body.append(frame)
+    // The themed ScrollArea inside is the only scroller; the box itself must
+    // stay `hidden` or the maximized state re-introduces a native bar beside it.
+    expect(browser.getComputedStyle(content).overflow).toBe('hidden')
+    expect(browser.getComputedStyle(content).paddingTop).toBe('0px')
 
-      // The themed ScrollArea inside is the only scroller; the box itself must
-      // stay `hidden` or the maximized state re-introduces a native bar beside it.
-      expect(browser.getComputedStyle(content).overflow).toBe('hidden')
-      expect(browser.getComputedStyle(content).paddingTop).toBe('0px')
-
-      frame.remove()
-    },
-  )
+    frame.remove()
+  })
 
   test('releases the shell height clamp on mobile so a page without a scrollable frame can scroll', async () => {
     // Below `sm` the shell root stops being a viewport-locked app frame. While
@@ -170,6 +243,53 @@ describe('window frame styles', () => {
     expect(contactRoute).toMatch(/<WindowFrame[\s\S]{0,200}?\bscrollable\b/)
   })
 
+  test('locks the shell scroller on pages whose window owns scrolling', async () => {
+    const shellRule =
+      styles.textContent?.match(
+        /\.os-site:has\(\.window-frame--scroll\)\s+\.desktop-main\s*>\s*\[data-slot=['"]scroll-area-viewport['"]\]\s*\{[^}]*\}/,
+      )?.[0] ?? ''
+    const shellScrollbarRule =
+      styles.textContent?.match(
+        /\.os-site:has\(\.window-frame--scroll\)\s+\.desktop-main\s*>\s*\[data-slot=['"]scroll-area-scrollbar['"]\]\s*\{[^}]*\}/,
+      )?.[0] ?? ''
+
+    expect(shellRule).toMatch(/overflow-y:\s*hidden/)
+    expect(shellScrollbarRule).toMatch(/display:\s*none/)
+  })
+
+  test('the about page gives its long content a window scroller', async () => {
+    const aboutRoute = await Bun.file(new URL('../src/routes/_site.about.tsx', import.meta.url)).text()
+
+    expect(aboutRoute).toMatch(/<WindowFrame[\s\S]{0,200}?\bscrollable\b/)
+  })
+
+  test('keeps the site not-found boundary inside the routes that load the site stylesheet', async () => {
+    // The router truncates the head/asset lane at the not-found match
+    // (`_getAssetMatches` and `projectLane` both stop there), so a child
+    // route's `notFound()` only keeps `src/styles.css` linked when the
+    // boundary is a match that also produces it. Before this, the boundary
+    // walked up to `__root`, whose head carries no site sheet, and the 404
+    // rendered unstyled with a global page scrollbar.
+    const [siteRoute, rootRoute, adminIndex, adminSplat] = await Promise.all(
+      [
+        '../src/routes/_site.tsx',
+        '../src/routes/__root.tsx',
+        '../src/routes/_payload.admin.index.tsx',
+        '../src/routes/_payload.admin.$.tsx',
+      ].map((path) => Bun.file(new URL(path, import.meta.url)).text()),
+    )
+
+    expect(siteRoute).toMatch(/notFoundComponent/)
+    // The root also wraps `/_payload`, and `src/styles.css` is unlayered so
+    // it outranks Payload's layered admin CSS. Relinking the sheet there
+    // strips the admin panel of its own styling (regression of 8d3e8dd).
+    expect(rootRoute).not.toContain('styles.css')
+    // `/_payload` is a sibling of `/_site` and the admin routes own their
+    // boundary, so Payload's own not-found always wins under `/admin` and
+    // the site page can never render there.
+    expect(adminIndex).toMatch(/notFoundComponent:\s*AdminNotFound/)
+    expect(adminSplat).toMatch(/notFoundComponent:\s*AdminNotFound/)
+  })
 
   test('renders the desktop navigation as a compact floating glass dock', () => {
     // The chrome is on the Radix viewport, not the ScrollArea root: the root is
@@ -204,8 +324,10 @@ describe('window frame styles', () => {
     // bounded only by `max-height`, painting a full-height translucent column.
     // happy-dom cannot catch this: it does not load the `utilities` layer, so
     // the computed style looked correct while the real page regressed.
-    const shell = (await Bun.file(new URL('../src/styles/shell.css', import.meta.url)).text())
-      .replace(/\/\*[\s\S]*?\*\//g, '')
+    const shell = (await Bun.file(new URL('../src/styles/shell.css', import.meta.url)).text()).replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    )
     const dock = shell.match(/\.desktop-shortcuts\s*\{[^}]*\}/)?.[0] ?? ''
 
     expect(dock).not.toBe('')
@@ -243,8 +365,10 @@ describe('window frame styles', () => {
     // and the dock overlapped the grid track that still reserved 82px.
     // `await` binds tighter than `.`, so without the parens it awaits the
     // BunFile object and `.replace` is called on a Promise.
-    const responsive = (await Bun.file(new URL('../src/styles/responsive.css', import.meta.url)).text())
-      .replace(/\/\*[\s\S]*?\*\//g, '')
+    const responsive = (await Bun.file(new URL('../src/styles/responsive.css', import.meta.url)).text()).replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    )
     const narrow = responsive.split('@media (max-width: 900px) {')[1] ?? ''
 
     const dockWidth = Number(narrow.match(/\.desktop-shortcuts\s*\{\s*width:\s*(\d+)px/)?.[1])
@@ -322,5 +446,50 @@ describe('window frame styles', () => {
     expect(browser.getComputedStyle(jsonDetails).display).not.toBe('none')
 
     frame.remove()
+  })
+})
+
+describe('dock glass blur survives minification', () => {
+  /**
+   * `backdrop-filter` is a shorthand, and Lightning CSS — Vite's default CSS
+   * minifier — collapses it into the prefixed property. With the standard
+   * declaration written first, the prefixed one overwrote it and the built
+   * rule shipped as `-webkit-backdrop-filter` alone, which Chromium does not
+   * support at all. The dock rendered as a flat transparent panel in every
+   * production build while dev looked correct (vitejs/vite#21954).
+   *
+   * Both orders are valid CSS, so only running the real minifier over the
+   * real rule catches a regression, and happy-dom cannot help: it does not
+   * model `backdrop-filter` at all.
+   *
+   * The minifier runs through a Vite build rather than a direct
+   * `lightningcss` call. That package's Node-API binding is broken under
+   * Bun — it throws `Get TypedArray info failed` from `transform` even when
+   * the platform package is `require`d directly, so `import { transform }
+   * from 'lightningcss'` cannot work under `bun test`. A one-file Vite build
+   * uses the same default minifier, returns the minified CSS in the rollup
+   * output, and runs in well under a second.
+   */
+  test('minified output keeps the standard backdrop-filter property', async () => {
+    const shell = (await Bun.file(new URL('../src/styles/shell.css', import.meta.url)).text()).replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    )
+    const rule = shell.match(/\.desktop-shortcuts-viewport\s*\{[^}]*\}/)?.[0] ?? ''
+
+    expect(rule).not.toBe('')
+    const prefixed = rule.indexOf('-webkit-backdrop-filter')
+    const standard = rule.indexOf('backdrop-filter')
+    // Both must be present first: `indexOf` returns -1 for a missing
+    // declaration, and -1 < 0 would make the order check pass for the
+    // wrong reason.
+    expect(prefixed).toBeGreaterThanOrEqual(0)
+    expect(standard).toBeGreaterThanOrEqual(0)
+    expect(prefixed).toBeLessThan(standard)
+
+    const minified = await minifyCss(rule)
+    // The boundary stops the `-webkit-backdrop-filter` the minifier does emit
+    // from satisfying this matcher, which would pass against the broken build.
+    expect(minified).toMatch(/(^|[^-\w])backdrop-filter:blur\(16px\)/)
   })
 })
