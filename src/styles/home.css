@@ -59,7 +59,7 @@ h1,
 h2,
 h3 {
   color: var(--os-ink);
-  font-family: "Arial Black", Impact, sans-serif;
+  font-family: "Archivo Black", "Arial Black", Impact, sans-serif;
   letter-spacing: -0.045em;
   line-height: 0.98;
 }

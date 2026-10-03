@@ -1,0 +1,28 @@
+/*
+ * Self-hosted webfonts. Imported FIRST in src/styles.css, before tailwindcss,
+ * because `@font-face` and the Tailwind `utilities` layer both need the family
+ * names registered before anything consumes them, and Tailwind's preflight
+ * resets `font-family` on the elements these rules then target.
+ *
+ * Why the site ships webfonts at all: every font stack in this repo used to be
+ * pure local-font fallbacks — `SFMono-Regular, "Cascadia Code", ...` for mono
+ * and `"Arial Black", Impact` for display. On macOS those resolve to SF Mono
+ * and Arial Black, which is why the site looked correct on a Mac and broken on
+ * Windows: "Cascadia Code" is not the family name (it is `Cascadia Code`/`Cascadia
+ * Mono` depending on install), Windows machines without it fell through to
+ * Consolas, and Impact is a display face whose metrics differ enough from Arial
+ * Black to change every heading's line breaks. A font that is not present is not
+ * a graceful degradation here; it is a different layout.
+ *
+ * Both faces are latin-subset woff2 (40K + 20K) and self-hosted, so there is no
+ * third-party request and no FOUT from a blocked CDN. `font-display: swap` keeps
+ * text readable while they load.
+ */
+
+/* JetBrains Mono Variable, weights 100-800. Replaces the SFMono-Regular /
+   Cascadia Code / Consolas stack for body text and code. */
+@import "@fontsource-variable/jetbrains-mono/wght.css" layer(vendor);
+
+/* Archivo Black 400 — the heavy display face behind every heading. Replaces
+   `Arial Black, Impact`. */
+@import "@fontsource/archivo-black/latin-400.css" layer(vendor);

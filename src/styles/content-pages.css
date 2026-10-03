@@ -218,7 +218,7 @@
   border: 3px solid var(--os-ink);
   background: var(--os-violet);
   box-shadow: 5px 5px 0 var(--os-ink);
-  font-family: "Arial Black", Impact, sans-serif;
+  font-family: "Archivo Black", "Arial Black", Impact, sans-serif;
   font-size: 30px;
   line-height: 0.8;
 }

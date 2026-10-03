@@ -1,8 +1,11 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Consolas, monospace;
-  --font-display: "Arial Black", Impact, sans-serif;
+  /* Self-hosted faces (src/styles/webfonts.css). The local-font fallbacks stay
+     after them for the rare case the woff2 fails to load, so the page is still
+     monospace rather than reverting to the serif default. */
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-display: "Archivo Black", "Arial Black", Impact, sans-serif;
 
   --animate-blink: blink 1s steps(2, jump-none) infinite;
 

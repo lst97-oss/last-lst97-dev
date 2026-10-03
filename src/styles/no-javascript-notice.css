@@ -15,7 +15,7 @@
     linear-gradient(90deg, var(--os-grid, rgba(35, 35, 40, 0.08)) 1px, transparent 1px);
   background-size: 32px 32px;
   color: var(--foreground, #232328);
-  font-family: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Consolas, monospace;
+  font-family: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: clamp(1rem, 2.2vw, 1.35rem);
   font-weight: 700;
   line-height: 1.8;
@@ -29,7 +29,7 @@
 
 .javascript-disabled-notice::first-line {
   color: var(--accent, #d75b3f);
-  font-family: "Arial Black", Impact, sans-serif;
+  font-family: "Archivo Black", "Arial Black", Impact, sans-serif;
   font-size: clamp(1.5rem, 4vw, 2.75rem);
   line-height: 1.2;
 }

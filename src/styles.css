@@ -6,6 +6,7 @@
 @layer payload-default, payload, theme, base, components, utilities;
 
 @import "tailwindcss";
+@import "./styles/webfonts.css";
 @import "./styles/tokens.css";
 @import "./styles/globals.css";
 @import "./styles/animations.css";
