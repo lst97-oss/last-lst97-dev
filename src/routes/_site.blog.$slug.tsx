@@ -81,6 +81,7 @@ function PostPage() {
       topics={post.topics}
       readingTime={readMinutes ? formatReadingTime(readMinutes) : null}
       publishedAt={post.publishedAt}
+      wide
       updatedAt={post.updatedAt}
     >
       <RichText value={post.content} />

@@ -90,6 +90,7 @@ function ChangelogEntryPage() {
       badges={entry.changeTypes.map((type) => changeTypeLabels[type] ?? type)}
       readingTime={readMinutes ? formatReadingTime(readMinutes) : null}
       publishedAt={entry.publishedAt}
+      wide
       updatedAt={entry.updatedAt}
     >
       <RichText value={entry.content} />

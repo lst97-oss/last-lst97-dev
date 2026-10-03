@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { cn } from 'cn'
 import { Children, type ComponentProps, type ReactNode } from 'react'
 import { ContentCover } from '@/components/site/content/cover'
 import { DetailMeta } from '@/components/site/content/detail-meta'
@@ -24,6 +25,13 @@ interface ContentDetailLayoutProps {
   readingTime?: string | null
   publishedAt?: string | null
   updatedAt?: string | null
+  /**
+   * Drop the 700px prose reading measure so the body spans the window, the way
+   * the project detail page does. Both detail pages carry Mermaid diagrams and
+   * wide code blocks, which the measure crops into a horizontally scrollable
+   * sliver. `.article-body--wide` is the existing project-page treatment.
+   */
+  wide?: boolean
   children: ReactNode
 }
 
@@ -56,6 +64,7 @@ export function ContentDetailLayout({
   readingTime = null,
   publishedAt = null,
   updatedAt = null,
+  wide = false,
 }: ContentDetailLayoutProps) {
   const coverItem = toMediaItem(coverImage, { altFallback: title })
 
@@ -98,7 +107,7 @@ export function ContentDetailLayout({
             </Link>
           ))}
         </DetailLabelRow>
-        <div className="article-body">{children}</div>
+        <div className={cn('article-body', wide && 'article-body--wide')}>{children}</div>
       </WindowFrame>
     </PageStack>
   )
