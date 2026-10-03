@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
 
+import { inspectBrowserCapabilities } from '@/lib/browser-capabilities'
 import { fetchSiteHealthStatus, type SiteHealthStatus } from '@/lib/site-health'
 
 const SiteHealthContext = createContext<SiteHealthStatus>('checking')
@@ -10,6 +11,11 @@ export function SiteHealthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SiteHealthStatus>('checking')
 
   useEffect(() => {
+    if (!inspectBrowserCapabilities(['fetch', 'abort-controller']).supported) {
+      setStatus('offline')
+      return
+    }
+
     let disposed = false
     let requestInFlight = false
     let activeController: AbortController | undefined
