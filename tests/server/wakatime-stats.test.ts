@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'bun:test'
-
-import { createWakaTimeStatsClient, formatWakaTimeShareSummary, wakaTimeShareUrl } from '../../src/server/wakatime/public-shares'
-import type { CodingStatsResult } from '../../src/server/wakatime/stats'
 import type { Logger } from '../../src/server/observability/logger'
+import {
+  createWakaTimeStatsClient,
+  formatWakaTimeShareSummary,
+  wakaTimeShareUrl,
+} from '../../src/server/wakatime/public-shares'
+import type { CodingStatsResult } from '../../src/server/wakatime/stats'
 
 const logger: Logger = { debug() {}, info() {}, warn() {}, error() {} }
 const now = () => new Date('2026-09-24T13:00:00.000Z')
@@ -78,11 +81,29 @@ describe('WakaTime public-share service', () => {
     const systems = await client.fetchSummary({ category: 'operating_systems', range: 'all_time' })
 
     expect(activity).toMatchObject({ category: 'activity', humanReadableTotal: '3,262 hrs 21 mins', daysInPeriod: 960 })
-    expect(recent).toMatchObject({ category: 'activity', totalSeconds: 5_400, daysInPeriod: 2, humanReadableTotal: '1 hrs 30 mins' })
-    expect(recent?.category === 'activity' ? recent.period : null).toEqual({ range: 'last_7_days', start: '2026-09-22T14:00:00Z', end: '2026-09-24T13:59:59Z' })
-    expect(languages?.category === 'languages' ? languages.items[0] : null).toMatchObject({ name: 'TypeScript', percent: 63.11 })
-    expect(editors?.category === 'editors' ? editors.items[0] : null).toMatchObject({ name: 'TypeScript', percent: 63.11 })
-    expect(systems?.category === 'operating_systems' ? systems.items[0] : null).toMatchObject({ name: 'TypeScript', percent: 63.11 })
+    expect(recent).toMatchObject({
+      category: 'activity',
+      totalSeconds: 5_400,
+      daysInPeriod: 2,
+      humanReadableTotal: '1 hrs 30 mins',
+    })
+    expect(recent?.category === 'activity' ? recent.period : null).toEqual({
+      range: 'last_7_days',
+      start: '2026-09-22T14:00:00Z',
+      end: '2026-09-24T13:59:59Z',
+    })
+    expect(languages?.category === 'languages' ? languages.items[0] : null).toMatchObject({
+      name: 'TypeScript',
+      percent: 63.11,
+    })
+    expect(editors?.category === 'editors' ? editors.items[0] : null).toMatchObject({
+      name: 'TypeScript',
+      percent: 63.11,
+    })
+    expect(systems?.category === 'operating_systems' ? systems.items[0] : null).toMatchObject({
+      name: 'TypeScript',
+      percent: 63.11,
+    })
     expect(seen).toEqual([
       wakaTimeShareUrl('activity', 'all_time'),
       wakaTimeShareUrl('activity', 'last_7_days'),
@@ -97,15 +118,27 @@ describe('WakaTime public-share service', () => {
     const client = createWakaTimeStatsClient({
       now,
       logger,
-      fetcher: async (url) => jsonResponse(url.includes('364f7e2b-adfa-4ffa-a6da-d086c4bbb7e8')
-        ? { data: [{ name: 'AI Coding', percent: 50 }, { name: 'Coding', percent: 25 }] }
-        : allTimeActivity),
+      fetcher: async (url) =>
+        jsonResponse(
+          url.includes('364f7e2b-adfa-4ffa-a6da-d086c4bbb7e8')
+            ? {
+                data: [
+                  { name: 'AI Coding', percent: 50 },
+                  { name: 'Coding', percent: 25 },
+                ],
+              }
+            : allTimeActivity,
+        ),
     })
 
     const categoryResult = await client.fetchSummary({ category: 'categories', range: 'last_7_days' })
 
     expect(categoryResult).toMatchObject({ category: 'categories', period: { range: 'last_7_days' } })
-    expect(categoryResult?.category === 'categories' ? categoryResult.items[0] : null).toMatchObject({ name: 'AI Coding', percent: 50, humanReadableEstimate: '1631 hrs 11 mins' })
+    expect(categoryResult?.category === 'categories' ? categoryResult.items[0] : null).toMatchObject({
+      name: 'AI Coding',
+      percent: 50,
+      humanReadableEstimate: '1631 hrs 11 mins',
+    })
   })
 
   it('caches a successful share independently from failures', async () => {
@@ -127,12 +160,28 @@ describe('WakaTime public-share service', () => {
 
   it('returns null with a sanitized warning on invalid or unavailable shares', async () => {
     const warnings: Array<{ event: string; fields?: Record<string, unknown> }> = []
-    const invalid = createWakaTimeStatsClient({ now, logger: { ...logger, warn(event, fields) { warnings.push({ event, fields }) } }, fetcher: async () => jsonResponse({ data: [{ name: 'x', percent: 101 }] }) })
-    const unavailable = createWakaTimeStatsClient({ now, logger, fetcher: async () => jsonResponse({ private: 'provider detail' }, 503) })
+    const invalid = createWakaTimeStatsClient({
+      now,
+      logger: {
+        ...logger,
+        warn(event, fields) {
+          warnings.push({ event, fields })
+        },
+      },
+      fetcher: async () => jsonResponse({ data: [{ name: 'x', percent: 101 }] }),
+    })
+    const unavailable = createWakaTimeStatsClient({
+      now,
+      logger,
+      fetcher: async () => jsonResponse({ private: 'provider detail' }, 503),
+    })
 
     await expect(invalid.fetchSummary({ category: 'languages', range: 'last_7_days' })).resolves.toBeNull()
     await expect(unavailable.fetchSummary({ category: 'activity', range: 'all_time' })).resolves.toBeNull()
-    expect(warnings).toContainEqual({ event: 'wakatime.public_share.failed', fields: { category: 'languages', range: 'last_7_days' } })
+    expect(warnings).toContainEqual({
+      event: 'wakatime.public_share.failed',
+      fields: { category: 'languages', range: 'last_7_days' },
+    })
   })
 
   it('rejects invalid direct client requests before making a network call', async () => {
@@ -148,6 +197,108 @@ describe('WakaTime public-share service', () => {
 
     await expect(client.fetchSummary({ category: 'operating_systems', range: 'last_7_days' })).resolves.toBeNull()
     expect(calls).toBe(0)
+  })
+
+  it('expires the cache on the injected clock rather than the wall clock', async () => {
+    let clockMs = Date.parse('2026-09-24T13:00:00.000Z')
+    let calls = 0
+    const client = createWakaTimeStatsClient({
+      now: () => new Date(clockMs),
+      cacheTtlMs: 30 * 60_000,
+      logger,
+      fetcher: async () => {
+        calls += 1
+        return jsonResponse(allTimeActivity)
+      },
+    })
+
+    await client.fetchSummary({ category: 'activity', range: 'all_time' })
+    await client.fetchSummary({ category: 'activity', range: 'all_time' })
+    expect(calls).toBe(1)
+
+    // Still inside the 30-minute window.
+    clockMs += 30 * 60_000 - 1
+    await client.fetchSummary({ category: 'activity', range: 'all_time' })
+    expect(calls).toBe(1)
+
+    // Past the window: refetched.
+    clockMs += 1
+    await client.fetchSummary({ category: 'activity', range: 'all_time' })
+    expect(calls).toBe(2)
+  })
+
+  it('caches a failure only for the shorter failure window', async () => {
+    let clockMs = Date.parse('2026-09-24T13:00:00.000Z')
+    let calls = 0
+    const client = createWakaTimeStatsClient({
+      now: () => new Date(clockMs),
+      cacheTtlMs: 30 * 60_000,
+      failureCacheTtlMs: 60_000,
+      logger,
+      fetcher: async () => {
+        calls += 1
+        return jsonResponse({ private: 'provider detail' }, 503)
+      },
+    })
+
+    await expect(client.fetchSummary({ category: 'activity', range: 'all_time' })).resolves.toBeNull()
+    await expect(client.fetchSummary({ category: 'activity', range: 'all_time' })).resolves.toBeNull()
+    expect(calls).toBe(1)
+
+    // Past the failure window, but still inside the success window: retried.
+    clockMs += 60_000
+    await client.fetchSummary({ category: 'activity', range: 'all_time' })
+    expect(calls).toBe(2)
+  })
+
+  it('collapses concurrent requests for the same share into one upstream call', async () => {
+    let calls = 0
+    // Gate the fetch so the first request is provably still in flight when the
+    // others arrive; no wall-clock wait, so there is no race to flake on.
+    const fetchGate = Promise.withResolvers<void>()
+    const client = createWakaTimeStatsClient({
+      now,
+      logger,
+      fetcher: async () => {
+        calls += 1
+        await fetchGate.promise
+        return jsonResponse(allTimeActivity)
+      },
+    })
+
+    const pending = Promise.all([
+      client.fetchSummary({ category: 'activity', range: 'all_time' }),
+      client.fetchSummary({ category: 'activity', range: 'all_time' }),
+      client.fetchSummary({ category: 'activity', range: 'all_time' }),
+    ])
+    fetchGate.resolve()
+    const results = await pending
+
+    expect(calls).toBe(1)
+    for (const summary of results) expect(summary?.category).toBe('activity')
+  })
+
+  it('keeps distinct shares independent while sharing the cache map', async () => {
+    const seen: string[] = []
+    const client = createWakaTimeStatsClient({
+      now,
+      logger,
+      fetcher: async (url) => {
+        seen.push(String(url))
+        return String(url).includes('364f7e2b-adfa-4ffa-a6da-d086c4bbb7e8')
+          ? jsonResponse(allTimeActivity)
+          : jsonResponse(items)
+      },
+    })
+
+    await client.fetchSummary({ category: 'activity', range: 'all_time' })
+    await client.fetchSummary({ category: 'languages', range: 'last_7_days' })
+    await client.fetchSummary({ category: 'activity', range: 'all_time' })
+
+    // The repeated activity call hit its own cache entry; the languages call
+    // did not resolve to the activity entry's key.
+    expect(seen).toHaveLength(2)
+    expect(seen.filter((url) => url === wakaTimeShareUrl('activity', 'all_time'))).toHaveLength(1)
   })
 
   it('formats a bounded, freshness-labelled LLM summary', () => {

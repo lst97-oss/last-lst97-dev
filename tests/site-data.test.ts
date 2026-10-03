@@ -39,19 +39,43 @@ describe('site content loaders', () => {
 
   test('lets failed Payload reads reach the route error boundary instead of turning them into empty content', async () => {
     const backendFailure = new Error('database unavailable')
-    const loaders = createSiteDataLoaders(createSources({
-      listPosts: async () => { throw backendFailure },
-      getPost: async () => { throw backendFailure },
-      listProjects: async () => { throw backendFailure },
-      listProjectsPage: async () => { throw backendFailure },
-      getProject: async () => { throw backendFailure },
-      listChangelogs: async () => { throw backendFailure },
-      getChangelog: async () => { throw backendFailure },
-      listTopics: async () => { throw backendFailure },
-      getTopic: async () => { throw backendFailure },
-      listPostsByTopic: async () => { throw backendFailure },
-      getFeaturedPost: async () => { throw backendFailure },
-    }))
+    const loaders = createSiteDataLoaders(
+      createSources({
+        listPosts: async () => {
+          throw backendFailure
+        },
+        getPost: async () => {
+          throw backendFailure
+        },
+        listProjects: async () => {
+          throw backendFailure
+        },
+        listProjectsPage: async () => {
+          throw backendFailure
+        },
+        getProject: async () => {
+          throw backendFailure
+        },
+        listChangelogs: async () => {
+          throw backendFailure
+        },
+        getChangelog: async () => {
+          throw backendFailure
+        },
+        listTopics: async () => {
+          throw backendFailure
+        },
+        getTopic: async () => {
+          throw backendFailure
+        },
+        listPostsByTopic: async () => {
+          throw backendFailure
+        },
+        getFeaturedPost: async () => {
+          throw backendFailure
+        },
+      }),
+    )
 
     await expect(loaders.loadPosts()).rejects.toBe(backendFailure)
     await expect(loaders.loadPost('entry')).rejects.toBe(backendFailure)

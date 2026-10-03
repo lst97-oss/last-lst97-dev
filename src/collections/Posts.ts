@@ -1,10 +1,9 @@
 import type { CollectionConfig } from 'payload'
-
+import { createKnowledgeAfterChangeHook, createKnowledgeAfterDeleteHook } from '../server/knowledge/payload-hooks'
 import { authenticatedAccess, publishedAccess } from './access'
 import { contentEditor } from './fields/content-editor'
 import { seoField } from './fields/seo'
 import { ensureContentSlug } from './hooks/content-slug'
-import { createKnowledgeAfterChangeHook, createKnowledgeAfterDeleteHook } from '../server/knowledge/payload-hooks'
 import { ensurePublicationDate } from './hooks/publication-date'
 
 export const Posts: CollectionConfig = {
@@ -54,7 +53,10 @@ export const Posts: CollectionConfig = {
       type: 'richText',
       editor: contentEditor,
       required: true,
-      admin: { description: 'Use Markdown shortcuts for headings, lists, tables, and fenced code. Insert images through the Media upload control.' },
+      admin: {
+        description:
+          'Use Markdown shortcuts for headings, lists, tables, and fenced code. Insert images through the Media upload control.',
+      },
     },
     {
       name: 'tags',

@@ -1,6 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createChatPostHandler } from '../server/chat/http-handler'
-import { getChatContactWorkflow, getChatService, verifyChatTurnstile } from '../server/chat/runtime'
+import {
+  getChatContactWorkflow,
+  getChatService,
+  verifyChatTurnstile,
+  verifyContactScreeningTurnstile,
+} from '../server/chat/runtime'
 import { getServerEnv, isVercelRuntime } from '../server/env'
 import { chatRequestMetadataFromRequest } from '../server/observability/chat-request-metadata'
 import { logger } from '../server/observability/logger'
@@ -10,6 +15,7 @@ const POST = createChatPostHandler({
   send: (input) => getChatService().send(input),
   sendStream: (input, signal) => getChatService().sendStream(input, signal),
   verifyChatTurnstile,
+  verifyContactScreeningTurnstile,
   handleContactAction: (input) => getChatContactWorkflow().handle(input),
   streamMaxMs: () => getServerEnv().CHAT_STREAM_MAX_MS,
   logger,

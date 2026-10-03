@@ -15,8 +15,12 @@ describe('site health status', () => {
 
   it('reports offline for failed HTTP, malformed payload, or network responses', async () => {
     const failedHttp = await fetchSiteHealthStatus(async () => new Response(null, { status: 503 }))
-    const malformedPayload = await fetchSiteHealthStatus(async () => new Response(JSON.stringify({ status: 'degraded' }), { status: 200 }))
-    const networkFailure = await fetchSiteHealthStatus(async () => { throw new Error('unavailable') })
+    const malformedPayload = await fetchSiteHealthStatus(
+      async () => new Response(JSON.stringify({ status: 'degraded' }), { status: 200 }),
+    )
+    const networkFailure = await fetchSiteHealthStatus(async () => {
+      throw new Error('unavailable')
+    })
 
     expect(failedHttp).toBe('offline')
     expect(malformedPayload).toBe('offline')

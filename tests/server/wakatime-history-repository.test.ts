@@ -6,14 +6,17 @@ import { createCodingHistoryRepository } from '../../src/server/wakatime/history
 
 const testDatabaseUrl = Bun.env.KNOWLEDGE_TEST_DATABASE_URL
 
-async function insertHeartbeat(pool: Pool, row: {
-  id: string
-  day: string
-  time: string
-  project: string | null
-  language: string | null
-  duration: number
-}) {
+async function insertHeartbeat(
+  pool: Pool,
+  row: {
+    id: string
+    day: string
+    time: string
+    project: string | null
+    language: string | null
+    duration: number
+  },
+) {
   await pool.query(
     `INSERT INTO "wakatime_heartbeats"
      ("waka_id", "day", "time", "project", "language", "entity_hash", "duration_seconds")
@@ -34,10 +37,38 @@ describe.skipIf(!testDatabaseUrl)('CodingHistoryRepository with Postgres', () =>
       '018d821d-7e0a-4e9b-a2ad-3780dc095503',
       '018d821d-7e0a-4e9b-a2ad-3780dc095504',
     ]
-    await insertHeartbeat(pool, { id: ids[0]!, day: '2025-01-01', time: '2025-01-01T10:00:00Z', project: 'alpha', language: 'TypeScript', duration: 600 })
-    await insertHeartbeat(pool, { id: ids[1]!, day: '2025-01-01', time: '2025-01-01T11:00:00Z', project: 'alpha', language: 'TypeScript', duration: 300 })
-    await insertHeartbeat(pool, { id: ids[2]!, day: '2025-01-02', time: '2025-01-02T10:00:00Z', project: 'beta', language: 'Python', duration: 1200 })
-    await insertHeartbeat(pool, { id: ids[3]!, day: '2025-01-04', time: '2025-01-04T10:00:00Z', project: null, language: null, duration: 60 })
+    await insertHeartbeat(pool, {
+      id: ids[0]!,
+      day: '2025-01-01',
+      time: '2025-01-01T10:00:00Z',
+      project: 'alpha',
+      language: 'TypeScript',
+      duration: 600,
+    })
+    await insertHeartbeat(pool, {
+      id: ids[1]!,
+      day: '2025-01-01',
+      time: '2025-01-01T11:00:00Z',
+      project: 'alpha',
+      language: 'TypeScript',
+      duration: 300,
+    })
+    await insertHeartbeat(pool, {
+      id: ids[2]!,
+      day: '2025-01-02',
+      time: '2025-01-02T10:00:00Z',
+      project: 'beta',
+      language: 'Python',
+      duration: 1200,
+    })
+    await insertHeartbeat(pool, {
+      id: ids[3]!,
+      day: '2025-01-04',
+      time: '2025-01-04T10:00:00Z',
+      project: null,
+      language: null,
+      duration: 60,
+    })
     return { pool, repository: createCodingHistoryRepository(pool), schema }
   }
 
@@ -45,7 +76,9 @@ describe.skipIf(!testDatabaseUrl)('CodingHistoryRepository with Postgres', () =>
     const { pool, repository, schema } = await setup()
     try {
       await expect(repository.summary({ from: '2025-01-01', to: '2025-01-31' })).resolves.toEqual({
-        totalSeconds: 2160, activeDays: 3, heartbeatCount: 4,
+        totalSeconds: 2160,
+        activeDays: 3,
+        heartbeatCount: 4,
       })
       const projects = await repository.byProject({ from: '2025-01-01', to: '2025-01-31' }, 10)
       expect(projects.map((entry) => entry.name)).toEqual(['beta', 'alpha', '(unknown)'])

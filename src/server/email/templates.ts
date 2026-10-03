@@ -2,6 +2,12 @@ import { CHAT_CONTACT_TEMPLATES, type ChatContactField, type ChatContactSubmissi
 import type { ContactMessage } from '../contact/types'
 import type { EmailTemplate } from './types'
 
+const CUSTOMER_RECEIPT_SUBJECT = 'Thank you for contacting LAST//OS'
+const CUSTOMER_RECEIPT_MESSAGE = [
+  'Thank you for contacting LAST//OS. We have received your message.',
+  'Nelson will review your enquiry and respond as soon as possible.',
+].join(' ')
+
 const palette = {
   ink: '#17171f',
   paper: '#fffdf3',
@@ -45,20 +51,22 @@ export function renderContactReceipt(contact: ContactMessage): EmailTemplate {
 
   return {
     templateId: 'contact-receipt',
-    subject: 'We received your message — LAST//OS',
+    subject: CUSTOMER_RECEIPT_SUBJECT,
     text: [
-      `Hi ${contact.name},`,
+      `Dear ${contact.name},`,
       '',
-      'We received your message. Thanks for reaching out — we appreciate you taking the time to write.',
+      CUSTOMER_RECEIPT_MESSAGE,
       '',
-      '— Nelson · LAST//OS',
+      'Kind regards,',
+      'Nelson',
+      'LAST//OS',
     ].join('\n'),
     html: renderLayout(
       'DELIVERY CONFIRMED',
       'Message received',
-      `<p style="margin:0 0 16px;font:16px/1.6 Arial,sans-serif;color:${palette.ink};">Hi ${name},</p>
-      <p style="margin:0 0 16px;font:16px/1.6 Arial,sans-serif;color:${palette.ink};">We received your message. Thanks for reaching out — we appreciate you taking the time to write.</p>
-      <p style="margin:24px 0 0;font:14px/1.6 Arial,sans-serif;color:${palette.muted};">— Nelson · LAST//OS</p>`,
+      `<p style="margin:0 0 16px;font:16px/1.6 Arial,sans-serif;color:${palette.ink};">Dear ${name},</p>
+      <p style="margin:0 0 16px;font:16px/1.6 Arial,sans-serif;color:${palette.ink};">${CUSTOMER_RECEIPT_MESSAGE}</p>
+      <p style="margin:24px 0 0;font:14px/1.6 Arial,sans-serif;color:${palette.muted};">Kind regards,<br>Nelson<br>LAST//OS</p>`,
     ),
   }
 }
@@ -96,7 +104,11 @@ export function renderChatContactNotification(contact: ChatContactSubmission): E
       ? 'Bug report — LAST//OS'
       : contact.template === 'feature_request'
         ? 'Feature request — LAST//OS'
-        : 'New message — LAST//OS'
+        : contact.template === 'quotation'
+          ? 'Quotation request — LAST//OS'
+          : contact.template === 'support_plan'
+            ? 'Support plan request — LAST//OS'
+            : 'New message — LAST//OS'
 
   return {
     templateId: 'chat-contact-notification',
@@ -110,20 +122,22 @@ export function renderChatContactReceipt(contact: ChatContactSubmission): EmailT
   const name = contact.fields.name.trim()
   return {
     templateId: 'chat-contact-receipt',
-    subject: 'We received your message — LAST//OS',
+    subject: CUSTOMER_RECEIPT_SUBJECT,
     text: [
-      `Hi ${name || 'there'},`,
+      `Dear ${name || 'Customer'},`,
       '',
-      'We received your message. Thanks for taking the time to write.',
+      CUSTOMER_RECEIPT_MESSAGE,
       '',
-      '— Nelson · LAST//OS',
+      'Kind regards,',
+      'Nelson',
+      'LAST//OS',
     ].join('\n'),
     html: renderLayout(
       'DELIVERY CONFIRMED',
       'Message received',
-      `<p style="margin:0 0 16px;font:16px/1.6 Arial,sans-serif;color:${palette.ink};">Hi ${escapeHtml(name || 'there')},</p>
-      <p style="margin:0 0 16px;font:16px/1.6 Arial,sans-serif;color:${palette.ink};">We received your message. Thanks for taking the time to write.</p>
-      <p style="margin:24px 0 0;font:14px/1.6 Arial,sans-serif;color:${palette.muted};">— Nelson · LAST//OS</p>`,
+      `<p style="margin:0 0 16px;font:16px/1.6 Arial,sans-serif;color:${palette.ink};">Dear ${escapeHtml(name || 'Customer')},</p>
+      <p style="margin:0 0 16px;font:16px/1.6 Arial,sans-serif;color:${palette.ink};">${CUSTOMER_RECEIPT_MESSAGE}</p>
+      <p style="margin:24px 0 0;font:14px/1.6 Arial,sans-serif;color:${palette.muted};">Kind regards,<br>Nelson<br>LAST//OS</p>`,
     ),
   }
 }

@@ -1,5 +1,5 @@
-import { $createUploadNode, $isUploadNode, UploadNode } from '@payloadcms/richtext-lexical/client'
 import type { ElementTransformer } from '@lexical/markdown'
+import { $createUploadNode, $isUploadNode, UploadNode } from '@payloadcms/richtext-lexical/client'
 import type { LexicalNode } from 'lexical'
 
 /**
@@ -57,9 +57,7 @@ export const UPLOAD_MARKDOWN_TRANSFORMER: ElementTransformer = {
 
     // A bare id cannot produce a real URL client-side, so emit the placeholder
     // the server transformer's `replace` understands.
-    const id = typeof data.value === 'object' && data.value !== null
-      ? (data.value as { id?: unknown }).id
-      : data.value
+    const id = typeof data.value === 'object' && data.value !== null ? (data.value as { id?: unknown }).id : data.value
     return `![${data.relationTo}:${id}]()`
   },
   regExp: UPLOAD_PLACEHOLDER_REGEX,
