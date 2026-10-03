@@ -49,10 +49,19 @@ export function createContentMeta({
   const title = seo.title?.trim() || fallbackTitle
   const description = seo.description?.trim() || fallbackDescription
   const image = seo.image.url ? seo.image : fallbackImage
+  // Social scrapers fetch `og:image` on every crawl, so it must not point at
+  // the full-resolution original. `hero` (1600x900) exists for exactly this
+  // and is a bounded derivative; the original is the fallback so a cover whose
+  // upload predates the size still emits a valid card.
+  const hero = image.sizes?.hero
+  const socialImage =
+    hero?.url && hero.width && hero.height
+      ? { url: hero.url, alt: image.alt, width: hero.width, height: hero.height }
+      : image
   // OG and Twitter reject relative image URLs, and a same-origin cover would
   // emit one. `absoluteUrl` leaves already-absolute R2 media untouched, so this
   // only rewrites the cases that are actually broken.
-  const resolvedImageUrl = absoluteUrl(image.url)
+  const resolvedImageUrl = absoluteUrl(socialImage.url)
   const canonical = canonicalUrl(pathname)
   const meta: ContentMetaDescriptor[] = [
     { title: `${title} — LAST//OS` },
@@ -67,7 +76,18 @@ export function createContentMeta({
 
   if (resolvedImageUrl) {
     meta.push({ property: 'og:image', content: resolvedImageUrl })
-    if (image.alt) meta.push({ property: 'og:image:alt', content: image.alt })
+    if (socialImage.alt) meta.push({ property: 'og:image:alt', content: socialImage.alt })
+    // Payload records carry intrinsic sizes; a cover without them is skipped
+    // rather than guessed at, because consumers size the card from these and a
+    // wrong aspect ratio crops the image. The declared size always describes the
+    // SAME file emitted as `og:image`, which is the hero derivative when one
+    // exists — declaring the original's ratio on a 16:9 crop would skew it.
+    if (socialImage.width && socialImage.height) {
+      meta.push(
+        { property: 'og:image:width', content: String(socialImage.width) },
+        { property: 'og:image:height', content: String(socialImage.height) },
+      )
+    }
   }
 
   meta.push(
@@ -78,7 +98,7 @@ export function createContentMeta({
 
   if (resolvedImageUrl) {
     meta.push({ name: 'twitter:image', content: resolvedImageUrl })
-    if (image.alt) meta.push({ name: 'twitter:image:alt', content: image.alt })
+    if (socialImage.alt) meta.push({ name: 'twitter:image:alt', content: socialImage.alt })
   }
 
   if (kind === 'article') {
