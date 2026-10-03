@@ -288,6 +288,142 @@
   color: var(--os-ink-soft);
 }
 
+/* Tier frames grow more pronounced while keeping all package copy on a clear surface. */
+.service-package-card {
+  position: relative;
+  isolation: isolate;
+  box-shadow: var(--shadow-os-sm);
+}
+
+.service-info-panel__summary--markerless {
+  list-style: none;
+}
+
+.service-info-panel__summary--markerless::-webkit-details-marker {
+  display: none;
+}
+
+.service-info-panel__summary--markerless::marker {
+  content: "";
+}
+
+/*
+ * Services tabs. The ui/tabs wrapper ships rounded-lg, a muted pill background
+ * and thin bottom rules; every rule in this file is unlayered and outranks
+ * those Tailwind defaults, so the site treatment is restated here: square
+ * corners, a 2px ink border, and the hard shadow used by every other panel.
+ *
+ * An inactive panel stays mounted (Radix forceMount) so its copy reaches
+ * crawlers; only its visibility changes, which is why the rule targets
+ * [data-state] rather than :not([data-state=active]) display:none alone.
+ */
+.services-tabs-list {
+  display: flex;
+  width: 100%;
+  gap: 0;
+  border: 3px solid var(--os-ink);
+  border-radius: 0;
+  padding: 0;
+  background: var(--os-card);
+  box-shadow: var(--shadow-os-sm);
+}
+.services-tab {
+  flex: 1;
+  border: 0;
+  border-right: 3px solid var(--os-ink);
+  border-radius: 0;
+  padding: 12px 16px;
+  background: transparent;
+  color: var(--os-ink);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.services-tab:last-child {
+  border-right: 0;
+}
+.services-tab:hover {
+  background: var(--os-yellow);
+}
+.services-tab:focus-visible {
+  outline: 3px solid var(--os-coral);
+  outline-offset: -3px;
+}
+.services-tab[data-state="active"] {
+  background: var(--os-coral);
+  color: var(--os-ink);
+}
+
+.services-tab-panel:focus-visible {
+  outline: none;
+}
+.services-tab-panel[data-state="inactive"] {
+  display: none;
+}
+
+.service-package-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.service-package-card--starter {
+  box-shadow: var(--shadow-os-sm);
+}
+
+.service-package-card--business {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-os-coral-sm);
+}
+
+.service-package-card--business-plus {
+  border: 4px solid color-mix(in srgb, var(--os-violet) 55%, var(--border));
+  padding: 1.5rem;
+  box-shadow: 8px 8px 0 var(--os-violet);
+}
+
+.service-package-card--business-plus::before {
+  position: absolute;
+  z-index: 0;
+  inset: 7px;
+  border: 1px solid color-mix(in srgb, var(--os-violet) 70%, var(--border));
+  content: "";
+  pointer-events: none;
+}
+
+.pixel-grid-gradient {
+  position: relative;
+  isolation: isolate;
+}
+
+.pixel-grid-gradient::before,
+.pixel-grid-gradient::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  mask-image: linear-gradient(to bottom right, transparent 20%, rgba(0, 0, 0, 0.35) 90%);
+}
+
+.pixel-grid-gradient::before {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--os-violet) 18%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--os-violet) 18%, transparent) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.2;
+}
+
+.pixel-grid-gradient::after {
+  background-image: repeating-conic-gradient(
+    color-mix(in srgb, var(--os-coral) 55%, transparent) 0deg 90deg,
+    transparent 90deg 180deg
+  );
+  background-size: 40px 40px;
+  opacity: 0.38;
+}
+
 .fact-panel-heading.has-avatar {
   align-items: flex-end;
   margin: -104px 0 18px;
@@ -307,6 +443,38 @@
 /* Reserve room for the overlapping avatar so the panel never collides with the h1 above. */
 .about-window.is-maximized .about-layout {
   margin-top: 104px;
+}
+
+
+/* Maximized-only copy is rendered into the server HTML and hidden here, not
+   gated in JS on window mode. Crawlers and non-JS clients read the text from
+   the markup; the window chrome still controls what a human sees. */
+.about-full-bio,
+.about-expanded,
+.contact-expanded {
+  display: none;
+}
+
+/* `about-full-bio` is a plain block, not a grid: it was a bare div before the
+   copy became unconditional, and turning it into a grid would add implicit
+   columns that the paragraph margins never asked for. */
+.about-window.is-maximized .about-full-bio {
+  display: block;
+}
+
+.about-window.is-maximized .about-expanded,
+.contact-window.is-maximized .contact-expanded {
+  display: grid;
+}
+
+/* The hint is the inverse affordance: shown until maximized, hidden after. */
+.about-expand-hint {
+  display: block;
+}
+
+.about-window.is-maximized .about-expand-hint,
+.contact-window.is-maximized .contact-expand-hint {
+  display: none;
 }
 
 /* Fact avatar box lives in _site.about.tsx via Tailwind + inline pixelated fit. */

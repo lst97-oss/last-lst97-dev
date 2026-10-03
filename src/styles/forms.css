@@ -8,8 +8,33 @@ textarea {
   color: var(--foreground);
 }
 
+/* The OS scrollbar recipe, applied to every textarea on the site so no call
+   site has to opt in. It mirrors the ScrollArea thumb themed in
+   chat-tools.css: a 10px bar, a solid --os-yellow thumb inset 2px per side,
+   and a transparent track so the surface behind the bar shows through.
+   A textarea cannot host a Radix ScrollArea — moving the scroll out of the
+   control breaks caret and keyboard scrolling — so it draws the bar itself. */
 textarea {
   resize: vertical;
+  scrollbar-width: thin;
+  scrollbar-color: var(--os-yellow) transparent;
+  /* Reserve the bar's 10px up front: a bar appearing at the cap would
+     otherwise reflow the text horizontally on every line that crosses it. */
+  scrollbar-gutter: stable;
+}
+
+textarea::-webkit-scrollbar {
+  width: 10px;
+}
+
+textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+textarea::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  background: var(--os-yellow);
+  background-clip: content-box;
 }
 
 /* Contact form layout lives in contact-message-form.tsx via Tailwind. */

@@ -21,12 +21,18 @@ describe('GitHub profile document sync', () => {
   it('does not index or write unsafe profile Markdown', async () => {
     const calls: string[] = []
 
-    await expect(syncGithubProfileDocument({
-      document: document('# Profile\nOPENROUTER_API_KEY=sk-or-v1-abcdefghijklmnopqrstuvwxyz123456'),
-      outputPath: '/data/profile.md',
-      async indexDocument() { calls.push('index') },
-      async writeAtomically() { calls.push('write') },
-    })).rejects.toThrow()
+    await expect(
+      syncGithubProfileDocument({
+        document: document('# Profile\nOPENROUTER_API_KEY=sk-or-v1-abcdefghijklmnopqrstuvwxyz123456'),
+        outputPath: '/data/profile.md',
+        async indexDocument() {
+          calls.push('index')
+        },
+        async writeAtomically() {
+          calls.push('write')
+        },
+      }),
+    ).rejects.toThrow()
 
     expect(calls).toEqual([])
   })
@@ -34,12 +40,19 @@ describe('GitHub profile document sync', () => {
   it('keeps the existing Markdown when the vector upsert fails', async () => {
     const calls: string[] = []
 
-    await expect(syncGithubProfileDocument({
-      document: document('# Safe profile'),
-      outputPath: '/data/profile.md',
-      async indexDocument() { calls.push('index'); throw new Error('database write failed') },
-      async writeAtomically() { calls.push('write') },
-    })).rejects.toThrow('database write failed')
+    await expect(
+      syncGithubProfileDocument({
+        document: document('# Safe profile'),
+        outputPath: '/data/profile.md',
+        async indexDocument() {
+          calls.push('index')
+          throw new Error('database write failed')
+        },
+        async writeAtomically() {
+          calls.push('write')
+        },
+      }),
+    ).rejects.toThrow('database write failed')
 
     expect(calls).toEqual(['index'])
   })
@@ -51,8 +64,13 @@ describe('GitHub profile document sync', () => {
     await syncGithubProfileDocument({
       document: document('# Safe profile'),
       outputPath: '/data/profile.md',
-      async indexDocument(indexed) { calls.push(`index:${indexed.source.sourceId}`) },
-      async writeAtomically(path, text) { calls.push('write'); written.push({ path, text }) },
+      async indexDocument(indexed) {
+        calls.push(`index:${indexed.source.sourceId}`)
+      },
+      async writeAtomically(path, text) {
+        calls.push('write')
+        written.push({ path, text })
+      },
     })
 
     expect(calls).toEqual(['index:lst97-profile', 'write'])

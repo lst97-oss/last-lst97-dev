@@ -10,8 +10,8 @@ Source is a WakaTime data-dump export (`days[].heartbeats[]`, ~1GB / 1.1M
 heartbeats / 959 days in the current load). Import:
 
 Before running the import, configure `KNOWLEDGE_DATABASE_URL`
-in `.env` to point at the remote knowledge database. See the setup in
-[`knowledge-rag.md`](knowledge-rag.md).
+in `.env` to point at the remote knowledge database. See the RAG bring-up order in
+[`AGENTS.md`](../AGENTS.md#rag--knowledge-operations).
 
 ```sh
 bun run knowledge:migrate        # creates wakatime_heartbeats + wakatime_imports

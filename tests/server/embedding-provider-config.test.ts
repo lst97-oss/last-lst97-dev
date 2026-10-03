@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'bun:test'
-
-import { createIndexEmbeddingConfig, createQueryEmbeddingConfig } from '../../src/server/knowledge/embedding-provider-config'
-import { createEmbeddingClient } from '../../src/server/knowledge/embedding-client'
 import { createServerEnv } from '../../src/server/env-schema'
+import { createEmbeddingClient } from '../../src/server/knowledge/embedding-client'
+import {
+  createIndexEmbeddingConfig,
+  createQueryEmbeddingConfig,
+} from '../../src/server/knowledge/embedding-provider-config'
 
 function response(body: unknown): Response {
   return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } })

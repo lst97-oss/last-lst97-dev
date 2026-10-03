@@ -21,7 +21,10 @@ describe('Payload content readers', () => {
       },
       findGlobal: async () => ({}),
     }
-    const readers = createPayloadReaders({ getPayload: async () => payload, now: () => new Date('2026-09-29T00:00:00.000Z') })
+    const readers = createPayloadReaders({
+      getPayload: async () => payload,
+      now: () => new Date('2026-09-29T00:00:00.000Z'),
+    })
 
     const result = await readers.blogs.listPublishedByTopic(7, { page: 1, limit: 10 })
 
@@ -52,7 +55,10 @@ describe('Payload content readers', () => {
       find: async () => ({ docs: [] }),
       findGlobal: async () => ({ featuredPost: selectedPost }),
     }
-    const readers = createPayloadReaders({ getPayload: async () => payload, now: () => new Date('2026-09-29T00:00:00.000Z') })
+    const readers = createPayloadReaders({
+      getPayload: async () => payload,
+      now: () => new Date('2026-09-29T00:00:00.000Z'),
+    })
 
     await expect(readers.home.getFeaturedPost()).resolves.toMatchObject({ slug: 'featured' })
     selectedPost = { ...selected, status: 'draft' }

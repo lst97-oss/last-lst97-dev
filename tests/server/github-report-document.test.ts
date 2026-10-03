@@ -43,18 +43,27 @@ describe('GitHub report Markdown document parser', () => {
 
   it('parses structured project metadata, software kinds, and both topic sources', () => {
     const detailed = [
-      '# SplitTab', '', '## Retrieval summary',
+      '# SplitTab',
+      '',
+      '## Retrieval summary',
       '- **Owner-provided purpose:** Expense management for shared costs.',
       '- **Software kinds:** web_app',
       '- **GitHub topics:** expenses, budgeting',
       '- **Curated topics:** shared-expenses, household-finance',
-      '', '## Repository metadata',
-      '- **Repository:** lst97/SplitTab', '- **Visibility:** private',
+      '',
+      '## Repository metadata',
+      '- **Repository:** lst97/SplitTab',
+      '- **Visibility:** private',
       '- **URL:** https://github.com/lst97/SplitTab',
-      '- **Created:** 2024-01-10T00:00:00Z', '- **Last updated:** 2026-09-10T00:00:00Z',
-      '- **Primary language:** TypeScript', '- **Stars / forks:** 4 / 2',
-      '- **Topics:** `expenses`, `budgeting`', '', '### GitHub language breakdown',
-      '- TypeScript (10,000 bytes)', '- Python (500 bytes)',
+      '- **Created:** 2024-01-10T00:00:00Z',
+      '- **Last updated:** 2026-09-10T00:00:00Z',
+      '- **Primary language:** TypeScript',
+      '- **Stars / forks:** 4 / 2',
+      '- **Topics:** `expenses`, `budgeting`',
+      '',
+      '### GitHub language breakdown',
+      '- TypeScript (10,000 bytes)',
+      '- Python (500 bytes)',
     ].join('\n')
     const document = parseGithubReportDocument('src/data/github/private/SplitTab.md', detailed)
 
@@ -90,9 +99,11 @@ describe('GitHub report Markdown document parser', () => {
 
   it('rejects mismatched paths, identities, or non-canonical URLs', () => {
     expect(parseGithubReportDocument('src/data/github/public/SplitTab.md', report)).toBeNull()
-    expect(parseGithubReportDocument(
-      'src/data/github/private/SplitTab.md',
-      report.replace('https://github.com/lst97/SplitTab', 'https://example.com/lst97/SplitTab'),
-    )).toBeNull()
+    expect(
+      parseGithubReportDocument(
+        'src/data/github/private/SplitTab.md',
+        report.replace('https://github.com/lst97/SplitTab', 'https://example.com/lst97/SplitTab'),
+      ),
+    ).toBeNull()
   })
 })

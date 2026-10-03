@@ -5,9 +5,22 @@ import type { GithubRepositoryAnalysis } from '../../src/server/knowledge/github
 import { renderGithubRepositorySummary } from '../../src/server/knowledge/github/summary-markdown'
 
 const analysis: GithubRepositoryAnalysis = {
-  repository: { fullName: 'lst97/demo', url: 'https://github.com/lst97/demo', isPrivate: false, description: 'Useful app' },
-  purpose: { value: 'Code exports indicate this repository creates task records.', evidence: ['src/tasks/create.ts'], inferred: true },
-  problem: { value: 'Unknown: source code does not explicitly state the problem addressed.', evidence: [], inferred: false },
+  repository: {
+    fullName: 'lst97/demo',
+    url: 'https://github.com/lst97/demo',
+    isPrivate: false,
+    description: 'Useful app',
+  },
+  purpose: {
+    value: 'Code exports indicate this repository creates task records.',
+    evidence: ['src/tasks/create.ts'],
+    inferred: true,
+  },
+  problem: {
+    value: 'Unknown: source code does not explicitly state the problem addressed.',
+    evidence: [],
+    inferred: false,
+  },
   features: [{ value: 'Creates task records', evidence: ['src/tasks/create.ts'], inferred: true }],
   files: { total: 10, source: 5, tests: 2, docs: 1, configuration: 1, assetsAndOther: 1 },
   technology: [{ name: 'TypeScript', evidence: ['package.json'] }],
@@ -19,7 +32,10 @@ const analysis: GithubRepositoryAnalysis = {
 }
 
 const contribution: GithubContributionRepository = {
-  fullName: 'community/tool', owner: 'community', url: 'https://github.com/community/tool', isPrivate: true,
+  fullName: 'community/tool',
+  owner: 'community',
+  url: 'https://github.com/community/tool',
+  isPrivate: true,
   counts: { commits: 4, pullRequests: 1, issues: 2, reviews: 3 },
   pullRequests: [{ title: 'Improve handling', state: 'MERGED', url: 'https://github.com/community/tool/pull/8' }],
   issues: [{ title: 'Document setup', state: 'CLOSED', url: 'https://github.com/community/tool/issues/9' }],
@@ -28,7 +44,15 @@ const contribution: GithubContributionRepository = {
 describe('GitHub repository summary Markdown', () => {
   it('renders evidence, patterns, counts, and available contribution details with private metadata', () => {
     const result = renderGithubRepositorySummary({
-      analysis: { ...analysis, repository: { ...analysis.repository, fullName: 'community/tool', url: 'https://github.com/community/tool', isPrivate: true } },
+      analysis: {
+        ...analysis,
+        repository: {
+          ...analysis.repository,
+          fullName: 'community/tool',
+          url: 'https://github.com/community/tool',
+          isPrivate: true,
+        },
+      },
       contribution,
       contributionCoverage: { complete: false, incompleteReasons: ['contribution_entries_capped'] },
       sourceKind: 'contribution',
@@ -46,12 +70,21 @@ describe('GitHub repository summary Markdown', () => {
 
   it('renders owned public documents and explicit unknown markers', () => {
     const result = renderGithubRepositorySummary({
-      analysis: { ...analysis, purpose: { value: 'Unknown: the inspected source does not expose enough named behavior to identify the project purpose.', evidence: [], inferred: false } },
+      analysis: {
+        ...analysis,
+        purpose: {
+          value: 'Unknown: the inspected source does not expose enough named behavior to identify the project purpose.',
+          evidence: [],
+          inferred: false,
+        },
+      },
       sourceKind: 'owned',
     })
     expect(result.document.isPublic).toBe(true)
     expect(result.document.source.type).toBe('github')
-    expect(result.markdown).toContain('Unknown: the inspected source does not expose enough named behavior to identify the project purpose.')
+    expect(result.markdown).toContain(
+      'Unknown: the inspected source does not expose enough named behavior to identify the project purpose.',
+    )
   })
 
   it('includes GitHub metadata formerly present only in the duplicate export and source inspection evidence', () => {
@@ -61,7 +94,10 @@ describe('GitHub repository summary Markdown', () => {
         repository: {
           ...analysis.repository,
           topics: ['pixel-art', 'portfolio'],
-          languages: [{ name: 'TypeScript', bytes: 12_345 }, { name: 'CSS', bytes: 678 }],
+          languages: [
+            { name: 'TypeScript', bytes: 12_345 },
+            { name: 'CSS', bytes: 678 },
+          ],
           defaultBranch: 'main',
           updatedAt: '2026-09-01T00:00:00Z',
         },

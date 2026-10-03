@@ -7,6 +7,21 @@
   background-attachment: fixed;
 }
 
+.browser-capability-notice {
+  border: 3px solid var(--border);
+  background: var(--warning-muted);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  box-shadow: var(--shadow-os);
+}
+
+.browser-capability-notice__eyebrow {
+  margin-bottom: 0.75rem;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
 .pixel-field {
   position: fixed;
   inset: 0;
@@ -217,8 +232,6 @@
   place-items: center;
   border: 2px solid var(--os-ink);
   background: var(--os-cream);
-  font-size: 15px;
-  font-weight: 900;
 }
 
 .menu-entry-copy {
@@ -315,8 +328,16 @@
   border-radius: 6px;
   background: transparent;
   box-shadow: 0 4px 12px rgba(23, 23, 31, 0.16);
-  backdrop-filter: blur(16px);
+  /* Order is load-bearing, do not "tidy" it. `backdrop-filter` is a
+     shorthand, and Lightning CSS (Vite's default minifier) collapses it
+     into the prefixed form. Declared second, the prefixed shorthand
+     overwrites the standard property and the built rule ships with only
+     `-webkit-backdrop-filter` — which Chromium does not support at all
+     (vitejs/vite#21954). Prefixed first, both survive minification.
+     Verified: dev computes blur(16px) while every production build
+     computed none. */
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
 }
 
 /* The Radix viewport renders its children inside a wrapper carrying an INLINE
@@ -357,6 +378,19 @@
 .desktop-main {
   grid-column: 2;
   min-height: 0;
+}
+
+/* Non-home routes scroll in their WindowFrame's themed viewport. The shell's
+   own ScrollArea still wraps that frame, but it must not expose a second page
+   scrollbar; the homepage has no `.window-frame--scroll` and keeps this outer
+   scroller for its dashboard content. Target only the direct Radix children
+   so nested window scrollbars remain visible. */
+.os-site:has(.window-frame--scroll) .desktop-main > [data-slot='scroll-area-viewport'] {
+  overflow-y: hidden !important;
+}
+
+.os-site:has(.window-frame--scroll) .desktop-main > [data-slot='scroll-area-scrollbar'] {
+  display: none;
 }
 
 /* Page stacks live in os-ui PageStack via Tailwind (max-w-6xl / max-w-4xl). */
@@ -414,8 +448,13 @@
    (padding would sit outside the scroller, not scroll with the content). The
    ScrollArea viewport carries the responsive padding instead. The frame class is
    in the selector because `.window-frame.is-maximized .window-content` is more
-   specific than two classes and would re-introduce the native scrollbar. */
-.window-frame .window-content.window-content--scroll {
+   specific than two classes and would re-introduce the native scrollbar, and
+   `:not(.is-minimized)` is what keeps minimize working: that rule and
+   `.window-frame.is-minimized .window-content { display: none }` are both
+   three-class selectors, so without the guard this later `display: flex` beat
+   the minimize state and every `scrollable` window stayed fully expanded. Same
+   idiom as `--scroll:not(.is-maximized)` above. */
+.window-frame:not(.is-minimized) .window-content.window-content--scroll {
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -471,4 +510,67 @@
 
 .hero-window .window-content {
   background: linear-gradient(135deg, var(--os-paper) 0%, #fff4ba 100%);
+}
+
+/* Pre-hydration boot gate (see `components/site/boot-gate.tsx`).
+   The server-rendered shell is held back until hydration settles, and the
+   `BootSkeleton` in its place carries the same chrome classes, so the swap
+   changes nothing geometric. `html.js-hydrated` is set by that component's
+   effect and, as a fail-open, by the 8s timer in the root document's inline
+   head script.
+
+   `display: contents` on the content wrapper is load-bearing: it makes the
+   wrapper generate no box, so `.os-site` stays a direct child of <body>
+   exactly as it is without the gate and every `h-dvh` / `position: fixed`
+   rule keeps the containing block it has today. Any flex/grid/block value
+   here would insert a new box and shift the reveal. */
+[data-boot='content'] {
+  display: none;
+}
+
+html.js-hydrated [data-boot='content'] {
+  display: contents;
+}
+
+/* Polarity: the skeleton is the DEFAULT visible state and the shell is the
+   DEFAULT hidden one. Before any script runs, `html` carries no
+   `js-hydrated` class at all, so the ungated rule has to be the
+   pre-hydration state — the reverse of the content pair above. */
+[data-boot='skeleton'] {
+  display: flex;
+}
+
+html.js-hydrated [data-boot='skeleton'] {
+  display: none;
+}
+
+/* The real dock scrolls through a Radix viewport; the skeleton has no
+   ScrollArea, so without this its seven static stubs would overflow the
+   viewport's `max-height` and paint outside the dock glass. Layout and gap
+   come from `.desktop-shortcuts-viewport > div`. */
+.boot-shortcuts-scroll {
+  overflow: hidden;
+}
+
+/* Client navigation progress (see `components/site/route-progress-bar.tsx`).
+   The element carries only `os-route-progress` — the fixed-overlay geometry
+   Tailwind has no utility for lives here.
+
+   The fill is a `scaleX` transform (not `width`) so the browser composites it,
+   and `transform-origin: left center` is what makes it grow from the left
+   edge. The 200ms ease-out doubles as the interpolation between the 80ms creep
+   steps and as the completion animation when the router goes idle.
+   `z-index: 40` clears `.window-frame.is-maximized` (30), so a maximized window
+   cannot cover the bar; the no-JS notice (99999) still wins, as it must. */
+.os-route-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 40;
+  height: 4px;
+  pointer-events: none;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 200ms ease-out;
+  background: var(--os-yellow);
+  box-shadow: 0 0 0 1px var(--os-coral);
 }

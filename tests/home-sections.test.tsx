@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
+import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from '@tanstack/react-router'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from '@tanstack/react-router'
 
 import { HomeFeaturedProjectSection } from '../src/components/site/home/featured-project-section'
 import { HomeHeroSection } from '../src/components/site/home/hero-section'
@@ -32,7 +32,9 @@ describe('home sections', () => {
   })
 
   test('shows the operator profile and coding time without a WakaTime snapshot', async () => {
-    const markup = await render(createElement(HomeOperatorProfileSection, { totalCodingTime: undefined, formattedSnapshot: null }))
+    const markup = await render(
+      createElement(HomeOperatorProfileSection, { totalCodingTime: undefined, formattedSnapshot: null }),
+    )
 
     expect(markup).toContain('Coding time by language')
     expect(markup).toContain('WakaTime public-share stats are temporarily unavailable.')

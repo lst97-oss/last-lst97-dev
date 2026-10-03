@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
-import { createElement } from 'react'
-import type { ReactElement } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from '@tanstack/react-router'
+import type { ReactElement } from 'react'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 
 import { ChangelogCard, PostCard, ProjectCard } from '../src/components/site/content/card'
 import { RichText } from '../src/components/site/content/rich-text'
@@ -35,6 +35,8 @@ const project: ProjectSummary = {
   title: 'Studio',
   summary: 'A small creative workspace.',
   technologies: ['TypeScript', 'React'],
+  topics: [],
+  tags: [],
   featured: true,
   coverImage: { url: '/media/studio.png', alt: 'Studio dashboard' },
   gallery: [],
@@ -79,6 +81,23 @@ describe('Payload content presentation', () => {
     expect(markup).toContain('TypeScript')
   })
 
+  test('loads the featured project cover eagerly, but keeps grid covers lazy', async () => {
+    // The home page renders one featured project card and it is the largest
+    // above-the-fold image there, so it is the likely LCP element. It must not be
+    // lazy. Every other project card in a listing grid stays lazy, so a page of
+    // results never eagerly fetches all of its covers.
+    const featured = await renderCard(createElement(ProjectCard, { project, featured: true }))
+    const grid = await renderCard(createElement(ProjectCard, { project, featured: false }))
+
+    expect(featured).toContain('loading="eager"')
+    expect(featured).toContain('fetchPriority="high"')
+    expect(featured).toContain('decoding="sync"')
+
+    expect(grid).toContain('loading="lazy"')
+    expect(grid).toContain('fetchPriority="auto"')
+    expect(grid).not.toContain('fetchPriority="high"')
+  })
+
   test('renders Payload Lexical formatting, headings, ordered lists, quotes, and rules', () => {
     const content = {
       root: {
@@ -95,7 +114,9 @@ describe('Payload content presentation', () => {
             direction: null,
             format: '',
             indent: 0,
-            children: [{ type: 'text', text: 'Important', format: 1, detail: 0, mode: 'normal', style: '', version: 1 }],
+            children: [
+              { type: 'text', text: 'Important', format: 1, detail: 0, mode: 'normal', style: '', version: 1 },
+            ],
           },
           {
             type: 'list',
@@ -114,7 +135,9 @@ describe('Payload content presentation', () => {
                 direction: null,
                 format: '',
                 indent: 0,
-                children: [{ type: 'text', text: 'First step', format: 0, detail: 0, mode: 'normal', style: '', version: 1 }],
+                children: [
+                  { type: 'text', text: 'First step', format: 0, detail: 0, mode: 'normal', style: '', version: 1 },
+                ],
               },
             ],
           },
@@ -124,7 +147,9 @@ describe('Payload content presentation', () => {
             direction: null,
             format: '',
             indent: 0,
-            children: [{ type: 'text', text: 'Keep it useful.', format: 2, detail: 0, mode: 'normal', style: '', version: 1 }],
+            children: [
+              { type: 'text', text: 'Keep it useful.', format: 2, detail: 0, mode: 'normal', style: '', version: 1 },
+            ],
           },
           { type: 'horizontalrule', version: 1 },
         ],
@@ -143,19 +168,55 @@ describe('Payload content presentation', () => {
   test('renders Markdown tables and fenced code blocks stored as Lexical nodes', () => {
     const content = {
       root: {
-        type: 'root', version: 1, direction: null, format: '', indent: 0,
+        type: 'root',
+        version: 1,
+        direction: null,
+        format: '',
+        indent: 0,
         children: [
           {
-            type: 'table', version: 1, direction: null, format: '', indent: 0,
-            children: [{
-              type: 'tablerow', version: 1, direction: null, format: '', indent: 0,
-              children: [{
-                type: 'tablecell', version: 1, headerState: 1, colSpan: 1, rowSpan: 1,
-                children: [{ type: 'paragraph', version: 1, direction: null, format: '', indent: 0, children: [{ type: 'text', text: 'Metric', format: 0 }] }],
-              }],
-            }],
+            type: 'table',
+            version: 1,
+            direction: null,
+            format: '',
+            indent: 0,
+            children: [
+              {
+                type: 'tablerow',
+                version: 1,
+                direction: null,
+                format: '',
+                indent: 0,
+                children: [
+                  {
+                    type: 'tablecell',
+                    version: 1,
+                    headerState: 1,
+                    colSpan: 1,
+                    rowSpan: 1,
+                    children: [
+                      {
+                        type: 'paragraph',
+                        version: 1,
+                        direction: null,
+                        format: '',
+                        indent: 0,
+                        children: [{ type: 'text', text: 'Metric', format: 0 }],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
           },
-          { type: 'block', version: 1, fields: { blockType: 'Code', code: 'const answer = 42', language: 'typescript' }, format: '', direction: null, indent: 0 },
+          {
+            type: 'block',
+            version: 1,
+            fields: { blockType: 'Code', code: 'const answer = 42', language: 'typescript' },
+            format: '',
+            direction: null,
+            indent: 0,
+          },
         ],
       },
     }
@@ -164,7 +225,57 @@ describe('Payload content presentation', () => {
     expect(markup).toContain('<table>')
     expect(markup).toContain('<th')
     expect(markup).toContain('Metric')
-    expect(markup).toContain('<pre><code data-language="typescript">const answer = 42</code></pre>')
+    // A fenced TypeScript block renders through the shared code view, not as a
+    // bare <pre><code>: the badge and the line numbers are the observable proof
+    // that the language reached the highlighter.
+    expect(markup).toContain('code-block-language')
+    expect(markup).toContain('TypeScript')
+    expect(markup).toContain('linenumber')
+    expect(markup).toContain('const')
+  })
+
+  test('a mermaid code block renders as a diagram shell, not a code listing', () => {
+    const content = {
+      root: {
+        type: 'root',
+        version: 1,
+        direction: null,
+        format: '',
+        indent: 0,
+        children: [
+          {
+            type: 'heading',
+            tag: 'h2',
+            version: 1,
+            direction: null,
+            format: '',
+            indent: 0,
+            children: [{ type: 'text', text: 'Architecture', format: 0 }],
+          },
+          {
+            type: 'block',
+            version: 2,
+            fields: {
+              blockType: 'Code',
+              code: 'flowchart TB\n  a["A"] --> b["B"]',
+              language: 'mermaid',
+              id: 'block-1',
+            },
+            format: '',
+            direction: null,
+            indent: 0,
+          },
+        ],
+      },
+    }
+
+    const markup = render(createElement(RichText, { value: content }))
+    expect(markup).toContain('mermaid-diagram-shell')
+    expect(markup).toContain('aria-label="Architecture flowchart"')
+    // The listing chrome must be absent: a diagram that also shipped a code
+    // block would print the source twice.
+    expect(markup).not.toContain('code-block-language')
+    expect(markup).not.toContain('linenumber')
   })
 
   test('renders checklist input identifiers deterministically for server and client hydration', () => {
@@ -194,7 +305,17 @@ describe('Payload content presentation', () => {
                 direction: null,
                 format: '',
                 indent: 0,
-                children: [{ type: 'text', text: 'Complete the task', format: 0, detail: 0, mode: 'normal', style: '', version: 1 }],
+                children: [
+                  {
+                    type: 'text',
+                    text: 'Complete the task',
+                    format: 0,
+                    detail: 0,
+                    mode: 'normal',
+                    style: '',
+                    version: 1,
+                  },
+                ],
               },
             ],
           },
@@ -223,7 +344,12 @@ describe('Payload content presentation', () => {
             type: 'upload',
             id: 'upload-1',
             relationTo: 'media',
-            value: { url: '/media/in-article.png', mimeType: 'image/png', filename: 'in-article.png', alt: 'Pixel landscape' },
+            value: {
+              url: '/media/in-article.png',
+              mimeType: 'image/png',
+              filename: 'in-article.png',
+              alt: 'Pixel landscape',
+            },
             fields: { alt: 'Pixel landscape' },
             format: '',
             version: 1,
@@ -346,7 +472,9 @@ describe('Payload content presentation', () => {
                 direction: null,
                 format: '',
                 indent: 0,
-                children: [{ type: 'text', text: 'click me', format: 0, detail: 0, mode: 'normal', style: '', version: 1 }],
+                children: [
+                  { type: 'text', text: 'click me', format: 0, detail: 0, mode: 'normal', style: '', version: 1 },
+                ],
               },
             ],
           },
@@ -390,22 +518,28 @@ describe('Payload content presentation', () => {
   })
 
   test('does not render an empty image element when a CMS cover is missing', async () => {
-    const markup = await renderCard(createElement(PostCard, { post: { ...post, coverImage: { url: null, alt: null } } }))
+    const markup = await renderCard(
+      createElement(PostCard, { post: { ...post, coverImage: { url: null, alt: null } } }),
+    )
 
     expect(markup).not.toContain('<img')
   })
 
   test('does not render executable cover URLs from CMS data', async () => {
-    const markup = await renderCard(createElement(PostCard, {
-      post: { ...post, coverImage: { url: 'javascript:alert(1)', alt: 'Unsafe' } },
-    }))
+    const markup = await renderCard(
+      createElement(PostCard, {
+        post: { ...post, coverImage: { url: 'javascript:alert(1)', alt: 'Unsafe' } },
+      }),
+    )
 
     expect(markup).not.toContain('<img')
     expect(markup).not.toContain('javascript:')
   })
 
   test('renders a deterministic placeholder block when a CMS cover is missing', async () => {
-    const markup = await renderCard(createElement(PostCard, { post: { ...post, coverImage: { url: null, alt: null } } }))
+    const markup = await renderCard(
+      createElement(PostCard, { post: { ...post, coverImage: { url: null, alt: null } } }),
+    )
 
     expect(markup).toContain('grid-cols-4')
     expect(markup).toContain('aria-label="Shipping small tools"')
@@ -424,9 +558,11 @@ describe('Payload content presentation', () => {
 
   test('renders a different placeholder for a different slug', async () => {
     const base = await renderCard(createElement(PostCard, { post: { ...post, coverImage: { url: null, alt: null } } }))
-    const other = await renderCard(createElement(PostCard, {
-      post: { ...post, slug: 'another-note', coverImage: { url: null, alt: null } },
-    }))
+    const other = await renderCard(
+      createElement(PostCard, {
+        post: { ...post, slug: 'another-note', coverImage: { url: null, alt: null } },
+      }),
+    )
 
     expect(other).not.toBe(base)
   })
@@ -466,9 +602,11 @@ describe('Payload content presentation', () => {
   })
 
   test('omits the project date row when no date is usable', async () => {
-    const markup = await renderCard(createElement(ProjectCard, {
-      project: { ...project, updatedAt: '' },
-    }))
+    const markup = await renderCard(
+      createElement(ProjectCard, {
+        project: { ...project, updatedAt: '' },
+      }),
+    )
 
     expect(markup).not.toContain('UPDATED / ')
   })

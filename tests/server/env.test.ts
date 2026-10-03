@@ -24,7 +24,7 @@ describe('createServerEnv', () => {
       LOG_LEVEL: 'info',
       OPENROUTER_APP_TITLE: 'Personal OS Portfolio',
       OPENROUTER_TIMEOUT_MS: 20_000,
-      MODERATION_MIN_CONFIDENCE: 0.75,
+      MODERATION_MIN_CONFIDENCE: 0.6,
     })
     expect(env.SMTP_USER).toBeUndefined()
     expect(env.OPENROUTER_API_KEY).toBeUndefined()
@@ -32,32 +32,42 @@ describe('createServerEnv', () => {
 
   it('requires core settings and only accepts Postgres database URLs', () => {
     expect(() => createServerEnv({ PAYLOAD_SECRET: validCoreEnv.PAYLOAD_SECRET })).toThrow('DATABASE_URL')
-    expect(() => createServerEnv({
-      ...validCoreEnv,
-      DATABASE_URL: 'mysql://portfolio:secret@localhost:3306/portfolio',
-    })).toThrow('postgres or postgresql protocol')
-    expect(() => createServerEnv({
-      DATABASE_URL: validCoreEnv.DATABASE_URL,
-    })).toThrow('PAYLOAD_SECRET')
+    expect(() =>
+      createServerEnv({
+        ...validCoreEnv,
+        DATABASE_URL: 'mysql://portfolio:secret@localhost:3306/portfolio',
+      }),
+    ).toThrow('postgres or postgresql protocol')
+    expect(() =>
+      createServerEnv({
+        DATABASE_URL: validCoreEnv.DATABASE_URL,
+      }),
+    ).toThrow('PAYLOAD_SECRET')
   })
 
   it('validates supplied integration and operational settings without requiring them', () => {
-    expect(() => createServerEnv({
-      ...validCoreEnv,
-      OPENROUTER_API_KEY: 'test-key',
-      OPENROUTER_MODEL: 'test/model',
-      SMTP_USER: 'not-an-email',
-    })).toThrow('SMTP_USER')
+    expect(() =>
+      createServerEnv({
+        ...validCoreEnv,
+        OPENROUTER_API_KEY: 'test-key',
+        OPENROUTER_MODEL: 'test/model',
+        SMTP_USER: 'not-an-email',
+      }),
+    ).toThrow('SMTP_USER')
 
-    expect(() => createServerEnv({
-      ...validCoreEnv,
-      OPENROUTER_TIMEOUT_MS: '0',
-    })).toThrow('OPENROUTER_TIMEOUT_MS')
+    expect(() =>
+      createServerEnv({
+        ...validCoreEnv,
+        OPENROUTER_TIMEOUT_MS: '0',
+      }),
+    ).toThrow('OPENROUTER_TIMEOUT_MS')
 
-    expect(() => createServerEnv({
-      ...validCoreEnv,
-      LOG_LEVEL: 'verbose',
-    })).toThrow('LOG_LEVEL')
+    expect(() =>
+      createServerEnv({
+        ...validCoreEnv,
+        LOG_LEVEL: 'verbose',
+      }),
+    ).toThrow('LOG_LEVEL')
 
     expect(createServerEnv(validCoreEnv)).toMatchObject({
       OPENROUTER_API_KEY: undefined,
@@ -68,15 +78,17 @@ describe('createServerEnv', () => {
   })
 
   it('exposes optional R2 settings for deployment-specific storage configuration', () => {
-    expect(createServerEnv({
-      ...validCoreEnv,
-      R2_ACCESS_KEY_ID: 'test-access-key',
-      R2_BUCKET: 'test-bucket',
-      R2_ENDPOINT: 'https://account.r2.cloudflarestorage.com',
-      R2_PUBLIC_URL: 'https://media.example.test',
-      R2_REGION: 'auto',
-      R2_SECRET_ACCESS_KEY: 'test-secret-key',
-    })).toMatchObject({
+    expect(
+      createServerEnv({
+        ...validCoreEnv,
+        R2_ACCESS_KEY_ID: 'test-access-key',
+        R2_BUCKET: 'test-bucket',
+        R2_ENDPOINT: 'https://account.r2.cloudflarestorage.com',
+        R2_PUBLIC_URL: 'https://media.example.test',
+        R2_REGION: 'auto',
+        R2_SECRET_ACCESS_KEY: 'test-secret-key',
+      }),
+    ).toMatchObject({
       R2_ACCESS_KEY_ID: 'test-access-key',
       R2_BUCKET: 'test-bucket',
       R2_ENDPOINT: 'https://account.r2.cloudflarestorage.com',
@@ -110,9 +122,15 @@ describe('createServerEnv', () => {
   })
 
   it('validates moderation confidence and signing secret lengths', () => {
-    expect(() => createServerEnv({ ...validCoreEnv, MODERATION_MIN_CONFIDENCE: '1.1' })).toThrow('MODERATION_MIN_CONFIDENCE')
-    expect(() => createServerEnv({ ...validCoreEnv, CHAT_CONTEXT_SIGNING_SECRET: 'too-short' })).toThrow('CHAT_CONTEXT_SIGNING_SECRET')
-    expect(() => createServerEnv({ ...validCoreEnv, RATE_LIMIT_HASH_SECRET: 'also-too-short' })).toThrow('RATE_LIMIT_HASH_SECRET')
+    expect(() => createServerEnv({ ...validCoreEnv, MODERATION_MIN_CONFIDENCE: '1.1' })).toThrow(
+      'MODERATION_MIN_CONFIDENCE',
+    )
+    expect(() => createServerEnv({ ...validCoreEnv, CHAT_CONTEXT_SIGNING_SECRET: 'too-short' })).toThrow(
+      'CHAT_CONTEXT_SIGNING_SECRET',
+    )
+    expect(() => createServerEnv({ ...validCoreEnv, RATE_LIMIT_HASH_SECRET: 'also-too-short' })).toThrow(
+      'RATE_LIMIT_HASH_SECRET',
+    )
   })
 
   it('keeps local knowledge inference optional and defaults the sidecar settings safely', () => {
@@ -142,29 +160,34 @@ describe('createServerEnv', () => {
   })
 
   it('validates a dedicated PostgreSQL URL for the RAG database without using the Payload URL', () => {
-    expect(createServerEnv({
-      ...validCoreEnv,
-      KNOWLEDGE_DATABASE_URL: 'postgres://rag:dev-only@localhost:5433/rag',
-    }).KNOWLEDGE_DATABASE_URL).toBe('postgres://rag:dev-only@localhost:5433/rag')
-    expect(() => createServerEnv({ ...validCoreEnv, KNOWLEDGE_DATABASE_URL: 'sqlite://rag.db' }))
-      .toThrow('KNOWLEDGE_DATABASE_URL')
+    expect(
+      createServerEnv({
+        ...validCoreEnv,
+        KNOWLEDGE_DATABASE_URL: 'postgres://rag:dev-only@localhost:5433/rag',
+      }).KNOWLEDGE_DATABASE_URL,
+    ).toBe('postgres://rag:dev-only@localhost:5433/rag')
+    expect(() => createServerEnv({ ...validCoreEnv, KNOWLEDGE_DATABASE_URL: 'sqlite://rag.db' })).toThrow(
+      'KNOWLEDGE_DATABASE_URL',
+    )
   })
 
   it('validates configured local embedding and SiliconFlow integration settings', () => {
-    expect(createServerEnv({
-      ...validCoreEnv,
-      SILICONFLOW_API_KEY: 'test-siliconflow-key',
-      KNOWLEDGE_QUERY_EMBEDDING_URL: 'https://embeddings.siliconflow.test/v1',
-      KNOWLEDGE_EMBEDDING_API_KEY: 'test-local-api-key',
-      KNOWLEDGE_EMBEDDING_URL: 'https://embeddings.example.test/v1',
-      KNOWLEDGE_EMBEDDING_MODEL: 'Qwen/Qwen3-Embedding-0.6B',
-      KNOWLEDGE_EMBEDDING_HOST: '127.0.0.1',
-      KNOWLEDGE_EMBEDDING_PORT: '9000',
-      KNOWLEDGE_EMBEDDING_TIMEOUT_MS: '30000',
-      KNOWLEDGE_RAG_ENABLED: 'true',
-      UNSLOTH_EMBEDDING_MODEL_PATH: '/models/qwen3-embedding-0.6b',
-      KNOWLEDGE_EMBEDDING_SERVER_PATH: '/opt/homebrew/bin/llama-server',
-    })).toMatchObject({
+    expect(
+      createServerEnv({
+        ...validCoreEnv,
+        SILICONFLOW_API_KEY: 'test-siliconflow-key',
+        KNOWLEDGE_QUERY_EMBEDDING_URL: 'https://embeddings.siliconflow.test/v1',
+        KNOWLEDGE_EMBEDDING_API_KEY: 'test-local-api-key',
+        KNOWLEDGE_EMBEDDING_URL: 'https://embeddings.example.test/v1',
+        KNOWLEDGE_EMBEDDING_MODEL: 'Qwen/Qwen3-Embedding-0.6B',
+        KNOWLEDGE_EMBEDDING_HOST: '127.0.0.1',
+        KNOWLEDGE_EMBEDDING_PORT: '9000',
+        KNOWLEDGE_EMBEDDING_TIMEOUT_MS: '30000',
+        KNOWLEDGE_RAG_ENABLED: 'true',
+        UNSLOTH_EMBEDDING_MODEL_PATH: '/models/qwen3-embedding-0.6b',
+        KNOWLEDGE_EMBEDDING_SERVER_PATH: '/opt/homebrew/bin/llama-server',
+      }),
+    ).toMatchObject({
       SILICONFLOW_API_KEY: 'test-siliconflow-key',
       KNOWLEDGE_QUERY_EMBEDDING_URL: 'https://embeddings.siliconflow.test/v1',
       KNOWLEDGE_EMBEDDING_API_KEY: 'test-local-api-key',
@@ -176,11 +199,18 @@ describe('createServerEnv', () => {
       KNOWLEDGE_EMBEDDING_SERVER_PATH: '/opt/homebrew/bin/llama-server',
     })
 
-    expect(() => createServerEnv({ ...validCoreEnv, KNOWLEDGE_QUERY_EMBEDDING_URL: 'not-a-url' }))
-      .toThrow('KNOWLEDGE_QUERY_EMBEDDING_URL')
-    expect(() => createServerEnv({ ...validCoreEnv, KNOWLEDGE_EMBEDDING_URL: 'not-a-url' })).toThrow('KNOWLEDGE_EMBEDDING_URL')
-    expect(() => createServerEnv({ ...validCoreEnv, KNOWLEDGE_EMBEDDING_PORT: '70000' })).toThrow('KNOWLEDGE_EMBEDDING_PORT')
-    expect(() => createServerEnv({ ...validCoreEnv, KNOWLEDGE_EMBEDDING_SERVER_PATH: '   ' })).toThrow('KNOWLEDGE_EMBEDDING_SERVER_PATH')
+    expect(() => createServerEnv({ ...validCoreEnv, KNOWLEDGE_QUERY_EMBEDDING_URL: 'not-a-url' })).toThrow(
+      'KNOWLEDGE_QUERY_EMBEDDING_URL',
+    )
+    expect(() => createServerEnv({ ...validCoreEnv, KNOWLEDGE_EMBEDDING_URL: 'not-a-url' })).toThrow(
+      'KNOWLEDGE_EMBEDDING_URL',
+    )
+    expect(() => createServerEnv({ ...validCoreEnv, KNOWLEDGE_EMBEDDING_PORT: '70000' })).toThrow(
+      'KNOWLEDGE_EMBEDDING_PORT',
+    )
+    expect(() => createServerEnv({ ...validCoreEnv, KNOWLEDGE_EMBEDDING_SERVER_PATH: '   ' })).toThrow(
+      'KNOWLEDGE_EMBEDDING_SERVER_PATH',
+    )
   })
 
   it('accepts only HTTPS Discord webhook URLs for chat diagnostics', () => {
@@ -192,21 +222,29 @@ describe('createServerEnv', () => {
     expect(createServerEnv(validWebhookEnv)).toMatchObject({
       CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: 'https://discord.com/api/webhooks/123456/secret-token',
     })
-    expect(() => createServerEnv({
-      ...validCoreEnv,
-      CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: 'https://example.com/api/webhooks/123456/secret-token',
-    } as Parameters<typeof createServerEnv>[0])).toThrow('CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL')
-    expect(() => createServerEnv({
-      ...validCoreEnv,
-      CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: 'http://discord.com/api/webhooks/123456/secret-token',
-    } as Parameters<typeof createServerEnv>[0])).toThrow('CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL')
-    expect(() => createServerEnv({
-      ...validCoreEnv,
-      CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: 'https://discord.com:8443/api/webhooks/123456/secret-token',
-    } as Parameters<typeof createServerEnv>[0])).toThrow('CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL')
-    expect(() => createServerEnv({
-      ...validCoreEnv,
-      CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: 'https://discord.com/not-a-webhook',
-    } as Parameters<typeof createServerEnv>[0])).toThrow('CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL')
+    expect(() =>
+      createServerEnv({
+        ...validCoreEnv,
+        CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: 'https://example.com/api/webhooks/123456/secret-token',
+      } as Parameters<typeof createServerEnv>[0]),
+    ).toThrow('CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL')
+    expect(() =>
+      createServerEnv({
+        ...validCoreEnv,
+        CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: 'http://discord.com/api/webhooks/123456/secret-token',
+      } as Parameters<typeof createServerEnv>[0]),
+    ).toThrow('CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL')
+    expect(() =>
+      createServerEnv({
+        ...validCoreEnv,
+        CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: 'https://discord.com:8443/api/webhooks/123456/secret-token',
+      } as Parameters<typeof createServerEnv>[0]),
+    ).toThrow('CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL')
+    expect(() =>
+      createServerEnv({
+        ...validCoreEnv,
+        CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: 'https://discord.com/not-a-webhook',
+      } as Parameters<typeof createServerEnv>[0]),
+    ).toThrow('CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL')
   })
 })

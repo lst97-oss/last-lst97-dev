@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { withToolTimeout, TOOL_TIMEOUT } from '../../src/server/chat/tools/tool-support'
+import { TOOL_TIMEOUT, withToolTimeout } from '../../src/server/chat/tools/tool-support'
 import { createRetrieveKnowledge } from '../../src/server/knowledge/retrieve'
 import type { KnowledgeCandidate } from '../../src/server/knowledge/types'
 
@@ -64,18 +64,34 @@ describe('retrieval degradation', () => {
         },
       },
       repository: repository as never,
-      reranker: { rerank: async () => { throw new Error('reranker should not be reached') } },
-      relevanceGate: { assess: async () => { throw new Error('gate should not be reached') } },
+      reranker: {
+        rerank: async () => {
+          throw new Error('reranker should not be reached')
+        },
+      },
+      relevanceGate: {
+        assess: async () => {
+          throw new Error('gate should not be reached')
+        },
+      },
       logger: {
-        warn: (event: string, data: Record<string, unknown>) => { warnings.push({ event, data }) },
-        info() {}, error() {}, debug() {},
+        warn: (event: string, data: Record<string, unknown>) => {
+          warnings.push({ event, data })
+        },
+        info() {},
+        error() {},
+        debug() {},
       } as never,
     })
     return {
       retrieve,
       warnings,
       retrievals,
-      diagnostics: { onRetrieval: (r: { degraded: boolean }) => { retrievals.push(r) } },
+      diagnostics: {
+        onRetrieval: (r: { degraded: boolean }) => {
+          retrievals.push(r)
+        },
+      },
     }
   }
 

@@ -6,12 +6,7 @@ import { createGmailEmailSender } from '../../src/server/email/nodemailer-sender
 // Nodemailer's `SMTPSentMessageInfo` carries SMTP timing counters that no test
 // asserts on. Building them in one place keeps every fake assignable to the
 // transport type instead of relying on a structurally partial object literal.
-function smtpInfo(overrides: {
-  messageId: string
-  to: string[]
-  accepted?: string[]
-  rejected?: string[]
-}) {
+function smtpInfo(overrides: { messageId: string; to: string[]; accepted?: string[]; rejected?: string[] }) {
   return {
     messageId: overrides.messageId,
     envelope: { from: 'operator@gmail.com', to: overrides.to },
@@ -48,11 +43,13 @@ describe('createGmailEmailSender', () => {
         subject: 'New contact message — LAST//OS',
         text: 'Plain-text notification',
         html: '<p>HTML notification</p>',
-        attachments: [{
-          filename: 'original-report.pdf',
-          content: new Uint8Array([37, 80, 68, 70, 45]),
-          contentType: 'application/pdf',
-        }],
+        attachments: [
+          {
+            filename: 'original-report.pdf',
+            content: new Uint8Array([37, 80, 68, 70, 45]),
+            contentType: 'application/pdf',
+          },
+        ],
       }),
     ).resolves.toEqual({ messageId: 'mail-1' })
 
@@ -65,11 +62,13 @@ describe('createGmailEmailSender', () => {
       html: '<p>HTML notification</p>',
     })
     expect(sentOptions).not.toHaveProperty('templateId')
-    expect(sentOptions?.attachments).toEqual([{
-      filename: 'original-report.pdf',
-      content: Buffer.from('%PDF-'),
-      contentType: 'application/pdf',
-    }])
+    expect(sentOptions?.attachments).toEqual([
+      {
+        filename: 'original-report.pdf',
+        content: Buffer.from('%PDF-'),
+        contentType: 'application/pdf',
+      },
+    ])
   })
 
   it('falls back to the authenticated Gmail address as the sender address', async () => {
@@ -104,18 +103,21 @@ describe('createGmailEmailSender', () => {
       fromEmail: 'noreply@example.com',
       fromName: 'LAST//OS',
       transport: {
-        sendMail: async () => smtpInfo({ messageId: 'mail-3', to: ['inbox@example.com'], accepted: [], rejected: ['inbox@example.com'] }),
+        sendMail: async () =>
+          smtpInfo({ messageId: 'mail-3', to: ['inbox@example.com'], accepted: [], rejected: ['inbox@example.com'] }),
       },
     })
 
-    await expect(sender.send({
-      templateId: 'contact-notification',
-      to: 'inbox@example.com',
-      replyTo: 'ada@example.com',
-      subject: 'New contact message — LAST//OS',
-      text: 'Plain-text notification',
-      html: '<p>HTML notification</p>',
-    })).rejects.toThrow('Email recipient was not accepted by the SMTP server')
+    await expect(
+      sender.send({
+        templateId: 'contact-notification',
+        to: 'inbox@example.com',
+        replyTo: 'ada@example.com',
+        subject: 'New contact message — LAST//OS',
+        text: 'Plain-text notification',
+        html: '<p>HTML notification</p>',
+      }),
+    ).rejects.toThrow('Email recipient was not accepted by the SMTP server')
   })
 
   it('sets bounded DNS, connection, greeting, and socket timeouts', () => {
@@ -157,15 +159,17 @@ describe('createGmailEmailSender', () => {
         fromName: 'LAST//OS',
       })
 
-      expect(createTransportSpy).toHaveBeenCalledWith(expect.objectContaining({
-        host: 'smtp.gmail.com',
-        port: 465,
-        secure: true,
-        dnsTimeout: 5_000,
-        connectionTimeout: 10_000,
-        greetingTimeout: 10_000,
-        socketTimeout: 15_000,
-      }))
+      expect(createTransportSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          host: 'smtp.gmail.com',
+          port: 465,
+          secure: true,
+          dnsTimeout: 5_000,
+          connectionTimeout: 10_000,
+          greetingTimeout: 10_000,
+          socketTimeout: 15_000,
+        }),
+      )
     } finally {
       createTransportSpy.mockRestore()
     }

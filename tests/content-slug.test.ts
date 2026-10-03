@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
-import { ensureContentSlug, resolveContentSlug } from '../src/collections/hooks/content-slug'
 import { Changelogs } from '../src/collections/Changelogs'
+import { ensureContentSlug, resolveContentSlug } from '../src/collections/hooks/content-slug'
 import { Posts } from '../src/collections/Posts'
 import { Projects } from '../src/collections/Projects'
 import { Topics } from '../src/collections/Topics'
@@ -51,7 +51,11 @@ describe('admin slug autocomplete', () => {
     const { automaticSlugForTitle } = await import('../src/lib/content/automatic-slug')
 
     expect(automaticSlugForTitle({ title: 'New note', currentSlug: '' })).toBe('new-note')
-    expect(automaticSlugForTitle({ title: 'Renamed note', currentSlug: 'new-note', previousAutomaticSlug: 'new-note' })).toBe('renamed-note')
-    expect(automaticSlugForTitle({ title: 'Renamed note', currentSlug: 'custom-route', previousAutomaticSlug: 'new-note' })).toBeNull()
+    expect(
+      automaticSlugForTitle({ title: 'Renamed note', currentSlug: 'new-note', previousAutomaticSlug: 'new-note' }),
+    ).toBe('renamed-note')
+    expect(
+      automaticSlugForTitle({ title: 'Renamed note', currentSlug: 'custom-route', previousAutomaticSlug: 'new-note' }),
+    ).toBeNull()
   })
 })

@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { mapChangelog, mapChangelogSummary, mapPost, mapPostSummary, mapProject, mapProjectSummary } from '../src/server/content/payload-mappers'
+import {
+  mapChangelog,
+  mapChangelogSummary,
+  mapPost,
+  mapPostSummary,
+  mapProject,
+  mapProjectSummary,
+} from '../src/server/content/payload-mappers'
 
 describe('Payload content mappers', () => {
   test('accepts valid Lexical editor state and discards malformed serialized content', () => {
@@ -17,21 +24,50 @@ describe('Payload content mappers', () => {
 
     expect(mapPost({ content: editorState }).content?.root.type).toBe('root')
     expect(mapPost({ content: { root: 'not-an-editor-state' } }).content).toBeNull()
-    expect(mapPost({ content: {
-      root: { type: 'root', children: [{ type: 'text', text: { secret: 'not-renderable' }, format: 1 }] },
-    } }).content).toBeNull()
-    expect(mapPost({ content: {
-      root: { type: 'root', children: [{ type: 'paragraph', children: { type: 'text', text: 'not-an-array' } }] },
-    } }).content).toBeNull()
+    expect(
+      mapPost({
+        content: {
+          root: { type: 'root', children: [{ type: 'text', text: { secret: 'not-renderable' }, format: 1 }] },
+        },
+      }).content,
+    ).toBeNull()
+    expect(
+      mapPost({
+        content: {
+          root: { type: 'root', children: [{ type: 'paragraph', children: { type: 'text', text: 'not-an-array' } }] },
+        },
+      }).content,
+    ).toBeNull()
   })
 
   test('keeps accessible table metadata and safe code fields for public Markdown rendering', () => {
-    const mapped = mapPost({ content: {
-      root: { type: 'root', children: [
-        { type: 'table', children: [{ type: 'tablerow', children: [{ type: 'tablecell', headerState: 1, colSpan: 2, rowSpan: 1, children: [] }] }] },
-        { type: 'block', fields: { blockType: 'Code', code: 'const safe = true', language: 'typescript', privateField: 'discard me' } },
-      ] },
-    } }).content
+    const mapped = mapPost({
+      content: {
+        root: {
+          type: 'root',
+          children: [
+            {
+              type: 'table',
+              children: [
+                {
+                  type: 'tablerow',
+                  children: [{ type: 'tablecell', headerState: 1, colSpan: 2, rowSpan: 1, children: [] }],
+                },
+              ],
+            },
+            {
+              type: 'block',
+              fields: {
+                blockType: 'Code',
+                code: 'const safe = true',
+                language: 'typescript',
+                privateField: 'discard me',
+              },
+            },
+          ],
+        },
+      },
+    }).content
 
     const serialized = JSON.stringify(mapped)
     expect(serialized).toContain('"headerState":1')
@@ -90,7 +126,9 @@ describe('Payload content mappers', () => {
             direction: null,
             format: '',
             indent: 0,
-            children: [{ type: 'text', text: 'Related note', format: 0, detail: 0, mode: 'normal', style: '', version: 1 }],
+            children: [
+              { type: 'text', text: 'Related note', format: 0, detail: 0, mode: 'normal', style: '', version: 1 },
+            ],
           },
         ],
       },

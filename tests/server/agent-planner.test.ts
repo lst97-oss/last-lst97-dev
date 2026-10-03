@@ -53,7 +53,9 @@ describe('agent planner site-content routing guidance', () => {
 
     expect(plannerSystem).toContain('For a combined coding-hours and profile/work question')
     expect(plannerSystem).toContain('For a current/active project question, include search_knowledge')
-    expect(plannerSystem).toContain('Operating-system shares only support all_time and must be normalized to that range')
+    expect(plannerSystem).toContain(
+      'Operating-system shares only support all_time and must be normalized to that range',
+    )
   })
 
   it('uses the imported history window for an all-time total on a named project', async () => {
@@ -75,7 +77,19 @@ describe('agent planner site-content routing guidance', () => {
         { role: 'user', content: 'What is the total coding time for that project?' },
         { role: 'assistant', content: '33 hours and 4 minutes in the recent activity window.' },
       ],
-      topicAnchors: [{ question: 'Total coding time for canton-101-server', observedAtUtc: '2026-09-25T00:00:00.000Z', tools: [{ name: 'coding_history', arguments: { op: 'project_time', project: 'canton-101-server', from: '2026-08-27', to: '2026-09-25' }, status: 'completed' }] }],
+      topicAnchors: [
+        {
+          question: 'Total coding time for canton-101-server',
+          observedAtUtc: '2026-09-25T00:00:00.000Z',
+          tools: [
+            {
+              name: 'coding_history',
+              arguments: { op: 'project_time', project: 'canton-101-server', from: '2026-08-27', to: '2026-09-25' },
+              status: 'completed',
+            },
+          ],
+        },
+      ],
       evidence: '',
       toolOutputs: 'coding_history: canton-101-server — 33 hours and 4 minutes (2026-08-27 → 2026-09-25).',
       stepsUsed: 1,
@@ -101,10 +115,16 @@ describe('agent planner site-content routing guidance', () => {
       message: 'How about the all time status for all the projects?',
       currentDateTimeUtc: '2026-09-25T00:00:00.000Z',
       history: [{ role: 'assistant', content: 'Recent project activity was queried for the last 30 days.' }],
-      evidence: '', toolOutputs: '', stepsUsed: 1, allowedTools: ['coding_history'],
+      evidence: '',
+      toolOutputs: '',
+      stepsUsed: 1,
+      allowedTools: ['coding_history'],
     })
 
-    expect(plan).toMatchObject({ kind: 'tool_calls', calls: [{ name: 'coding_history', arguments: { op: 'by_project', range: 'all_time' } }] })
+    expect(plan).toMatchObject({
+      kind: 'tool_calls',
+      calls: [{ name: 'coding_history', arguments: { op: 'by_project', range: 'all_time' } }],
+    })
     expect(plannerSystem).toContain('range (all_time|last_year|last_30_days|last_7_days)')
     expect(plannerSystem).toContain('not dates from an earlier recent-window answer')
   })
@@ -128,9 +148,13 @@ describe('agent planner site-content routing guidance', () => {
       stepsUsed: 0,
     })
 
-    expect(plannerSystem).toContain('Current website repository architecture/implementation questions use search_knowledge')
+    expect(plannerSystem).toContain(
+      'Current website repository architecture/implementation questions use search_knowledge',
+    )
     expect(plannerSystem).toContain('search_knowledge')
-    expect(plannerSystem).toContain('site_content({op, slug?, limit?, page?}) for live Payload CMS posts, projects, changelogs, and topics')
+    expect(plannerSystem).toContain(
+      'site_content({op, slug?, limit?, page?}) for live Payload CMS posts, projects, changelogs, and topics',
+    )
     expect(plannerSystem).toContain('published blog post, changelog, and topic questions use the matching')
   })
 
@@ -166,11 +190,13 @@ describe('agent planner site-content routing guidance', () => {
         return '{"action":"tool_calls","calls":[{"id":"1","name":"search_knowledge","arguments":{"query":"Tell me about Nelson’s education."}}]}'
       },
     })
-    const topicAnchors: ChatTopicAnchor[] = [{
-      question: "Tell me about Nelson's experience",
-      observedAtUtc: '2026-09-24T00:00:00.000Z',
-      tools: [{ name: 'search_knowledge', arguments: { query: "Nelson's work experience" }, status: 'completed' }],
-    }]
+    const topicAnchors: ChatTopicAnchor[] = [
+      {
+        question: "Tell me about Nelson's experience",
+        observedAtUtc: '2026-09-24T00:00:00.000Z',
+        tools: [{ name: 'search_knowledge', arguments: { query: "Nelson's work experience" }, status: 'completed' }],
+      },
+    ]
 
     await planner.planNextStep({
       message: 'How about education?',

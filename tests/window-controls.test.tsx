@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
+import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from '@tanstack/react-router'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from '@tanstack/react-router'
 
 import { WindowControls } from '../src/components/site/window/window-controls'
 

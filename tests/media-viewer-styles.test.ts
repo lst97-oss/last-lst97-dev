@@ -94,14 +94,11 @@ describe('media viewer styles', () => {
     dialog.remove()
   })
 
-
   test('the active filmstrip thumb is visually distinct from an inactive one', () => {
     const inactive = element('button', 'media-viewer-thumb')
     const active = element('button', 'media-viewer-thumb is-active')
 
-    expect(browser.getComputedStyle(active).borderTopColor).not.toBe(
-      browser.getComputedStyle(inactive).borderTopColor,
-    )
+    expect(browser.getComputedStyle(active).borderTopColor).not.toBe(browser.getComputedStyle(inactive).borderTopColor)
 
     inactive.remove()
     active.remove()

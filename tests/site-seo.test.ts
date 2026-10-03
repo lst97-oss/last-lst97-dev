@@ -8,9 +8,8 @@ import {
   createSiteStructuredData,
   getSiteUrl,
 } from '../src/lib/seo/site-seo'
-import { buildRobotsTxt, buildSecurityTxt, buildLlmsTxt, BLOCKED_BOT_AGENTS } from '../src/server/seo/text-files'
 import { buildSitemapXml } from '../src/server/seo/sitemap'
-
+import { BLOCKED_BOT_AGENTS, buildLlmsTxt, buildRobotsTxt, buildSecurityTxt } from '../src/server/seo/text-files'
 
 const viteConfigSource = await Bun.file(new URL('../vite.config.ts', import.meta.url)).text()
 const siteSeoSource = await Bun.file(new URL('../src/lib/seo/site-seo.ts', import.meta.url)).text()
@@ -63,8 +62,9 @@ describe('page meta', () => {
     expect(meta).toContainEqual({ property: 'og:url', content: 'http://localhost:3000/about' })
     expect(meta).toContainEqual({ property: 'og:site_name', content: 'LAST//OS' })
     expect(meta).toContainEqual({ name: 'twitter:card', content: 'summary_large_image' })
-    // Falls back to the site icon so every page has a shareable image.
-    expect(meta).toContainEqual({ property: 'og:image', content: 'http://localhost:3000/favicon/favicon.svg' })
+    // Falls back to the committed social card, not the site icon: an SVG
+    // `og:image` renders blank in Slack, Discord, LinkedIn and X.
+    expect(meta).toContainEqual({ property: 'og:image', content: 'http://localhost:3000/og/default.png' })
     expect(links).toEqual([{ rel: 'canonical', href: 'http://localhost:3000/about' }])
   })
 
@@ -134,6 +134,44 @@ describe('page meta', () => {
   test('omits the script entirely when there is no structured data', () => {
     const { scripts } = createPageMeta({ pathname: '/', title: 'Home', description: 'Home.' })
     expect(scripts).toEqual([])
+  })
+
+  test('declares the committed card size when no image is supplied', () => {
+    // Scrapers size the card from these; the default card's real size is known,
+    // so it is always declared.
+    const { meta } = createPageMeta({ pathname: '/', title: 'Home', description: 'Home.' })
+
+    expect(meta).toContainEqual({ property: 'og:image:width', content: '1200' })
+    expect(meta).toContainEqual({ property: 'og:image:height', content: '630' })
+  })
+
+  test('omits the size for a supplied image whose dimensions are unknown', () => {
+    // A guessed number is worse than an absent tag: consumers crop to the
+    // declared ratio, so a wrong one truncates the image.
+    const { meta } = createPageMeta({
+      pathname: '/x',
+      title: 'X',
+      description: 'X.',
+      image: '/assets/portrait.webp',
+    })
+
+    expect(meta).toContainEqual({ property: 'og:image', content: 'http://localhost:3000/assets/portrait.webp' })
+    expect(meta.some((entry) => 'property' in entry && entry.property === 'og:image:width')).toBe(false)
+    expect(meta.some((entry) => 'property' in entry && entry.property === 'og:image:height')).toBe(false)
+  })
+
+  test('declares an explicitly supplied image size', () => {
+    const { meta } = createPageMeta({
+      pathname: '/x',
+      title: 'X',
+      description: 'X.',
+      image: '/assets/wide.png',
+      imageWidth: 1200,
+      imageHeight: 630,
+    })
+
+    expect(meta).toContainEqual({ property: 'og:image:width', content: '1200' })
+    expect(meta).toContainEqual({ property: 'og:image:height', content: '630' })
   })
 })
 

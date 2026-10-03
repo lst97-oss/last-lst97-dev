@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-
+import { safeAssetHref, safeContentHref } from '../src/lib/content/url'
 import {
   safeAssetHref as safeAssetHrefFromLegacyPath,
   safeContentHref as safeContentHrefFromLegacyPath,
 } from '../src/lib/content-url'
-import { safeAssetHref, safeContentHref } from '../src/lib/content/url'
 
 describe('content URL helpers', () => {
   test('allows safe content links and rejects executable or control-character URLs', () => {

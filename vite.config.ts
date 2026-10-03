@@ -2,30 +2,31 @@
 // The adapter's `exports` map only exposes `./vite` → `payloadPlugin`, which forces RSC
 // mode (`@vitejs/plugin-rsc` + `reactStartRscVitePlugin`) that 404s every route on the
 // installed TanStack Start 1.168 line. These four are the RSC-independent subset.
-import { tanstackStart } from '@tanstack/react-start/plugin/vite'
-import viteReact from '@vitejs/plugin-react'
+
 import tailwindcss from '@tailwindcss/vite'
 import { devtools } from '@tanstack/devtools-vite'
-import { defineConfig } from 'vite'
-import { nitro } from 'nitro/vite'
-import { clientModuleResolution } from './vendor/payload-tanstack-vite/clientModuleResolution.js'
-import { wrapCjsForClient } from './vendor/payload-tanstack-vite/wrapCjsForClient.js'
-import { ssrStripDistStyleImports } from './vendor/payload-tanstack-vite/stripDistStyleImports.js'
-import { payloadDevTransforms } from './vendor/payload-tanstack-vite/devTransforms.js'
-import { reactDomServerInRsc } from './vendor/payload-tanstack-vite/reactDomServerInRsc.js'
-import viteRsc from '@vitejs/plugin-rsc'
+import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import { reactStartRscVitePlugin } from '@tanstack/react-start-rsc/plugin/vite'
-import {
-  defaultImportProtectionIgnoreImporters,
-  onImportProtectionViolation,
-  serverOnlyClientSpecifiers,
-} from './vendor/payload-tanstack-vite/importProtection.js'
+import viteReact from '@vitejs/plugin-react'
+import viteRsc from '@vitejs/plugin-rsc'
+import { nitro } from 'nitro/vite'
+import { defineConfig } from 'vite'
+import { clientModuleResolution } from './vendor/payload-tanstack-vite/clientModuleResolution.js'
 import {
   optimizeDepsExcludeDefaults,
   optimizeDepsIncludeDefaults,
   payloadNoExternalPatterns,
   ssrExternalPackages,
 } from './vendor/payload-tanstack-vite/constants.js'
+import { payloadDevTransforms } from './vendor/payload-tanstack-vite/devTransforms.js'
+import {
+  defaultImportProtectionIgnoreImporters,
+  onImportProtectionViolation,
+  serverOnlyClientSpecifiers,
+} from './vendor/payload-tanstack-vite/importProtection.js'
+import { reactDomServerInRsc } from './vendor/payload-tanstack-vite/reactDomServerInRsc.js'
+import { ssrStripDistStyleImports } from './vendor/payload-tanstack-vite/stripDistStyleImports.js'
+import { wrapCjsForClient } from './vendor/payload-tanstack-vite/wrapCjsForClient.js'
 
 const projectPath = (relativePath: string) => {
   const resolvedPath = relativePath.replace(/^\.\//, '')
