@@ -19,6 +19,17 @@
   margin-bottom: 0;
 }
 
+/* Payload's preflight zeroes every element margin (see the `@layer` note in
+   `src/styles.css`), and `globals.css` only pins `p { margin-top: 0 }`. Long
+   article bodies therefore stacked their paragraphs flush against each other:
+   markdown's blank lines produced real, separate `<p>` nodes, but nothing gave
+   them any gap. `.chat-markdown` already spaces its blocks in `em`; this does
+   the same so the gap tracks the reader's font size. Specificity of
+   `.rich-text > *:last-child` still wins, so the block ends flush. */
+.rich-text p {
+  margin: 0 0 1.1em;
+}
+
 .rich-text h2,
 .rich-text h3 {
   margin-top: 32px;
@@ -38,8 +49,11 @@
   text-decoration-thickness: 2px;
 }
 
+/* Lists are block-level siblings, not paragraphs, so they never pick up the
+   `p` gap above. Without this they collide with the block that follows them. */
 .rich-text ul,
 .rich-text ol {
+  margin: 0 0 1.1em;
   padding-left: 28px;
 }
 
@@ -67,6 +81,85 @@
   height: auto;
   margin: 24px auto;
   border: 3px solid var(--os-ink);
+}
+
+/* Markdown tables (Payload's TableFeature). The table is a hard-edged box in
+   the site's chrome, so it reads as a reference panel rather than floating
+   spreadsheet text inside a paragraph. `display: block` on the wrapper lets a
+   wide table scroll horizontally instead of forcing the article wider. */
+.rich-text > table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 24px 0;
+  border-collapse: collapse;
+  border: 3px solid var(--os-ink);
+  background: var(--os-paper);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.rich-text > table > tbody {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rich-text th,
+.rich-text td {
+  border: 2px solid var(--os-ink);
+  padding: 9px 13px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.rich-text th {
+  background: var(--os-yellow);
+  color: var(--os-ink);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rich-text tbody tr:nth-child(even) td {
+  background: var(--os-cream);
+}
+
+/* Fenced code blocks. `CodeBlockView` renders the chrome; these rules only
+   skin the highlighter's own pre/code output, which inherits font metrics from
+   the article so the listing matches surrounding prose. */
+.rich-text .code-block {
+  margin: 24px 0;
+  border: 3px solid var(--os-ink);
+  background: var(--os-paper);
+  box-shadow: 4px 4px 0 var(--os-ink);
+}
+
+.rich-text .code-block-heading {
+  display: flex;
+  justify-content: flex-end;
+  border-bottom: 2px solid var(--os-ink);
+  background: var(--os-yellow);
+}
+
+.rich-text .code-block-language {
+  border-inline-start: 2px solid var(--os-ink);
+  padding: 3px 8px;
+  color: var(--os-ink);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rich-text .code-block pre {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  tab-size: 2;
 }
 
 .rich-relationship {

@@ -44,6 +44,7 @@ function escapeXml(value: string): string {
 const STATIC_ENTRIES: SitemapEntry[] = [
   { path: '/', changefreq: 'weekly', priority: '1.0' },
   { path: '/about', changefreq: 'monthly', priority: '0.8' },
+  { path: '/services', changefreq: 'monthly', priority: '0.8' },
   { path: '/projects', changefreq: 'weekly', priority: '0.9' },
   { path: '/blog', changefreq: 'daily', priority: '0.8' },
   { path: '/changelog', changefreq: 'weekly', priority: '0.7' },

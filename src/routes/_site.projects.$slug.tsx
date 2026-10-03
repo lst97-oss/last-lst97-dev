@@ -8,20 +8,24 @@ import { Eyebrow, PageStack, ProjectStatus, pixelButtonVariants, Tag, TagRow } f
 import { PixelIcon } from '@/components/site/pixel-icon'
 import { ImageGallery, MediaTrigger, toMediaItem } from '@/components/site/share/media'
 import { WindowFrame } from '@/components/site/window-frame'
+import { ProjectDetailSkeleton } from '@/components/ui/skeletons'
 import { contentCardDate, formatReadingTime, readingTimeMinutes } from '@/lib/content/date'
 import { createContentMeta } from '@/lib/content/meta'
 import { formatProjectTimeframe, getProjectLifecycleLabel } from '@/lib/content/project-display'
 import { loadProject } from '@/lib/content/site-data'
-import { createProjectStructuredData } from '@/lib/content/structured-data'
+import { createProjectStructuredData, withBreadcrumbs } from '@/lib/content/structured-data'
 import { safeAssetHref } from '@/lib/content/url'
 import { canonicalUrl } from '@/lib/seo/site-seo'
 
 export const Route = createFileRoute('/_site/projects/$slug')({
-  errorComponent: () => <ContentUnavailableRoute
-    title="project.connection"
-    icon="▤"
-    message="This project could not be loaded from the content service. Try again in a moment."
-  />,
+  errorComponent: () => (
+    <ContentUnavailableRoute
+      title="project.connection"
+      icon="▤"
+      message="This project could not be loaded from the content service. Try again in a moment."
+    />
+  ),
+  pendingComponent: () => <ProjectDetailSkeleton backLabel="← BACK TO PROJECTS" icon="▤" windowTitle="project://…" />,
   loader: async ({ params }) => {
     const project = await loadProject(params.slug)
     if (!project) throw notFound()
@@ -42,17 +46,24 @@ export const Route = createFileRoute('/_site/projects/$slug')({
           publishedTime: loaderData.createdAt,
           modifiedTime: loaderData.updatedAt,
           tags: loaderData.technologies,
-          structuredData: createProjectStructuredData({
-            title: loaderData.seo.title?.trim() || loaderData.title,
-            summary: loaderData.seo.description?.trim() || loaderData.summary,
-            slug: params.slug,
-            imageUrl: (loaderData.seo.image.url ?? loaderData.coverImage.url) ?? null,
-            liveUrl: loaderData.liveUrl,
-            repositoryUrl: loaderData.repositoryUrl,
-            technologies: loaderData.technologies,
-            createdAt: loaderData.createdAt,
-            updatedAt: loaderData.updatedAt,
-          }),
+          structuredData: withBreadcrumbs(
+            createProjectStructuredData({
+              title: loaderData.seo.title?.trim() || loaderData.title,
+              summary: loaderData.seo.description?.trim() || loaderData.summary,
+              slug: params.slug,
+              imageUrl: loaderData.seo.image.url ?? loaderData.coverImage.url ?? null,
+              liveUrl: loaderData.liveUrl,
+              repositoryUrl: loaderData.repositoryUrl,
+              technologies: loaderData.technologies,
+              createdAt: loaderData.createdAt,
+              updatedAt: loaderData.updatedAt,
+            }),
+            [
+              { name: 'Home', path: '/' },
+              { name: 'Projects', path: '/projects' },
+              { name: loaderData.title, path: `/projects/${params.slug}` },
+            ],
+          ),
         })
       : {
           meta: [{ title: 'Project — LAST//OS' }],
@@ -101,21 +112,61 @@ function ProjectPage() {
   return (
     <PageStack>
       <WindowFrame title={`project://${project.slug}`} icon="▤" scrollable>
-        <Link className="back-link mb-7 inline-block text-xs font-black tracking-wider text-accent" to="/projects">← BACK TO PROJECTS</Link>
+        <Link className="back-link mb-7 inline-block text-xs font-black tracking-wider text-accent" to="/projects">
+          ← BACK TO PROJECTS
+        </Link>
         <MediaTrigger item={coverItem} label={`View full size image: ${project.title}`}>
           <ContentCover image={project.coverImage} className="content-cover content-detail-cover" priority />
         </MediaTrigger>
-        <Eyebrow><PixelIcon glyph="◆" /> PROJECT / {project.featured ? 'FEATURED' : 'ARCHIVE'}</Eyebrow>
+        <Eyebrow>
+          <PixelIcon glyph="◆" /> PROJECT / {project.featured ? 'FEATURED' : 'ARCHIVE'}
+        </Eyebrow>
         <h1>{project.title}</h1>
         <p className="lead-copy lead-copy--wide">{project.summary}</p>
         <DetailMeta created={projectDate} readingTime={readMinutes ? formatReadingTime(readMinutes) : null} />
         <ProjectFacts lifecycle={lifecycle} role={project.role} timeframe={timeframe} />
-        <TagRow className="post-tags my-6">{project.technologies.map((technology) => <Tag key={technology}>{technology}</Tag>)}</TagRow>
+        <TagRow className="post-tags my-6">
+          {project.technologies.map((technology) => (
+            <Tag key={technology}>{technology}</Tag>
+          ))}
+        </TagRow>
+        {/* Plain labels, not links: the only topic route in the app is
+            /blog/topics/$slug, which lists posts. A project topic linked there
+            would promise navigation that does not exist. */}
+        {project.topics.length > 0 ? (
+          <TagRow className="post-tags -mt-4 mb-6">
+            {project.topics.map((topic) => (
+              <Tag key={topic.slug}>{topic.title}</Tag>
+            ))}
+          </TagRow>
+        ) : null}
+        {project.tags.length > 0 ? (
+          <TagRow className="post-tags -mt-4 mb-6">
+            {project.tags.map((tag) => (
+              <Tag key={tag.slug}>{tag.title}</Tag>
+            ))}
+          </TagRow>
+        ) : null}
         <div className="project-links flex flex-wrap items-center gap-3">
-          {liveUrl ? <a className={cn(pixelButtonVariants({ tone: 'coral' }))} href={liveUrl} rel="noopener noreferrer" target="_blank">VIEW LIVE <span>↗</span></a> : null}
-          {repositoryUrl ? <a className={cn(pixelButtonVariants())} href={repositoryUrl} rel="noopener noreferrer" target="_blank">SOURCE CODE <span>↗</span></a> : null}
+          {liveUrl ? (
+            <a
+              className={cn(pixelButtonVariants({ tone: 'coral' }))}
+              href={liveUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              VIEW LIVE <span>↗</span>
+            </a>
+          ) : null}
+          {repositoryUrl ? (
+            <a className={cn(pixelButtonVariants())} href={repositoryUrl} rel="noopener noreferrer" target="_blank">
+              SOURCE CODE <span>↗</span>
+            </a>
+          ) : null}
         </div>
-        <div className="article-body article-body--wide"><RichText value={project.content} /></div>
+        <div className="article-body article-body--wide">
+          <RichText value={project.content} />
+        </div>
         <ImageGallery heading="Gallery" items={mediaItems} />
       </WindowFrame>
     </PageStack>

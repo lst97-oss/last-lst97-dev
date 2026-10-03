@@ -6,6 +6,7 @@ import { ContentUnavailableRoute } from '@/components/site/content/unavailable'
 import { CardGrid, CountBadge, EmptyPanel, PageHeading, PageStack } from '@/components/site/os-ui'
 import { PixelIcon } from '@/components/site/pixel-icon'
 import { WindowFrame } from '@/components/site/window-frame'
+import { ChangelogListSkeleton } from '@/components/ui/skeletons'
 import { loadChangelogsPage } from '@/lib/content/site-data'
 import { createPageMeta } from '@/lib/seo/site-seo'
 
@@ -21,11 +22,14 @@ export const Route = createFileRoute('/_site/changelog/')({
   // `deps` in the loader comes from loaderDeps, not from validateSearch.
   loaderDeps: ({ search }) => ({ page: search.page ?? 1 }),
   loader: ({ deps }) => loadChangelogsPage(deps.page ?? 1, 9),
-  errorComponent: () => <ContentUnavailableRoute
-    title="changelog.log"
-    icon="↻"
-    message="Changelog could not be loaded from the content service. Try again in a moment."
-  />,
+  pendingComponent: () => <ChangelogListSkeleton />,
+  errorComponent: () => (
+    <ContentUnavailableRoute
+      title="changelog.log"
+      icon="↻"
+      message="Changelog could not be loaded from the content service. Try again in a moment."
+    />
+  ),
   head: () =>
     createPageMeta({
       pathname: '/changelog',
@@ -54,10 +58,16 @@ function ChangelogPage() {
           <>
             <CardGrid>
               {changelogs.items.map((entry) => (
-                <ChangelogCard entry={entry} key={entry.slug} />
+                <ChangelogCard entry={entry} headingLevel={2} key={entry.slug} />
               ))}
             </CardGrid>
-            <ContentPagination basePath="/changelog" current={changelogs.page} label="Changelog pages" search={search} totalPages={changelogs.totalPages} />
+            <ContentPagination
+              basePath="/changelog"
+              current={changelogs.page}
+              label="Changelog pages"
+              search={search}
+              totalPages={changelogs.totalPages}
+            />
           </>
         ) : (
           <EmptyPanel className="min-h-82 items-center text-center">
