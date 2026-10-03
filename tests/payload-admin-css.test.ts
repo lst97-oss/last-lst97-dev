@@ -2,10 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 const ROOTS = ['node_modules/@payloadcms/ui/dist', 'node_modules/@payloadcms/richtext-lexical/dist'] as const
 
-/** Mirrors scripts/generate-payload-admin-css.ts; a Payload bump that moves CSS elsewhere must update both. */
+/** Mirrors scripts/assets/generate-payload-admin-css.ts; a Payload bump that moves CSS elsewhere must update both. */
 const SKIPPED: Record<string, true> = {
   'node_modules/@payloadcms/ui/dist/styles.css': true,
-  'node_modules/@payloadcms/ui/dist/css/app.css': true,
 }
 
 const GENERATED = 'src/styles/payload-admin-generated.css'
@@ -22,10 +21,7 @@ const REQUIRED = [
 
 async function importTargets(): Promise<string[]> {
   const text = await Bun.file(GENERATED).text()
-  return [...text.matchAll(/^@import '(?<specifier>[^']+)';$/gm)].map((match) =>
-    match.groups?.specifier ??
-    '',
-  )
+  return [...text.matchAll(/^@import '(?<specifier>[^']+)';$/gm)].map((match) => match.groups?.specifier ?? '')
 }
 
 async function collectPackageCss(): Promise<string[]> {
@@ -83,5 +79,23 @@ describe('payload admin theme', () => {
     }
     expect(values.sans).toContain('-apple-system')
     expect(values.mono).toContain('ui-monospace')
+  })
+
+  // The values above are the site stack, but they only reach the browser when
+  // the cascade cooperates. @payloadcms/ui declares the same two variables in
+  // `@layer payload-default`, and TanStack emits a route's `head().links`
+  // BEFORE manifest CSS, so an equally-layered override loses in the built
+  // document while still winning in dev — which is exactly how the previous
+  // version of this file passed while production rendered Inter. Unlayered is
+  // the only placement that survives that ordering, so assert the source:
+  // happy-dom resolves no cascade layers.
+  test('keeps the font overrides unlayered so the cascade cannot beat them', async () => {
+    const theme = await Bun.file(THEME).text()
+
+    // The comment above names `@layer` while explaining why it is absent, so
+    // strip comments before checking the declarations themselves.
+    const declarationsOnly = theme.replace(/\/\*[\s\S]*?\*\//g, '')
+
+    expect(declarationsOnly).not.toContain('@layer')
   })
 })

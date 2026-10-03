@@ -1,8 +1,8 @@
 import { Pool } from 'pg'
 
-import { getServerEnv } from '../src/server/env'
-import { requireIntegrationEnv } from '../src/server/env-schema'
-import { migrateKnowledgeDatabase } from '../src/server/knowledge/database-migration'
+import { getServerEnv } from '../../src/server/env'
+import { requireIntegrationEnv } from '../../src/server/env-schema'
+import { migrateKnowledgeDatabase } from '../../src/server/knowledge/database-migration'
 
 const env = getServerEnv()
 const connectionString = requireIntegrationEnv('KNOWLEDGE_DATABASE_URL', env.KNOWLEDGE_DATABASE_URL)

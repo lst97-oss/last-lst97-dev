@@ -19,7 +19,12 @@ const ranStatuses = stdout
   .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '')
   .split('\n')
   .filter((line) => line.includes('│'))
-  .map((line) => line.split('│').map((cell) => cell.trim()).at(-2))
+  .map((line) =>
+    line
+      .split('│')
+      .map((cell) => cell.trim())
+      .at(-2),
+  )
   .filter((status): status is string => status === 'Yes' || status === 'No')
 
 if (ranStatuses.length === 0) {

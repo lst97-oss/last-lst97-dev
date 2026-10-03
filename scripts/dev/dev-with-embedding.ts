@@ -1,6 +1,6 @@
+import { projectRoot } from '../project-root'
 import { childEnvironment, startEmbeddingSidecar, stopEmbeddingSidecar } from './embedding-process'
 
-const projectRoot = import.meta.dir.replace(/[/\\]scripts$/, '')
 const ragEnabled = Bun.env.KNOWLEDGE_RAG_ENABLED === 'true'
 let sidecar: Bun.Subprocess | undefined
 

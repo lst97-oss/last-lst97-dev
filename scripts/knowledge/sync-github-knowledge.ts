@@ -1,37 +1,43 @@
-import { getServerEnv } from '../src/server/env'
-import { requireIntegrationEnv } from '../src/server/env-schema'
-import { createIndexKnowledgeSource } from '../src/server/knowledge/index-source'
-import { createEmbeddingClient } from '../src/server/knowledge/embedding-client'
-import { getKnowledgeIndexRepository, closeKnowledgeDatabase } from '../src/server/knowledge/database'
+import { getServerEnv } from '../../src/server/env'
+import { requireIntegrationEnv } from '../../src/server/env-schema'
+import { closeKnowledgeDatabase, getKnowledgeIndexRepository } from '../../src/server/knowledge/database'
+import { createEmbeddingClient } from '../../src/server/knowledge/embedding-client'
+import { assertSafeGithubMarkdown, sanitizeEvidenceText } from '../../src/server/knowledge/github/content-safety'
+import {
+  createGithubContributionsGateway,
+  discoverGithubContributions,
+} from '../../src/server/knowledge/github/contributions'
+import {
+  type GithubSyncRepository,
+  syncGithubRepositoryReports,
+} from '../../src/server/knowledge/github/knowledge-sync'
+import { removeSupersededGithubReports } from '../../src/server/knowledge/github/legacy-reports'
 import {
   githubProfileSchema,
   normalizeGithubRepositoryCliRecord,
   renderPersonalGithubProfileMarkdown,
-} from '../src/server/knowledge/github/markdown'
+} from '../../src/server/knowledge/github/markdown'
+import { renderGithubProfileMarkdown } from '../../src/server/knowledge/github/profile-markdown'
+import { syncGithubProfileDocument } from '../../src/server/knowledge/github/profile-sync'
+import { analyzeGithubRepository } from '../../src/server/knowledge/github/repository-analysis'
 import {
   GithubCommandOutputTooLargeError,
-  inspectGithubRepository,
   type GithubCommandRunner,
-} from '../src/server/knowledge/github/repository-inspector'
-import { analyzeGithubRepository } from '../src/server/knowledge/github/repository-analysis'
-import { renderGithubRepositorySummary } from '../src/server/knowledge/github/summary-markdown'
-import { getCuratedProjectClassification } from '../src/server/knowledge/project-curation'
-import { syncGithubRepositoryReports, type GithubSyncRepository } from '../src/server/knowledge/github/knowledge-sync'
-import { assertSafeGithubMarkdown, sanitizeEvidenceText } from '../src/server/knowledge/github/content-safety'
-import { createProfileKnowledgeSource } from '../src/server/knowledge/profile-source'
-import { createWakaTimeKnowledgeSource } from '../src/server/knowledge/wakatime-source'
-import { createGithubContributionsGateway, discoverGithubContributions } from '../src/server/knowledge/github/contributions'
-import { removeSupersededGithubReports } from '../src/server/knowledge/github/legacy-reports'
-import { renderGithubProfileMarkdown } from '../src/server/knowledge/github/profile-markdown'
-import { syncGithubProfileDocument } from '../src/server/knowledge/github/profile-sync'
-import { logger } from '../src/server/observability/logger'
-import type { KnowledgeDocument, KnowledgeSource } from '../src/server/knowledge/source-types'
-import type { KnowledgeSourceType } from '../src/server/knowledge/types'
-import { startEmbeddingSidecar, stopEmbeddingSidecar } from './embedding-process'
+  inspectGithubRepository,
+} from '../../src/server/knowledge/github/repository-inspector'
+import { renderGithubRepositorySummary } from '../../src/server/knowledge/github/summary-markdown'
+import { createIndexKnowledgeSource } from '../../src/server/knowledge/index-source'
+import { createProfileKnowledgeSource } from '../../src/server/knowledge/profile-source'
+import { getCuratedProjectClassification } from '../../src/server/knowledge/project-curation'
+import type { KnowledgeDocument, KnowledgeSource } from '../../src/server/knowledge/source-types'
+import type { KnowledgeSourceType } from '../../src/server/knowledge/types'
+import { createWakaTimeKnowledgeSource } from '../../src/server/knowledge/wakatime-source'
+import { logger } from '../../src/server/observability/logger'
+import { startEmbeddingSidecar, stopEmbeddingSidecar } from '../dev/embedding-process'
+import { projectRoot } from '../project-root'
 
 const OWNER = 'lst97'
 const WAKATIME_SHARE_URL = 'https://wakatime.com/share/@lst97/93993eb7-ae0d-41d1-b44d-6bcf2f02ceb0.json'
-const projectRoot = import.meta.dir.replace(/[/\\]scripts$/, '')
 const githubDataRoot = `${projectRoot}/src/data/github`
 const env = getServerEnv()
 
@@ -81,12 +87,12 @@ async function writeMarkdownAtomically(path: string, text: string): Promise<void
   const separator = path.lastIndexOf('/')
   const directory = path.slice(0, separator)
   const mkdir = Bun.spawn(['mkdir', '-p', directory], { stdout: 'ignore', stderr: 'ignore' })
-  if (await mkdir.exited !== 0) throw new Error('Could not create GitHub knowledge directory')
+  if ((await mkdir.exited) !== 0) throw new Error('Could not create GitHub knowledge directory')
   const temporaryPath = `${path}.tmp-${crypto.randomUUID()}`
   try {
     await writeMarkdown(temporaryPath, text)
     const move = Bun.spawn(['mv', '-f', temporaryPath, path], { stdout: 'ignore', stderr: 'ignore' })
-    if (await move.exited !== 0) throw new Error('Could not replace GitHub knowledge report')
+    if ((await move.exited) !== 0) throw new Error('Could not replace GitHub knowledge report')
   } catch {
     const cleanup = Bun.spawn(['rm', '-f', temporaryPath], { stdout: 'ignore', stderr: 'ignore' })
     await cleanup.exited
@@ -112,9 +118,7 @@ async function sanitizeExistingGithubMarkdown(): Promise<number> {
 async function reportFileExists(repository: GithubSyncRepository): Promise<boolean> {
   const contributionPrefix = repository.sourceKind === 'contribution' ? '/contributions' : ''
   const visibility = repository.isPrivate ? 'private' : 'public'
-  const filename = repository.sourceKind === 'contribution'
-    ? repository.fullName.replace('/', '__')
-    : repository.name
+  const filename = repository.sourceKind === 'contribution' ? repository.fullName.replace('/', '__') : repository.name
   const file = Bun.file(`${githubDataRoot}${contributionPrefix}/${visibility}/${filename}.md`)
   return file.exists()
 }
@@ -160,9 +164,13 @@ async function collectDocuments(): Promise<{
   contributionCount: number
 }> {
   const repoOutput = await runGh([
-    'repo', 'list', OWNER,
-    '--limit', '1000',
-    '--json', 'nameWithOwner,name,description,url,isPrivate,isFork,isArchived,createdAt,updatedAt,primaryLanguage,languages,repositoryTopics,homepageUrl,defaultBranchRef,licenseInfo,stargazerCount,forkCount,visibility',
+    'repo',
+    'list',
+    OWNER,
+    '--limit',
+    '1000',
+    '--json',
+    'nameWithOwner,name,description,url,isPrivate,isFork,isArchived,createdAt,updatedAt,primaryLanguage,languages,repositoryTopics,homepageUrl,defaultBranchRef,licenseInfo,stargazerCount,forkCount,visibility',
   ])
   let rawRepositories: unknown
   try {
@@ -184,7 +192,7 @@ async function collectDocuments(): Promise<{
   if (parsedResults.some((result) => !result.success)) {
     throw new Error('GitHub repository inventory contained invalid entries')
   }
-  const repositories = parsedResults.flatMap((result) => result.success ? [result.data] : [])
+  const repositories = parsedResults.flatMap((result) => (result.success ? [result.data] : []))
   const contributionGateway = createGithubContributionsGateway({
     async query(document) {
       const output = await runGh(['api', 'graphql', '-f', `query=${document}`], 8_000_000)
@@ -243,24 +251,28 @@ async function collectDocuments(): Promise<{
   }))
 
   const curatedProfile = await createProfileKnowledgeSource().fetch('operator-profile')
-  const wakaTimeProfile = await createWakaTimeKnowledgeSource({ endpoint: WAKATIME_SHARE_URL }).fetch('wakatime-all-time')
+  const wakaTimeProfile = await createWakaTimeKnowledgeSource({ endpoint: WAKATIME_SHARE_URL }).fetch(
+    'wakatime-all-time',
+  )
   const profileMarkdown = renderGithubProfileMarkdown({
     githubProfileMarkdown: renderPersonalGithubProfileMarkdown(profile.data),
     curatedProfileMarkdown: curatedProfile?.text ?? 'No additional owner-provided profile summary is configured.',
     ...(wakaTimeProfile ? { wakaTimeMarkdown: wakaTimeProfile.text } : {}),
     wakaTimeSourceUrl: WAKATIME_SHARE_URL,
   })
-  const documents: KnowledgeDocument[] = [{
-    source: {
-      type: 'github-profile',
-      sourceId: 'lst97-profile',
-      title: 'Nelson (LST97) profile',
-      url: 'https://github.com/lst97',
+  const documents: KnowledgeDocument[] = [
+    {
+      source: {
+        type: 'github-profile',
+        sourceId: 'lst97-profile',
+        title: 'Nelson (LST97) profile',
+        url: 'https://github.com/lst97',
+      },
+      text: profileMarkdown,
+      isPublic: true,
+      sourceUpdatedAt: null,
     },
-    text: profileMarkdown,
-    isPublic: true,
-    sourceUpdatedAt: null,
-  }]
+  ]
 
   if (!wakaTimeProfile) logger.warn('knowledge.github.wakatime_profile_unavailable')
   logger.info('knowledge.github.fetch.completed', {
@@ -288,7 +300,9 @@ try {
   const data = await collectDocuments()
   const retryMissingOnly = Bun.argv.includes('--retry-missing')
   const refreshContributionsOnly = Bun.argv.includes('--refresh-contributions')
-  const selectedRepository = Bun.argv.find((argument) => argument.startsWith('--repository='))?.slice('--repository='.length)
+  const selectedRepository = Bun.argv
+    .find((argument) => argument.startsWith('--repository='))
+    ?.slice('--repository='.length)
   if (selectedRepository && !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(selectedRepository)) {
     throw new Error('The selected repository identity is invalid')
   }
@@ -296,13 +310,14 @@ try {
     throw new Error('The selected repository is not in the current GitHub inventory')
   }
   const repositoriesToSync = retryMissingOnly
-    ? await Promise.all(data.repositories.map(async (repository) => ({ repository, exists: await reportFileExists(repository) })))
-      .then((entries) => entries.filter(({ exists }) => !exists).map(({ repository }) => repository))
-      : refreshContributionsOnly
-        ? data.repositories.filter((repository) => repository.sourceKind === 'contribution')
-        : selectedRepository
-          ? data.repositories.filter((repository) => repository.fullName === selectedRepository)
-          : data.repositories
+    ? await Promise.all(
+        data.repositories.map(async (repository) => ({ repository, exists: await reportFileExists(repository) })),
+      ).then((entries) => entries.filter(({ exists }) => !exists).map(({ repository }) => repository))
+    : refreshContributionsOnly
+      ? data.repositories.filter((repository) => repository.sourceKind === 'contribution')
+      : selectedRepository
+        ? data.repositories.filter((repository) => repository.fullName === selectedRepository)
+        : data.repositories
   syncStage = 'embedding_server'
   sidecar = await ensureLocalEmbeddingServer()
   syncStage = 'indexing'
@@ -369,10 +384,12 @@ try {
     }
     const cleanup = await removeSupersededGithubReports({
       candidates,
-      async read(path) { return Bun.file(path).text() },
+      async read(path) {
+        return Bun.file(path).text()
+      },
       async remove(path) {
         const child = Bun.spawn(['rm', '-f', path], { stdout: 'ignore', stderr: 'ignore' })
-        if (await child.exited !== 0) throw new Error('Could not remove superseded GitHub report')
+        if ((await child.exited) !== 0) throw new Error('Could not remove superseded GitHub report')
       },
     })
     legacyReportsRemoved = cleanup.removedCount
@@ -383,7 +400,9 @@ try {
     await syncGithubProfileDocument({
       document,
       outputPath: `${projectRoot}/src/data/profile.md`,
-      async indexDocument(profileDocument) { await indexDocuments([profileDocument]) },
+      async indexDocument(profileDocument) {
+        await indexDocuments([profileDocument])
+      },
       writeAtomically: writeMarkdownAtomically,
     })
   }

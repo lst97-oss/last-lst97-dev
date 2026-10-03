@@ -1,16 +1,16 @@
-import { getServerEnv } from '../src/server/env'
-import { requireIntegrationEnv } from '../src/server/env-schema'
-import { closeKnowledgeDatabase, getKnowledgeIndexRepository } from '../src/server/knowledge/database'
-import { createEmbeddingClient } from '../src/server/knowledge/embedding-client'
-import { createIndexKnowledgeSource } from '../src/server/knowledge/index-source'
-import { assertSafeGithubMarkdown } from '../src/server/knowledge/github/content-safety'
-import { parseGithubReportDocument } from '../src/server/knowledge/github/report-document'
-import { logger } from '../src/server/observability/logger'
-import type { KnowledgeDocument, KnowledgeSource } from '../src/server/knowledge/source-types'
-import type { KnowledgeSourceType } from '../src/server/knowledge/types'
-import { startEmbeddingSidecar, stopEmbeddingSidecar } from './embedding-process'
+import { getServerEnv } from '../../src/server/env'
+import { requireIntegrationEnv } from '../../src/server/env-schema'
+import { closeKnowledgeDatabase, getKnowledgeIndexRepository } from '../../src/server/knowledge/database'
+import { createEmbeddingClient } from '../../src/server/knowledge/embedding-client'
+import { assertSafeGithubMarkdown } from '../../src/server/knowledge/github/content-safety'
+import { parseGithubReportDocument } from '../../src/server/knowledge/github/report-document'
+import { createIndexKnowledgeSource } from '../../src/server/knowledge/index-source'
+import type { KnowledgeDocument, KnowledgeSource } from '../../src/server/knowledge/source-types'
+import type { KnowledgeSourceType } from '../../src/server/knowledge/types'
+import { logger } from '../../src/server/observability/logger'
+import { startEmbeddingSidecar, stopEmbeddingSidecar } from '../dev/embedding-process'
+import { projectRoot } from '../project-root'
 
-const projectRoot = import.meta.dir.replace(/[/\\]scripts$/, '')
 const env = getServerEnv()
 
 requireIntegrationEnv('KNOWLEDGE_DATABASE_URL', env.KNOWLEDGE_DATABASE_URL)
@@ -35,7 +35,9 @@ let sidecar: Bun.Subprocess | undefined
 try {
   const embeddingUrl = new URL(env.KNOWLEDGE_EMBEDDING_URL)
   if (['127.0.0.1', 'localhost', '::1'].includes(embeddingUrl.hostname)) {
-    const health = await fetch(new URL('/health', embeddingUrl), { signal: AbortSignal.timeout(1_000) }).catch(() => null)
+    const health = await fetch(new URL('/health', embeddingUrl), { signal: AbortSignal.timeout(1_000) }).catch(
+      () => null,
+    )
     if (!health?.ok) sidecar = await startEmbeddingSidecar()
   }
 

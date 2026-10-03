@@ -1,9 +1,9 @@
 import { Pool } from 'pg'
 
-import { getServerEnv } from '../src/server/env'
-import { requireIntegrationEnv } from '../src/server/env-schema'
-import { migrateKnowledgeDatabase } from '../src/server/knowledge/database-migration'
-import { parseDumpDay, prepareHeartbeatRows, type PreparedHeartbeatRow } from '../src/server/wakatime/history/import'
+import { getServerEnv } from '../../src/server/env'
+import { requireIntegrationEnv } from '../../src/server/env-schema'
+import { migrateKnowledgeDatabase } from '../../src/server/knowledge/database-migration'
+import { type PreparedHeartbeatRow, parseDumpDay, prepareHeartbeatRows } from '../../src/server/wakatime/history/import'
 
 function fail(message: string): never {
   console.error(JSON.stringify({ event: 'wakatime.history.import.failed', reason: message }))
@@ -101,7 +101,7 @@ async function refreshDayRollups(pool: Pool, days: string[]): Promise<void> {
   }
 }
 
-async function *streamDumpDays(path: string): AsyncGenerator<string> {
+async function* streamDumpDays(path: string): AsyncGenerator<string> {
   const file = Bun.file(path)
   if (!(await file.exists())) fail('The WakaTime dump file does not exist')
   const reader = file.stream().getReader()
@@ -185,9 +185,7 @@ try {
   await migrateKnowledgeDatabase(pool)
   let importId = 0
   try {
-    const ledger = await pool.query(
-      `INSERT INTO "wakatime_imports" ("status") VALUES ('running') RETURNING "id"`,
-    )
+    const ledger = await pool.query(`INSERT INTO "wakatime_imports" ("status") VALUES ('running') RETURNING "id"`)
     importId = (ledger.rows[0] as { id: number }).id
 
     let days = 0
@@ -233,7 +231,10 @@ try {
     )
     console.info(JSON.stringify({ event: 'wakatime.history.import.completed', days, heartbeats, rangeStart, rangeEnd }))
   } catch (error) {
-    if (importId > 0) await pool.query(`UPDATE "wakatime_imports" SET "completed_at" = now(), "status" = 'failed' WHERE "id" = $1`, [importId])
+    if (importId > 0)
+      await pool.query(`UPDATE "wakatime_imports" SET "completed_at" = now(), "status" = 'failed' WHERE "id" = $1`, [
+        importId,
+      ])
     throw error
   }
 } finally {

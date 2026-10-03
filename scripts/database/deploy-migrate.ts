@@ -15,7 +15,9 @@
 const enabled = process.env.DEPLOY_MIGRATE === 'true'
 
 if (!enabled) {
-  console.info('[deploy-migrate] DEPLOY_MIGRATE is not "true" — skipping. Set it on the deploy target to apply migrations during the build.')
+  console.info(
+    '[deploy-migrate] DEPLOY_MIGRATE is not "true" — skipping. Set it on the deploy target to apply migrations during the build.',
+  )
   process.exit(0)
 }
 // Note: `bun run` auto-loads the repository `.env`, so this check passes even
@@ -31,6 +33,7 @@ if (!process.env.DATABASE_URL) {
 // Top-level `await` below requires this file to be a module; without an export
 // TypeScript reports TS1375 and the file is treated as a script.
 export {}
+
 const migration = Bun.spawn(['bunx', 'payload', 'migrate', '--force-accept-warning'], {
   env: process.env,
   stdout: 'inherit',
@@ -40,7 +43,9 @@ const migration = Bun.spawn(['bunx', 'payload', 'migrate', '--force-accept-warni
 const exitCode = await migration.exited
 
 if (exitCode !== 0) {
-  console.error('[deploy-migrate] payload migrate failed. The build is aborted so the new code is never deployed against an unmigrated schema.')
+  console.error(
+    '[deploy-migrate] payload migrate failed. The build is aborted so the new code is never deployed against an unmigrated schema.',
+  )
   process.exit(exitCode)
 }
 

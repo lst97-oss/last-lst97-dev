@@ -1,7 +1,8 @@
+import { projectRoot } from '../project-root'
+
 const DEFAULT_MODEL = 'Qwen/Qwen3-Embedding-0.6B'
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1'])
 const STARTUP_TIMEOUT_MS = 180_000
-const projectRoot = import.meta.dir.replace(/[/\\]scripts$/, '')
 
 export interface EmbeddingServerArgsInput {
   modelPath: string
@@ -24,14 +25,21 @@ export function buildEmbeddingServerArgs(input: EmbeddingServerArgsInput): strin
   if (!input.model.trim()) throw new Error('The local embedding model identifier is required.')
 
   return [
-    '--model', modelPath,
+    '--model',
+    modelPath,
     '--embedding',
-    '--pooling', 'last',
-    '--embd-normalize', '2',
-    '--host', input.host,
-    '--port', String(input.port),
-    '--alias', input.model,
-    '--cors-origins', 'localhost',
+    '--pooling',
+    'last',
+    '--embd-normalize',
+    '2',
+    '--host',
+    input.host,
+    '--port',
+    String(input.port),
+    '--alias',
+    input.model,
+    '--cors-origins',
+    'localhost',
     '--no-webui',
   ]
 }
@@ -86,10 +94,7 @@ export async function startEmbeddingSidecar(): Promise<Bun.Subprocess> {
 export async function stopEmbeddingSidecar(child: Bun.Subprocess): Promise<void> {
   if (child.exitCode !== null) return
   child.kill('SIGTERM')
-  const stopped = await Promise.race([
-    child.exited.then(() => true),
-    Bun.sleep(5_000).then(() => false),
-  ])
+  const stopped = await Promise.race([child.exited.then(() => true), Bun.sleep(5_000).then(() => false)])
   if (!stopped) {
     child.kill('SIGKILL')
     await child.exited

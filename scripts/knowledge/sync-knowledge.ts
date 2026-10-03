@@ -10,11 +10,13 @@ try {
     overrideAccess: true,
   })
   const results = await payload.jobs.run({ queue: 'knowledge', limit: 1, overrideAccess: true })
-  console.info(JSON.stringify({
-    event: 'knowledge.sync.initial_run.finished',
-    processedJobCount: Object.keys(results.jobStatus ?? {}).length,
-    remainingJobs: results.remainingJobsFromQueried,
-  }))
+  console.info(
+    JSON.stringify({
+      event: 'knowledge.sync.initial_run.finished',
+      processedJobCount: Object.keys(results.jobStatus ?? {}).length,
+      remainingJobs: results.remainingJobsFromQueried,
+    }),
+  )
 } finally {
   await payload.destroy()
 }

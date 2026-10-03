@@ -1,4 +1,4 @@
-import { startEmbeddingSidecar, stopEmbeddingSidecar } from './embedding-process'
+import { startEmbeddingSidecar, stopEmbeddingSidecar } from '../dev/embedding-process'
 
 const sidecar = await startEmbeddingSidecar()
 let stopping = false

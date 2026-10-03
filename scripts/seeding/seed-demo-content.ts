@@ -15,8 +15,11 @@
  *
  * LOCAL ONLY — writes to whatever DATABASE_URL is loaded.
  */
-import { randomUUID } from 'node:crypto'
 import { Client } from 'pg'
+
+// Web Crypto, available as a global under Bun; `node:crypto` imported the same
+// function through Node's module shim.
+const { randomUUID } = crypto
 
 const DEMO_PREFIX = 'demo-'
 
@@ -35,9 +38,7 @@ function richText(text: string) {
           direction: null,
           format: '',
           indent: 0,
-          children: [
-            { type: 'text', version: 1, text, detail: 0, format: 0, mode: 'normal', style: '' },
-          ],
+          children: [{ type: 'text', version: 1, text, detail: 0, format: 0, mode: 'normal', style: '' }],
         },
       ],
     },
@@ -273,8 +274,18 @@ async function main() {
         `INSERT INTO projects (title, slug, summary, content, role, project_status, start_date, end_date, featured, sort_order, status, published_at, created_at, updated_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'published',$11,$12,$12) RETURNING id`,
         [
-          p.title, p.slug, p.summary, JSON.stringify(richText(p.summary)), p.role, p.projectStatus,
-          p.startDate, p.endDate, p.featured, p.sortOrder, NOW, NOW,
+          p.title,
+          p.slug,
+          p.summary,
+          JSON.stringify(richText(p.summary)),
+          p.role,
+          p.projectStatus,
+          p.startDate,
+          p.endDate,
+          p.featured,
+          p.sortOrder,
+          NOW,
+          NOW,
         ],
       )
       const id = rows[0].id
@@ -297,7 +308,12 @@ async function main() {
       )
       const id = rows[0].id
       for (const [order, tag] of p.tags.entries()) {
-        await client.query(`INSERT INTO posts_tags (id, _parent_id, _order, tag) VALUES ($1,$2,$3,$4)`, [randomUUID(), id, order, tag])
+        await client.query(`INSERT INTO posts_tags (id, _parent_id, _order, tag) VALUES ($1,$2,$3,$4)`, [
+          randomUUID(),
+          id,
+          order,
+          tag,
+        ])
       }
       console.log(`  post: ${p.slug} (${p.status})`)
     }
@@ -310,12 +326,21 @@ async function main() {
       )
       const id = rows[0].id
       for (const [order, tag] of c.tags.entries()) {
-        await client.query(`INSERT INTO changelogs_tags (id, _parent_id, _order, tag) VALUES ($1,$2,$3,$4)`, [randomUUID(), id, order, tag])
+        await client.query(`INSERT INTO changelogs_tags (id, _parent_id, _order, tag) VALUES ($1,$2,$3,$4)`, [
+          randomUUID(),
+          id,
+          order,
+          tag,
+        ])
       }
       for (const [order, type] of c.changeTypes.entries()) {
         // This table predates the `_parent_id`/`_order` convention the other
         // array tables use; it stores parent_id/order/value instead.
-        await client.query(`INSERT INTO changelogs_change_types (parent_id, "order", value) VALUES ($1,$2,$3)`, [id, order, type])
+        await client.query(`INSERT INTO changelogs_change_types (parent_id, "order", value) VALUES ($1,$2,$3)`, [
+          id,
+          order,
+          type,
+        ])
       }
       console.log(`  changelog: ${c.slug}`)
     }
