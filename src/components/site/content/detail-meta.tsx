@@ -5,15 +5,7 @@ import { CalendarDays, Clock3, Plus, RotateCcwClock } from 'lucide-react'
  * accessible text — so it is hidden from assistive tech rather than repeated
  * as an aria-label.
  */
-function MetaField({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof CalendarDays
-  label: string
-  value: string
-}) {
+function MetaField({ icon: Icon, label, value }: { icon: typeof CalendarDays; label: string; value: string }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <Icon aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={2.5} />

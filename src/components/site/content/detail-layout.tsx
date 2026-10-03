@@ -27,7 +27,6 @@ interface ContentDetailLayoutProps {
   children: ReactNode
 }
 
-
 /**
  * A label row, or nothing when the document carries no labels. Both the tag
  * rows and the topic row are this: an empty row would otherwise reserve a
@@ -70,17 +69,35 @@ export function ContentDetailLayout({
     // between a list and one of its entries.
     <PageStack>
       <WindowFrame title={windowTitle} icon={icon} scrollable>
-        <Link className="back-link mb-7 inline-block text-xs font-black tracking-wider text-accent" to={backHref}>{backLabel}</Link>
+        <Link className="back-link mb-7 inline-block text-xs font-black tracking-wider text-accent" to={backHref}>
+          {backLabel}
+        </Link>
         <MediaTrigger item={coverItem} label={`View full size image: ${title}`}>
           <ContentCover image={coverImage} className="content-cover content-detail-cover" priority />
         </MediaTrigger>
-        <Eyebrow><PixelIcon glyph="●" /> {eyebrow}</Eyebrow>
+        <Eyebrow>
+          <PixelIcon glyph="●" /> {eyebrow}
+        </Eyebrow>
         <h1>{title}</h1>
         <p className="lead-copy">{excerpt}</p>
         <DetailMeta created={created} published={published} readingTime={readingTime} updated={updated} />
-        <DetailLabelRow className="post-tags my-6">{tags.map((tag) => <Tag key={tag}>{tag}</Tag>)}</DetailLabelRow>
-        <DetailLabelRow className="post-tags -mt-4 mb-6">{badges.map((badge) => <Tag key={badge}>{badge}</Tag>)}</DetailLabelRow>
-        <DetailLabelRow className="post-tags -mt-4 mb-6">{topics.map((topic) => <Link key={topic.slug} to="/blog/topics/$slug" params={{ slug: topic.slug }}><Tag>{topic.title}</Tag></Link>)}</DetailLabelRow>
+        <DetailLabelRow className="post-tags my-6">
+          {tags.map((tag) => (
+            <Tag key={tag}>{tag}</Tag>
+          ))}
+        </DetailLabelRow>
+        <DetailLabelRow className="post-tags -mt-4 mb-6">
+          {badges.map((badge) => (
+            <Tag key={badge}>{badge}</Tag>
+          ))}
+        </DetailLabelRow>
+        <DetailLabelRow className="post-tags -mt-4 mb-6">
+          {topics.map((topic) => (
+            <Link key={topic.slug} to="/blog/topics/$slug" params={{ slug: topic.slug }}>
+              <Tag>{topic.title}</Tag>
+            </Link>
+          ))}
+        </DetailLabelRow>
         <div className="article-body">{children}</div>
       </WindowFrame>
     </PageStack>

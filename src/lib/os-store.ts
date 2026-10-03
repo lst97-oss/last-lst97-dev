@@ -19,7 +19,7 @@ export function focusWindow(windowId: string): void {
     activeWindowId: windowId,
     windowModes: {
       ...state.windowModes,
-      [windowId]: state.windowModes[windowId] === 'minimized' ? 'normal' : state.windowModes[windowId] ?? 'normal',
+      [windowId]: state.windowModes[windowId] === 'minimized' ? 'normal' : (state.windowModes[windowId] ?? 'normal'),
     },
   }))
 }
@@ -28,9 +28,8 @@ export function toggleMinimizeWindow(windowId: string): void {
   osStore.setState((state) => {
     const currentMode = state.windowModes[windowId] ?? 'normal'
     const nextMode: WindowMode = currentMode === 'minimized' ? 'normal' : 'minimized'
-    const nextActiveWindowId = nextMode === 'minimized'
-      ? state.activeWindowId === windowId ? null : state.activeWindowId
-      : windowId
+    const nextActiveWindowId =
+      nextMode === 'minimized' ? (state.activeWindowId === windowId ? null : state.activeWindowId) : windowId
 
     return {
       activeWindowId: nextActiveWindowId,

@@ -15,7 +15,11 @@ export function slugifyContentTitle(title: unknown): string {
     .replace(/^-+|-+$/g, '')
 }
 
-export function automaticSlugForTitle({ title, currentSlug, previousAutomaticSlug }: AutomaticSlugInput): string | null {
+export function automaticSlugForTitle({
+  title,
+  currentSlug,
+  previousAutomaticSlug,
+}: AutomaticSlugInput): string | null {
   const current = typeof currentSlug === 'string' ? currentSlug.trim() : ''
   if (current && current !== previousAutomaticSlug) return null
 

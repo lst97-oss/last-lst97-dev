@@ -50,7 +50,18 @@ export function ContentCover({
       {/* `decoding` follows `loading`: the one cover that can be the LCP
           candidate gets `sync` so the browser does not paint the frame before
           the pixels land; lazy off-screen covers get `async`. */}
-      <img alt={image.alt ?? ''} className="block size-full object-cover" decoding={priority ? 'sync' : 'async'} fetchPriority={priority ? 'high' : 'auto'} height={image.height ?? undefined} loading={priority ? 'eager' : 'lazy'} sizes={resolvedSizes} src={src} srcSet={srcSet || undefined} width={image.width ?? undefined} />
+      <img
+        alt={image.alt ?? ''}
+        className="block size-full object-cover"
+        decoding={priority ? 'sync' : 'async'}
+        fetchPriority={priority ? 'high' : 'auto'}
+        height={image.height ?? undefined}
+        loading={priority ? 'eager' : 'lazy'}
+        sizes={resolvedSizes}
+        src={src}
+        srcSet={srcSet || undefined}
+        width={image.width ?? undefined}
+      />
     </figure>
   )
 }

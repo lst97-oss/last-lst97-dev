@@ -17,7 +17,13 @@ export function HomeFeaturedProjectSection({ project }: { project: Project | und
         // one card, not a card-grid column.
         <ProjectCard featured project={project} />
       ) : (
-        <EmptyPanel><PixelIcon glyph="◇" /><p>Project archive is ready for its first upload.</p><Link className="text-xs font-black tracking-wider text-accent" to="/contact">START A CONVERSATION →</Link></EmptyPanel>
+        <EmptyPanel>
+          <PixelIcon glyph="◇" />
+          <p>Project archive is ready for its first upload.</p>
+          <Link className="text-xs font-black tracking-wider text-accent" to="/contact">
+            START A CONVERSATION →
+          </Link>
+        </EmptyPanel>
       )}
     </WindowFrame>
   )

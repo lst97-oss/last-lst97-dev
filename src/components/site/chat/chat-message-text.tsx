@@ -26,11 +26,14 @@ function stripTrailingPunctuation(value: string): { url: string; punctuation: st
   let end = value.length
   while (end > 0 && /[.,!?;:]/u.test(value[end - 1] ?? '')) end -= 1
 
-  for (const [closer, opener] of [[')', '('], [']', '[']] as const) {
+  for (const [closer, opener] of [
+    [')', '('],
+    [']', '['],
+  ] as const) {
     while (
-      end > 0
-      && value[end - 1] === closer
-      && value.slice(0, end).split(closer).length > value.slice(0, end).split(opener).length
+      end > 0 &&
+      value[end - 1] === closer &&
+      value.slice(0, end).split(closer).length > value.slice(0, end).split(opener).length
     ) {
       end -= 1
     }
@@ -98,9 +101,12 @@ function normalizeCollapsedPipeTables(text: string): string {
     .map((part, index) => {
       if (index % 2 === 1) return part
       const inlineCode = part.split(/(`+[\s\S]*?`+)/g)
-      if (!inlineCode.some((segment, segmentIndex) => segmentIndex % 2 === 0 && /\|[ \t]*:?-{3,}:?[ \t]*\|/.test(segment))) return part
+      if (
+        !inlineCode.some((segment, segmentIndex) => segmentIndex % 2 === 0 && /\|[ \t]*:?-{3,}:?[ \t]*\|/.test(segment))
+      )
+        return part
       return inlineCode
-        .map((segment, segmentIndex) => segmentIndex % 2 === 1 ? segment : segment.replace(/\|[ \t]+\|/g, '|\n|'))
+        .map((segment, segmentIndex) => (segmentIndex % 2 === 1 ? segment : segment.replace(/\|[ \t]+\|/g, '|\n|')))
         .join('')
     })
     .join('')

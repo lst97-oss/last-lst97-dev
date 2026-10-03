@@ -5,20 +5,14 @@ export type AdminRenderResult = {
   element: ReactNode
 }
 
-export type AdminRenderIntent =
-  | { type: 'render' }
-  | { type: 'not-found' }
-  | { type: 'redirect'; url: string }
+export type AdminRenderIntent = { type: 'render' } | { type: 'not-found' } | { type: 'redirect'; url: string }
 
 export type AdminRenderRequest = {
   search: Record<string, string | string[]>
   segments: string[]
 }
 
-export function buildAdminRenderRequest(
-  searchStr: string,
-  segments: string[],
-): AdminRenderRequest {
+export function buildAdminRenderRequest(searchStr: string, segments: string[]): AdminRenderRequest {
   return { search: parseAdminSearchParams(searchStr), segments }
 }
 
@@ -34,9 +28,7 @@ export function parseAdminSearchParams(searchStr: string): Record<string, string
   return search
 }
 
-export function getAdminRenderIntent(
-  intent: AdminRenderResult['intent'],
-): AdminRenderIntent {
+export function getAdminRenderIntent(intent: AdminRenderResult['intent']): AdminRenderIntent {
   if (intent?.type === 'notFound') return { type: 'not-found' }
   if (intent?.type === 'redirect' && intent.url) {
     return { type: 'redirect', url: intent.url }

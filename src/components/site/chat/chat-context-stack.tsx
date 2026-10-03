@@ -53,13 +53,15 @@ export function ChatContextStack() {
   return (
     <section className="chat-context-stack" aria-labelledby="chat-context-stack-title">
       <header className="chat-context-stack-header">
-        <Eyebrow className="m-0"><PixelIcon glyph="#" /> LLM CONTEXT / MEMORY STACK</Eyebrow>
+        <Eyebrow className="m-0">
+          <PixelIcon glyph="#" /> LLM CONTEXT / MEMORY STACK
+        </Eyebrow>
         <h3 id="chat-context-stack-title">What the answer model actually receives</h3>
         <p>
-          One request, three frames: a server-written system frame, the entire verified conversation, and the
-          question being asked. Nothing is summarised away between the chat and the model — up to{' '}
-          {MAX_CHAT_CONTEXT_MESSAGES} signed messages ({MAX_CHAT_TURNS} exchanges) are replayed on every turn, so
-          follow-ups resolve against the real transcript.
+          One request, three frames: a server-written system frame, the entire verified conversation, and the question
+          being asked. Nothing is summarised away between the chat and the model — up to {MAX_CHAT_CONTEXT_MESSAGES}{' '}
+          signed messages ({MAX_CHAT_TURNS} exchanges) are replayed on every turn, so follow-ups resolve against the
+          real transcript.
         </p>
       </header>
 
@@ -97,16 +99,20 @@ export function ChatContextStack() {
           </div>
           <div className="chat-context-frame-body">
             <p className="chat-context-frame-note">
-              The full signed conversation, in order, oldest first — every earlier question and answer the visitor
-              has not cleared. Each message is trimmed to {MAX_HISTORY_MESSAGE_LENGTH.toLocaleString('en-US')} characters.
+              The full signed conversation, in order, oldest first — every earlier question and answer the visitor has
+              not cleared. Each message is trimmed to {MAX_HISTORY_MESSAGE_LENGTH.toLocaleString('en-US')} characters.
               This is the full history, not a summary or a window.
             </p>
             <pre className="chat-context-wire">
-              <code>{'[\n  { "role": "user",      "content": "first question" },\n  { "role": "assistant", "content": "first answer" },\n  { "role": "user",      "content": "second question" },\n  { "role": "assistant", "content": "second answer" }\n]'}</code>
+              <code>
+                {
+                  '[\n  { "role": "user",      "content": "first question" },\n  { "role": "assistant", "content": "first answer" },\n  { "role": "user",      "content": "second question" },\n  { "role": "assistant", "content": "second answer" }\n]'
+                }
+              </code>
             </pre>
             <p className="chat-context-frame-note">
-              The history can resolve references and accepted offers, but it is never treated as evidence: a new
-              factual claim still requires a fresh source lookup this turn.
+              The history can resolve references and accepted offers, but it is never treated as evidence: a new factual
+              claim still requires a fresh source lookup this turn.
             </p>
           </div>
         </li>
@@ -119,8 +125,8 @@ export function ChatContextStack() {
           </div>
           <div className="chat-context-frame-body">
             <p className="chat-context-frame-note">
-              The message just submitted, trimmed to {MAX_HISTORY_MESSAGE_LENGTH.toLocaleString('en-US')} characters.
-              It is the only turn that may trigger source lookups.
+              The message just submitted, trimmed to {MAX_HISTORY_MESSAGE_LENGTH.toLocaleString('en-US')} characters. It
+              is the only turn that may trigger source lookups.
             </p>
           </div>
         </li>

@@ -56,7 +56,7 @@ export const BATTLE_RANGED_DAMAGE = 12
 export const BATTLE_RANGED_COOLDOWN_TICKS = 5
 export const BATTLE_RESPAWNS_PER_TICK_PER_TEAM = 2
 
-const BATTLE_SEED = 0xB47E1
+const BATTLE_SEED = 0xb47e1
 
 function nextRandom(state: BattleState): number {
   state.rngState = (state.rngState + 0x6d2b79f5) | 0
@@ -262,7 +262,14 @@ function reinforce(state: BattleState, occupied: Set<string>): void {
 }
 
 const DIRECTION_ORDER: Array<[number, number]> = [
-  [1, 1], [1, 0], [1, -1], [0, 1], [0, -1], [-1, 1], [-1, 0], [-1, -1],
+  [1, 1],
+  [1, 0],
+  [1, -1],
+  [0, 1],
+  [0, -1],
+  [-1, 1],
+  [-1, 0],
+  [-1, -1],
 ]
 
 function closestEnemy(units: BattleUnit[], unit: BattleUnit): { enemy: BattleUnit; dist: number } | null {

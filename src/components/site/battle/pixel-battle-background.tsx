@@ -179,8 +179,7 @@ export const PixelBattleBackground = memo(function PixelBattleBackground() {
       canvas.width = Math.max(1, Math.floor(window.innerWidth * CANVAS_SCALE))
       canvas.height = Math.max(1, Math.floor(window.innerHeight * CANVAS_SCALE))
       context.setTransform(CANVAS_SCALE, 0, 0, CANVAS_SCALE, 0, 0)
-      trailColor =
-        getComputedStyle(document.documentElement).getPropertyValue('--os-trail').trim() || TRAIL_FALLBACK
+      trailColor = getComputedStyle(document.documentElement).getPropertyValue('--os-trail').trim() || TRAIL_FALLBACK
       // Cell keys embed cols, so a resize invalidates every lit cell.
       trail.clear()
       if (!battle) {

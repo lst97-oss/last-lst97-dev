@@ -58,7 +58,12 @@ export function MediaViewer({ items, index, onIndexChange, onClose, title = 'ima
   const hasMultiple = items.length > 1
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
       <DialogContent
         className="media-viewer-dialog"
         onKeyDown={(event) => {
@@ -96,81 +101,70 @@ export function MediaViewer({ items, index, onIndexChange, onClose, title = 'ima
               the frame itself would inset the title bar too, which is not how
               any other window on the site looks. */}
           <div className="window-content media-viewer-body">
-
-          {/* `decoding="sync"` is deliberate: this is the LCP candidate the
+            {/* `decoding="sync"` is deliberate: this is the LCP candidate the
               moment the dialog opens, and async decode lets the browser paint
               the frame before the pixels arrive. Everywhere else the images
               are lazy and off-screen, where `async` is the better trade. */}
-          <img
-            alt={item.alt}
-            className="media-viewer-image"
-            decoding="sync"
-            fetchPriority="high"
-            height={item.height}
-            loading="eager"
-            sizes="(max-width: 768px) 100vw, 92vw"
-            src={item.src}
-            srcSet={item.srcSet}
-            width={item.width}
-          />
+            <img
+              alt={item.alt}
+              className="media-viewer-image"
+              decoding="sync"
+              fetchPriority="high"
+              height={item.height}
+              loading="eager"
+              sizes="(max-width: 768px) 100vw, 92vw"
+              src={item.src}
+              srcSet={item.srcSet}
+              width={item.width}
+            />
 
-          {item.caption ? <p className="media-viewer-caption">{item.caption}</p> : null}
+            {item.caption ? <p className="media-viewer-caption">{item.caption}</p> : null}
 
-          {hasMultiple ? (
-            <div className="media-viewer-controls">
-              <button
-                className="media-viewer-step"
-                onClick={() => goTo(activeIndex - 1)}
-                type="button"
-              >
-                ← PREV
-              </button>
-              <span className="media-viewer-counter">
-                {activeIndex + 1} OF {items.length}
-              </span>
-              <button
-                className="media-viewer-step"
-                onClick={() => goTo(activeIndex + 1)}
-                type="button"
-              >
-                NEXT →
-              </button>
-            </div>
-          ) : (
-            <div className="media-viewer-controls">
-              <span className="media-viewer-counter">
-                1 OF 1
-              </span>
-            </div>
-          )}
+            {hasMultiple ? (
+              <div className="media-viewer-controls">
+                <button className="media-viewer-step" onClick={() => goTo(activeIndex - 1)} type="button">
+                  ← PREV
+                </button>
+                <span className="media-viewer-counter">
+                  {activeIndex + 1} OF {items.length}
+                </span>
+                <button className="media-viewer-step" onClick={() => goTo(activeIndex + 1)} type="button">
+                  NEXT →
+                </button>
+              </div>
+            ) : (
+              <div className="media-viewer-controls">
+                <span className="media-viewer-counter">1 OF 1</span>
+              </div>
+            )}
 
-          {hasMultiple ? (
-            <div className="media-viewer-filmstrip" ref={filmstripRef}>
-              {items.map((thumb, thumbIndex) => (
-                <button
-                  aria-current={thumbIndex === activeIndex ? 'true' : undefined}
-                  aria-label={`View image ${thumbIndex + 1} of ${items.length}`}
-                  className={cn('media-viewer-thumb', thumbIndex === activeIndex && 'is-active')}
-                  key={`${thumb.src}-${thumbIndex}`}
-                  onClick={() => goTo(thumbIndex)}
-                  type="button"
-                >
-                  {/* Thumbnails are decorative, so `alt` stays empty. They sit
+            {hasMultiple ? (
+              <div className="media-viewer-filmstrip" ref={filmstripRef}>
+                {items.map((thumb, thumbIndex) => (
+                  <button
+                    aria-current={thumbIndex === activeIndex ? 'true' : undefined}
+                    aria-label={`View image ${thumbIndex + 1} of ${items.length}`}
+                    className={cn('media-viewer-thumb', thumbIndex === activeIndex && 'is-active')}
+                    key={`${thumb.src}-${thumbIndex}`}
+                    onClick={() => goTo(thumbIndex)}
+                    type="button"
+                  >
+                    {/* Thumbnails are decorative, so `alt` stays empty. They sit
                       below the fold inside the dialog and the boxes are 84x60
                       with `object-fit: cover`, so the 320px derivative is the
                       right source and lazy loading is correct. */}
-                  <img
-                    alt=""
-                    decoding="async"
-                    height={60}
-                    loading="lazy"
-                    src={thumb.thumbSrc ?? thumb.src}
-                    width={84}
-                  />
-                </button>
-              ))}
-            </div>
-          ) : null}
+                    <img
+                      alt=""
+                      decoding="async"
+                      height={60}
+                      loading="lazy"
+                      src={thumb.thumbSrc ?? thumb.src}
+                      width={84}
+                    />
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
       </DialogContent>
