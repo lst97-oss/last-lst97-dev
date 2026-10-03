@@ -22,6 +22,7 @@ import { Route as SiteIndexRouteImport } from './routes/_site.index'
 import { Route as SiteAboutRouteImport } from './routes/_site.about'
 import { Route as SiteChatRouteImport } from './routes/_site.chat'
 import { Route as SiteContactRouteImport } from './routes/_site.contact'
+import { Route as SiteServicesRouteImport } from './routes/_site.services'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
 import { Route as PayloadAdminIndexRouteImport } from './routes/_payload.admin.index'
 import { Route as PayloadAdminSplatRouteImport } from './routes/_payload.admin.$'
@@ -98,6 +99,11 @@ const SiteChatRoute = SiteChatRouteImport.update({
 const SiteContactRoute = SiteContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteServicesRoute = SiteServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
   getParentRoute: () => SiteRoute,
 } as any)
 const ApiSplatRoute = ApiSplatRouteImport.update({
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof SiteAboutRoute
   '/chat': typeof SiteChatRoute
   '/contact': typeof SiteContactRoute
+  '/services': typeof SiteServicesRoute
   '/api/$': typeof ApiSplatRoute
   '/admin/$': typeof PayloadAdminSplatRoute
   '/blog/$slug': typeof SiteBlogSlugRoute
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/about': typeof SiteAboutRoute
   '/chat': typeof SiteChatRoute
   '/contact': typeof SiteContactRoute
+  '/services': typeof SiteServicesRoute
   '/api/$': typeof ApiSplatRoute
   '/admin/$': typeof PayloadAdminSplatRoute
   '/blog/$slug': typeof SiteBlogSlugRoute
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/_site/about': typeof SiteAboutRoute
   '/_site/chat': typeof SiteChatRoute
   '/_site/contact': typeof SiteContactRoute
+  '/_site/services': typeof SiteServicesRoute
   '/api/$': typeof ApiSplatRoute
   '/_site/': typeof SiteIndexRoute
   '/_payload/admin/$': typeof PayloadAdminSplatRoute
@@ -261,6 +270,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/chat'
     | '/contact'
+    | '/services'
     | '/api/$'
     | '/admin/$'
     | '/blog/$slug'
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/chat'
     | '/contact'
+    | '/services'
     | '/api/$'
     | '/admin/$'
     | '/blog/$slug'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/_site/about'
     | '/_site/chat'
     | '/_site/contact'
+    | '/_site/services'
     | '/api/$'
     | '/_site/'
     | '/_payload/admin/$'
@@ -439,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteContactRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/services': {
+      id: '/_site/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof SiteServicesRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/api/$': {
       id: '/api/$'
       path: '/api/$'
@@ -550,6 +569,7 @@ interface SiteRouteChildren {
   SiteAboutRoute: typeof SiteAboutRoute
   SiteChatRoute: typeof SiteChatRoute
   SiteContactRoute: typeof SiteContactRoute
+  SiteServicesRoute: typeof SiteServicesRoute
   SiteIndexRoute: typeof SiteIndexRoute
   SiteBlogSlugRoute: typeof SiteBlogSlugRoute
   SiteChangelogSlugRoute: typeof SiteChangelogSlugRoute
@@ -564,6 +584,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteAboutRoute: SiteAboutRoute,
   SiteChatRoute: SiteChatRoute,
   SiteContactRoute: SiteContactRoute,
+  SiteServicesRoute: SiteServicesRoute,
   SiteIndexRoute: SiteIndexRoute,
   SiteBlogSlugRoute: SiteBlogSlugRoute,
   SiteChangelogSlugRoute: SiteChangelogSlugRoute,
