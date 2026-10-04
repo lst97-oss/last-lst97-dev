@@ -93,22 +93,24 @@ export function HomeSkeleton() {
           </div>
         </div>
 
-        <PixelSkeletonWindow icon="✎" title="featured-note.exe">
-          <div className="grid gap-5 sm:grid-cols-2 sm:items-center">
-            <PixelSkeletonCover className="aspect-video" seed="home-featured-note" />
-            <div>
-              <div className="m-0 mb-3 flex items-center gap-2">
-                <PixelSkeletonBlock className="size-2.5" />
-                <PixelSkeletonBar width={40} />
+        {/* One window now holds the featured lead card and the recent strip, so
+            the skeleton is one window with both regions rather than two windows
+            that would never both exist. */}
+        <PixelSkeletonWindow icon="✎" title="latest-notes.directory">
+          <div className="mb-8 border-b-3 border-border pb-8">
+            <div className="grid gap-5 sm:grid-cols-2 sm:items-center">
+              <PixelSkeletonCover className="aspect-video" seed="home-featured-note" />
+              <div className="w-full">
+                <div className="m-0 mb-3 flex items-center gap-2">
+                  <PixelSkeletonBlock className="size-2.5" />
+                  <PixelSkeletonBar width={40} />
+                </div>
+                <PixelSkeletonBar className="mb-2 h-7 w-3/4" />
+                <PixelSkeletonLines className="mb-4" count={2} />
+                <PixelSkeletonBar className="w-40" width={55} />
               </div>
-              <PixelSkeletonBar className="mb-2 h-7 w-3/4" />
-              <PixelSkeletonLines className="mb-4" count={2} />
-              <PixelSkeletonBar className="w-40" width={55} />
             </div>
           </div>
-        </PixelSkeletonWindow>
-
-        <PixelSkeletonWindow icon="✎" title="latest-notes.directory">
           <div className="section-heading mb-5 flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-stretch">
             <div>
               <div className="m-0 mb-3 flex items-center gap-2">
@@ -117,7 +119,6 @@ export function HomeSkeleton() {
               </div>
               <PixelSkeletonBar className="h-7 w-64" />
             </div>
-            <PixelSkeletonBar className="mt-4 w-40" width={55} />
           </div>
           <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 3 }, (_, index) => (

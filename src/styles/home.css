@@ -148,3 +148,60 @@ h3 {
 .dashboard-grid .window-content {
   height: calc(100% - 38px);
 }
+
+/* Featured-project carousel (HomeFeaturedProjectSection). The track is
+   translated by the active index, which is set inline as a style; only the
+   layout that a Tailwind utility cannot express belongs here. Slides are
+   `flex: 0 0 100%` so the track is `count * 100%` wide and each index step
+   lands exactly one slide. */
+.featured-carousel {
+  overflow: hidden;
+  /* The slide rule below only narrows the SLIDE. This rule is what keeps the
+     carousel itself from being sized by content in the first place, and it is
+     load-bearing for the home page rather than tidiness — see the comment at
+     the bottom of this block. */
+  contain: inline-size;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+.featured-carousel-track {
+  display: flex;
+  transition: transform 300ms ease-out;
+}
+
+/* `min-width: 0` is load-bearing, not tidiness. Radix ScrollArea writes
+   `display: table; min-width: 100%` as an inline style on each viewport's
+   direct child, and a table box sizes to its contents — so a slide left at its
+   natural width widens the whole window frame instead of being clipped by it.
+   `min-width: 0` breaks that cycle.
+
+   It is not sufficient on its own. The slide's `flex: 0 0 100%` resolves its
+   percentage against the CAROUSEL, which is itself inside that content-sized
+   table wrapper — so the basis is circular and the track fell back to its
+   children's min-content (measured 850px), inflating every home window to
+   920px inside a 610px main column, where `.os-site`'s `overflow: hidden`
+   clipped the right-hand third of each card. `contain: inline-size` on the
+   carousel above breaks the cycle from the other end: it is sized as if it had
+   no contents, so it takes the column width and the transform track is
+   contained by the `overflow: hidden` above instead of escaping it. Same fix
+   as `.rich-text` in `prose.css` and `.mermaid-diagram-shell` in
+   `chat-tools.css`. */
+.featured-carousel-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+.featured-carousel-dot {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: 2px solid var(--os-ink);
+  background: transparent;
+  cursor: pointer;
+}
+
+.featured-carousel-dot[aria-current='true'] {
+  background: var(--os-coral);
+}
