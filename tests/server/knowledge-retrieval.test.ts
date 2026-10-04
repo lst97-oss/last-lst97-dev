@@ -90,6 +90,10 @@ function harness(
         })
         return vector
       },
+      embedMany: async ({ texts }: { texts: string[] }) => {
+        calls.order.push('embed')
+        return texts.map(() => vector)
+      },
     },
     repository: {
       search: async (_vector: number[], limit: number) => {

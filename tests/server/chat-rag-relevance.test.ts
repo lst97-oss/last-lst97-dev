@@ -32,7 +32,7 @@ const unrelatedCandidate: KnowledgeCandidate = {
 
 function retrievalHarness() {
   return createRetrieveKnowledge({
-    embedding: { embed: async () => [1, 0, 0, 0] },
+    embedding: { embed: async () => [1, 0, 0, 0], embedMany: async ({ texts }) => texts.map(() => [1, 0, 0, 0]) },
     repository: {
       search: async () => [unrelatedCandidate, directCandidate],
       listOwnedProjects: async () => ({ projects: [], hasMore: false, matchingTotal: 0, breakdown: [] }),

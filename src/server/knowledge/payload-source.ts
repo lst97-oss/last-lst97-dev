@@ -1,6 +1,24 @@
 import { lexicalToPlainText } from './chunking'
 import type { KnowledgeDocument, KnowledgeSource } from './source-types'
 
+const MAX_PREFIX_DESCRIPTION_CHARS = 300
+
+/**
+ * The document title and its excerpt/summary are the context a chunk loses once
+ * it is split out of the document body, so they are repeated on every chunk.
+ * `KnowledgeSourceReference.type` is stored on the row but is not part of the
+ * chunk text, so a project chunk otherwise reaches the responder with nothing
+ * marking it as describing a shipped build rather than an article.
+ */
+function buildChunkContextPrefix(type: 'post' | 'project', title: string, description: string): string | undefined {
+  if (!title) return undefined
+  const heading = type === 'post' ? `## ${title}` : `## Project\n\n### ${title}`
+  const truncated =
+    description.length > MAX_PREFIX_DESCRIPTION_CHARS
+      ? description.slice(0, MAX_PREFIX_DESCRIPTION_CHARS).replace(/\s+\S*$/, '')
+      : description
+  return truncated ? `${heading}\n\n${truncated}` : heading
+}
 export interface PayloadKnowledgeRecord {
   id: string | number
   title?: unknown
@@ -62,6 +80,8 @@ export function createPayloadKnowledgeSource(
           url: `${publicBaseUrl}/${collectionPath}/${encodeURIComponent(slug)}`,
         },
         text,
+        headingDelimited: true,
+        chunkContextPrefix: buildChunkContextPrefix(config.type, title, description),
         isPublic,
         sourceUpdatedAt: updatedAt && Number.isFinite(updatedAt.valueOf()) ? updatedAt : publishedAt,
       }

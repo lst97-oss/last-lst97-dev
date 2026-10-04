@@ -3,10 +3,12 @@ import { updateOwnedProjectCatalogWithinTransaction } from './catalog'
 import {
   assertChunkSource,
   boundedSearchLimit,
+  chunkStateRowSchema,
   DIMENSIONS,
   mapSearchRows,
   normalizedProjectName,
   ownerRepositoryTypes,
+  parseVectorLiteral,
   projectCatalogMetadataSchema,
   validateSourceType,
   vectorLiteral,
@@ -17,7 +19,13 @@ export function createKnowledgeChunkOperations(
   database: KnowledgeDatabase,
 ): Pick<
   KnowledgeIndexRepository,
-  'upsertSourceChunks' | 'removeSource' | 'listSourceIds' | 'search' | 'searchExactProjectName' | 'searchByKeyword'
+  | 'upsertSourceChunks'
+  | 'removeSource'
+  | 'listSourceIds'
+  | 'listSourceChunkState'
+  | 'search'
+  | 'searchExactProjectName'
+  | 'searchByKeyword'
 > {
   return {
     async upsertSourceChunks(source, chunks, projectCatalog) {
@@ -103,6 +111,34 @@ export function createKnowledgeChunkOperations(
         if (typeof row !== 'object' || row === null || !('source_id' in row)) return []
         const sourceId = (row as { source_id?: unknown }).source_id
         return typeof sourceId === 'string' ? [sourceId] : []
+      })
+    },
+
+    async listSourceChunkState(sourceType, sourceId) {
+      const type = validateSourceType(sourceType)
+      if (!sourceId.trim()) throw new Error('Knowledge source ID is invalid')
+      const result = await database.execute(sql`
+        SELECT "chunk_index", "content_hash", "embedding"::text AS "embedding_text"
+        FROM "knowledge_chunks"
+        WHERE "source_type" = ${type} AND "source_id" = ${sourceId}
+        ORDER BY "chunk_index" ASC
+      `)
+      return (result.rows ?? []).map((row) => {
+        const parsed = chunkStateRowSchema.safeParse(row)
+        if (!parsed.success) throw new Error('Knowledge repository returned an invalid chunk state')
+        let embedding: number[]
+        try {
+          embedding = parseVectorLiteral(parsed.data.embedding_text)
+        } catch {
+          // The shared vector assertion message names the dimension problem, not
+          // this query, so the row failure is reported with one attributable string.
+          throw new Error('Knowledge repository returned an invalid chunk state')
+        }
+        return {
+          chunkIndex: parsed.data.chunk_index,
+          contentHash: parsed.data.content_hash,
+          embedding,
+        }
       })
     },
 

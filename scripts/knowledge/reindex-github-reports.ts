@@ -2,6 +2,7 @@ import { getServerEnv } from '../../src/server/env'
 import { requireIntegrationEnv } from '../../src/server/env-schema'
 import { closeKnowledgeDatabase, getKnowledgeIndexRepository } from '../../src/server/knowledge/database'
 import { createEmbeddingClient } from '../../src/server/knowledge/embedding-client'
+import { isLocalEmbeddingUrl, resolveIndexEmbeddingConfig } from '../../src/server/knowledge/embedding-provider-config'
 import { assertSafeGithubMarkdown } from '../../src/server/knowledge/github/content-safety'
 import { parseGithubReportDocument } from '../../src/server/knowledge/github/report-document'
 import { createIndexKnowledgeSource } from '../../src/server/knowledge/index-source'
@@ -33,21 +34,15 @@ if (documents.length === 0) throw new Error('No GitHub report Markdown files wer
 
 let sidecar: Bun.Subprocess | undefined
 try {
-  const embeddingUrl = new URL(env.KNOWLEDGE_EMBEDDING_URL)
-  if (['127.0.0.1', 'localhost', '::1'].includes(embeddingUrl.hostname)) {
-    const health = await fetch(new URL('/health', embeddingUrl), { signal: AbortSignal.timeout(1_000) }).catch(
-      () => null,
-    )
+  if (isLocalEmbeddingUrl(env.KNOWLEDGE_EMBEDDING_URL)) {
+    const health = await fetch(new URL('/health', env.KNOWLEDGE_EMBEDDING_URL), {
+      signal: AbortSignal.timeout(1_000),
+    }).catch(() => null)
     if (!health?.ok) sidecar = await startEmbeddingSidecar()
   }
 
   const repository = getKnowledgeIndexRepository()
-  const embedding = createEmbeddingClient({
-    baseUrl: env.KNOWLEDGE_EMBEDDING_URL,
-    model: env.KNOWLEDGE_EMBEDDING_MODEL,
-    apiKey: env.KNOWLEDGE_EMBEDDING_API_KEY,
-    timeoutMs: env.KNOWLEDGE_EMBEDDING_TIMEOUT_MS,
-  })
+  const embedding = createEmbeddingClient(resolveIndexEmbeddingConfig(env))
   const sources = new Map<KnowledgeSourceType, KnowledgeSource>()
   let indexedChunkCount = 0
   for (const document of documents) {

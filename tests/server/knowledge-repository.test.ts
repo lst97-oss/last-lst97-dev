@@ -93,6 +93,48 @@ describe('KnowledgeIndexRepository', () => {
     expect(result).toEqual(['lst97/tool', 'lst97/another'])
   })
 
+  it('reads stored chunk hashes and vectors with bound parameters', async () => {
+    const vector = chunks[0]!.embedding
+    const db = createDatabase([
+      { chunk_index: 0, content_hash: 'a'.repeat(64), embedding_text: `[${vector.join(',')}]` },
+    ])
+    const repository = createKnowledgeIndexRepository(db)
+
+    const result = await repository.listSourceChunkState('github', 'lst97/tool')
+
+    expect(db.queries[0]?.sql).toContain('SELECT "chunk_index", "content_hash"')
+    expect(db.queries[0]?.sql).toContain('"embedding"::text AS "embedding_text"')
+    expect(db.queries[0]?.sql).not.toContain('%s')
+    expect(db.queries[0]?.params).toEqual(['github', 'lst97/tool'])
+    expect(result).toEqual([{ chunkIndex: 0, contentHash: 'a'.repeat(64), embedding: vector }])
+  })
+
+  it('rejects a stored chunk state row that is malformed or has a bad vector', async () => {
+    const invalidRows: unknown[] = [
+      { chunk_index: -1, content_hash: 'a'.repeat(64), embedding_text: `[${Array(1024).fill(0).join(',')}]` },
+      { chunk_index: 0, content_hash: 'not-a-hash', embedding_text: `[${Array(1024).fill(0).join(',')}]` },
+      { chunk_index: 0, content_hash: 'a'.repeat(64), embedding_text: '[1,2]' },
+    ]
+
+    for (const rows of invalidRows.map((row) => [row])) {
+      const repository = createKnowledgeIndexRepository(createDatabase(rows))
+      await expect(repository.listSourceChunkState('github', 'lst97/tool')).rejects.toThrow(
+        'Knowledge repository returned an invalid chunk state',
+      )
+    }
+  })
+
+  it('rejects an invalid source type or blank source id before querying', async () => {
+    const db = createDatabase()
+    const repository = createKnowledgeIndexRepository(db)
+
+    await expect(repository.listSourceChunkState('not-a-type' as never, 'lst97/tool')).rejects.toThrow(
+      'Knowledge source type is invalid',
+    )
+    await expect(repository.listSourceChunkState('github', '   ')).rejects.toThrow('Knowledge source ID is invalid')
+    expect(db.queries).toHaveLength(0)
+  })
+
   // Every type the DB CHECK and `KnowledgeSourceType` allow must survive
   // `validateSourceType`. Dropping one turns a legitimate index or delete into a
   // thrown "invalid" at the persistence boundary, where nothing names the type

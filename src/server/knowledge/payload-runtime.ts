@@ -4,7 +4,7 @@ import { getServerEnv } from '../env'
 import { logger } from '../observability/logger'
 import { getKnowledgeIndexRepository } from './database'
 import { createEmbeddingClient } from './embedding-client'
-import { createIndexEmbeddingConfig } from './embedding-provider-config'
+import { resolveIndexEmbeddingConfig } from './embedding-provider-config'
 import { createIndexKnowledgeSource } from './index-source'
 import type { KnowledgeListSource } from './jobs'
 import { createKnowledgeSourceSynchronizer } from './jobs'
@@ -53,7 +53,7 @@ function createPayloadContentSource(payload: Payload, type: 'post' | 'project') 
 function createKnowledgeDependencies(source: KnowledgeSource) {
   const env = getServerEnv()
   const repository = getKnowledgeIndexRepository()
-  const embedding = createEmbeddingClient(createIndexEmbeddingConfig(env))
+  const embedding = createEmbeddingClient(resolveIndexEmbeddingConfig(env))
   return { indexer: createIndexKnowledgeSource({ source, embedding, repository, logger }) }
 }
 
@@ -98,7 +98,7 @@ export async function runPayloadKnowledgeSyncTask(
   })
   const env = getServerEnv()
   const repository = getKnowledgeIndexRepository()
-  const embedding = createEmbeddingClient(createIndexEmbeddingConfig(env))
+  const embedding = createEmbeddingClient(resolveIndexEmbeddingConfig(env))
   const indexers = new Map<KnowledgeSourceType, ReturnType<typeof createIndexKnowledgeSource>>()
   for (const source of sources) {
     indexers.set(source.type, createIndexKnowledgeSource({ source, embedding, repository, logger }))

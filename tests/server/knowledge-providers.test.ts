@@ -99,6 +99,97 @@ describe('createEmbeddingClient', () => {
     await expect(client.embed({ text: 'query', kind: 'query' })).rejects.toThrow('Embedding provider request failed')
     await expect(client.embed({ text: 'query', kind: 'query' })).rejects.not.toThrow('private upstream detail')
   })
+
+  it('batches document texts four per request and returns vectors in input order', async () => {
+    const batches: string[][] = []
+    const client = createEmbeddingClient(
+      { baseUrl: 'http://127.0.0.1:8787/v1', model: 'test', timeoutMs: 1_000 },
+      async (_input, init) => {
+        const { input: raw } = JSON.parse(String(init?.body)) as { input: string | string[] }
+        // A single-text request keeps the bare-string body; only a real batch is an array.
+        const texts = typeof raw === 'string' ? [raw] : raw
+        batches.push(texts)
+        // Reply out of order to prove the client reorders by `index`.
+        return response({
+          data: texts.map((_text, index) => ({ index, embedding: Array(1024).fill(0) })).reverse(),
+        })
+      },
+    )
+
+    const vectors = await client.embedMany({ texts: ['a', 'b', 'c', 'd', 'e'], kind: 'document' })
+
+    expect(batches.map((batch) => batch.length)).toEqual([4, 1])
+    expect(batches[0]).toEqual(['a', 'b', 'c', 'd'])
+    expect(batches[1]).toEqual(['e'])
+    expect(vectors).toHaveLength(5)
+  })
+
+  it('applies the query instruction to every text in a query batch', async () => {
+    const bodies: string[][] = []
+    const client = createEmbeddingClient(
+      { baseUrl: 'http://127.0.0.1:8787/v1', model: 'test', timeoutMs: 1_000 },
+      async (_input, init) => {
+        const body = JSON.parse(String(init?.body)) as { input: string[] }
+        bodies.push(body.input)
+        return response({ data: body.input.map((_t, index) => ({ index, embedding: Array(1024).fill(0) })) })
+      },
+    )
+
+    await client.embedMany({ texts: ['first', 'second'], kind: 'query' })
+
+    expect(bodies[0]?.[0]).toBe(
+      'Instruct: Given a question, retrieve relevant passages that answer the question\nQuery: first',
+    )
+    expect(bodies[0]?.[1]).toBe(
+      'Instruct: Given a question, retrieve relevant passages that answer the question\nQuery: second',
+    )
+  })
+
+  it('rejects a batch whose response count, indices, or dimensions disagree', async () => {
+    const invalidResponses: unknown[] = [
+      { data: [{ index: 0, embedding: Array(1024).fill(0) }] },
+      {
+        data: [
+          { index: 0, embedding: Array(1024).fill(0) },
+          { index: 0, embedding: Array(1024).fill(0) },
+        ],
+      },
+      {
+        data: [
+          { index: 0, embedding: Array(1024).fill(0) },
+          { index: 1, embedding: [1, 2] },
+        ],
+      },
+    ]
+
+    for (const invalidResponse of invalidResponses) {
+      const client = createEmbeddingClient(
+        { baseUrl: 'http://localhost:8787/v1', model: 'test', timeoutMs: 1_000 },
+        async () => response(invalidResponse),
+      )
+      await expect(client.embedMany({ texts: ['a', 'b'], kind: 'document' })).rejects.toThrow(
+        'Embedding provider returned an invalid response',
+      )
+    }
+  })
+
+  it('rejects an empty, blank, or oversized batch before calling the provider', async () => {
+    let calls = 0
+    const client = createEmbeddingClient(
+      { baseUrl: 'http://localhost:8787/v1', model: 'test', timeoutMs: 1_000 },
+      async () => {
+        calls += 1
+        return response({ data: [] })
+      },
+    )
+
+    await expect(client.embedMany({ texts: [], kind: 'document' })).rejects.toThrow('Embedding input is invalid')
+    await expect(client.embedMany({ texts: ['   '], kind: 'document' })).rejects.toThrow('Embedding input is invalid')
+    await expect(client.embedMany({ texts: ['x'.repeat(12_001)], kind: 'document' })).rejects.toThrow(
+      'Embedding input is invalid',
+    )
+    expect(calls).toBe(0)
+  })
 })
 
 describe('createSiliconFlowReranker', () => {

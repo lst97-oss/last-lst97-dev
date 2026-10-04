@@ -30,6 +30,11 @@ const searchRowSchema = z.object({
   content: z.string(),
   is_public: z.boolean(),
 })
+export const chunkStateRowSchema = z.object({
+  chunk_index: z.number().int().nonnegative(),
+  content_hash: z.string().regex(/^[\da-f]{64}$/i),
+  embedding_text: z.string(),
+})
 export const projectCatalogRowSchema = z.object({
   source_type: z.enum(['github', 'github-private']),
   source_id: z.string().min(1),
@@ -112,6 +117,13 @@ export function assertEmbedding(vector: number[]): void {
 export function vectorLiteral(vector: number[]): string {
   assertEmbedding(vector)
   return `[${vector.join(',')}]`
+}
+
+export function parseVectorLiteral(value: string): number[] {
+  const body = value.startsWith('[') && value.endsWith(']') ? value.slice(1, -1) : value
+  const vector = body.split(',').map((entry) => Number(entry))
+  assertEmbedding(vector)
+  return vector
 }
 
 export function textArray(values: string[]): SQL {
