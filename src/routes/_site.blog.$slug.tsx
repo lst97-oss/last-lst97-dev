@@ -1,11 +1,12 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { ContentDetailLayout } from '@/components/site/content/detail-layout'
+import { RelatedContent } from '@/components/site/content/related-content'
 import { RichText } from '@/components/site/content/rich-text'
 import { ContentUnavailableRoute } from '@/components/site/content/unavailable'
 import { ContentDetailSkeleton } from '@/components/ui/skeletons'
 import { formatPublishedDate, formatReadingTime, readingTimeMinutes } from '@/lib/content/date'
-import { createContentMeta } from '@/lib/content/meta'
-import { loadPost } from '@/lib/content/site-data'
+import { createContentMeta, resolveContentShare } from '@/lib/content/meta'
+import { loadPost, loadRelatedPosts } from '@/lib/content/site-data'
 import { createPostStructuredData, withBreadcrumbs } from '@/lib/content/structured-data'
 import { canonicalUrl } from '@/lib/seo/site-seo'
 
@@ -25,48 +26,64 @@ export const Route = createFileRoute('/_site/blog/$slug')({
   loader: async ({ params }) => {
     const post = await loadPost(params.slug)
     if (!post) throw notFound()
-    return post
+    const related = await loadRelatedPosts({
+      excludeSlug: post.slug,
+      topicIds: post.topics?.map((topic) => topic.id) ?? [],
+      limit: 3,
+    })
+    return { post, related }
   },
-  head: ({ loaderData, params }) =>
-    loaderData
+  head: ({ loaderData, params }) => {
+    const post = loaderData?.post
+    return post
       ? createContentMeta({
-          title: loaderData.title,
-          description: loaderData.excerpt,
-          image: loaderData.coverImage,
-          seo: loaderData.seo,
+          title: post.title,
+          description: post.excerpt,
+          image: post.coverImage,
+          seo: post.seo,
           kind: 'article',
           pathname: `/blog/${params.slug}`,
-          publishedTime: loaderData.publishedAt,
-          modifiedTime: loaderData.updatedAt,
-          tags: loaderData.tags,
+          publishedTime: post.publishedAt,
+          modifiedTime: post.updatedAt,
+          tags: post.tags,
           structuredData: withBreadcrumbs(
             createPostStructuredData({
-              title: loaderData.seo.title?.trim() || loaderData.title,
-              description: loaderData.seo.description?.trim() || loaderData.excerpt,
+              title: post.seo.title?.trim() || post.title,
+              description: post.seo.description?.trim() || post.excerpt,
               slug: params.slug,
-              imageUrl: loaderData.seo.image.url ?? loaderData.coverImage.url ?? null,
-              publishedTime: loaderData.publishedAt,
-              modifiedTime: loaderData.updatedAt,
-              tags: loaderData.tags,
-              readingTimeMinutes: readingTimeMinutes(loaderData.content),
+              imageUrl: post.seo.image.url ?? post.coverImage.url ?? null,
+              publishedTime: post.publishedAt,
+              modifiedTime: post.updatedAt,
+              tags: post.tags,
+              readingTimeMinutes: readingTimeMinutes(post.content),
             }),
             [
               { name: 'Home', path: '/' },
               { name: 'Blog', path: '/blog' },
-              { name: loaderData.title, path: `/blog/${params.slug}` },
+              { name: post.title, path: `/blog/${params.slug}` },
             ],
           ),
         })
       : {
           meta: [{ title: 'Note — LAST//OS' }],
           links: [{ rel: 'canonical', href: canonicalUrl(`/blog/${params.slug}`) }],
-        },
+        }
+  },
   component: PostPage,
 })
 
 function PostPage() {
-  const post = Route.useLoaderData()
+  const { post, related } = Route.useLoaderData()
   const readMinutes = readingTimeMinutes(post.content)
+  // The same inputs `head()` passes, so the dialog preview and the emitted
+  // `og:*` tags cannot disagree.
+  const share = resolveContentShare({
+    title: post.title,
+    description: post.excerpt,
+    image: post.coverImage,
+    seo: post.seo,
+    pathname: `/blog/${post.slug}`,
+  })
   return (
     <ContentDetailLayout
       windowTitle={`note://${post.slug}`}
@@ -83,6 +100,8 @@ function PostPage() {
       publishedAt={post.publishedAt}
       wide
       updatedAt={post.updatedAt}
+      share={share}
+      related={<RelatedContent items={related} kind="post" />}
     >
       <RichText value={post.content} />
     </ContentDetailLayout>

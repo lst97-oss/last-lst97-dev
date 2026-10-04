@@ -63,13 +63,22 @@ function PixelSkeletonPagination() {
   )
 }
 
-/** The `topic-filter-link` row above the blog grid — chips, not anchors. */
-function TopicFilterSkeleton() {
+/**
+ * Mirrors `ListFilters`: the archive search box, then the narrower topic filter
+ * box, then the chip row. The project listing gained the same filter bar as the
+ * blog listing, so both skeletons carry it — otherwise the pending state jumps
+ * when the real filters arrive.
+ */
+function ListFiltersSkeleton() {
   return (
-    <div className="mb-6 flex flex-wrap gap-2">
-      {Array.from({ length: 5 }, (_, index) => (
-        <PixelSkeletonChip className="h-6 w-24" key={index} />
-      ))}
+    <div className="list-filters mb-6 flex flex-col gap-4">
+      <PixelSkeletonBar className="h-10 w-full max-w-104" />
+      <PixelSkeletonBar className="h-10 w-80" />
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length: 5 }, (_, index) => (
+          <PixelSkeletonChip className="h-6 w-24" key={index} />
+        ))}
+      </div>
     </div>
   )
 }
@@ -80,7 +89,7 @@ export function BlogListSkeleton() {
       <div className={PAGE_COLUMN}>
         <PixelSkeletonWindow icon="✎" title="notes.directory">
           <ListHeadingSkeleton />
-          <TopicFilterSkeleton />
+          <ListFiltersSkeleton />
           <div className={CARD_GRID}>
             {Array.from({ length: 9 }, (_, index) => (
               <PostCardSkeleton index={index} key={index} />
@@ -99,6 +108,7 @@ export function ProjectListSkeleton() {
       <div className={PAGE_COLUMN}>
         <PixelSkeletonWindow icon="▤" title="projects.archive">
           <ListHeadingSkeleton />
+          <ListFiltersSkeleton />
           <div className={CARD_GRID}>
             {Array.from({ length: 9 }, (_, index) => (
               <ProjectCardSkeleton index={index} key={index} />

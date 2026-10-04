@@ -24,15 +24,19 @@ describe('createContentReader', () => {
         totalDocs: 1,
       }),
       listPublishedByTopic: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
+      listAllByUpdated: async () => [],
+      listRelated: async () => [],
       getPublishedBySlug: async () => null,
     }
     const projects: ProjectReader = {
       listPublished: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
       listAll: async () => [],
+      listRelated: async () => [],
       getPublishedBySlug: async () => null,
     }
     const changelogs: ChangelogReader = {
       listPublished: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
+      getNeighbours: async () => ({ previous: null, next: null }),
       getPublishedBySlug: async () => null,
     }
 
@@ -41,7 +45,6 @@ describe('createContentReader', () => {
       projects,
       changelogs,
       topics: { listPublished: async () => [], getPublishedBySlug: async () => null },
-      home: { getFeaturedPost: async () => null },
     })
 
     await expect(reader.listPosts({ page: 1, limit: 10 })).resolves.toMatchObject({
@@ -50,7 +53,7 @@ describe('createContentReader', () => {
     await expect(reader.getProject('missing')).resolves.toBeNull()
   })
 
-  it('exposes published topics, topic posts, and the selected homepage post', async () => {
+  it('exposes published topics and the posts filed under them', async () => {
     const topic = { id: 7, slug: 'engineering', title: 'Engineering', description: 'Building software.' }
     const post = {
       slug: 'shipping-small-tools',
@@ -67,27 +70,29 @@ describe('createContentReader', () => {
       blogs: {
         listPublished: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
         listPublishedByTopic: async () => ({ items: [post], page: 1, totalPages: 1, totalDocs: 1 }),
+        listAllByUpdated: async () => [],
+        listRelated: async () => [],
         getPublishedBySlug: async () => null,
       },
       projects: {
         listPublished: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
         listAll: async () => [],
+        listRelated: async () => [],
         getPublishedBySlug: async () => null,
       },
       changelogs: {
         listPublished: async () => ({ items: [], page: 1, totalPages: 1, totalDocs: 0 }),
+        getNeighbours: async () => ({ previous: null, next: null }),
         getPublishedBySlug: async () => null,
       },
       topics: {
         listPublished: async () => [topic],
         getPublishedBySlug: async () => topic,
       },
-      home: { getFeaturedPost: async () => post },
     })
 
     await expect(reader.listTopics()).resolves.toEqual([topic])
     await expect(reader.getTopic('engineering')).resolves.toEqual(topic)
     await expect(reader.listPostsByTopic(topic.id, { page: 1, limit: 10 })).resolves.toMatchObject({ items: [post] })
-    await expect(reader.getFeaturedPost()).resolves.toEqual(post)
   })
 })

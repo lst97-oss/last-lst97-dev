@@ -19,7 +19,6 @@ describe('Payload content readers', () => {
         calls.push(args)
         return { docs: [post], page: 1, totalPages: 1, totalDocs: 1 }
       },
-      findGlobal: async () => ({}),
     }
     const readers = createPayloadReaders({
       getPayload: async () => payload,
@@ -39,31 +38,5 @@ describe('Payload content readers', () => {
         ],
       },
     })
-  })
-
-  it('returns a selected homepage post only when it is already public', async () => {
-    const selected = {
-      id: 23,
-      title: 'Featured',
-      slug: 'featured',
-      excerpt: 'Selected note.',
-      status: 'published',
-      publishedAt: '2026-09-28T00:00:00.000Z',
-    }
-    let selectedPost: Record<string, unknown> = selected
-    const payload = {
-      find: async () => ({ docs: [] }),
-      findGlobal: async () => ({ featuredPost: selectedPost }),
-    }
-    const readers = createPayloadReaders({
-      getPayload: async () => payload,
-      now: () => new Date('2026-09-29T00:00:00.000Z'),
-    })
-
-    await expect(readers.home.getFeaturedPost()).resolves.toMatchObject({ slug: 'featured' })
-    selectedPost = { ...selected, status: 'draft' }
-    await expect(readers.home.getFeaturedPost()).resolves.toBeNull()
-    selectedPost = { ...selected, publishedAt: '2099-01-01T00:00:00.000Z' }
-    await expect(readers.home.getFeaturedPost()).resolves.toBeNull()
   })
 })

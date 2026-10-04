@@ -1,11 +1,10 @@
-import type { BlogReader, ChangelogReader, HomeReader, ListPostsInput, ProjectReader, TopicReader } from './types'
+import type { BlogReader, ChangelogReader, ListPostsInput, ProjectReader, RelatedInput, TopicReader } from './types'
 
 export function createContentReader(dependencies: {
   blogs: BlogReader
   projects: ProjectReader
   changelogs: ChangelogReader
   topics: TopicReader
-  home: HomeReader
 }) {
   return {
     listPosts(input: ListPostsInput) {
@@ -14,8 +13,20 @@ export function createContentReader(dependencies: {
     listPostsByTopic(topicId: string | number, input: ListPostsInput) {
       return dependencies.blogs.listPublishedByTopic(topicId, input)
     },
+    listAllPostsByUpdated() {
+      return dependencies.blogs.listAllByUpdated()
+    },
     getPost(slug: string) {
       return dependencies.blogs.getPublishedBySlug(slug)
+    },
+    listRelatedPosts(input: RelatedInput) {
+      return dependencies.blogs.listRelated(input)
+    },
+    listRelatedProjects(input: RelatedInput) {
+      return dependencies.projects.listRelated(input)
+    },
+    getChangelogNeighbours(slug: string) {
+      return dependencies.changelogs.getNeighbours({ slug })
     },
     listProjects() {
       return dependencies.projects.listAll()
@@ -37,9 +48,6 @@ export function createContentReader(dependencies: {
     },
     getTopic(slug: string) {
       return dependencies.topics.getPublishedBySlug(slug)
-    },
-    getFeaturedPost() {
-      return dependencies.home.getFeaturedPost()
     },
   }
 }

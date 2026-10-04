@@ -2,17 +2,19 @@ import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { cn } from 'cn'
 import { ContentCover } from '@/components/site/content/cover'
 import { DetailMeta } from '@/components/site/content/detail-meta'
+import { RelatedContent } from '@/components/site/content/related-content'
 import { RichText } from '@/components/site/content/rich-text'
 import { ContentUnavailableRoute } from '@/components/site/content/unavailable'
 import { Eyebrow, PageStack, ProjectStatus, pixelButtonVariants, Tag, TagRow } from '@/components/site/os-ui'
 import { PixelIcon } from '@/components/site/pixel-icon'
+import { ShareDialog } from '@/components/site/share'
 import { ImageGallery, MediaTrigger, toMediaItem } from '@/components/site/share/media'
 import { WindowFrame } from '@/components/site/window-frame'
 import { ProjectDetailSkeleton } from '@/components/ui/skeletons'
 import { contentCardDate, formatReadingTime, readingTimeMinutes } from '@/lib/content/date'
-import { createContentMeta } from '@/lib/content/meta'
+import { createContentMeta, resolveContentShare } from '@/lib/content/meta'
 import { formatProjectTimeframe, getProjectLifecycleLabel } from '@/lib/content/project-display'
-import { loadProject } from '@/lib/content/site-data'
+import { loadProject, loadRelatedProjects } from '@/lib/content/site-data'
 import { createProjectStructuredData, withBreadcrumbs } from '@/lib/content/structured-data'
 import { safeAssetHref } from '@/lib/content/url'
 import { canonicalUrl } from '@/lib/seo/site-seo'
@@ -29,46 +31,55 @@ export const Route = createFileRoute('/_site/projects/$slug')({
   loader: async ({ params }) => {
     const project = await loadProject(params.slug)
     if (!project) throw notFound()
-    return project
+    // Topics first, recency as the top-up: most projects carry no topics at
+    // all, and an empty section helps nobody.
+    const related = await loadRelatedProjects({
+      excludeSlug: project.slug,
+      topicIds: project.topics.map((topic) => topic.id),
+      limit: 3,
+    })
+    return { project, related }
   },
-  head: ({ loaderData, params }) =>
-    loaderData
+  head: ({ loaderData, params }) => {
+    const project = loaderData?.project
+    return project
       ? createContentMeta({
-          title: loaderData.title,
-          description: loaderData.summary,
-          image: loaderData.coverImage,
-          seo: loaderData.seo,
+          title: project.title,
+          description: project.summary,
+          image: project.coverImage,
+          seo: project.seo,
           kind: 'article',
           pathname: `/projects/${params.slug}`,
           // Projects have no publication date, but the record still carries a
           // created and updated timestamp; passing them gives `article:*` and
           // the JSON-LD a real freshness signal instead of nothing.
-          publishedTime: loaderData.createdAt,
-          modifiedTime: loaderData.updatedAt,
-          tags: loaderData.technologies,
+          publishedTime: project.createdAt,
+          modifiedTime: project.updatedAt,
+          tags: project.technologies,
           structuredData: withBreadcrumbs(
             createProjectStructuredData({
-              title: loaderData.seo.title?.trim() || loaderData.title,
-              summary: loaderData.seo.description?.trim() || loaderData.summary,
+              title: project.seo.title?.trim() || project.title,
+              summary: project.seo.description?.trim() || project.summary,
               slug: params.slug,
-              imageUrl: loaderData.seo.image.url ?? loaderData.coverImage.url ?? null,
-              liveUrl: loaderData.liveUrl,
-              repositoryUrl: loaderData.repositoryUrl,
-              technologies: loaderData.technologies,
-              createdAt: loaderData.createdAt,
-              updatedAt: loaderData.updatedAt,
+              imageUrl: project.seo.image.url ?? project.coverImage.url ?? null,
+              liveUrl: project.liveUrl,
+              repositoryUrl: project.repositoryUrl,
+              technologies: project.technologies,
+              createdAt: project.createdAt,
+              updatedAt: project.updatedAt,
             }),
             [
               { name: 'Home', path: '/' },
               { name: 'Projects', path: '/projects' },
-              { name: loaderData.title, path: `/projects/${params.slug}` },
+              { name: project.title, path: `/projects/${params.slug}` },
             ],
           ),
         })
       : {
           meta: [{ title: 'Project — LAST//OS' }],
           links: [{ rel: 'canonical', href: canonicalUrl(`/projects/${params.slug}`) }],
-        },
+        }
+  },
   component: ProjectPage,
 })
 
@@ -94,13 +105,22 @@ function ProjectFacts({
 }
 
 function ProjectPage() {
-  const project = Route.useLoaderData()
+  const { project, related } = Route.useLoaderData()
   const lifecycle = getProjectLifecycleLabel(project.projectStatus)
   const timeframe = formatProjectTimeframe(project.projectStatus, project.startDate, project.endDate)
   const liveUrl = safeAssetHref(project.liveUrl)
   const repositoryUrl = safeAssetHref(project.repositoryUrl)
   const coverItem = toMediaItem(project.coverImage, { altFallback: project.title })
   const readMinutes = readingTimeMinutes(project.content)
+  // The same inputs `head()` passes, so the dialog preview and the emitted
+  // `og:*` tags cannot disagree.
+  const share = resolveContentShare({
+    title: project.title,
+    description: project.summary,
+    image: project.coverImage,
+    seo: project.seo,
+    pathname: `/projects/${project.slug}`,
+  })
   const projectDate = contentCardDate(project.createdAt) ?? contentCardDate(project.updatedAt)
   // `gallery` is a flat array of media documents; each one's own `alt` is the
   // caption, so the same text is the accessible name and the viewer caption.
@@ -163,11 +183,13 @@ function ProjectPage() {
               SOURCE CODE <span>↗</span>
             </a>
           ) : null}
+          <ShareDialog {...share} />
         </div>
         <div className="article-body article-body--wide">
           <RichText value={project.content} />
         </div>
         <ImageGallery heading="Gallery" items={mediaItems} />
+        <RelatedContent items={related} kind="project" />
       </WindowFrame>
     </PageStack>
   )

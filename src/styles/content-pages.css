@@ -267,6 +267,136 @@
   color: var(--accent);
 }
 
+.topic-filter-link--active {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.list-search {
+  display: flex;
+  gap: 8px;
+}
+
+.list-search input {
+  width: 100%;
+  border: 2px solid var(--border);
+  background: var(--card);
+  padding: 0.55rem 0.8rem;
+  color: var(--foreground);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.list-search input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The topic filter narrows a chip list, not the archive, so it wants less
+   room than the removed archive search box did. */
+.list-search--topics {
+  max-width: 20rem;
+}
+
+.topic-filter-empty {
+  align-self: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
+/* The topic filter is a disclosure bar, not a card. Its box mirrors the chat
+   page's tool section (`chat.css` `.os-chat-suggestions-summary`): a flat 2px
+   ink border on paper, no radius, tight padding, a yellow hover with the small
+   offset shadow, a coral focus ring, and a coral chevron on the right. The chat
+   bar is a single button, so its anatomy splits across the two elements here —
+   the item carries the border, the trigger carries the surface and the label.
+   Nothing wraps the content: the chip list hangs below the bar exactly as the
+   suggestion chips hang below "TRY A TOOL", and the chips keep their own card
+   treatment from `.topic-filter-link`.
+
+   `!important` is required on the trigger's box metrics: the primitive sets
+   `rounded-md` and a 1rem padding as Tailwind utilities on its own class. */
+.list-filter-accordion [data-slot='accordion-item'] {
+  border: 2px solid var(--border);
+  background: var(--card);
+  transition: background-color 100ms ease-out, box-shadow 100ms ease-out;
+}
+
+/* The hover box moves to the item so the offset shadow falls OUTSIDE the
+   border, as it does on the chat bar. Hovering the trigger instead would paint
+   the shadow inside the item's border and read as a doubled edge. */
+.list-filter-accordion [data-slot='accordion-item']:has(.list-filter-trigger:hover) {
+  background: var(--warning-muted);
+  box-shadow: var(--shadow-os-xs);
+}
+
+.list-filter-trigger {
+  box-sizing: border-box;
+  align-items: center !important;
+  gap: 10px !important;
+  border-radius: 0 !important;
+  padding: 7px 10px !important;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+}
+
+.list-filter-trigger:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The primitive ships a lucide chevron, so the chat bar's coral glyph is
+   reproduced by recolouring it rather than by swapping in a text character. */
+.list-filter-trigger > svg {
+  width: 15px !important;
+  height: 15px !important;
+  color: var(--accent);
+  stroke-width: 3;
+}
+
+.list-filter-content {
+  margin-top: 8px;
+  padding: 0 0.8rem 1rem;
+}
+
+.list-filter-label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.list-filter-active {
+  border: 2px solid var(--accent);
+  background: var(--accent);
+  padding: 0.1rem 0.45rem;
+  color: var(--accent-foreground);
+  font-size: 0.7rem;
+}
+
+.list-filter-clear {
+  align-self: flex-start;
+  border: 2px solid var(--border);
+  background: var(--card);
+  padding: 0.4rem 0.7rem;
+  color: var(--foreground);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.list-filter-clear:hover,
+.list-filter-clear:focus-visible {
+  background: var(--warning-muted);
+  color: var(--accent);
+}
+
 .back-link {
   display: inline-block;
   margin-bottom: 30px;

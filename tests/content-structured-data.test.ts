@@ -54,11 +54,16 @@ describe('content meta image handling', () => {
     expect(property(meta, 'og:image')).toBe('https://media.example.com/cover.png')
   })
 
-  it('falls back to a summary card when there is no image', () => {
+  it('falls back to the committed site card when there is no image', () => {
     const meta = contentMeta({})
 
-    expect(property(meta, 'og:image')).toBeUndefined()
-    expect(named(meta, 'twitter:card')).toBe('summary')
+    // Emitting no image degrades a shared link to a bare text stub, and most
+    // documents in this CMS carry no cover, so the site card is the fallback
+    // and the card is always a large one.
+    expect(property(meta, 'og:image')).toBe('http://localhost:3000/og/default.webp')
+    expect(property(meta, 'og:image:width')).toBe('1200')
+    expect(property(meta, 'og:image:height')).toBe('630')
+    expect(named(meta, 'twitter:card')).toBe('summary_large_image')
   })
 })
 
