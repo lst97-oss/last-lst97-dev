@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import {
-  HomeFeaturedPostSection,
   HomeFeaturedProjectSection,
   HomeHeroSection,
   HomeOperatorProfileSection,
@@ -9,19 +8,20 @@ import {
 } from '@/components/site/home'
 import { PageStack } from '@/components/site/os-ui'
 import { HomeSkeleton } from '@/components/ui/skeletons'
-import { loadFeaturedPost, loadPosts, loadProjects } from '@/lib/content/site-data'
+import { loadAllPostsByUpdated, loadProjects } from '@/lib/content/site-data'
 import { createPageMeta, SITE_DESCRIPTION, SITE_TAGLINE } from '@/lib/seo/site-seo'
 import { getWakaTimeSnapshotServerFn } from '@/server/wakatime/server-functions'
 
 export const Route = createFileRoute('/_site/')({
   loader: async () => {
-    const [posts, projects, featuredPost, wakatimeSnapshot] = await Promise.all([
-      loadPosts(),
+    // One ordering for the whole home page: `-updatedAt`. The notes window is the
+    // only consumer, so no second published-date list has to be kept in step.
+    const [allPosts, projects, wakatimeSnapshot] = await Promise.all([
+      loadAllPostsByUpdated(),
       loadProjects(),
-      loadFeaturedPost(),
       getWakaTimeSnapshotServerFn(),
     ])
-    return { posts, projects, featuredPost, wakatimeSnapshot }
+    return { allPosts, projects, wakatimeSnapshot }
   },
   pendingComponent: () => <HomeSkeleton />,
   head: () =>
@@ -34,8 +34,7 @@ export const Route = createFileRoute('/_site/')({
 })
 
 function HomePage() {
-  const { posts, projects, featuredPost, wakatimeSnapshot } = Route.useLoaderData()
-  const featuredProject = projects.find((project) => project.featured) ?? projects[0]
+  const { allPosts, projects, wakatimeSnapshot } = Route.useLoaderData()
   const totalCodingTime = wakatimeSnapshot?.stats.data.grand_total.human_readable_total_including_other_language
   const formattedWakatimeStatsJson = wakatimeSnapshot?.formattedJson ?? null
 
@@ -44,7 +43,7 @@ function HomePage() {
       <HomeHeroSection />
       <div className="dashboard-grid grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-3">
-          <HomeFeaturedProjectSection project={featuredProject} />
+          <HomeFeaturedProjectSection projects={projects} />
         </div>
         <div className="lg:col-span-2">
           <HomeOperatorProfileSection
@@ -53,8 +52,7 @@ function HomePage() {
           />
         </div>
       </div>
-      {featuredPost ? <HomeFeaturedPostSection post={featuredPost} /> : null}
-      <HomeRecentNotesSection posts={posts.items} />
+      <HomeRecentNotesSection posts={allPosts} />
     </PageStack>
   )
 }
