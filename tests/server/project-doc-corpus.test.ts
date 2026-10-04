@@ -14,7 +14,21 @@ import { parseProjectDocument } from '../../src/server/knowledge/project-documen
  */
 const PROJECT_GLOB = 'src/data/projects/*/*.md'
 
-const EXPECTED_PROJECTS = ['last-os', 'gnaf-address-autocomplete', 'smartplay-hk-oss', 'wat-wat-new-zealand'] as const
+const EXPECTED_PROJECTS = [
+  'last-os',
+  'gnaf-address-autocomplete',
+  'smartplay-hk-oss',
+  'wat-wat-new-zealand',
+  'best-maker-pty-ltd',
+  'canton-101',
+] as const
+
+/**
+ * A folder listed here is asserted non-public below. Hardcoding one folder
+ * would silently assert that every later private project is public, so this is
+ * a set and `project-document.ts` remains the exhaustive declaration it guards.
+ */
+const PRIVATE_PROJECTS = ['wat-wat-new-zealand', 'canton-101'] as const
 
 async function readCorpus() {
   const entries: { relativePath: string; text: string }[] = []
@@ -55,12 +69,14 @@ describe('project deep-dive corpus', () => {
     expect(new Set(identities).size).toBe(identities.length)
   })
 
-  it('stamps the private project as non-public and the others as public', async () => {
+  it('stamps private projects as non-public and the others as public', async () => {
     const entries = await readCorpus()
 
     for (const { relativePath, text } of entries) {
       const parsed = parseProjectDocument(relativePath, text)
-      const isPrivateProject = relativePath.startsWith('src/data/projects/wat-wat-new-zealand/')
+      const isPrivateProject = PRIVATE_PROJECTS.some((project) =>
+        relativePath.startsWith(`src/data/projects/${project}/`),
+      )
 
       expect(parsed?.isPublic).toBe(!isPrivateProject)
     }

@@ -307,11 +307,11 @@ async function main() {
     endDate: '2026-08-20T00:00:00.000Z',
     repositoryUrl: 'https://github.com/lst97/smartplay-hk-oss',
     liveUrl: 'https://sphkoss.lst97.dev',
-    // Not featured: the home loader takes the first `featured` project by
-    // `sortOrder`, and G-NAF at -1 already holds that window. This sits above the
-    // remaining demo rows and below the two featured entries.
+    // Not featured: the home carousel is taken by the featured window at -2, -1,
+    // 0 and 1. This sits directly below the portfolio overview at 7, so the
+    // archive reads overview, then the individual project articles.
     featured: false,
-    sortOrder: 7,
+    sortOrder: 8,
     status: 'published' as const,
     // `technologies` is a Payload array field, so each entry is a row object
     // with a `technology` key rather than a bare string.

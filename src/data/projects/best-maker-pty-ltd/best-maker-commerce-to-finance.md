@@ -1,0 +1,44 @@
+# How a storefront purchase becomes an invoice without a second login or a second ledger
+
+- **Category:** Commerce
+- **Source ID:** best-maker-commerce-to-finance
+- **URL:** https://www.lst97.dev/projects/best-maker-pty-ltd
+- **Visibility:** Public
+
+A fabrication business sells two very different things. Most of its work is bespoke: measured, quoted, agreed, built over months. Some of it is a catalogue of standard items — a shelf bracket, a timber panel cut to size — that a customer can buy directly. Best Maker serves both, and the storefront side had to be pulled into the same financial spine rather than left as a separate shop that happens to share a logo.
+
+The commerce backend owns the catalog, the cart, checkout and orders. What makes it work as part of one business is three decisions: authentication is not duplicated, orders carry invoice metadata back into the finance pipeline, and pickup is a first-class checkout option rather than a shipping hack.
+
+## One identity system, not two
+
+The most common failure in a stack like this is two login systems. The dashboard has accounts, and the commerce backend has its own customer accounts, so a returning customer is asked to register twice, and a staff member is an operator in one system and a stranger in the other.
+
+Best Maker avoids this by having a single authority for identity. Authentication lives in the API server. The web application and the commerce backend both delegate to it. A commerce session is issued by the same authority that issues a dashboard session, so a customer has one login and a staff member has one set of roles, regardless of which surface they are using.
+
+Delegation is the correct shape here rather than duplication. Copying the authentication code into the commerce backend would mean two implementations of password rules, session expiry, and role checks — and they would drift. Instead the commerce backend asks the identity authority, and holds no password logic of its own.
+
+This also means role-based access control is expressed once. Roles are enforced server-side across the dashboard, the CMS and the admin surfaces, not gated by hiding buttons in the UI. A staff member whose role does not include a capability cannot reach it by crafting the request, because the check happens where the data is.
+
+## Catalog and product detail pages
+
+The catalog and its detail pages are served from the commerce backend rather than modelled twice in the CMS. A product has availability, variants and a price, and duplicating that into another system means reconciling stock by hand.
+
+The customer-facing pages are reader-facing and part of the same site — the commerce backend is reached through the edge, alongside the public site and the API — so a customer's path from browsing to checkout does not feel like leaving the business and arriving somewhere else.
+
+## Cart, checkout and pickup
+
+Checkout handles payment, and it also handles pickup-location handling, which matters for a fabrication business where a large proportion of orders are collected rather than shipped. Pickup is not treated as a shipping method with a fixed address; the customer selects a location and the order records which one, so the internal team knows where the item is going without a phone call.
+
+Payment is completed in the commerce layer, but the payment is not the end of the transaction from the business's point of view. What the business needs is the sale recorded in its own financial pipeline, in a form the monthly statistics and the reconciliation step can read.
+
+## Orders carry invoice metadata back
+
+That is the bridge. When an order is created in the commerce backend, invoice metadata is carried back into the finance pipeline: the customer, the line items, the amount, the payment state. An order becomes an invoice — or an invoice record the quote-to-cash spine understands — using the same entity shape as a bespoke job's invoice, not a parallel commerce-specific structure.
+
+The consequence is that a storefront purchase follows the same spine from the quotation step onward. The order arrives, is turned into an invoice, and is reconciled identically to a bespoke job. The monthly statistics do not need to know whether revenue came from a shelf or from a staircase, because both arrive as invoices with line items and a payment record.
+
+This is the practical payoff of the "one data model per real-world entity" principle: customer, address, payment method, product, order and invoice each exist once, and each document type presents the same underlying records in the form its audience needs — a storefront page, a dashboard, or a PDF.
+
+## Back-office administration
+
+The same identity and access model governs staff administration. Staff members have roles, role-based access control is enforced across the dashboard and CMS server-side, and invitations let a new staff member claim their access rather than an administrator creating credentials for them. Notifications are generated by business events — an order placed, a quotation accepted, an expense awaiting approval — rather than sent ad hoc, so nothing depends on someone remembering to send it.

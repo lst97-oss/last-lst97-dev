@@ -351,10 +351,10 @@ async function main() {
     // deployment is reachable only through an allowlisted, tunneled host. Both
     // would render as a dead link to a visitor.
     featured: false,
-    // Below the demo block's start (90) and above nothing else, so the row lands
-    // directly after SmartPlay in the listing without touching the featured
-    // window the home loader reads.
-    sortOrder: 8,
+    // Last in the non-featured listing: the portfolio overview (7), SmartPlay
+    // (8) and the featured demo row (9) all sit above it. The featured window
+    // the home loader reads is unaffected either way.
+    sortOrder: 10,
     status: 'published' as const,
     // `technologies` is a Payload array field, so each entry is a row object
     // with a `technology` key rather than a bare string.

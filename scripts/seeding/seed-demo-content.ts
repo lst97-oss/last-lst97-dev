@@ -17,9 +17,10 @@
  */
 import { Client } from 'pg'
 
-// Web Crypto, available as a global under Bun; `node:crypto` imported the same
-// function through Node's module shim.
-const { randomUUID } = crypto
+// Web Crypto, available as a global under Bun. It must be called off `crypto`
+// itself: destructuring `randomUUID` and invoking the bare reference throws
+// ERR_INVALID_THIS, because the Web Crypto methods require a Crypto receiver.
+const randomUUID = () => crypto.randomUUID()
 
 const DEMO_PREFIX = 'demo-'
 
@@ -72,7 +73,11 @@ const DEMO_PROJECTS: ProjectSeed[] = [
     startDate: '2025-03-01T00:00:00.000Z',
     endDate: null,
     featured: true,
-    sortOrder: 1,
+    // Stays featured, but trails every real project: the home loader takes
+    // featured rows in `sortOrder` order, and this row is demo data rather than
+    // a shipped piece of work. 9 keeps it clear of the real featured slots
+    // (-2, -1, 0 and 1).
+    sortOrder: 9,
   },
   {
     slug: 'demo-vector-search',
