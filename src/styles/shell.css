@@ -574,3 +574,99 @@ html.js-hydrated [data-boot='skeleton'] {
   background: var(--os-yellow);
   box-shadow: 0 0 0 1px var(--os-coral);
 }
+
+/* Toasts (see `components/ui/sonner.tsx`, mounted by `routes/_site.tsx`).
+
+   The `--normal-*` / `--success-*` / `--border-radius` token mapping is NOT
+   here — sonner's `[data-sonner-toaster][data-sonner-theme=light]` sets those
+   on the element itself at specificity 0,2,0, so only the wrapper's inline
+   `style` can override them.
+
+   House idiom rather than sonner's rounded sans-serif default: the site is
+   monospace, 3px ink borders, no radius, offset shadow. `--font-mono` is what
+   `tokens.css` @theme emits.
+
+   The `[data-sonner-toaster]` attribute qualifier is load-bearing, not
+   redundant: sonner injects `font-family: ui-sans-serif, …` on that attribute
+   selector (0,1,0) from a runtime <style> that lands AFTER this stylesheet, so
+   a bare `.os-toaster` loses on cascade order and the toast renders in system
+   sans while the whole site is monospace. Qualifying raises this to 0,2,0. */
+.os-toaster[data-sonner-toaster] {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+/* The border and the offset shadow are the OS window idiom, and `--border` is
+   `--os-ink`, so this inverts with `.dark` for free. Sonner's own
+   `box-shadow: 0 4px 12px rgba(0,0,0,.1)` is replaced rather than added to —
+   a soft blur under a hard 3px frame reads as two unrelated surfaces. */
+.os-toaster [data-sonner-toast][data-styled='true'] {
+  padding: 12px 14px;
+  gap: 10px;
+  border: 3px solid var(--border);
+  box-shadow: var(--shadow-os-sm);
+}
+
+.os-toaster [data-sonner-toast][data-styled='true']:hover {
+  box-shadow: var(--shadow-os-xs);
+}
+
+.os-toaster [data-sonner-toast][data-styled='true'] [data-title] {
+  font-weight: 700;
+}
+
+/* Sonner hardcodes `#3f3f3f` for the description, which is neither token nor
+   legible on `--card`; the title inherits `--normal-text` already. */
+.os-toaster [data-sonner-toast][data-styled='true'] [data-description] {
+  color: var(--muted-foreground);
+}
+
+/* Type is carried by the ICON, not the background. Sonner only reads
+   `--success-bg` / `--error-bg` / `--warning-bg` / `--info-bg` when
+   `richColors` is on, and the mapping this wrapper used to inline
+   (`--*-muted` surfaces) read as a colour wash rather than the site's flat
+   paper cards — worse than no tint at all. The wrapper's lucide icons inherit
+   `currentColor`, so painting `[data-icon]` per `data-type` is both cheaper
+   and legible: `--warning`/`--error`/`--success`/`--info` are the same tokens
+   the rest of the site uses for those meanings, and they are chosen to hold
+   contrast on `--card`. */
+.os-toaster [data-sonner-toast][data-type='success'] [data-icon] {
+  color: var(--success);
+}
+
+.os-toaster [data-sonner-toast][data-type='error'] [data-icon] {
+  color: var(--error);
+}
+
+.os-toaster [data-sonner-toast][data-type='warning'] [data-icon] {
+  color: var(--warning);
+}
+
+.os-toaster [data-sonner-toast][data-type='info'] [data-icon] {
+  color: var(--info);
+}
+
+/* Close button: sonner draws it as a 20px circle with `border-radius: 50%`,
+   which no other control on the site uses. Square it, keep it 3px-bordered,
+   and park it in the top-right corner. `--toast-close-button-start` /
+   `--toast-close-button-end` are what sonner's own rule reads for `left` /
+   `right`. */
+.os-toaster [data-sonner-toast] [data-close-button] {
+  top: 6px;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 0;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: var(--shadow-os-xs);
+}
+
+/* `data-button` is sonner's action button — same pixel treatment as the toast
+   itself, inverted so it reads as the primary target. */
+.os-toaster [data-sonner-toast] [data-button],
+.os-toaster [data-sonner-toast] [data-cancel] {
+  border-radius: 0;
+  border: 2px solid var(--border);
+  font-weight: 700;
+}

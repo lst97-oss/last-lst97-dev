@@ -4,6 +4,7 @@ import { BootGate } from '@/components/site/boot-gate'
 import { NotFoundPage } from '@/components/site/not-found-page'
 import { DesktopShell } from '@/components/site/shell'
 import { SiteHealthProvider } from '@/components/site/site-health-provider'
+import { Toaster } from '@/components/ui/sonner'
 import { getMelbourneTemperatureServerFn } from '@/server/melbourne-temperature/server-functions'
 import siteCss from '@/styles.css?url'
 
@@ -37,6 +38,17 @@ function SiteLayout() {
           <Outlet />
         </DesktopShell>
       </BootGate>
+      {/* Toast host, mounted once for every public route — `/_payload/admin`
+          is a sibling of `/_site` and brings Payload's own Toaster, so the two
+          never double up.
+
+          It sits OUTSIDE `BootGate` deliberately: the gate's content wrapper is
+          `display: none` until `html.js-hydrated`, so a toast raised during
+          hydration would be mounted but invisible. Sonner positions its list
+          `fixed`, so nothing in the shell tree is needed for that to work —
+          and it must never be moved inside a window frame, whose
+          `overflow: hidden` viewport scrolls its content. */}
+      <Toaster />
     </SiteHealthProvider>
   )
 }
