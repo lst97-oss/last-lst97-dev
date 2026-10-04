@@ -104,6 +104,8 @@ describe('knowledge chunking', () => {
       expect(body.length).toBeLessThanOrEqual(200)
     }
     expect(chunks.some(({ text: chunk }) => chunk.includes('## Next'))).toBe(true)
+    // Every chunk of the oversized section carries the prefix, not just the first.
+    expect(chunks.every(({ text: chunk }) => chunk.startsWith('## Reliable services\n\n'))).toBe(true)
   })
 
   it('matches the sliding window on a document with no headings', () => {

@@ -174,11 +174,16 @@ export function chunkHeadingDelimitedDocument(
     if (trimmedSegment.length > maxChars) {
       emit(group)
       group = ''
+      // Window the section body on its own, then prefix every resulting chunk.
+      // Prefixing the section before windowing would put the prefix on the first
+      // chunk only, so the rest of a long section would lose its document title.
       const windowed = chunkKnowledgeDocument(
-        { ...document, text: `${prefix}${trimmedSegment}`, chunkContextPrefix: undefined },
+        { ...document, text: trimmedSegment, chunkContextPrefix: undefined },
         { maxChars, overlapChars },
       )
-      for (const chunk of windowed) chunks.push(buildChunk(document, chunks.length, chunk.text))
+      for (const chunk of windowed) {
+        chunks.push(buildChunk(document, chunks.length, `${prefix}${chunk.text}`.trim()))
+      }
       continue
     }
     const candidate = group ? `${group}\n\n${trimmedSegment}` : trimmedSegment
