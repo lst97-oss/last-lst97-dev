@@ -32,6 +32,7 @@ export const SITE_AUTHOR = {
 export const SITE_OG_IMAGE_PATH = '/og/default.webp'
 
 export const SITE_OG_IMAGE_RENDERER_PATH = '/api/site/og'
+export const SITE_OG_IMAGE_RENDERER_VERSION = '3'
 
 export const SITE_OG_IMAGE_TITLE_LIMIT = 120
 export const SITE_OG_IMAGE_DESCRIPTION_LIMIT = 200
@@ -153,6 +154,7 @@ export function createOgImagePath(title: string, description: string): string {
   const query = new URLSearchParams({
     title: clampDescription(title, SITE_OG_IMAGE_TITLE_LIMIT),
     description: clampDescription(description, SITE_OG_IMAGE_DESCRIPTION_LIMIT),
+    v: SITE_OG_IMAGE_RENDERER_VERSION,
   })
 
   return `${SITE_OG_IMAGE_RENDERER_PATH}?${query.toString()}`

@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer'
+import { create as createFont, type Font } from 'fontkit'
 import sharp from 'sharp'
 import { z } from 'zod'
 import {
@@ -8,22 +9,23 @@ import {
   SITE_OG_IMAGE_TITLE_LIMIT,
   SITE_OG_IMAGE_WIDTH,
 } from '@/lib/seo/site-seo'
+import archivoBlackFontDataUrl from './fonts/archivo-black-regular.ttf?inline'
+import jetBrainsMonoFontDataUrl from './fonts/jetbrains-mono-variable.ttf?inline'
 import artworkDataUrl from './og-artwork.webp?inline'
+import { renderSvgTextPaths } from './svg-text-paths'
 
 const INK = '#17171f'
 const INK_SOFT = '#3c3b4a'
 const YELLOW = '#ffd34e'
 const CORAL = '#ff7969'
-const DISPLAY_FONT = 'Arial Black, Impact, sans-serif'
-const BODY_FONT = 'Helvetica Neue, Arial, sans-serif'
 const TITLE_MAX_CHARS_PER_LINE = 28
 const TITLE_MAX_LINES = 2
 const DESCRIPTION_MAX_CHARS_PER_LINE = 41
 const DESCRIPTION_MAX_LINES = 4
 const TITLE_FONT_SIZE = 62
 const TITLE_LINE_HEIGHT = 76
-const DESCRIPTION_FONT_SIZE = 29
-const DESCRIPTION_LINE_HEIGHT = 39
+const DESCRIPTION_FONT_SIZE = 24
+const DESCRIPTION_LINE_HEIGHT = 34
 const BRAND_FONT_SIZE = 26
 const CACHE_CONTROL = 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400'
 
@@ -33,6 +35,9 @@ const imageRequestSchema = z.object({
 })
 
 const artworkBytes = decodeArtworkDataUrl(artworkDataUrl)
+const archivoBlackFont = createFontFromDataUrl(archivoBlackFontDataUrl, 900)
+const jetBrainsMonoFont = createFontFromDataUrl(jetBrainsMonoFontDataUrl, 600)
+const jetBrainsMonoBoldFont = createFontFromDataUrl(jetBrainsMonoFontDataUrl, 800)
 
 function decodeArtworkDataUrl(value: string): Uint8Array {
   const separator = value.indexOf(',')
@@ -44,6 +49,23 @@ function decodeArtworkDataUrl(value: string): Uint8Array {
   return Uint8Array.from(decoded, (character) => character.charCodeAt(0))
 }
 
+function decodeFontDataUrl(value: string): Uint8Array {
+  const separator = value.indexOf(',')
+  const dataType = separator < 0 ? '' : value.slice(0, separator)
+  if (separator < 0 || !dataType.startsWith('data:font/') || !dataType.endsWith(';base64')) {
+    throw new Error('OG fonts must be inline base64 font data URLs')
+  }
+
+  const decoded = atob(value.slice(separator + 1))
+  return Uint8Array.from(decoded, (character) => character.charCodeAt(0))
+}
+
+function createFontFromDataUrl(dataUrl: string, weight: number): Font {
+  const loadedFont = createFont(Buffer.from(decodeFontDataUrl(dataUrl)))
+  if (!('layout' in loadedFont)) throw new Error('OG fonts must be single-face font files')
+  return loadedFont.variationAxes.wght ? loadedFont.getVariation({ wght: weight }) : loadedFont
+}
+
 function normalizeText(value: string): string {
   const withoutControlCharacters = Array.from(value, (character) => {
     const codePoint = character.codePointAt(0) ?? 0
@@ -51,10 +73,6 @@ function normalizeText(value: string): string {
   }).join('')
 
   return withoutControlCharacters.replace(/\s+/g, ' ').trim()
-}
-
-function escapeXml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 function fitAtWordBoundary(value: string, maxChars: number): string {
@@ -98,22 +116,36 @@ function renderOverlay(title: string, description: string): Uint8Array {
   const titleLines = wrapText(title, TITLE_MAX_CHARS_PER_LINE, TITLE_MAX_LINES)
   const descriptionLines = wrapText(description, DESCRIPTION_MAX_CHARS_PER_LINE, DESCRIPTION_MAX_LINES)
   const titleMarkup = titleLines
-    .map(
-      (line, index) =>
-        `<text x="82" y="${216 + index * TITLE_LINE_HEIGHT}" font-family="${DISPLAY_FONT}" font-size="${TITLE_FONT_SIZE}" font-weight="900" fill="${INK}">${escapeXml(line)}</text>`,
+    .map((line, index) =>
+      renderSvgTextPaths(archivoBlackFont, line, {
+        x: 82,
+        baselineY: 216 + index * TITLE_LINE_HEIGHT,
+        fontSize: TITLE_FONT_SIZE,
+        fill: INK,
+      }),
     )
     .join('\n')
   const descriptionStartY = 216 + titleLines.length * TITLE_LINE_HEIGHT + 28
   const descriptionMarkup = descriptionLines
-    .map(
-      (line, index) =>
-        `<text x="86" y="${descriptionStartY + index * DESCRIPTION_LINE_HEIGHT}" font-family="${BODY_FONT}" font-size="${DESCRIPTION_FONT_SIZE}" font-weight="600" fill="${INK_SOFT}">${escapeXml(line)}</text>`,
+    .map((line, index) =>
+      renderSvgTextPaths(jetBrainsMonoFont, line, {
+        x: 86,
+        baselineY: descriptionStartY + index * DESCRIPTION_LINE_HEIGHT,
+        fontSize: DESCRIPTION_FONT_SIZE,
+        fill: INK_SOFT,
+      }),
     )
     .join('\n')
+  const brandMarkup = renderSvgTextPaths(jetBrainsMonoBoldFont, `${SITE_NAME} / PAGE`, {
+    x: 122,
+    baselineY: 99,
+    fontSize: BRAND_FONT_SIZE,
+    fill: CORAL,
+  })
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SITE_OG_IMAGE_WIDTH}" height="${SITE_OG_IMAGE_HEIGHT}" viewBox="0 0 ${SITE_OG_IMAGE_WIDTH} ${SITE_OG_IMAGE_HEIGHT}">
     <rect x="82" y="76" width="24" height="24" fill="${YELLOW}" stroke="${INK}" stroke-width="3"/>
-    <text x="122" y="99" font-family="${BODY_FONT}" font-size="${BRAND_FONT_SIZE}" font-weight="900" letter-spacing="2" fill="${CORAL}">${SITE_NAME} / PAGE</text>
+    ${brandMarkup}
     ${titleMarkup}
     ${descriptionMarkup}
   </svg>`

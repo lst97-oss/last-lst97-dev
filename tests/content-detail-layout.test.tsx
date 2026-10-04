@@ -144,7 +144,7 @@ describe('content detail layout', () => {
       title: 'Shared note',
       description: 'With a share button.',
       image: {
-        url: 'https://last-os.invalid/api/site/og?title=Shared+note&description=With+a+share+button.',
+        url: 'https://last-os.invalid/api/site/og?title=Shared+note&description=With+a+share+button.&v=3',
         alt: 'LAST//OS share card for Shared note. With a share button.',
         width: 1200,
         height: 630,

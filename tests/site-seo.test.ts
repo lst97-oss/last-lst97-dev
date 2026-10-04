@@ -182,6 +182,14 @@ describe('page meta', () => {
   })
 })
 
+describe('page-specific Open Graph image cache version', () => {
+  test('uses a new renderer version so cached tofu cards cannot survive a renderer fix', () => {
+    const imageUrl = new URL(createOgImagePath('About', 'Who built this and why.'), 'https://www.lst97.dev')
+
+    expect(imageUrl.searchParams.get('v')).toBe('3')
+  })
+})
+
 describe('description clamping', () => {
   test('leaves short descriptions untouched', () => {
     expect(clampDescription('Short and sweet.')).toBe('Short and sweet.')
