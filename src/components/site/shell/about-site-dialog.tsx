@@ -2,14 +2,7 @@ import { Braces, Code2, Database, FileText, Heart, MonitorSmartphone, Scale, Ser
 
 import { Eyebrow } from '@/components/site/os-ui'
 import { PixelIcon } from '@/components/site/pixel-icon'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { SITE_NAME } from '@/lib/seo/site-seo'
 
 /** One row of the spec table, mirroring the About-this-Mac panel it is modelled on. */
@@ -34,22 +27,14 @@ function SpecRow({ icon: Icon, label, value }: { icon: typeof Braces; label: str
  * services behind them. Anything user-configurable ("Enabled services") is
  * deliberately omitted, because a static panel cannot know what a given
  * deployment has switched on.
+ *
+ * The open state is owned by the caller rather than an internal trigger button:
+ * the desktop system bar and the mobile tab bar's More menu each own one
+ * instance and open it from their own control.
  */
-export function AboutSiteDialog() {
+export function AboutSiteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <button
-          aria-label="About this site"
-          className="system-about-button inline-flex min-h-9 items-center gap-1.5 border-2 border-primary px-2.5 py-1 text-xs leading-none font-black tracking-widest text-primary uppercase hover:border-accent hover:bg-accent hover:text-foreground sm:px-2"
-          type="button"
-        >
-          <Sparkles aria-hidden="true" className="size-3.5 self-center" strokeWidth={2.5} />
-          {/* Icon-only below sm: the system bar has no room for a label, and
-              the aria-label above still names the control for screen readers. */}
-          <span className="hidden sm:inline">ABOUT THIS SITE</span>
-        </button>
-      </DialogTrigger>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="about-site-dialog">
         <DialogHeader>
           <Eyebrow>

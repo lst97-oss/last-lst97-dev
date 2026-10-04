@@ -177,4 +177,38 @@
   }
 }
 
+/* Below Tailwind's `sm` (40rem) the header's desktop dropdown row is hidden
+   (`.system-menu … max-sm:hidden` in `DesktopShell`) and the bottom tab bar
+   replaces it, so the bar's own `display: grid` and the space reserved for it
+   are gated by the SAME width. Keying the reserve to the 650px band above
+   instead would leave ~10px of dead padding with no bar between 640 and 650,
+   and keying it to a Tailwind utility would lose to `shell.css`, which is
+   unlayered. Keep this block, `.os-mobile-tab-bar { display: none }` in
+   `shell.css`, and the header's `max-sm:hidden` at one breakpoint.
+
+   There are two mobile scroll models, selected by whether a `scrollable`
+   WindowFrame is present, and each needs the space reserved a different way:
+   the frame model shrinks the frame's own height cap (see `shell.css`), while
+   the body model has <body> as the scroller and needs in-flow padding here. */
+@media (width < 40rem) {
+  /* Declared on `.os-site` rather than `:root` so it inherits into the
+     WindowFrame without affecting anything outside the shell. */
+  .os-site {
+    --os-tab-bar-reserve: calc(var(--os-tab-bar-height) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .os-mobile-tab-bar {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  /* Body-scroller model: home and any page with no `scrollable` WindowFrame.
+     `min-height: 100dvh` above makes the shell exactly a viewport tall, so the
+     padding is what lets its content grow past the fold and still end above the
+     bar instead of beneath it. */
+  .os-site:not(:has(.window-frame--scroll)) {
+    padding-bottom: var(--os-tab-bar-reserve);
+  }
+}
+
 /* Reduced-motion handling lives in animations.css. */

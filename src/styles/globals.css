@@ -67,6 +67,13 @@
   --shadow-os-hover: 2px 2px 0 var(--border);
   --shadow-os-coral: 8px 8px 0 var(--accent);
   --shadow-os-coral-sm: 5px 5px 0 var(--accent);
+
+  /* Mobile bottom tab bar (see `components/site/mobile-tab-bar.tsx`).
+     The height is real everywhere; the RESERVED space is 0 by default and only
+     becomes real below Tailwind's `sm`, so every existing `calc()` above and in
+     `shell.css` is byte-identical on desktop. */
+  --os-tab-bar-height: 3.5rem;
+  --os-tab-bar-reserve: 0px;
 }
 
 .dark {

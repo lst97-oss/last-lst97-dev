@@ -231,6 +231,88 @@ describe('window frame styles', () => {
     expect(mobile).toMatch(/\.os-site:has\(\.window-frame--scroll\)\s*\{[^}]*overflow:\s*hidden/)
   })
 
+  test('the bottom tab bar is fixed and pinned to the viewport bottom', () => {
+    // `position: fixed` with `bottom: 0` is what keeps navigation reachable on a
+    // page scrolled to its very bottom, instead of only at the top of the page.
+    const bar = browser.document.createElement('nav')
+    bar.className = 'os-mobile-tab-bar'
+    browser.document.body.append(bar)
+
+    const barStyle = browser.getComputedStyle(bar)
+    expect(barStyle.position).toBe('fixed')
+    expect(barStyle.bottom).toBe('0px')
+    expect(barStyle.right).toBe('0px')
+    expect(barStyle.left).toBe('0px')
+    // 30 matches a maximized window's z-index, and the More popup sits at 50, so
+    // neither a maximized frame nor its menu can paint over the bar.
+    expect(Number.parseInt(barStyle.zIndex, 10)).toBeGreaterThanOrEqual(30)
+
+    bar.remove()
+  })
+
+  test('the tab bar is gated to the same breakpoint as the header nav it replaces', async () => {
+    // happy-dom applies no media queries, so the gate is asserted as text. The
+    // two halves must be the SAME width or one of them is wrong at the boundary:
+    // a bar with no reserved space, or reserved space with no bar.
+    const responsive = (await Bun.file(new URL('../src/styles/responsive.css', import.meta.url)).text()).replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    )
+    const narrowStart = responsive.indexOf('@media (width < 40rem) {')
+    expect(narrowStart).toBeGreaterThan(-1)
+    const narrow = responsive.slice(narrowStart)
+
+    // Ungated: hidden everywhere, so desktop is untouched by the bar's presence.
+    expect(styles.textContent).toMatch(/\.os-mobile-tab-bar\s*\{[^}]*display:\s*none/)
+    // Gated: visible as a five-column track under Tailwind's `sm`.
+    expect(narrow).toMatch(/\.os-mobile-tab-bar\s*\{[^}]*display:\s*grid/)
+    expect(narrow).toMatch(/\.os-mobile-tab-bar\s*\{[^}]*grid-template-columns:\s*repeat\(5,\s*minmax\(0,\s*1fr\)\)/)
+    // The header's desktop dropdown row is hidden at that same `sm`.
+    expect(shellSource).toContain('system-menu flex items-center gap-1 max-sm:hidden')
+  })
+
+  test('the reserved space equals the bar height plus the safe area, and is zero on desktop', async () => {
+    const globals = await Bun.file(new URL('../src/styles/globals.css', import.meta.url)).text()
+    const responsive = (await Bun.file(new URL('../src/styles/responsive.css', import.meta.url)).text()).replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    )
+    const narrow = responsive.slice(responsive.indexOf('@media (width < 40rem) {'))
+
+    // Zero by default: any non-zero value above `sm` would shrink the desktop
+    // window-frame height cap and move every pixel of desktop layout.
+    expect(globals).toMatch(/--os-tab-bar-reserve:\s*0px/)
+    expect(narrow).toMatch(
+      /--os-tab-bar-reserve:\s*calc\(var\(--os-tab-bar-height\)\s*\+\s*env\(safe-area-inset-bottom,\s*0px\)\)/,
+    )
+    // Declared on `.os-site` so it inherits into the frame without escaping the shell.
+    expect(narrow).toMatch(/\.os-site\s*\{[^}]*--os-tab-bar-reserve:/)
+    // The bar pads itself by the same inset, which is what keeps the occupied
+    // height equal to the reserve instead of hiding content behind the bar.
+    expect(styles.textContent).toMatch(
+      /\.os-mobile-tab-bar\s*\{[^}]*padding-bottom:\s*env\(safe-area-inset-bottom,\s*0px\)/,
+    )
+  })
+
+  test('each mobile scroll model reserves the bar space the other way', async () => {
+    const responsive = (await Bun.file(new URL('../src/styles/responsive.css', import.meta.url)).text()).replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    )
+    const narrow = responsive.slice(responsive.indexOf('@media (width < 40rem) {'))
+
+    // Body-scroller pages (home, anything without a `scrollable` frame) scroll
+    // on <body>, so the space has to be in flow under the shell's own padding.
+    expect(narrow).toMatch(
+      /\.os-site:not\(:has\(\.window-frame--scroll\)\)\s*\{[^}]*padding-bottom:\s*var\(--os-tab-bar-reserve\)/,
+    )
+    // Frame-scroller pages instead shrink the frame's height cap, so the last
+    // rows of a long detail page stop above the bar.
+    expect(styles.textContent).toMatch(
+      /\.window-frame--scroll:not\(\.is-maximized\)\s*\{[^}]*max-height:\s*calc\(100dvh - 7rem - var\(--os-tab-bar-reserve\)\)/,
+    )
+  })
+
   test('every scrollable frame route opts into the shell scroller', async () => {
     // The two scroll models are selected by whether a `scrollable` frame is
     // present, so a route that scrolls tall content without the prop silently

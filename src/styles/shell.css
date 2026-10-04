@@ -38,11 +38,6 @@
   color: var(--os-ink);
 }
 
-.system-menu-button:focus-visible {
-  outline: 3px solid var(--os-coral);
-  outline-offset: 2px;
-}
-
 /* "About this site" panel, modelled on the macOS About-this-Mac window: the
    same chunky OS chrome as every other dialog, then a narrow centred spec
    table rather than the wide prose of the chat pipeline dialog. */
@@ -358,7 +353,7 @@
 /* Shortcut layout/typography lives in DesktopShell via Tailwind.
    Active/hover fill stays here (state-based).
    The border is transparent at rest and only its COLOR changes on active/hover,
-   matching `.os-mobile-dock-item` in the bottom sheet. A border that appears from
+   matching `.os-mobile-tab` in the bottom bar. A border that appears from
    `none` would reflow the item and shift every icon below it by 6px. */
 .desktop-shortcut:hover,
 .desktop-shortcut.is-active {
@@ -435,12 +430,15 @@
    ScrollArea viewport a bounded height. It resolves against the shell viewport
    because the desktop main column is a stretched flex/grid item, so a percentage
    height would not resolve up the chain — hence the explicit `100dvh` minus the
-   system bar (3rem) and the ScrollArea viewport padding (2rem + 2rem). The
-   maximized state opts out: its fixed inset already bounds the frame. */
+   system bar (3rem) and the ScrollArea viewport padding (2rem + 2rem).
+   `--os-tab-bar-reserve` is subtracted so the last rows of a long page stop
+   above the fixed mobile tab bar instead of scrolling underneath it; it is 0
+   above `sm`, so desktop geometry is unchanged. The maximized state opts out:
+   its fixed inset already bounds the frame. */
 .window-frame--scroll:not(.is-maximized) {
   display: flex;
   flex-direction: column;
-  max-height: calc(100dvh - 7rem);
+  max-height: calc(100dvh - 7rem - var(--os-tab-bar-reserve));
 }
 
 /* The scrollable content box hosts a ScrollArea, so it must not also overflow
@@ -476,36 +474,130 @@
 
 /* Content padding lives in WindowFrame via Tailwind (responsive p-6/sm:p-8/lg:p-12). */
 
-/* Drawer shell (border/bg/safe-area) lives in MobileNavDrawer via Tailwind. */
-.os-mobile-nav-content {
+/* Mobile bottom tab bar (see `components/site/mobile-tab-bar.tsx`).
+
+   `position: fixed` so it stays visible on every page, and the shell reserves
+   `--os-tab-bar-reserve` for it below Tailwind's `sm` — see the `< 40rem` block
+   in `responsive.css`. The reserve is 0 above `sm`, where this element is
+   `display: none` anyway.
+
+   The `display` gate lives here rather than as a Tailwind utility because this
+   file is UNLAYERED and Tailwind's `utilities` layer outranks it (see the layer
+   order in `src/styles.css`), the same reason `.desktop-shortcuts` needs
+   `position: fixed !important`. One unlayered rule must be the single source of
+   truth for the breakpoint, otherwise a utility would win and the reserved space
+   would flip at a different width than the bar.
+
+   The bar occupies exactly `--os-tab-bar-reserve`: `min-height` on the bar and
+   on every tab, plus the safe-area padding on the bar ALONE. Keep those three in
+   sync or content will slide under the bar at the bottom of a page. */
+.os-mobile-tab-bar {
+  display: none;
+  position: fixed;
+  /* Longhand rather than the `inset` shorthand: happy-dom never expands
+     `inset`, so the shorthand would leave the pinning unobservable in the
+     stylesheet suite, and the browser's computed value is identical either way. */
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  min-height: var(--os-tab-bar-height);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-top: 3px solid var(--border);
+  background: var(--card);
+  /* Translucent and soft, not a solid band. `var(--border)` is opaque
+     `--os-ink`, so a hard `0 -4px 0` offset drew a black bar above the nav;
+     `color-mix` keeps the shadow tied to the theme (and inverts with `.dark`)
+     while letting it fade into the page. The 3px `border-top` above already
+     draws the hard edge, so the shadow only has to carry depth. Same soft-blur
+     idiom as `.desktop-shortcuts-viewport`. */
+  box-shadow: 0 -6px 16px color-mix(in srgb, var(--border) 22%, transparent);
 }
 
-.os-mobile-nav-content [data-slot="drawer-overlay"] {
-  background: rgb(0 0 0 / 50%);
+/* Outranks `.system-menu-positioner` (20) so the More menu is never painted
+   behind a maximized window (30). */
+.os-mobile-more-positioner {
+  z-index: 50;
 }
 
-/* Title layout lives in MobileNavDrawer via Tailwind. */
-.os-mobile-nav-title .pixel-icon {
-  color: var(--os-ink);
+/* Tab layout/typography: an icon box over a label, both centered, inside a bar
+   at least a 44px touch target tall. No border — a border that appeared on
+   active would reflow the grid and shift the label, the same reason the desktop
+   shortcut keeps a transparent border at rest. */
+.os-mobile-tab {
+  display: grid;
+  grid-template-rows: auto auto;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  min-height: var(--os-tab-bar-height);
+  padding: 4px 2px;
+  border: 0;
+  background: transparent;
+  color: var(--card-foreground);
+  font: inherit;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-/* Dock grid + items live in MobileNavDrawer via Tailwind.
-   Active/hover/focus states stay here. */
-.os-mobile-dock-item:hover {
-  background: var(--os-cream);
-  border-color: var(--os-ink);
-}
-
-.os-mobile-dock-item.is-active {
+/* Active fill is inset rather than an offset shadow: the bar is flush to the
+   viewport edges, so an outset shadow would overflow off-screen. `data-active`
+   is how the More trigger reports that the CURRENT page is one of its entries. */
+.os-mobile-tab.is-active,
+.os-mobile-tab[data-active] {
   background: var(--os-yellow);
-  border-color: var(--os-ink);
-  box-shadow: 4px 4px 0 var(--os-ink);
+  box-shadow: inset 0 -3px 0 0 var(--os-ink);
 }
 
-.os-mobile-dock-item:focus-visible {
+.os-mobile-tab:hover {
+  background: var(--os-cream);
+}
+
+/* Negative offset so the ring stays inside the fixed bar. */
+.os-mobile-tab:focus-visible {
   outline: 3px solid var(--os-coral);
-  outline-offset: 2px;
+  outline-offset: -3px;
+}
+
+/* Sized off `.menu-entry-glyph` (also 30px with a 2px border) so the bar's icon
+   boxes match the More menu's. */
+.os-mobile-tab-art {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 2px solid var(--os-ink);
+  background: var(--os-cream);
+}
+
+.os-mobile-tab-label {
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+/* Dev only. The TanStack devtools launcher is a fixed bottom-right button
+   (z-index 99999) with no reposition option in its plugin config, so below
+   Tailwind's `sm` it sits on top of the tab bar's More tab and swallows its
+   taps. Lift it clear of the bar: the launcher is developer tooling and must
+   never cover site navigation. The plugin removes itself from production
+   builds (`removeDevtoolsOnBuild` defaults to true), so this rule is inert in
+   a shipped build — the element does not exist there. */
+@media (width < 40rem) {
+  /* The launcher positions itself with an inline `inset`, which sets `top`, so
+     a `bottom` override on its own is ignored while `top` still wins. Clearing
+     `top` re-anchors it to the bottom; both declarations need `!important` to
+     beat the inline style. */
+  [data-testid='tanstack_devtools'] button {
+    top: auto !important;
+    bottom: calc(var(--os-tab-bar-height) + env(safe-area-inset-bottom, 0px) + 7.5px) !important;
+  }
 }
 
 .hero-window .window-content {
