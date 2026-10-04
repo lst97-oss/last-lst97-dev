@@ -63,8 +63,11 @@ describe('page meta', () => {
     expect(meta).toContainEqual({ property: 'og:site_name', content: 'LAST//OS' })
     expect(meta).toContainEqual({ name: 'twitter:card', content: 'summary_large_image' })
     // Falls back to the committed social card, not the site icon: an SVG
-    // `og:image` renders blank in Slack, Discord, LinkedIn and X.
-    expect(meta).toContainEqual({ property: 'og:image', content: 'http://localhost:3000/og/default.png' })
+    // `og:image` renders blank in Slack, Discord, LinkedIn and X. WebP is
+    // accepted by all four, and `og:image:type` is declared because the format
+    // of the committed card is known.
+    expect(meta).toContainEqual({ property: 'og:image', content: 'http://localhost:3000/og/default.webp' })
+    expect(meta).toContainEqual({ property: 'og:image:type', content: 'image/webp' })
     expect(links).toEqual([{ rel: 'canonical', href: 'http://localhost:3000/about' }])
   })
 
