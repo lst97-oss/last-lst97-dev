@@ -8,6 +8,7 @@ import { ShareDialog } from '../src/components/site/share/share-dialog'
 import { SharePreview } from '../src/components/site/share/share-preview'
 import { buildShareTargets } from '../src/components/site/share/share-targets'
 import { type ShareCopy, useShareCopy } from '../src/components/site/share/use-share-copy'
+import { createOgImageAlt, createOgImagePath } from '../src/lib/seo/site-seo'
 
 const SHARE = {
   url: 'https://last-os.invalid/blog/build-notes',
@@ -23,8 +24,8 @@ const SHARE = {
 }
 
 const DEFAULT_CARD = {
-  url: 'https://last-os.invalid/og/default.webp',
-  alt: 'LAST//OS — Personal system online',
+  url: `https://last-os.invalid${createOgImagePath(SHARE.title, SHARE.description)}`,
+  alt: createOgImageAlt(SHARE.title, SHARE.description),
   width: 1200,
   height: 630,
   isDefault: true,
@@ -79,7 +80,8 @@ describe('share dialog', () => {
     // The card really is what a scraper would fetch, so the preview renders it
     // rather than showing nothing — but it must not pass the site card off as
     // this document's own artwork.
-    expect(preview).toContain(DEFAULT_CARD.url)
+    // The URL reaches the DOM as an attribute value, so `&` arrives escaped.
+    expect(preview).toContain(DEFAULT_CARD.url.replaceAll('&', '&amp;'))
     expect(preview).toContain('SITE DEFAULT CARD — NO COVER IMAGE')
     // A document's own cover carries no such label.
     expect(await render(createElement(SharePreview, { ...SHARE }))).not.toContain('SITE DEFAULT CARD')

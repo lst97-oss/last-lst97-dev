@@ -9,6 +9,7 @@ import {
   createProjectStructuredData,
   withBreadcrumbs,
 } from '../src/lib/content/structured-data'
+import { createOgImagePath } from '../src/lib/seo/site-seo'
 import type { CoverImage, SEOOverrides } from '../src/server/content/types'
 
 const noSeo: SEOOverrides = { title: null, description: null, image: { url: null, alt: null } }
@@ -54,13 +55,13 @@ describe('content meta image handling', () => {
     expect(property(meta, 'og:image')).toBe('https://media.example.com/cover.png')
   })
 
-  it('falls back to the committed site card when there is no image', () => {
+  it('generates a text card from the SEO title and description when there is no image', () => {
     const meta = contentMeta({})
 
     // Emitting no image degrades a shared link to a bare text stub, and most
-    // documents in this CMS carry no cover, so the site card is the fallback
-    // and the card is always a large one.
-    expect(property(meta, 'og:image')).toBe('http://localhost:3000/og/default.webp')
+    // documents in this CMS carry no cover, so a rendered card over the site
+    // artwork is the fallback and the card is always a large one.
+    expect(property(meta, 'og:image')).toBe(`http://localhost:3000${createOgImagePath('A note', 'An excerpt.')}`)
     expect(property(meta, 'og:image:width')).toBe('1200')
     expect(property(meta, 'og:image:height')).toBe('630')
     expect(named(meta, 'twitter:card')).toBe('summary_large_image')

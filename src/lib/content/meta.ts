@@ -1,9 +1,10 @@
 import {
   absoluteUrl,
   canonicalUrl,
+  createOgImageAlt,
+  createOgImagePath,
   SITE_NAME,
   SITE_OG_IMAGE_HEIGHT,
-  SITE_OG_IMAGE_PATH,
   SITE_OG_IMAGE_WIDTH,
   SITE_TAGLINE,
 } from '@/lib/seo/site-seo'
@@ -43,10 +44,9 @@ export interface ContentShare {
   title: string
   description: string
   /**
-   * The card image. `url` is never null — a document with no cover falls back
-   * to the committed site card — but `isDefault` records when it did, so the
-   * share preview can label a fallback rather than pass it off as the
-   * document's own artwork.
+   * The card image. `url` is never null — a document with no cover gets a
+   * generated card over the site artwork — and `isDefault` lets the share
+   * preview label that fallback instead of passing it off as document artwork.
    */
   image: {
     url: string
@@ -90,17 +90,16 @@ export function resolveContentShare({
   // only rewrites the cases that are actually broken.
   const imageUrl = absoluteUrl(socialImage.url)
 
-  // A document with no cover still gets a card. Without `og:image` a link
-  // unfurl degrades to a bare text stub, and most documents in this CMS carry
-  // no cover, so this fallback is what the majority of shared links use.
+  // A document with no cover gets the branded art with its SEO title and
+  // description rendered into it. Most CMS documents rely on this fallback.
   if (!imageUrl) {
     return {
       url: canonicalUrl(pathname),
       title,
       description,
       image: {
-        url: absoluteUrl(SITE_OG_IMAGE_PATH) ?? '',
-        alt: `${SITE_NAME} — ${SITE_TAGLINE}`,
+        url: absoluteUrl(createOgImagePath(title, description)) ?? '',
+        alt: createOgImageAlt(title, description),
         width: SITE_OG_IMAGE_WIDTH,
         height: SITE_OG_IMAGE_HEIGHT,
         isDefault: true,
@@ -164,10 +163,8 @@ export function createContentMeta({
   ]
 
   // `share.image.url` is never empty now, so this block always runs: every
-  // detail page emits a card. The declared size always describes the SAME file
-  // emitted as `og:image` — the hero derivative when one exists, the committed
-  // site card for a document with no cover — because a consumer sizes the card
-  // from these and a mismatched aspect ratio crops the image.
+  // detail page emits a card. The declared size describes the same image URL:
+  // a hero derivative when available, or the generated 1200x630 fallback.
   meta.push({ property: 'og:image', content: share.image.url })
   meta.push({ property: 'og:image:alt', content: share.image.alt })
   if (share.image.isDefault) meta.push({ property: 'og:image:type', content: 'image/webp' })

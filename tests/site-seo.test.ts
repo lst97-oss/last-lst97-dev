@@ -4,6 +4,7 @@ import {
   absoluteUrl,
   canonicalUrl,
   clampDescription,
+  createOgImagePath,
   createPageMeta,
   createSiteStructuredData,
   getSiteUrl,
@@ -66,7 +67,10 @@ describe('page meta', () => {
     // `og:image` renders blank in Slack, Discord, LinkedIn and X. WebP is
     // accepted by all four, and `og:image:type` is declared because the format
     // of the committed card is known.
-    expect(meta).toContainEqual({ property: 'og:image', content: 'http://localhost:3000/og/default.webp' })
+    expect(meta).toContainEqual({
+      property: 'og:image',
+      content: `http://localhost:3000${createOgImagePath('About', 'Who built this and why.')}`,
+    })
     expect(meta).toContainEqual({ property: 'og:image:type', content: 'image/webp' })
     expect(links).toEqual([{ rel: 'canonical', href: 'http://localhost:3000/about' }])
   })

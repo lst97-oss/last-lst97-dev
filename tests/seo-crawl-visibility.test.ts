@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import sharp from 'sharp'
-import { createPageMeta, SITE_OG_IMAGE_PATH } from '../src/lib/seo/site-seo'
+import { createOgImagePath, createPageMeta, SITE_OG_IMAGE_PATH } from '../src/lib/seo/site-seo'
 import { buildSitemapXml } from '../src/server/seo/sitemap'
 
 const ogFile = Bun.file(new URL(`../public${SITE_OG_IMAGE_PATH}`, import.meta.url))
@@ -21,12 +21,11 @@ const contactSourceFlat = contactSource.replace(/\s+/g, ' ')
  * return value.
  */
 describe('social card asset', () => {
-  test('the default og:image is a real raster WebP on disk', async () => {
+  test('the static OG artwork is a real raster WebP on disk', async () => {
     expect(await ogFile.exists()).toBe(true)
     // RIFF container, with `WEBP` as the four bytes at offset 8. This is the
-    // assertion that keeps the card from silently becoming an SVG or a text
-    // placeholder — every major scraper rasterises `og:image` and renders
-    // anything non-raster blank.
+    // assertion that keeps the artwork from silently becoming an SVG or a
+    // text placeholder.
     const head = Buffer.from(await ogFile.slice(0, 12).arrayBuffer())
     expect(head.subarray(0, 4).toString('latin1')).toBe('RIFF')
     expect(head.subarray(8, 12).toString('latin1')).toBe('WEBP')
@@ -45,11 +44,14 @@ describe('social card asset', () => {
     expect(height).toBe(630)
   })
 
-  test('every page head falls back to the card, never the favicon', () => {
+  test('every page head gets a page-specific card URL, never the favicon', () => {
     for (const pathname of ['/', '/about', '/services', '/blog', '/projects', '/changelog', '/contact', '/chat']) {
       const { meta } = createPageMeta({ pathname, title: 'Page', description: 'A page.' })
       const image = meta.find((tag) => 'property' in tag && tag.property === 'og:image')
-      expect(image).toEqual({ property: 'og:image', content: `http://localhost:3000${SITE_OG_IMAGE_PATH}` })
+      expect(image).toEqual({
+        property: 'og:image',
+        content: `http://localhost:3000${createOgImagePath('Page', 'A page.')}`,
+      })
     }
   })
 })

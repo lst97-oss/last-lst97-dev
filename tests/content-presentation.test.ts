@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { formatPublishedDate } from '../src/lib/content/date'
 import { createContentMeta, resolveContentShare } from '../src/lib/content/meta'
 import { formatProjectTimeframe, getProjectLifecycleLabel } from '../src/lib/content/project-display'
-import { getSiteUrl, SITE_OG_IMAGE_PATH } from '../src/lib/seo/site-seo'
+import { createOgImageAlt, createOgImagePath, getSiteUrl } from '../src/lib/seo/site-seo'
 
 describe('content presentation helpers', () => {
   test('prefers SEO overrides and falls back to editorial content and cover image', () => {
@@ -100,7 +100,7 @@ describe('content presentation helpers', () => {
     expect(fallback.image.url).toBe(`${getSiteUrl()}/media/project.png`)
   })
 
-  test('previews the hero derivative, and falls back to the site card when there is no cover', () => {
+  test('previews the hero derivative, and generates a text card when there is no cover', () => {
     // Scrapers fetch og:image on every crawl, so the preview must show the
     // bounded derivative the head emits rather than the full-size original.
     const hero = resolveContentShare({
@@ -125,9 +125,8 @@ describe('content presentation helpers', () => {
       isDefault: false,
     })
 
-    // No cover and no override falls back to the committed site card rather
-    // than emitting no image: without `og:image` a link unfurl degrades to a
-    // bare text stub, and most documents here carry no cover.
+    // No cover and no override gets the shared artwork with this document's
+    // title and description rendered into it.
     const imageless = resolveContentShare({
       title: 'Untitled note',
       description: 'No cover on this one.',
@@ -137,15 +136,14 @@ describe('content presentation helpers', () => {
     })
 
     expect(imageless.image).toEqual({
-      url: `${getSiteUrl()}${SITE_OG_IMAGE_PATH}`,
-      alt: 'LAST//OS — Personal system online',
+      url: `${getSiteUrl()}${createOgImagePath('Untitled note', 'No cover on this one.')}`,
+      alt: createOgImageAlt('Untitled note', 'No cover on this one.'),
       width: 1200,
       height: 630,
       isDefault: true,
     })
 
-    // `isDefault` is what lets the share preview label the card honestly
-    // instead of passing the site card off as the document's own artwork.
+    // `isDefault` labels the generated fallback in the share preview.
     const meta = createContentMeta({
       title: 'Untitled note',
       description: 'No cover on this one.',
@@ -155,7 +153,10 @@ describe('content presentation helpers', () => {
       pathname: '/blog/untitled-note',
     })
 
-    expect(meta.meta).toContainEqual({ property: 'og:image', content: `${getSiteUrl()}${SITE_OG_IMAGE_PATH}` })
+    expect(meta.meta).toContainEqual({
+      property: 'og:image',
+      content: `${getSiteUrl()}${createOgImagePath('Untitled note', 'No cover on this one.')}`,
+    })
     expect(meta.meta).toContainEqual({ property: 'og:image:type', content: 'image/webp' })
     expect(meta.meta).toContainEqual({ property: 'og:image:width', content: '1200' })
     expect(meta.meta).toContainEqual({ property: 'og:image:height', content: '630' })
