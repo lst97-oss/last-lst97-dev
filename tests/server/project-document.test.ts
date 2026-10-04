@@ -43,10 +43,12 @@ describe('project deep-dive Markdown document parser', () => {
     expect(parseProjectDocument(smartplayPath, document)?.text).toStartWith('## Project: SmartPlay HK OSS')
   })
 
-  it('recognises only the three project folders, and no inherited object key', () => {
+  it('recognises only the known project folders, and no inherited object key', () => {
     expect(isProjectDocProject('gnaf-address-autocomplete')).toBe(true)
     expect(isProjectDocProject('smartplay-hk-oss')).toBe(true)
     expect(isProjectDocProject('wat-wat-new-zealand')).toBe(true)
+    expect(isProjectDocProject('best-maker-pty-ltd')).toBe(true)
+    expect(isProjectDocProject('canton-101')).toBe(true)
     expect(isProjectDocProject('unknown-project')).toBe(false)
     // A prototype key must not pass: it is not a project.
     expect(isProjectDocProject('constructor')).toBe(false)
@@ -115,6 +117,39 @@ describe('project deep-dive Markdown document parser', () => {
 
     expect(parsed?.isPublic).toBe(false)
     expect(parsed?.text).toStartWith('## Project: Wat Wat New Zealand')
+  })
+
+  it('marks Canto101 documents private so the responder never implies the source is public', () => {
+    const privateDocument = [
+      '# How Canto101 keeps a generated client honest against its API contract',
+      '',
+      '- **Category:** Quality Gates',
+      '- **Source ID:** canton101-quality-gates',
+      '- **URL:** https://www.lst97.dev/projects/canton-101',
+      '- **Visibility:** Private',
+      '',
+      'Every Canto101 repository is unpublished, so a citation for one of its documents must never invite a visitor to open the source.',
+    ].join('\n')
+
+    const parsed = parseProjectDocument('src/data/projects/canton-101/canton101-quality-gates.md', privateDocument)
+
+    expect(parsed?.isPublic).toBe(false)
+    expect(parsed?.text).toStartWith('## Project: Canto101')
+  })
+
+  it('rejects a Canto101 document claiming Public, so its private repositories stay unpublished', () => {
+    const lyingDocument = [
+      '# How Canto101 keeps a generated client honest against its API contract',
+      '',
+      '- **Category:** Quality Gates',
+      '- **Source ID:** canton101-quality-gates',
+      '- **URL:** https://www.lst97.dev/projects/canton-101',
+      '- **Visibility:** Public',
+      '',
+      'Every Canto101 repository is unpublished, so a citation for one of its documents must never invite a visitor to open the source.',
+    ].join('\n')
+
+    expect(parseProjectDocument('src/data/projects/canton-101/canton101-quality-gates.md', lyingDocument)).toBeNull()
   })
 
   it('rejects a private project document claiming Public, so the folder stays the source of truth', () => {

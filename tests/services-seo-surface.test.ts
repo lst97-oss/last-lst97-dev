@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createServicesStructuredData } from '../src/lib/content/structured-data'
-import { createPageMeta, SITE_OG_IMAGE_PATH } from '../src/lib/seo/site-seo'
+import { createOgImagePath, createPageMeta } from '../src/lib/seo/site-seo'
 import { createSitemapEntries } from '../src/server/seo/sitemap'
 import { buildLlmsTxt } from '../src/server/seo/text-files'
 
@@ -44,7 +44,10 @@ describe('page metadata', () => {
 
     expect(links).toContainEqual({ rel: 'canonical', href: 'http://localhost:3000/services' })
     expect(meta).toContainEqual({ property: 'og:url', content: 'http://localhost:3000/services' })
-    expect(meta).toContainEqual({ property: 'og:image', content: `http://localhost:3000${SITE_OG_IMAGE_PATH}` })
+    expect(meta).toContainEqual({
+      property: 'og:image',
+      content: `http://localhost:3000${createOgImagePath('Website Services', 'Packages from A$1,000.')}`,
+    })
   })
 
   test('the route passes /services to createPageMeta', () => {

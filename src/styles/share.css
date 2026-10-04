@@ -1,0 +1,208 @@
+/* Share dialog + link preview.
+   Dialog sizing follows the .chat-pipeline-dialog precedent in chat-tools.css
+   and the .media-viewer-dialog one in media-viewer.css: a class on
+   DialogContent plus descendant selectors on the data-slot attributes, because
+   DialogContent hardcodes `rounded-lg` and `sm:max-w-lg` and wraps its children
+   in a ScrollArea whose viewport owns the padding. */
+
+.share-dialog {
+  width: min(560px, calc(100vw - 24px));
+  max-width: min(560px, calc(100vw - 24px));
+  border: 3px solid var(--os-ink);
+  border-radius: 0;
+  background: var(--os-paper);
+  color: var(--os-ink);
+  box-shadow: 8px 8px 0 var(--os-ink);
+}
+
+/* DialogContent hardcodes `p-6` on the ScrollArea viewport, but this dialog
+   draws its own 3px border and 8px offset shadow, so that padding would read as
+   a second frame floating inside the first. */
+.share-dialog [data-dialog-scroll] > [data-slot="scroll-area-viewport"] {
+  padding: 20px 16px;
+}
+
+/* The repo has no tailwindcss-animate, so DialogContent's animate-in /
+   zoom-in-95 classes are inert. A plain transition on Radix's data-state
+   matches the house idiom. */
+.share-dialog [data-state="open"],
+.share-dialog [data-state="closed"] {
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+/* `src/styles/globals.css` sets `button { font: inherit }` OUTSIDE any
+   cascade layer, so it beats Tailwind's layered `text-xs` on every raw pixel
+   button — the share trigger included. On the project page its `<a>` siblings
+   keep `text-xs`, so without this the trigger renders 15px beside 12px peers
+   and the row is 46px tall instead of 40px. Scoped to this trigger rather than
+   fixed globally, which is a separate change with its own review. */
+.share-trigger {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+@media (min-width: 640px) {
+  .share-dialog [data-dialog-scroll] > [data-slot="scroll-area-viewport"] {
+    padding: 24px;
+  }
+}
+
+/* The card a link preview renders: image on top, then title, then description,
+   with the destination above them. */
+.share-preview {
+  overflow: hidden;
+  border: 2px solid var(--os-ink);
+  background: var(--os-card);
+}
+
+.share-preview-location {
+  margin: 0;
+  border-bottom: 2px solid var(--os-ink);
+  background: var(--os-yellow);
+  padding: 5px 10px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--os-ink);
+}
+
+/* 1200x630 is the OG card ratio every one of these platforms renders at, so
+   previewing at any other ratio would misstate how the card is cropped. */
+.share-preview-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  border-bottom: 2px solid var(--os-ink);
+}
+
+.share-preview-image--empty {
+  display: grid;
+  place-items: center;
+  background: var(--os-cream);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--os-ink-soft);
+}
+
+.share-preview-title {
+  margin: 12px 12px 0;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.3;
+  color: var(--os-ink);
+}
+
+.share-preview-description {
+  margin: 6px 12px 14px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--os-ink-soft);
+}
+
+.share-url {
+  display: flex;
+  gap: 10px;
+}
+
+.share-url input {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.share-targets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 480px) {
+  .share-targets {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Modelled on `.about-site-button` in shell.css: the same 2px ink border, 3px
+   offset shadow, uppercase treatment, and the same three interaction states. */
+.share-target {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 2px solid var(--os-ink);
+  background: var(--os-paper);
+  padding: 7px 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--os-ink);
+  box-shadow: 3px 3px 0 var(--os-ink);
+  transition: translate 100ms ease-out, box-shadow 100ms ease-out;
+}
+
+.share-target:hover {
+  background: var(--os-yellow);
+}
+
+.share-target:active {
+  translate: 3px 3px;
+  box-shadow: none;
+}
+
+.share-target:focus-visible {
+  outline: 3px solid var(--os-coral);
+  outline-offset: 2px;
+}
+
+/* The copy tile is the one destination that needs no third-party page and is
+   the fastest thing a reader can do, so it carries the brand accent while the
+   three external shares stay neutral paper. Yellow rather than coral: coral is
+   the dialog's focus ring colour (see `:focus-visible` above), and reusing it
+   here would make the accent state ambiguous. */
+.share-target--copy {
+  background: var(--os-yellow);
+}
+
+.share-target--copy:hover {
+  background: var(--os-teal);
+}
+
+/* Confirmed state: the button the reader just pressed, so the colour shift is
+   part of the acknowledgement alongside the check icon and label change. */
+.share-target--copied {
+  background: var(--os-teal);
+}
+
+.share-target--copied:hover {
+  background: var(--os-teal);
+}
+
+/* Labels the card as the site fallback rather than the document's own art, so
+   the preview cannot pass a generic image off as this page's cover. */
+.share-preview-note {
+  margin: 0;
+  border-top: 2px solid var(--os-ink);
+  padding: 7px 12px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--os-ink-soft);
+}
+
+/* Reserved height so the dialog does not resize when the copy confirmation
+   appears and disappears. */
+.share-status {
+  min-height: 1.2em;
+  margin: 0;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--os-ink-soft);
+}

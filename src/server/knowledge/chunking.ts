@@ -42,12 +42,20 @@ export function lexicalToPlainText(value: unknown): string {
   if (!isRecord(value)) return ''
   const root = isRecord(value.root) ? value.root : value
   const blocks = new Set(['paragraph', 'heading', 'listitem', 'quote', 'code', 'horizontalrule'])
+  const headingLevel = (node: Record<string, unknown>): number => {
+    const tag = typeof node.tag === 'string' ? node.tag.toLowerCase() : ''
+    return /^h[1-6]$/.test(tag) ? Number(tag[1]) : 2
+  }
   const readNode = (node: unknown): string => {
     if (!isRecord(node)) return ''
     const type = typeof node.type === 'string' ? node.type : ''
     if (type === 'text') return typeof node.text === 'string' ? node.text : ''
     if (type === 'linebreak' || type === 'tab') return type === 'tab' ? '\t' : '\n'
     const children = Array.isArray(node.children) ? node.children.map(readNode).join('') : ''
+    // A heading keeps its Markdown marker so the text can be split on structure
+    // rather than by character count. Without it a heading is indistinguishable
+    // from a body line once it leaves this function.
+    if (type === 'heading' && children) return `${'#'.repeat(headingLevel(node))} ${children.trim()}\n`
     return blocks.has(type) && children ? `${children}\n` : children
   }
 
@@ -59,16 +67,39 @@ function sha256(value: string): string {
   return new Bun.CryptoHasher('sha256').update(value).digest('hex')
 }
 
-export function chunkKnowledgeDocument(
-  document: KnowledgeDocument,
-  options: ChunkingOptions = {},
-): KnowledgeTextChunk[] {
+function resolveChunkBounds(options: ChunkingOptions): { maxChars: number; overlapChars: number } {
   const maxChars = options.maxChars ?? 1_200
   const overlapChars = options.overlapChars ?? 160
   if (!Number.isInteger(maxChars) || maxChars < 1) throw new Error('Chunk maximum must be a positive integer')
   if (!Number.isInteger(overlapChars) || overlapChars < 0 || overlapChars >= maxChars) {
     throw new Error('Chunk overlap must be non-negative and smaller than the maximum')
   }
+  return { maxChars, overlapChars }
+}
+
+function documentPrefix(document: KnowledgeDocument): string {
+  const prefix = document.chunkContextPrefix?.trim()
+  return prefix ? `${prefix}\n\n` : ''
+}
+
+function buildChunk(document: KnowledgeDocument, chunkIndex: number, chunkText: string): KnowledgeTextChunk {
+  const contentHash = sha256(chunkText)
+  return {
+    id: `${document.source.type}:${document.source.sourceId}:${chunkIndex}:${contentHash.slice(0, 12)}`,
+    source: document.source,
+    chunkIndex,
+    text: chunkText,
+    contentHash,
+    isPublic: document.isPublic,
+    sourceUpdatedAt: document.sourceUpdatedAt,
+  }
+}
+
+export function chunkKnowledgeDocument(
+  document: KnowledgeDocument,
+  options: ChunkingOptions = {},
+): KnowledgeTextChunk[] {
+  const { maxChars, overlapChars } = resolveChunkBounds(options)
 
   const text = normalizeText(document.text)
   if (!text) return []
@@ -86,23 +117,79 @@ export function chunkKnowledgeDocument(
     end = adjustCodePointBoundary(text, end)
 
     const chunkText = text.slice(start, end).trim()
-    if (chunkText) {
-      const contentHash = sha256(chunkText)
-      const chunkIndex = chunks.length
-      chunks.push({
-        id: `${document.source.type}:${document.source.sourceId}:${chunkIndex}:${contentHash.slice(0, 12)}`,
-        source: document.source,
-        chunkIndex,
-        text: chunkText,
-        contentHash,
-        isPublic: document.isPublic,
-        sourceUpdatedAt: document.sourceUpdatedAt,
-      })
-    }
+    if (chunkText) chunks.push(buildChunk(document, chunks.length, chunkText))
 
     if (end >= text.length) break
     start = adjustCodePointBoundary(text, Math.max(start + 1, end - overlapChars))
   }
+
+  return chunks
+}
+
+const HEADING_LINE = /^#{1,6}\s/
+
+function splitHeadingSegments(text: string): string[] {
+  const segments: string[] = []
+  let current: string[] = []
+  for (const line of text.split('\n')) {
+    if (HEADING_LINE.test(line) && current.length > 0) {
+      segments.push(current.join('\n'))
+      current = []
+    }
+    current.push(line)
+  }
+  if (current.length > 0) segments.push(current.join('\n'))
+  return segments
+}
+
+/**
+ * Splits on Markdown heading boundaries instead of a character window, so a
+ * chunk never straddles a section. The prefix is concatenated rather than
+ * budgeted, which keeps the chunk count a function of the body alone — a long
+ * title must not change how many chunks a document produces.
+ *
+ * Overlap is deliberately not carried across a heading: it would re-introduce
+ * exactly the boundary-smearing that splitting on headings removes. It is only
+ * forwarded to the sliding window used for a single oversized section.
+ */
+export function chunkHeadingDelimitedDocument(
+  document: KnowledgeDocument,
+  options: ChunkingOptions = {},
+): KnowledgeTextChunk[] {
+  const { maxChars, overlapChars } = resolveChunkBounds(options)
+  const text = normalizeText(document.text)
+  if (!text) return []
+
+  const prefix = documentPrefix(document)
+  const chunks: KnowledgeTextChunk[] = []
+  const emit = (group: string) => {
+    const trimmed = group.trim()
+    if (trimmed) chunks.push(buildChunk(document, chunks.length, `${prefix}${trimmed}`.trim()))
+  }
+
+  let group = ''
+  for (const segment of splitHeadingSegments(text)) {
+    const trimmedSegment = segment.trim()
+    if (!trimmedSegment) continue
+    if (trimmedSegment.length > maxChars) {
+      emit(group)
+      group = ''
+      const windowed = chunkKnowledgeDocument(
+        { ...document, text: `${prefix}${trimmedSegment}`, chunkContextPrefix: undefined },
+        { maxChars, overlapChars },
+      )
+      for (const chunk of windowed) chunks.push(buildChunk(document, chunks.length, chunk.text))
+      continue
+    }
+    const candidate = group ? `${group}\n\n${trimmedSegment}` : trimmedSegment
+    if (group && candidate.length > maxChars) {
+      emit(group)
+      group = trimmedSegment
+      continue
+    }
+    group = candidate
+  }
+  emit(group)
 
   return chunks
 }

@@ -2,6 +2,7 @@ import { getServerEnv } from '../../src/server/env'
 import { requireIntegrationEnv } from '../../src/server/env-schema'
 import { closeKnowledgeDatabase, getKnowledgeIndexRepository } from '../../src/server/knowledge/database'
 import { createEmbeddingClient } from '../../src/server/knowledge/embedding-client'
+import { isLocalEmbeddingUrl, resolveIndexEmbeddingConfig } from '../../src/server/knowledge/embedding-provider-config'
 import { assertSafeGithubMarkdown, sanitizeEvidenceText } from '../../src/server/knowledge/github/content-safety'
 import {
   createGithubContributionsGateway,
@@ -62,11 +63,9 @@ async function runGh(args: string[], maxOutputChars = 8_000_000): Promise<string
 }
 
 async function ensureLocalEmbeddingServer(): Promise<Bun.Subprocess | undefined> {
-  const embeddingUrl = new URL(env.KNOWLEDGE_EMBEDDING_URL)
-  const localHosts = new Set(['127.0.0.1', 'localhost', '::1'])
-  if (!localHosts.has(embeddingUrl.hostname)) return undefined
+  if (!isLocalEmbeddingUrl(env.KNOWLEDGE_EMBEDDING_URL)) return undefined
 
-  const healthUrl = new URL('/health', embeddingUrl)
+  const healthUrl = new URL('/health', env.KNOWLEDGE_EMBEDDING_URL)
   try {
     const response = await fetch(healthUrl, { signal: AbortSignal.timeout(1_000) })
     if (response.ok) return undefined
@@ -125,12 +124,7 @@ async function reportFileExists(repository: GithubSyncRepository): Promise<boole
 
 async function indexDocuments(documents: KnowledgeDocument[]): Promise<void> {
   const repository = getKnowledgeIndexRepository()
-  const embedding = createEmbeddingClient({
-    baseUrl: env.KNOWLEDGE_EMBEDDING_URL,
-    model: env.KNOWLEDGE_EMBEDDING_MODEL,
-    apiKey: env.KNOWLEDGE_EMBEDDING_API_KEY,
-    timeoutMs: env.KNOWLEDGE_EMBEDDING_TIMEOUT_MS,
-  })
+  const embedding = createEmbeddingClient(resolveIndexEmbeddingConfig(env))
   const sources = new Map<KnowledgeSourceType, KnowledgeSource>()
   const indexedIds = new Map<KnowledgeSourceType, Set<string>>()
 
@@ -322,12 +316,7 @@ try {
   sidecar = await ensureLocalEmbeddingServer()
   syncStage = 'indexing'
   const repository = getKnowledgeIndexRepository()
-  const embedding = createEmbeddingClient({
-    baseUrl: env.KNOWLEDGE_EMBEDDING_URL,
-    model: env.KNOWLEDGE_EMBEDDING_MODEL,
-    apiKey: env.KNOWLEDGE_EMBEDDING_API_KEY,
-    timeoutMs: env.KNOWLEDGE_EMBEDDING_TIMEOUT_MS,
-  })
+  const embedding = createEmbeddingClient(resolveIndexEmbeddingConfig(env))
   const commandRunner: GithubCommandRunner = {
     async run(command, args, maxOutputBytes = 2_000_000) {
       const process = Bun.spawn([command, ...args], { cwd: projectRoot, stdout: 'pipe', stderr: 'ignore' })

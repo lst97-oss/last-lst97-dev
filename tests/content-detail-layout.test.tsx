@@ -125,4 +125,41 @@ describe('content detail layout', () => {
 
     expect(markup).not.toContain('detail-meta')
   })
+
+  test('offers a share button only when share values are supplied', async () => {
+    const props = {
+      windowTitle: 'note://shared',
+      icon: '✎',
+      backHref: '/blog' as const,
+      backLabel: '← BACK TO NOTES',
+      eyebrow: 'NOTE',
+      coverImage: { url: null, alt: null },
+      title: 'Shared note',
+      excerpt: 'With a share button.',
+      tags: [],
+      children: createElement('p', null, 'Body.'),
+    }
+    const share = {
+      url: 'https://last-os.invalid/blog/shared',
+      title: 'Shared note',
+      description: 'With a share button.',
+      image: {
+        url: 'https://last-os.invalid/api/site/og?title=Shared+note&description=With+a+share+button.',
+        alt: 'LAST//OS share card for Shared note. With a share button.',
+        width: 1200,
+        height: 630,
+        isDefault: true,
+      },
+    }
+
+    const withShare = await render(createElement(ContentDetailLayout, { ...props, share }))
+    const withoutShare = await render(createElement(ContentDetailLayout, props))
+
+    expect(withShare).toContain('aria-label="Share this page"')
+    expect(withShare).toContain('share-actions')
+    // A document with no resolved Open Graph values must not offer a preview
+    // of nothing, so the button is omitted rather than rendered inert.
+    expect(withoutShare).not.toContain('aria-label="Share this page"')
+    expect(withoutShare).not.toContain('share-actions')
+  })
 })

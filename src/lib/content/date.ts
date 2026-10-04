@@ -1,7 +1,19 @@
+/**
+ * `day`/`month` are pinned to `2-digit` on purpose. With the fields left to
+ * the default, ICU 77 (Bun) resolves en-AU to `21/9/2026` while ICU 78
+ * (Chromium, Node 22) resolves it to `21/09/2026`, so the server-rendered card
+ * date and the hydrated one disagree and React discards the subtree. Stating
+ * the fields explicitly makes both builds emit the padded form.
+ */
+const publishedDateFormatter = new Intl.DateTimeFormat('en-AU', {
+  timeZone: 'Australia/Melbourne',
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+})
+
 export function formatPublishedDate(value: string): string {
-  return new Date(value).toLocaleDateString('en-AU', {
-    timeZone: 'Australia/Melbourne',
-  })
+  return publishedDateFormatter.format(new Date(value))
 }
 
 /**

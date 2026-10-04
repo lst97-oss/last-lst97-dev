@@ -2,10 +2,10 @@ import { Menu } from '@base-ui/react/menu'
 import { Link, useLocation } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import type { LucideIcon } from 'lucide-react'
-import { AtSign, FolderOpen, LayoutGrid, MessageSquare, Pencil, RefreshCw, User } from 'lucide-react'
+import { AtSign, FolderOpen, LayoutGrid, MessageSquare, Pencil, RefreshCw, Sparkles, User } from 'lucide-react'
 import { type ReactNode, useEffect, useState } from 'react'
 import { PixelBattleBackground } from '@/components/site/battle/pixel-battle-background'
-import { MobileNavDrawer } from '@/components/site/mobile-nav-drawer'
+import { MobileTabBar } from '@/components/site/mobile-tab-bar'
 import { PixelIcon } from '@/components/site/pixel-icon'
 import { GlobalRouteProgress } from '@/components/site/route-progress-bar'
 import { AboutSiteDialog } from '@/components/site/shell/about-site-dialog'
@@ -115,7 +115,7 @@ export function DesktopShell({ children, temperature = null }: { children: React
   const activeWindowId = useStore(osStore, (state) => state.activeWindowId)
   const healthStatus = useSiteHealthStatus()
   const [openMenu, setOpenMenu] = useState<string | null>(null)
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
 
   return (
     <div className="os-site flex h-dvh flex-col overflow-hidden bg-background">
@@ -130,15 +130,6 @@ export function DesktopShell({ children, temperature = null }: { children: React
           >
             <PixelIcon glyph="◆" /> LAST//OS
           </Link>
-          <button
-            className="system-menu-button hidden min-h-11 items-center gap-1.5 border-2 border-primary px-3 py-2 text-xs font-black tracking-widest text-primary uppercase hover:border-accent hover:bg-accent hover:text-foreground max-sm:inline-flex"
-            type="button"
-            aria-expanded={mobileNavOpen}
-            aria-controls="mobile-nav-drawer"
-            onClick={() => setMobileNavOpen((value) => !value)}
-          >
-            ☰ MENU
-          </button>
           <nav className="system-menu flex items-center gap-1 max-sm:hidden" aria-label="Site shortcuts">
             {headerMenus.map((menu) => (
               <Menu.Root
@@ -205,7 +196,20 @@ export function DesktopShell({ children, temperature = null }: { children: React
           ) : null}
           <MelbourneTemperature temperature={temperature} />
           <MelbourneClock />
-          <AboutSiteDialog />
+          <button
+            aria-label="About this site"
+            className="system-about-button inline-flex min-h-9 items-center gap-1.5 border-2 border-primary px-2.5 py-1 text-xs leading-none font-black tracking-widest text-primary uppercase hover:border-accent hover:bg-accent hover:text-foreground sm:px-2 max-sm:hidden"
+            onClick={() => setAboutOpen(true)}
+            type="button"
+          >
+            <Sparkles aria-hidden="true" className="size-3.5 self-center" strokeWidth={2.5} />
+            {/* Icon-only below sm: the system bar has no room for a label, and
+                the aria-label above still names the control for screen readers.
+                Hidden entirely below sm: mobile opens this panel from the tab
+                bar's More menu instead. */}
+            <span className="hidden sm:inline">ABOUT THIS SITE</span>
+          </button>
+          <AboutSiteDialog onOpenChange={setAboutOpen} open={aboutOpen} />
         </div>
       </header>
 
@@ -231,7 +235,7 @@ export function DesktopShell({ children, temperature = null }: { children: React
           {children}
         </ScrollArea>
       </div>
-      <MobileNavDrawer open={mobileNavOpen} onOpenChange={setMobileNavOpen} />
+      <MobileTabBar />
     </div>
   )
 }

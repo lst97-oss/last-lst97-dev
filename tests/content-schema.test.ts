@@ -5,7 +5,6 @@ import { Media } from '../src/collections/Media'
 import { Posts } from '../src/collections/Posts'
 import { Projects } from '../src/collections/Projects'
 import { Topics } from '../src/collections/Topics'
-import { HomePage } from '../src/globals/HomePage'
 
 type FieldShape = {
   admin?: { date?: { pickerAppearance?: string } }
@@ -111,15 +110,9 @@ describe('Payload editorial schemas', () => {
     expect(field(Media.fields, 'alt')?.required).toBe(true)
   })
 
-  test('topics provide stable public labels and the homepage selects one post', () => {
+  test('topics provide stable public labels', () => {
     expect(Topics.slug).toBe('topics')
     expect(field(Topics.fields, 'title')?.required).toBe(true)
     expect(field(Topics.fields, 'slug')).toMatchObject({ type: 'text', required: false, unique: true })
-    expect(HomePage.slug).toBe('home-page')
-    expect(field(HomePage.fields, 'featuredPost')).toMatchObject({
-      type: 'relationship',
-      relationTo: 'posts',
-      filterOptions: { status: { equals: 'published' } },
-    })
   })
 })

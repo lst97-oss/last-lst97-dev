@@ -84,11 +84,11 @@ describe('reading time', () => {
 
 describe('content card date', () => {
   test('prefers the publication date when present', () => {
-    expect(contentCardDate('2026-09-20T00:00:00.000Z', '2026-09-25T00:00:00.000Z')).toBe('20/9/2026')
+    expect(contentCardDate('2026-09-20T00:00:00.000Z', '2026-09-25T00:00:00.000Z')).toBe('20/09/2026')
   })
 
   test('falls back to the update date when unpublished', () => {
-    expect(contentCardDate(null, '2026-09-25T00:00:00.000Z')).toBe('25/9/2026')
+    expect(contentCardDate(null, '2026-09-25T00:00:00.000Z')).toBe('25/09/2026')
   })
 
   test('returns null when neither date is usable', () => {

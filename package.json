@@ -80,10 +80,9 @@
     "date-fns": "^4.4.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.5.0",
-    "lucide-react": "^1.51.0",
+    "lucide-react": "^1.52.0",
     "mermaid": "^12.1.0",
-    "next-themes": "^0.4.6",
-    "nodemailer": "^10.0.13",
+    "nodemailer": "^10.0.14",
     "payload": "4.0.0-canary.35",
     "pdfkit": "^0.20.2",
     "pg": "8.23.1",
@@ -100,7 +99,6 @@
     "sharp": "^0.35.5",
     "sonner": "^2.0.8",
     "tailwindcss": "^4.3.3",
-    "vaul": "^1.1.2",
     "zod": "^4.6.5"
   },
   "devDependencies": {

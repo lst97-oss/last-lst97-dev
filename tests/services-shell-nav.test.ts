@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 const shellSource = await Bun.file(new URL('../src/components/site/shell.tsx', import.meta.url)).text()
-const drawerSource = await Bun.file(new URL('../src/components/site/mobile-nav-drawer.tsx', import.meta.url)).text()
+const tabBarSource = await Bun.file(new URL('../src/components/site/mobile-tab-bar.tsx', import.meta.url)).text()
 
 /**
  * The nav data is three hand-maintained arrays plus the sitemap and chat section
@@ -39,14 +39,52 @@ describe('desktop shell navigation', () => {
   })
 })
 
-describe('mobile drawer navigation', () => {
-  test('the drawer grid carries the same Services shortcut', () => {
-    expect(drawerSource).toContain(`{ ${NAV_LABELS}, icon: LayoutGrid },`)
+describe('mobile tab bar navigation', () => {
+  /** The hrefs inside one nav array literal, in source order. */
+  function hrefsInArray(source: string, name: string, end: string): string[] {
+    const start = source.indexOf(`const ${name}`)
+    expect(start).toBeGreaterThan(-1)
+    const slice = source.slice(start, source.indexOf(end, start))
+    return [...slice.matchAll(/href: '([^']+)'/g)].map((match) => match[1] as string)
+  }
+
+  test('the tab bar carries a Services shortcut carrying an icon', () => {
+    expect(tabBarSource).toContain(`{ ${NAV_LABELS}, icon: LayoutGrid },`)
   })
 
-  test('Home stays first so the drawer opens on the desktop equivalent', () => {
-    const hrefs = [...drawerSource.matchAll(/href: '([^']+)'/g)].map((match) => match[1])
-    expect(hrefs[0]).toBe('/')
-    expect(hrefs).toContain('/services')
+  test('the four primary tabs keep their order, which is the bar layout', () => {
+    expect(hrefsInArray(tabBarSource, 'mobileTabBarItems', 'const mobileMoreItems')).toEqual([
+      '/',
+      '/services',
+      '/projects',
+      '/chat',
+    ])
+  })
+
+  test('More holds every destination that is not a tab', () => {
+    const moreHrefs = hrefsInArray(tabBarSource, 'mobileMoreItems', 'const moreDescriptions')
+    expect(moreHrefs).toEqual(['/about', '/blog', '/changelog', '/contact'])
+  })
+
+  test('no public page becomes unreachable on mobile', () => {
+    // The bottom sheet listed eight destinations. Splitting them across four
+    // tabs and a More menu must still cover all eight, or a page is silently
+    // gone from the only nav a phone can see.
+    const reachable = [
+      ...hrefsInArray(tabBarSource, 'mobileTabBarItems', 'const mobileMoreItems'),
+      ...hrefsInArray(tabBarSource, 'mobileMoreItems', 'const moreDescriptions'),
+    ]
+    for (const href of ['/', '/services', '/about', '/blog', '/projects', '/changelog', '/chat', '/contact']) {
+      expect(reachable).toContain(href)
+    }
+  })
+
+  test('the More menu opens upward and keeps the About this site action', () => {
+    // `side="top"` is what keeps the popup on screen above a bar pinned to the
+    // bottom; the default side would render it below the viewport.
+    expect(tabBarSource).toContain('side="top"')
+    // The header's About button is hidden below sm, so this menu item is the
+    // only way to open that panel on a phone.
+    expect(tabBarSource).toContain('setAboutOpen(true)')
   })
 })

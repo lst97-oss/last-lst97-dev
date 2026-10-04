@@ -19,7 +19,10 @@ function createSources(overrides: Partial<Parameters<typeof createSiteDataLoader
     listTopics: async () => [],
     getTopic: async () => null,
     listPostsByTopic: async () => emptyPostPage,
-    getFeaturedPost: async () => null,
+    listAllPostsByUpdated: async () => [],
+    listRelatedPosts: async () => [],
+    listRelatedProjects: async () => [],
+    getChangelogNeighbours: async () => ({ previous: null, next: null }),
     ...overrides,
   }
 }
@@ -34,7 +37,6 @@ describe('site content loaders', () => {
     expect(await loaders.loadTopics()).toEqual([])
     expect(await loaders.loadTopic('engineering')).toBeNull()
     expect(await loaders.loadPostsByTopic(topic.id)).toEqual(emptyPostPage)
-    expect(await loaders.loadFeaturedPost()).toBeNull()
   })
 
   test('lets failed Payload reads reach the route error boundary instead of turning them into empty content', async () => {
@@ -71,9 +73,6 @@ describe('site content loaders', () => {
         listPostsByTopic: async () => {
           throw backendFailure
         },
-        getFeaturedPost: async () => {
-          throw backendFailure
-        },
       }),
     )
 
@@ -86,7 +85,6 @@ describe('site content loaders', () => {
     await expect(loaders.loadTopics()).rejects.toBe(backendFailure)
     await expect(loaders.loadTopic('engineering')).rejects.toBe(backendFailure)
     await expect(loaders.loadPostsByTopic(topic.id)).rejects.toBe(backendFailure)
-    await expect(loaders.loadFeaturedPost()).rejects.toBe(backendFailure)
   })
 
   test('preserves a successful missing detail as null so routes can render a real not-found state', async () => {

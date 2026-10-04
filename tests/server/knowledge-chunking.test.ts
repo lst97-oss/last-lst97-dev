@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 
-import { chunkKnowledgeDocument, lexicalToPlainText } from '../../src/server/knowledge/chunking'
+import {
+  chunkHeadingDelimitedDocument,
+  chunkKnowledgeDocument,
+  lexicalToPlainText,
+} from '../../src/server/knowledge/chunking'
 import type { KnowledgeDocument } from '../../src/server/knowledge/source-types'
 
 const document: KnowledgeDocument = {
@@ -58,12 +62,66 @@ describe('knowledge chunking', () => {
                 { type: 'text', text: 'useful tools.' },
               ],
             },
-            { type: 'heading', children: [{ type: 'text', text: 'Open source' }] },
+            { type: 'heading', tag: 'h3', children: [{ type: 'text', text: 'Open source' }] },
             { type: 'list', children: [{ type: 'listitem', children: [{ type: 'text', text: 'Typed APIs' }] }] },
           ],
         },
       }),
-    ).toBe('Built useful tools.\nOpen source\nTyped APIs')
+    ).toBe('Built useful tools.\n### Open source\nTyped APIs')
+  })
+
+  it('splits on heading boundaries and repeats the context prefix on every chunk', () => {
+    const headingDelimited = {
+      ...document,
+      text: ['## Setup', 'install notes. '.repeat(40), '## Limits', 'the sidecar is local. '.repeat(40)].join('\n'),
+      headingDelimited: true,
+      chunkContextPrefix: '## Reliable services',
+    }
+
+    const chunks = chunkHeadingDelimitedDocument(headingDelimited)
+
+    expect(chunks.length).toBeGreaterThan(1)
+    expect(chunks.every(({ text: chunk }) => chunk.startsWith('## Reliable services\n\n'))).toBe(true)
+    // Every chunk opens on a real heading, so no chunk begins mid-section.
+    expect(chunks.every(({ text: chunk }) => /^#{1,6} /.test(chunk.split('\n\n')[1] ?? ''))).toBe(true)
+    expect(chunks.map(({ chunkIndex }) => chunkIndex)).toEqual(chunks.map((_chunk, index) => index))
+    expect(new Set(chunks.map(({ contentHash }) => contentHash)).size).toBe(chunks.length)
+  })
+
+  it('falls back to bounded overlapping windows for a section larger than the maximum', () => {
+    const headingDelimited = {
+      ...document,
+      text: ['## Huge', 'overflowing body. '.repeat(60), '## Next', 'small tail.'].join('\n'),
+      headingDelimited: true,
+      chunkContextPrefix: '## Reliable services',
+    }
+
+    const chunks = chunkHeadingDelimitedDocument(headingDelimited, { maxChars: 200, overlapChars: 40 })
+
+    expect(chunks.length).toBeGreaterThan(2)
+    for (const { text: chunk } of chunks) {
+      const body = chunk.slice('## Reliable services\n\n'.length)
+      expect(body.length).toBeLessThanOrEqual(200)
+    }
+    expect(chunks.some(({ text: chunk }) => chunk.includes('## Next'))).toBe(true)
+  })
+
+  it('matches the sliding window on a document with no headings', () => {
+    const plain = { ...document, headingDelimited: true }
+
+    expect(chunkHeadingDelimitedDocument(plain).map(({ text }) => text)).toEqual(
+      chunkKnowledgeDocument(plain).map(({ text }) => text),
+    )
+  })
+
+  it('applies the same bounds validation as the sliding window', () => {
+    expect(() => chunkHeadingDelimitedDocument(document, { maxChars: 0 })).toThrow(
+      'Chunk maximum must be a positive integer',
+    )
+    expect(() => chunkHeadingDelimitedDocument(document, { maxChars: 20, overlapChars: 20 })).toThrow(
+      'smaller than the maximum',
+    )
+    expect(chunkHeadingDelimitedDocument({ ...document, text: ' \n\t ' })).toEqual([])
   })
 
   it('validates chunk bounds and does not loop for tiny settings', () => {

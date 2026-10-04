@@ -13,7 +13,6 @@ import { Posts } from './src/collections/Posts'
 import { Projects } from './src/collections/Projects'
 import { Tags } from './src/collections/Tags'
 import { Topics } from './src/collections/Topics'
-import { HomePage } from './src/globals/HomePage'
 import { migrations } from './src/migrations'
 import { getServerEnv } from './src/server/env'
 import { knowledgePayloadTasks } from './src/server/knowledge/payload-tasks'
@@ -93,7 +92,6 @@ export default buildConfig({
     Topics,
     Tags,
   ],
-  globals: [HomePage],
   db: postgresAdapter({
     // Schema changes are applied through the committed Payload migrations, not dev auto-push.
     push: false,

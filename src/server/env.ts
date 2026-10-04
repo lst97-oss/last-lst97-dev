@@ -1,7 +1,7 @@
 import type { IntegrationEnvKey, ServerEnvSource } from './env-schema'
 import { createServerEnv, requireIntegrationEnv } from './env-schema'
 
-type ServerEnv = ReturnType<typeof createServerEnv>
+export type ServerEnv = ReturnType<typeof createServerEnv>
 
 let serverEnv: ServerEnv | undefined
 

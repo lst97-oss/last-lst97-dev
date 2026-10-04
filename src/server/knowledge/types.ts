@@ -52,6 +52,15 @@ export interface EmbeddingPort {
     kind: 'query' | 'document'
     onModelCall?: (call: ChatModelCallDiagnostic) => void
   }): Promise<number[]>
+  /**
+   * Embeds several texts, returning vectors in input order. Indexing one
+   * document otherwise costs one HTTP round-trip per chunk.
+   */
+  embedMany(input: {
+    texts: string[]
+    kind: 'query' | 'document'
+    onModelCall?: (call: ChatModelCallDiagnostic) => void
+  }): Promise<number[][]>
 }
 
 export interface RerankerPort {

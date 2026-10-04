@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createPageMeta, SITE_OG_IMAGE_PATH } from '../src/lib/seo/site-seo'
+import sharp from 'sharp'
+import { createOgImagePath, createPageMeta, SITE_OG_IMAGE_PATH } from '../src/lib/seo/site-seo'
 import { buildSitemapXml } from '../src/server/seo/sitemap'
 
 const ogFile = Bun.file(new URL(`../public${SITE_OG_IMAGE_PATH}`, import.meta.url))
@@ -20,28 +21,37 @@ const contactSourceFlat = contactSource.replace(/\s+/g, ' ')
  * return value.
  */
 describe('social card asset', () => {
-  test('the default og:image is a real raster PNG on disk', async () => {
+  test('the static OG artwork is a real raster WebP on disk', async () => {
     expect(await ogFile.exists()).toBe(true)
-    const head = Buffer.from(await ogFile.slice(0, 8).arrayBuffer())
-    expect(head.subarray(0, 4).toString('latin1')).toBe('\x89PNG')
+    // RIFF container, with `WEBP` as the four bytes at offset 8. This is the
+    // assertion that keeps the artwork from silently becoming an SVG or a
+    // text placeholder.
+    const head = Buffer.from(await ogFile.slice(0, 12).arrayBuffer())
+    expect(head.subarray(0, 4).toString('latin1')).toBe('RIFF')
+    expect(head.subarray(8, 12).toString('latin1')).toBe('WEBP')
   })
 
   test('is not an SVG, which every major scraper renders blank', () => {
     expect(SITE_OG_IMAGE_PATH.endsWith('.svg')).toBe(false)
   })
 
-  test("uses Open Graph's 1200x630 ratio, read from the PNG header", async () => {
-    // IHDR width/height are big-endian uint32 at byte offsets 16 and 20.
-    const header = Buffer.from(await ogFile.slice(0, 24).arrayBuffer())
-    expect(header.readUInt32BE(16)).toBe(1200)
-    expect(header.readUInt32BE(20)).toBe(630)
+  test("uses Open Graph's 1200x630 ratio, decoded from the file itself", async () => {
+    // Read through sharp rather than a format-specific header: the VP8L header
+    // does not sit at fixed offsets the way a PNG IHDR does, so hardcoding byte
+    // positions would only re-assert the WebP encoding.
+    const { width, height } = await sharp(await ogFile.arrayBuffer()).metadata()
+    expect(width).toBe(1200)
+    expect(height).toBe(630)
   })
 
-  test('every page head falls back to the card, never the favicon', () => {
+  test('every page head gets a page-specific card URL, never the favicon', () => {
     for (const pathname of ['/', '/about', '/services', '/blog', '/projects', '/changelog', '/contact', '/chat']) {
       const { meta } = createPageMeta({ pathname, title: 'Page', description: 'A page.' })
       const image = meta.find((tag) => 'property' in tag && tag.property === 'og:image')
-      expect(image).toEqual({ property: 'og:image', content: `http://localhost:3000${SITE_OG_IMAGE_PATH}` })
+      expect(image).toEqual({
+        property: 'og:image',
+        content: `http://localhost:3000${createOgImagePath('Page', 'A page.')}`,
+      })
     }
   })
 })

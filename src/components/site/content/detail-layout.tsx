@@ -5,9 +5,11 @@ import { ContentCover } from '@/components/site/content/cover'
 import { DetailMeta } from '@/components/site/content/detail-meta'
 import { Eyebrow, PageStack, Tag, TagRow } from '@/components/site/os-ui'
 import { PixelIcon } from '@/components/site/pixel-icon'
+import { ShareDialog } from '@/components/site/share'
 import { MediaTrigger, toMediaItem } from '@/components/site/share/media'
 import { WindowFrame } from '@/components/site/window-frame'
 import { contentCardDate } from '@/lib/content/date'
+import type { ContentShare } from '@/lib/content/meta'
 import type { TopicSummary } from '@/server/content/types'
 
 interface ContentDetailLayoutProps {
@@ -26,12 +28,23 @@ interface ContentDetailLayoutProps {
   publishedAt?: string | null
   updatedAt?: string | null
   /**
+   * Resolved Open Graph values for the share dialog, from
+   * `resolveContentShare`. Omit it and no share button renders, so a page with
+   * no resolved SEO values does not offer a preview of nothing.
+   */
+  share?: ContentShare | null
+  /**
    * Drop the 700px prose reading measure so the body spans the window, the way
    * the project detail page does. Both detail pages carry Mermaid diagrams and
    * wide code blocks, which the measure crops into a horizontally scrollable
    * sliver. `.article-body--wide` is the existing project-page treatment.
    */
   wide?: boolean
+  /**
+   * Rendered below the article body, inside the window but OUTSIDE `.article-body`.
+   * A card grid passed as children would be squeezed into the prose measure.
+   */
+  related?: ReactNode
   children: ReactNode
 }
 
@@ -65,6 +78,8 @@ export function ContentDetailLayout({
   publishedAt = null,
   updatedAt = null,
   wide = false,
+  related = null,
+  share = null,
 }: ContentDetailLayoutProps) {
   const coverItem = toMediaItem(coverImage, { altFallback: title })
 
@@ -90,6 +105,13 @@ export function ContentDetailLayout({
         <h1>{title}</h1>
         <p className="lead-copy">{excerpt}</p>
         <DetailMeta created={created} published={published} readingTime={readingTime} updated={updated} />
+        {/* With the byline rather than below the label rows: the button belongs
+            to the document, not to its tags. */}
+        {share ? (
+          <div className="share-actions mb-6">
+            <ShareDialog {...share} />
+          </div>
+        ) : null}
         <DetailLabelRow className="post-tags my-6">
           {tags.map((tag) => (
             <Tag key={tag}>{tag}</Tag>
@@ -108,6 +130,7 @@ export function ContentDetailLayout({
           ))}
         </DetailLabelRow>
         <div className={cn('article-body', wide && 'article-body--wide')}>{children}</div>
+        {related ? <div className="px-6 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-12">{related}</div> : null}
       </WindowFrame>
     </PageStack>
   )

@@ -62,6 +62,10 @@ describe('retrieval degradation', () => {
           if (failure.at === 'embed') throw new Error('getaddrinfo ENOTFOUND db.example.com')
           return vector
         },
+        embedMany: async ({ texts }) => {
+          if (failure.at === 'embed') throw new Error('getaddrinfo ENOTFOUND db.example.com')
+          return texts.map(() => vector)
+        },
       },
       repository: repository as never,
       reranker: {

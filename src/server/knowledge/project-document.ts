@@ -29,6 +29,13 @@ const PROJECT_LABELS = {
   'gnaf-address-autocomplete': 'G-NAF Address Autocomplete',
   'smartplay-hk-oss': 'SmartPlay HK OSS',
   'wat-wat-new-zealand': 'Wat Wat New Zealand',
+  // Best Maker is a shipped client business at https://www.bestmaker.com.au.
+  // Its five repositories are private, but the product itself is publicly
+  // presented, so its documents are `Public` below.
+  'best-maker-pty-ltd': 'Best Maker Pty Ltd',
+  // Every Canto101 repository is unpublished, so its documents are `Private`
+  // and its citations carry the private badge.
+  'canton-101': 'Canto101',
 } as const
 
 export type ProjectDocProject = keyof typeof PROJECT_LABELS
@@ -52,6 +59,8 @@ const PRIVATE_PROJECT_LABELS: Readonly<Record<ProjectDocProject, string>> = {
   'gnaf-address-autocomplete': 'Public',
   'smartplay-hk-oss': 'Public',
   'wat-wat-new-zealand': 'Private',
+  'best-maker-pty-ltd': 'Public',
+  'canton-101': 'Private',
 }
 
 const metadataPattern = (name: string) => new RegExp(`^- \\*\\*${name}:\\*\\*\\s+([^\\n]+)$`, 'm')

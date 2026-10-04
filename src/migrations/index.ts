@@ -9,6 +9,7 @@ import * as migration_20260929_083219_20260929_content_detail from './20260929_0
 import * as migration_20260930_054442_make_generated_slugs_optional from './20260930_054442_make_generated_slugs_optional';
 import * as migration_20260930_081123_gallery_has_many from './20260930_081123_gallery_has_many';
 import * as migration_20261001_101754_add_project_tags_topics from './20261001_101754_add_project_tags_topics';
+import * as migration_20261004_120000_remove_home_page_global from './20261004_120000_remove_home_page_global';
 
 export const migrations = [
   {
@@ -65,5 +66,10 @@ export const migrations = [
     up: migration_20261001_101754_add_project_tags_topics.up,
     down: migration_20261001_101754_add_project_tags_topics.down,
     name: '20261001_101754_add_project_tags_topics'
+  },
+  {
+    up: migration_20261004_120000_remove_home_page_global.up,
+    down: migration_20261004_120000_remove_home_page_global.down,
+    name: '20261004_120000_remove_home_page_global'
   },
 ];

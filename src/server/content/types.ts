@@ -184,11 +184,34 @@ export interface Changelog extends ChangelogSummary {
 export interface ListPostsInput {
   page: number
   limit: number
+  filters?: ContentFilters
+}
+
+/** Narrows a listing. Optional, and the only filter the listings expose. */
+export interface ContentFilters {
+  /** Only documents carrying ANY of these topics. */
+  topicIds?: (string | number)[]
+}
+
+export interface RelatedInput {
+  /** The document being viewed; never returned among the results. */
+  excludeSlug: string
+  /** The current document's topic ids. Empty falls back to recency alone. */
+  topicIds: (string | number)[]
+  limit: number
 }
 
 export interface BlogReader {
   listPublished(input: ListPostsInput): Promise<Page<PostSummary>>
   listPublishedByTopic(topicId: string | number, input: ListPostsInput): Promise<Page<PostSummary>>
+  /**
+   * Every published post, unpaged and sorted by most recently updated. The home
+   * note window paginates its expanded view over this, so it must not be the
+   * `-publishedAt` ordering that `listPublished` uses.
+   */
+  listAllByUpdated(): Promise<PostSummary[]>
+  /** Same-type entries for a detail page: shared topics first, then most recent. */
+  listRelated(input: RelatedInput): Promise<PostSummary[]>
   getPublishedBySlug(slug: string): Promise<Post | null>
 }
 
@@ -197,12 +220,10 @@ export interface TopicReader {
   getPublishedBySlug(slug: string): Promise<TopicSummary | null>
 }
 
-export interface HomeReader {
-  getFeaturedPost(): Promise<PostSummary | null>
-}
-
 export interface ProjectReader {
   listPublished(input: ListPostsInput): Promise<Page<ProjectSummary>>
+  /** Same-type entries for a detail page: shared topics first, then most recent. */
+  listRelated(input: RelatedInput): Promise<ProjectSummary[]>
   /** Every published project, unpaged — for the sitemap and chat tools. */
   listAll(): Promise<ProjectSummary[]>
   getPublishedBySlug(slug: string): Promise<Project | null>
@@ -210,5 +231,14 @@ export interface ProjectReader {
 
 export interface ChangelogReader {
   listPublished(input: ListPostsInput): Promise<Page<ChangelogSummary>>
+  /**
+   * The releases either side of one, against the `-publishedAt` order the
+   * listing uses. `previous` is the older release, `next` the newer; either is
+   * null at the ends of the archive.
+   */
+  getNeighbours(input: { slug: string }): Promise<{
+    previous: ChangelogSummary | null
+    next: ChangelogSummary | null
+  }>
   getPublishedBySlug(slug: string): Promise<Changelog | null>
 }

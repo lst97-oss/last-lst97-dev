@@ -42,14 +42,6 @@ describe('home operator profile', () => {
     expect(maximizedRule).toContain('display: grid;')
   })
 
-  test('keeps featured projects sourced from Payload', () => {
-    expect(homeRoute).toContain('loadProjects()')
-    expect(homeRoute).toContain('<HomeFeaturedProjectSection project={featuredProject} />')
-    // The `featured` prop is what caps the cover in that window; the card is
-    // still the same Payload-sourced ProjectCard.
-    expect(featuredProjectSection).toContain('<ProjectCard featured project={project} />')
-  })
-
   test('shows the supplied most-used language shares in the operator window', () => {
     expect(operatorProfile).toContain('operator-profile-window')
     expect(operatorProfile).toContain('profile-coding-details')

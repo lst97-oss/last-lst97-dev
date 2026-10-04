@@ -367,9 +367,10 @@ async function main() {
     endDate: '2025-06-01T00:00:00.000Z',
     liveUrl: 'https://gnaf.lst97.dev',
     featured: true,
-    // The home loader picks the first `featured` project by `sortOrder`, so this
-    // must outrank every other featured row to hold the featured-project window.
-    sortOrder: -1,
+    // The home loader picks the first `featured` project by `sortOrder`. LAST//OS
+    // holds -2 because it *is* this site; Best Maker Pty Ltd sits at -1 and
+    // Canto101 at 0, so G-NAF moves to 1 and reads as the fourth slide.
+    sortOrder: 1,
     status: 'published' as const,
     // `technologies` is a Payload array field, so each entry is a row object
     // with a `technology` key rather than a bare string.

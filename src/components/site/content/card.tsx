@@ -84,9 +84,16 @@ export function ProjectCard({
   project,
   featured = false,
   headingLevel = 3,
+  priority = featured,
 }: {
   project: ProjectSummary
   featured?: boolean
+  /**
+   * Eager/high-priority cover load. Defaults to `featured`, which is correct
+   * everywhere except the home carousel: it renders every featured card, and
+   * only the first slide can be the LCP element.
+   */
+  priority?: boolean
 } & CardHeadingProps) {
   const Title = headingLevel === 2 ? 'h2' : 'h3'
   const lifecycle = getProjectLifecycleLabel(project.projectStatus)
@@ -109,8 +116,9 @@ export function ProjectCard({
         // The featured card is the largest above-the-fold image on the home
         // page and is the likely LCP element, so it loads eagerly with high
         // priority. Grid cards stay lazy; one eager image per listing is the
-        // documented budget, and this is that one.
-        priority={featured}
+        // documented budget, and this is that one. The home carousel passes
+        // `priority={slideIndex === 0}` for exactly that reason.
+        priority={priority}
         // The window is a 3/5 column of a max-w-6xl page with its own padding,
         // so the cover tops out near 480px rather than tracking the viewport.
         sizes={featured ? '(min-width: 1024px) 480px, 100vw' : undefined}

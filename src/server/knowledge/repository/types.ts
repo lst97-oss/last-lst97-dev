@@ -35,6 +35,11 @@ export interface KnowledgeIndexRepository {
   ): Promise<void>
   removeSource(sourceType: KnowledgeSourceType, sourceId: string): Promise<void>
   listSourceIds(sourceType: KnowledgeSourceType): Promise<string[]>
+  /** Stored chunk text hashes and vectors, so an update can skip unchanged chunks. */
+  listSourceChunkState(
+    sourceType: KnowledgeSourceType,
+    sourceId: string,
+  ): Promise<Array<{ chunkIndex: number; contentHash: string; embedding: number[] }>>
   listOwnedProjects(query: ProjectCatalogQuery): Promise<{
     projects: KnowledgeProjectRecord[]
     hasMore: boolean

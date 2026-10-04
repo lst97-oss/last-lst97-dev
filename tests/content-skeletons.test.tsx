@@ -95,14 +95,19 @@ describe('list skeletons', () => {
     }
   })
 
-  test('only the blog list carries the topic filter row', () => {
-    // `loadTopics` runs on the blog loader alone; a filter row on the project
-    // or changelog list would promise navigation that does not exist.
+  test('both filterable lists carry the search and topic filter rows', () => {
+    // `/projects` and `/blog` both load topics and both render `ListFilters`;
+    // the changelog listing has neither, so a filter row there would promise
+    // navigation that does not exist.
     const topicRow = 'h-6 w-24'
+    const searchRow = 'h-10 w-full'
 
     expect(occurrences(markup(<BlogListSkeleton />), topicRow)).toBe(5)
-    expect(markup(<ProjectListSkeleton />)).not.toContain(topicRow)
+    expect(occurrences(markup(<ProjectListSkeleton />), topicRow)).toBe(5)
+    expect(markup(<BlogListSkeleton />)).toContain(searchRow)
+    expect(markup(<ProjectListSkeleton />)).toContain(searchRow)
     expect(markup(<ChangelogListSkeleton />)).not.toContain(topicRow)
+    expect(markup(<ChangelogListSkeleton />)).not.toContain(searchRow)
   })
 
   test('each list opens its own window frame', () => {
@@ -208,13 +213,9 @@ describe('home skeleton', () => {
   test('opens every home window the page renders', () => {
     const html = markup(<HomeSkeleton />)
 
-    for (const title of [
-      'welcome.exe',
-      'featured-project.app',
-      'operator.profile',
-      'featured-note.exe',
-      'latest-notes.directory',
-    ]) {
+    // The featured note is a lead card inside `latest-notes.directory` now, not
+    // a window of its own.
+    for (const title of ['welcome.exe', 'featured-project.app', 'operator.profile', 'latest-notes.directory']) {
       expect(html).toContain(`data-window-title="${title}"`)
     }
   })
