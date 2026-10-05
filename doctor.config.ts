@@ -11,6 +11,7 @@ export default {
     //   admin-not-found         only-export-components         → pure selector extracted
     //   content-skeletons       jsx-key                       → keys on the element array
     //   ui/* wrappers           effect-needs-cleanup           → upstream shadcn/embla shape
+    //   carousel                effect-needs-cleanup           → both listeners detached
     // Doctor matches these paths against whichever scan root is supplied.
     // Support both the usual project root and a focused `src` scan.
     files: [
@@ -24,12 +25,13 @@ export default {
       // input-group, marker, message, message-scroller, scroll-area, select,
       // spinner, tabs) are listed here rather than re-verified per finding.
       //
-      // One finding in here is a real defect, not library shape:
-      // carousel.tsx:94 subscribes `api.on('reInit', onSelect)` while its
-      // cleanup only detaches `select`, so re-inits accumulate listeners.
-      // No app code imports <Carousel>, so it is suppressed rather than
-      // patched — if a page adopts it, add `api?.off('reInit', onSelect)`
-      // to the cleanup at carousel.tsx:97-99 first.
+      // The one real defect this suppression used to hide is fixed in code, not
+      // exempted: `carousel.tsx` subscribed `api.on('reInit', onSelect)` while its
+      // cleanup only detached `select`, so re-inits accumulated listeners that
+      // outlived the component. Both are now detached. No app code imports
+      // <Carousel> — the home windows are hand-rolled transform tracks — and
+      // embla does not initialise under happy-dom, so there is no consumer-
+      // visible behaviour to pin a test against.
       // Three forms, because the scan root decides the emitted path: a project
       // -root scan says `src/components/ui/…`, one rooted at `src` says
       // `components/ui/…`, and one rooted at `src/components` says `ui/…`.

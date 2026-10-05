@@ -2,15 +2,12 @@ import { z } from 'zod'
 
 import type { Logger } from '../observability/logger'
 
-// The system-bar temperature for Melbourne. Two upstream endpoints, tried in
-// order: the Bureau of Meteorology hourly series (the authoritative local
-// observation) and the global forecast `current` block as a fallback.
-//
-// This lives on the server so one in-memory entry serves every visitor: the
-// header rendered it client-side, which meant an open-meteo request per browser
-// tab on mount plus one every 30 minutes. The reading is stable for the hour, so
-// it is fetched at most once an hour per instance and arrives in the SSR payload
-// rather than flashing `—` into the header.
+// Two upstream endpoints, tried in order: the Bureau of Meteorology hourly
+// series (the authoritative local observation) and the global forecast
+// `current` block as a fallback. Cached server-side so one in-memory entry
+// serves every visitor instead of an open-meteo request per browser tab; the
+// reading is stable for the hour, so it arrives in the SSR payload rather than
+// flashing `—` into the header.
 const TEMPERATURE_CACHE_TTL_MS = 60 * 60 * 1000
 const MELBOURNE_LATITUDE = '-37.8136'
 const MELBOURNE_LONGITUDE = '144.9631'

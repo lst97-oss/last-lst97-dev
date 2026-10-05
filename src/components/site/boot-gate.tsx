@@ -20,8 +20,8 @@ let revealed = false
  * (`MelbourneClock` swaps `'MEL · SYNCING'`, `SiteHealthProvider` leaves
  * `'checking'`, `osStore` settles window states), and each swap reflows the
  * header. Gating removes the reflow instead of trying to make the mutations
- * reflow-free. `MelbourneTemperature` used to be a fourth case here; it now
- * arrives from the `_site` loader, so its reading is correct in the SSR markup.
+ * reflow-free; `MelbourneTemperature` is not a case because it arrives from the
+ * `_site` loader, so its reading is correct in the SSR markup.
  *
  * The effect is deliberately a plain `useEffect` with no `requestAnimationFrame`
  * and no router subscription: it fires at the commit that ends hydration, and

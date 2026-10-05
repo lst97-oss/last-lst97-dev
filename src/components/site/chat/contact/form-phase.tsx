@@ -287,10 +287,9 @@ export function ChatContactFormPhase({
 }
 
 /**
- * A closed-set field rendered as a dropdown. Radix renders the trigger as a
- * `<button>`, so it gets its OS styling from `.os-chat-contact-select` in
- * chat.css rather than the wrapper's rounded-md defaults: every site rule is
- * unlayered and outranks a Tailwind utility passed as a className.
+ * A closed-set field rendered as a dropdown. The trigger is a real `<button>`,
+ * so it gets its OS styling from `.os-chat-contact-select` in chat.css rather
+ * than the wrapper's rounded-md defaults.
  */
 function ChatContactSelectField({
   field,
@@ -312,9 +311,16 @@ function ChatContactSelectField({
   onBlur: () => void
 }) {
   return (
+    // `items` is what makes the trigger show each option's label. Base UI
+    // resolves the displayed value from this map rather than reading the
+    // mounted item's text, so without it the trigger would render the raw
+    // option value (e.g. "community_centre") instead of its label.
     <Select
-      value={value}
-      onValueChange={onChange}
+      items={field.options.map((option) => ({ value: option.value, label: option.label }))}
+      value={value === '' ? null : value}
+      onValueChange={(next) => {
+        if (next !== null) onChange(next)
+      }}
       onOpenChange={(open) => {
         if (!open) onBlur()
       }}

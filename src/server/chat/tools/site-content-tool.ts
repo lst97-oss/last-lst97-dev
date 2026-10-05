@@ -50,16 +50,11 @@ function lexicalTextLength(value: unknown): number {
 }
 
 /**
- * Static site sections a visitor can reach, with a one-line purpose each. This
- * is the answer to "what can I do on this site?" and "where is X?" — it lists
- * sections, not entries, so individual documents still come from the collection
- * ops. Kept beside the tool rather than in the SEO sitemap module because the
- * visitor-facing wording is chat-specific, and `/chat` is deliberately not in
- * the crawlable sitemap.
- * Purpose strings are short by necessity: `agent-loop.ts` slices the tool
- * output to 600 characters for the responder and the SSE `tool_result` summary
- * to 400 (`agent-loop.ts:359`). With eight sections the whole list measures 396,
- * so every entry must survive the shorter of the two.
+ * Static site sections a visitor can reach, with a one-line purpose each. Kept
+ * beside the tool rather than in the SEO sitemap module because the wording is
+ * chat-specific, and `/chat` is deliberately not in the crawlable sitemap.
+ * Purpose strings are short by necessity: the agent loop slices tool output to
+ * 600 characters and the SSE `tool_result` summary to 400.
  */
 const SITE_SECTIONS = [
   { path: '/', title: 'Home', purpose: 'Overview and recent notes.' },
@@ -71,8 +66,6 @@ const SITE_SECTIONS = [
   { path: '/contact', title: 'Contact', purpose: 'Reach Nelson, report a bug.' },
   { path: '/chat', title: 'Chat', purpose: 'Ask about Nelson or the site.' },
 ] as const
-
-/** Public pathname for each collection, matching the site routes. */
 
 function publicPath(collection: 'projects' | 'blog' | 'changelog' | 'blog/topics', slug: string): string {
   return `/${collection}/${encodeURIComponent(slug)}`
@@ -117,8 +110,6 @@ function completed(
     validatedArguments: validatedArguments(args),
     sseLabel: 'BROWSING SITE CONTENT…',
     sseName: 'site_content',
-    // Citations become the SOURCES list under the reply, so a site-content answer
-    // is attributable even though it never touches the RAG or catalogue paths.
     ...(citations.length > 0
       ? {
           retrieval: {
@@ -135,12 +126,9 @@ export async function runSiteContentTool(
   runner: AgentToolRunner,
   args: SiteContentToolArguments,
 ): Promise<AgentToolResult> {
-  // list_pages is a static answer, so it must work even when no CMS reader is
-  // wired: a site-orientation question should not fail with the collections.
+  // A static answer must work even when no CMS reader is wired, and the text
+  // line stays compact because the citation already carries the absolute URL.
   if (args.op === 'list_pages') {
-    // The citation already carries the absolute URL, so the text line stays
-    // compact: the whole list must survive the 600-char tool-output budget the
-    // agent loop applies before the responder ever sees it.
     const base = runner.publicSiteUrl.replace(/\/+$/, '')
     const lines = SITE_SECTIONS.map((section) => `- ${section.title} (${section.path}) — ${section.purpose}`)
     return completed(

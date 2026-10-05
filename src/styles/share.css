@@ -22,11 +22,10 @@
   padding: 20px 16px;
 }
 
-/* The repo has no tailwindcss-animate, so DialogContent's animate-in /
-   zoom-in-95 classes are inert. A plain transition on Radix's data-state
-   matches the house idiom. */
-.share-dialog [data-state="open"],
-.share-dialog [data-state="closed"] {
+/* The dialog popup fades and scales through Base UI's transition-status
+   attributes, which matches the house idiom. */
+.share-dialog [data-open],
+.share-dialog [data-closed] {
   transition: opacity 120ms ease, transform 120ms ease;
 }
 
@@ -67,18 +66,24 @@
 }
 
 /* 1200x630 is the OG card ratio every one of these platforms renders at, so
-   previewing at any other ratio would misstate how the card is cropped. */
+   previewing at any other ratio would misstate how the card is cropped. The
+   ratio now comes from the `AspectRatio` that wraps the image
+   (src/components/site/share/share-preview.tsx), and `object-fit` from the
+   image itself, so this rule carries only the box's width and its border. */
 .share-preview-image {
   display: block;
   width: 100%;
-  aspect-ratio: 1200 / 630;
-  object-fit: cover;
   border-bottom: 2px solid var(--os-ink);
 }
 
+/* This state is not rendered by `SharePreview` today (it only emits the loaded
+   image), but it must keep its own ratio: it used to inherit `aspect-ratio`
+   from `.share-preview-image`, which no longer declares one. Stating it here
+   keeps the box correct for whichever surface renders the empty card. */
 .share-preview-image--empty {
   display: grid;
   place-items: center;
+  aspect-ratio: 1200 / 630;
   background: var(--os-cream);
   font-size: 11px;
   font-weight: 900;

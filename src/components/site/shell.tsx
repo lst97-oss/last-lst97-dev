@@ -88,9 +88,7 @@ function MelbourneClock() {
 }
 
 // The reading arrives from the `_site` loader via `src/server/melbourne-temperature`,
-// where it is cached for an hour and shared by every visitor. It used to be
-// fetched here in an effect on every mount and every 30 minutes, and the
-// initial `—` was one of the header swaps `BootGate` exists to hide.
+// where it is cached for an hour and shared by every visitor.
 function MelbourneTemperature({ temperature }: { temperature: number | null }) {
   return (
     <span

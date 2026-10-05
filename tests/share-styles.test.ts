@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { SharePreview } from '../src/components/site/share/share-preview'
 import { createSiteStyleWindow } from './site-stylesheet'
 
-// The share dialog is a Radix DialogContent, so the OS look depends entirely on
+// The share dialog is a Base UI `Dialog.Popup`, so the OS look depends entirely on
 // these hand-written rules beating the primitive's own `rounded-lg` and
 // `sm:max-w-lg`. `tests/site-stylesheet.ts` is required here: happy-dom never
 // resolves `@import`, so loading src/styles.css directly would leave every
@@ -48,14 +51,23 @@ describe('share styles', () => {
   })
 
   test('the preview image holds the OG card ratio so the crop is honest', () => {
-    const image = element('img', 'share-preview-image')
-    const style = browser.getComputedStyle(image)
+    // The ratio is no longer a CSS declaration: `SharePreview` wraps the image
+    // in `AspectRatio`, which emits it as an inline `--ratio` custom property
+    // consumed by `aspect-(--ratio)`. happy-dom does not evaluate that utility
+    // against a stylesheet, so the assertion has to read the rendered markup.
+    const markup = renderToStaticMarkup(
+      createElement(SharePreview, {
+        url: 'https://example.com/projects/one',
+        title: 'One',
+        description: 'A project',
+        image: { url: '/media/one.png', alt: 'Cover', width: 1200, height: 630, isDefault: false },
+      }),
+    )
 
+    expect(markup).toContain('data-slot="aspect-ratio"')
+    expect(markup).toContain('class="relative aspect-(--ratio) share-preview-image"')
     // 1200x630 is what every destination renders the card at.
-    expect(style.aspectRatio).toBe('1200 / 630')
-    expect(style.width).toBe('100%')
-
-    image.remove()
+    expect(Number.parseFloat(/--ratio:([\d.]+)/.exec(markup)?.[1] ?? '0')).toBeCloseTo(1200 / 630)
   })
 
   test('the empty-image state replaces a card the scraper would never see', () => {

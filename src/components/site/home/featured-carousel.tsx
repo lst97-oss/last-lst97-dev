@@ -10,10 +10,9 @@ export const FEATURED_AUTOPLAY_MS = 5_000
 
 /**
  * The page squares copy `ContentPagination`'s treatment rather than a class in
- * `src/styles/`: those literal utilities sit in Tailwind's `utilities` layer,
- * and an unlayered rule in a stylesheet silently loses to them (see the
- * `.card-title` note in `src/styles/content-cards.css`). The active and
- * disabled treatments are the same two literals used there.
+ * `src/styles/`, because an unlayered rule in a stylesheet would lose to those
+ * literal utilities. The active and disabled treatments are the same two
+ * literals used there.
  */
 const pageSquareClass =
   'inline-flex size-10 items-center justify-center border-3 border-border bg-card font-black tracking-wider text-foreground uppercase shadow-os-sm transition-all duration-100 ease-out hover:not-disabled:translate-x-0.5 hover:not-disabled:translate-y-0.5 hover:not-disabled:bg-accent hover:not-disabled:shadow-os-xs'
@@ -132,7 +131,7 @@ export function useFeaturedCarousel({
   const isVisible = !isMobile && windowMode !== 'minimized'
 
   const [activeIndex, setActiveIndex] = useState(0)
-  const [page, setPage] = useState(0)
+  const [pageState, setPageState] = useState(0)
   // Autoplay is not announced to screen readers; a deliberate control press
   // makes the carousel region live from then on.
   const [hasInteracted, setHasInteracted] = useState(false)
@@ -191,10 +190,17 @@ export function useFeaturedCarousel({
 
   const totalPages = Math.max(1, Math.ceil(poolCount / pageSize))
 
-  // A CMS edit can drop an item while the window sits on a later page.
-  useEffect(() => {
-    setPage((current) => Math.min(current, totalPages - 1))
-  }, [totalPages])
+  // A CMS edit can drop an item while the window sits on a later page, so the
+  // page is clamped where it is read. Correcting it from an effect instead
+  // renders the stale page first, and the grid slices an out-of-range range
+  // for that frame.
+  const page = Math.min(pageState, totalPages - 1)
+  const setPage = useCallback(
+    (next: number) => {
+      setPageState(Math.max(0, Math.min(next, totalPages - 1)))
+    },
+    [totalPages],
+  )
 
   return {
     activeIndex,

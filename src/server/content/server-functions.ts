@@ -75,7 +75,6 @@ export const getTopicServerFn = createServerFn({ method: 'GET', strict: false })
 
 const relatedValidator = (input: { excludeSlug: string; topicIds?: (string | number)[]; limit?: number }) => ({
   excludeSlug: input.excludeSlug,
-  // Each id adds one `or` branch to the Payload query, so cap the fan-out.
   topicIds: (input.topicIds ?? []).slice(0, 10),
   limit: Math.min(Math.max(input.limit ?? 3, 1), 12),
 })

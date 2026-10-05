@@ -18,7 +18,7 @@ export interface ServicePackage {
   /** Display price, always a "From A$…" starting point. */
   price: string
   bestFor: string
-  /** Three or four decision-making features shown before the full inclusions. */
+  /** Decision-making features shown before the full inclusions. */
   highlights: string[]
   /** Inclusions specific to this tier; a tier with `inherits` lists only its own. */
   includes: string[]
@@ -58,11 +58,6 @@ export interface ServiceSupportPlan {
   /** Display price, always a "From A$…" starting point or an hourly rate. */
   price: string
   bestFor: string
-  /**
-   * Optional override for the always-visible bullets. Omit it and the card
-   * shows the first three `items`; set it only when a different subset should
-   * lead, which nothing currently needs.
-   */
   highlights?: string[]
   items: string[]
 }
@@ -72,12 +67,6 @@ export interface ServiceSupportEngagement {
   slug: string
   name: string
   bestFor: string
-  /**
-   * Two or three bullets shown without expanding anything. The first three of
-   * `items` by default: a card that opened with a nine-item list read as a
-   * wall of text and pushed the price comparison below the fold.
-   */
-  highlights: string[]
   /** The full list, revealed by the card's disclosure. */
   items: string[]
 }
@@ -352,9 +341,8 @@ export const SERVICE_SUPPORT_PLANS: ServiceSupportPlan[] = [
 ]
 
 /**
- * Numeric AUD figures for the JSON-LD `Offer` nodes, keyed by plan slug
- * because the slug is the stable identity. `ServiceSupportPlan.price` stays the
- * human-readable label and is never parsed back into a number.
+ * Keyed by plan slug because the slug is the stable identity, and
+ * `ServiceSupportPlan.price` stays the human-readable label.
  *
  * "Migration & Major Changes" is absent on purpose: it is `Custom Quote` with
  * no figure, and emitting 0 would advertise the work as free.
@@ -372,7 +360,11 @@ export const SUPPORT_TIER_PRICE_AMOUNT: Record<ServiceSupportPlan['slug'], numbe
 }
 
 /**
-/** How many bullets a card shows before its disclosure is opened. */
+ * How many bullets a card shows before its disclosure is opened. Cards omit
+ * `highlights` and fall back to the first this-many `items`: a card that
+ * opened with the full nine-item list read as a wall of text and pushed the
+ * price comparison below the fold.
+ */
 const SUPPORT_HIGHLIGHT_COUNT = 3
 
 /**
@@ -382,7 +374,6 @@ const SUPPORT_HIGHLIGHT_COUNT = 3
  * flat and authoritative for the JSON-LD offers, the quotation email, and the
  * corpus parity guard, all of which address a single engagement.
  */
-/** The base the standard engagement sits on: diagnose first, then fix. */
 export const SERVICE_SUPPORT_CONSULTATION_RATE = 'A$40'
 
 /**
@@ -424,7 +415,7 @@ export const SERVICE_SUPPORT_CONSULTATION_PLANS: ServiceSupportEngagement[] = SE
   items: plan.items,
 }))
 
-/** Migration work, which is quoted individually and rendered in its own card. */
+/** Quoted individually, so it renders in its own card rather than as a tier. */
 export const SERVICE_SUPPORT_CUSTOM_PLANS: ServiceSupportEngagement[] = SERVICE_SUPPORT_PLANS.filter(
   (plan) => plan.slug === SERVICE_SUPPORT_CUSTOM_SLUG,
 ).map((plan) => ({

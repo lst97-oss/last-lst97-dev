@@ -12,7 +12,7 @@ textarea {
    site has to opt in. It mirrors the ScrollArea thumb themed in
    chat-tools.css: a 10px bar, a solid --os-yellow thumb inset 2px per side,
    and a transparent track so the surface behind the bar shows through.
-   A textarea cannot host a Radix ScrollArea — moving the scroll out of the
+   A textarea cannot host the shared ScrollArea — moving the scroll out of the
    control breaks caret and keyboard scrolling — so it draws the bar itself. */
 textarea {
   resize: vertical;
@@ -36,9 +36,6 @@ textarea::-webkit-scrollbar-thumb {
   background: var(--os-yellow);
   background-clip: content-box;
 }
-
-/* Contact form layout lives in contact-message-form.tsx via Tailwind. */
-/* Contact form is full-width via Tailwind. */
 
 label > span {
   display: block;

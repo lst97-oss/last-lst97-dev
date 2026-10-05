@@ -1,6 +1,7 @@
 import { cn } from 'cn'
 import { type ReactNode, useState } from 'react'
-import type { MediaViewerItem } from './media-item'
+import { AspectRatio } from '@/components/ui/aspect-ratio'
+import { BOX_ASPECT, intrinsicRatio, type MediaViewerItem } from './media-item'
 import { MediaViewer } from './media-viewer'
 
 /**
@@ -42,21 +43,28 @@ export function ImageGallery({ items, heading }: { items: MediaViewerItem[]; hea
               type="button"
             >
               <figure className="m-0 overflow-hidden border-3 border-border bg-card shadow-os-sm">
-                <img
-                  alt={item.alt || `${heading ?? 'Gallery'} image ${index + 1}`}
-                  className="block aspect-video w-full object-cover"
-                  decoding="async"
-                  height={item.height}
-                  loading="lazy"
-                  // The grid is one column below `sm` and two columns above it,
-                  // so 50vw is the real rendered width past that breakpoint.
-                  // The old 33vw under-declared the fetch width, making the
-                  // browser pick an unnecessarily large candidate.
-                  sizes="(min-width: 640px) 50vw, 100vw"
-                  src={item.src}
-                  srcSet={item.srcSet}
-                  width={item.width}
-                />
+                {/* Each tile reserves the image's OWN ratio rather than a 16:9
+                    frame that crops it, so a portrait screenshot is shown whole.
+                    A media document with no dimensions has no ratio to reserve, so
+                    it falls back to the covers' 16:9 box — which is also what
+                    `object-cover` then crops it into. */}
+                <AspectRatio ratio={intrinsicRatio(item) ?? BOX_ASPECT}>
+                  <img
+                    alt={item.alt || `${heading ?? 'Gallery'} image ${index + 1}`}
+                    className="size-full object-cover"
+                    decoding="async"
+                    height={item.height}
+                    loading="lazy"
+                    // The grid is one column below `sm` and two columns above it,
+                    // so 50vw is the real rendered width past that breakpoint.
+                    // The old 33vw under-declared the fetch width, making the
+                    // browser pick an unnecessarily large candidate.
+                    sizes="(min-width: 640px) 50vw, 100vw"
+                    src={item.src}
+                    srcSet={item.srcSet}
+                    width={item.width}
+                  />
+                </AspectRatio>
                 {item.caption ? (
                   <figcaption className="p-3 text-sm text-muted-foreground">{item.caption}</figcaption>
                 ) : null}

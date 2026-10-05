@@ -6,9 +6,6 @@
  * from the client graph) and no direct `Bun.env` reads. The canonical origin
  * is injected at build time by Vite (`define`) from `PUBLIC_SITE_URL`, with a
  * localhost fallback for dev.
- *
- * Every route composes its head from `createPageMeta` so titles, canonicals,
- * and social tags stay consistent instead of being re-invented per page.
  */
 
 export const SITE_NAME = 'LAST//OS'
@@ -149,7 +146,6 @@ export function clampDescription(value: string, max = MAX_DESCRIPTION_LENGTH): s
   return `${(lastSpace > max * 0.6 ? clipped.slice(0, lastSpace) : clipped).replace(/[\s.,;:—-]+$/, '')}…`
 }
 
-/** Builds a cacheable image URL from the page's SEO title and description. */
 export function createOgImagePath(title: string, description: string): string {
   const query = new URLSearchParams({
     title: clampDescription(title, SITE_OG_IMAGE_TITLE_LIMIT),
@@ -160,15 +156,10 @@ export function createOgImagePath(title: string, description: string): string {
   return `${SITE_OG_IMAGE_RENDERER_PATH}?${query.toString()}`
 }
 
-/** Accessible description for the text and artwork rendered into a page card. */
 export function createOgImageAlt(title: string, description: string): string {
   return `LAST//OS share card for ${clampDescription(title, SITE_OG_IMAGE_TITLE_LIMIT)}. ${clampDescription(description, 150)}`
 }
 
-/**
- * Builds the full meta/link/script set for a page: title, description,
- * canonical, Open Graph, Twitter card, and optional article metadata.
- */
 export function createPageMeta({
   description,
   image,

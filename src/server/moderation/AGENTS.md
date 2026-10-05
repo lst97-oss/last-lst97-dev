@@ -166,12 +166,61 @@ Contact message text and form values must never reach application logs or
 Discord diagnostics. The direct contact path deliberately passes no
 `ModerationDiagnosticsObserver`. Keep it that way.
 
+## The scope question separates asking from producing
+
+`technical_question` is an **in-scope** label, so its description used to be
+the trap that let unrelated requests through: it claimed to cover
+"TypeScript/JavaScript language questions" with nothing excluding work
+product, so "please output a typescript" scored in scope and the responder
+wrote a generic snippet. The criteria now draw the line explicitly:
+
+- `technical_question` is understanding, comparison, advice, or a
+  recommendation Nelson would give — "asks for understanding, comparison, or
+  advice, not for produced code".
+- `general_knowledge` owns every request that asks the assistant to *produce*
+  something instead of answer: code or text to write, generate, complete,
+  refactor, or debug in any language or subject; a role-play or different
+  persona; or an action to run, edit, deploy, book, pay, schedule, or send.
+- `chatScopeQuestion` states the same exclusion once, plus the **follow-up
+  rule**: a turn that only adds detail to, or narrows the output of, such a
+  request is that same out-of-scope request. That rule is what stops the
+  reported "please output a typescript" → "A code snippet demo" pair, where
+  each turn read as a harmless short question in isolation.
+
+`general_knowledge` also states the **bare-mention rule**: a terse or fragmented
+mention of that work product ("a code snippet demo", "output a typescript") is
+the same request, not an ambiguous one. Without it the very first probe run
+left that exact turn at `uncertain` 0.64 with no history. It was never a leak —
+`service.ts` treats an explicit `uncertain` scope label as a hard block — but
+the visitor gets the rephrase prompt instead of the scope message, so the rule
+belongs in the label rather than in the gate.
+
+Measured against `jev-latest` on 2026-10-06, final wording, 44 cases: **28
+out-of-scope all `general_knowledge`, 16 in-scope all accepted, zero
+`uncertain`.** The reported turn 0.99, its follow-up 1.00, bare "A code snippet
+demo" 0.97, "Code." 0.92. Out-of-scope floor was "pay my invoice for me" 0.56
+and "optimise this sorting algorithm" 0.64. In-scope floor was "what is your
+experience with Go?" 0.66 and "why did you choose pgvector for this site?"
+0.65. Through the service layer the reported turn returns
+`{ allowed: false, reason: 'out_of_scope' }` and a genuine offer question still
+returns `{ allowed: true }`.
+
+Re-measure both directions before trusting any rewording here. The positive
+controls matter as much as the negatives, because the failure this fixed was
+silent over-inclusion, not a rejection.
+
 ## Prompt budget
 
 `tests/server/typesafe-classifier.test.ts` pins
 `JSON.stringify(requestBody.questions).length < 12_000` on the chat-and-tools
-path. Measured headroom is roughly 1,400 characters. The contact-channel
-constants are not in that payload, so they are unconstrained by this budget.
+path. **Measured headroom is about 150 characters, not the ~1,400 the
+measurement command below suggests** — that command stubs every question text
+with `"x"` and so undercounts. To get the real number, log
+`JSON.stringify(requestBody.questions).length` inside the budget test itself;
+it was 11,849 before the 2026-10-06 scope change and 11,986 after it. The
+scope question duplicated its own criteria descriptions, so they were
+condensed to pay for the work-product exclusion. The contact-channel constants
+are not in that payload, so they are unconstrained by this budget.
 
 Measure after any prompt edit rather than eyeballing it:
 

@@ -15,8 +15,7 @@ const users = config.collections.find((collection) => collection.slug === 'users
 
 describe('payload config abuse prevention', () => {
   it('locks out repeated failed logins', () => {
-    // Payload already defaults to 5 attempts / 10 minutes
-    // (payload/dist/collections/config/defaults.js:132), so the effective
+    // Payload already defaults to 5 attempts / 10 minutes, so the effective
     // guarantee is what matters: the values must exist and must not have been
     // loosened. Declaring them explicitly pins the intent against a future
     // change to the library default.

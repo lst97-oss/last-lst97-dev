@@ -10,22 +10,14 @@ import { CHAT_OFFLINE_MESSAGE, MAX_CHAT_CONTEXT_TOKEN_CHARS } from '../../lib/ch
 import type { PublicCitation } from '../knowledge/retrieve'
 import { CHAT_TOOL_NAMES, type ChatToolProgressName } from './types'
 
-// SSE event protocol for POST /api/site/chat when the client sends
-// `Accept: text/event-stream`. Framing is `event: <type>\ndata: <json>\n\n`.
-// This module is pure string shaping with no server runtime imports, so the
-// browser chat client can share the frame splitter and parser.
+// Single definition of every `/api/site/chat` wire shape, shared by the browser
+// client and the handler, so a body the client cannot understand is dropped
+// rather than cast. See AGENTS.md "Chat request flow".
 //
-// It is also the single definition of EVERY `/api/site/chat` wire shape:
-// the stream events, the two JSON response bodies, and the incoming request
-// schemas. The browser parses with the same schemas the handler validates
-// with, so a body the client cannot understand is dropped instead of being
-// cast into whatever shape the caller hoped for.
-//
-// Browser-safety is load-bearing. `vendor/payload-tanstack-vite/importProtection.js`
-// fails the client build if a server-only specifier reaches this graph, so the
-// only permitted value imports are `zod`, `../../lib/chat-contact`,
-// `../../lib/chat-limits`, and `./types`. Everything from `src/server/**` must
-// stay `import type`.
+// `vendor/payload-tanstack-vite/importProtection.js` fails the client build if
+// a server-only specifier reaches this graph, so the only permitted value
+// imports are `zod`, `../../lib/chat-contact`, `../../lib/chat-limits`, and
+// `./types`. Everything from `src/server/**` must stay `import type`.
 
 export const CHAT_STATUS_LABELS = {
   thinking: 'THINKING…',
@@ -113,9 +105,6 @@ export type ChatContactActionRequest = ChatContactAction & {
   requestId: string
 }
 
-// ---------------------------------------------------------------------------
-// Closed sets, derived rather than restated.
-
 /**
  * Every template name, taken from `CHAT_CONTACT_TEMPLATES` rather than a
  * literal list. `http-handler.ts` used to hardcode
@@ -142,9 +131,6 @@ const chatToolProgressNames = [
 const chatToolProgressNameSchema = z.enum(chatToolProgressNames)
 
 const chatStatusNames = Object.keys(CHAT_STATUS_LABELS) as [ChatStatus, ...ChatStatus[]]
-
-// ---------------------------------------------------------------------------
-// Citations.
 
 const chatCitationShape = z.object({
   id: z.string(),
@@ -173,9 +159,6 @@ export type ChatCitationParity = [z.infer<typeof chatCitationShape>] extends [Pu
  */
 export const chatCitationSchema = chatCitationShape as unknown as z.ZodType<PublicCitation>
 
-// ---------------------------------------------------------------------------
-// Contact events.
-
 /**
  * `ChatContactSubmission.fields` is a template-specific all-`string` record in
  * every variant (`src/lib/chat-contact.ts`), so a validated `Record<string, string>`
@@ -187,7 +170,7 @@ const chatContactSubmissionSchema = z.object({
 })
 
 /**
- * Seven of the thirteen contact events differ only in their discriminator.
+ * Seven of the fourteen contact events differ only in their discriminator.
  * A helper taking `type: string` would widen the discriminator to `string` and
  * collapse the discriminated union, so `chatContactEventSchema` expands these
  * calls with literal arguments instead.
@@ -255,9 +238,6 @@ const chatContactEventSchemaUnion = z.discriminatedUnion('type', [
 ])
 export const chatContactEventSchema = chatContactEventSchemaUnion as unknown as z.ZodType<ChatContactEvent>
 
-// ---------------------------------------------------------------------------
-// Stream events.
-
 /**
  * Each `.catch()` reproduces a fallback the client already applied by hand
  * (`String(data.delta ?? '')`, `String(data.label ?? 'WORKING…')`,
@@ -284,9 +264,6 @@ const chatStreamEventSchemaUnion = z.union([
   chatContactEventSchema,
 ])
 export const chatStreamEventSchema = chatStreamEventSchemaUnion as unknown as z.ZodType<ChatStreamEvent>
-
-// ---------------------------------------------------------------------------
-// JSON responses (the non-stream reply path and contact actions).
 
 /**
  * A union, not a plain object, because the browser branch is driven by
@@ -364,8 +341,6 @@ export const chatContactActionSchema = z.discriminatedUnion('action', [
       action: z.literal('submit_form'),
       contextToken: chatContextTokenSchema,
       fields: z.unknown(),
-      // Screening spends two model calls, so it is gated ahead of the work
-      // rather than only at the final send.
       turnstileToken: z.string().min(1).max(2_048),
     })
     .strict(),

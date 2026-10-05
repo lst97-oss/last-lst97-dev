@@ -7,10 +7,6 @@ import type { WakaTimeStatsClient } from '../../wakatime/stats'
 import type { ChatMessage, ChatProjectListState, ChatToolName, ChatToolProgressName, ChatTopicAnchor } from '../types'
 import type { CodingHistorySource } from './coding-history-tool'
 
-// Jev authoritatively selects tools at each step. The planner only prepares
-// arguments for Jev-approved tools; every call still passes the fixed,
-// read-only schemas and bounded-output runner before data leaves the server.
-
 export type AgentToolName = ChatToolName
 
 export type AgentToolUseLabel = 'use' | 'skip' | 'uncertain'

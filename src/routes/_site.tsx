@@ -4,7 +4,7 @@ import { BootGate } from '@/components/site/boot-gate'
 import { NotFoundPage } from '@/components/site/not-found-page'
 import { DesktopShell } from '@/components/site/shell'
 import { SiteHealthProvider } from '@/components/site/site-health-provider'
-import { Toaster } from '@/components/ui/sonner'
+import { Toaster } from '@/components/ui/toast'
 import { getMelbourneTemperatureServerFn } from '@/server/melbourne-temperature/server-functions'
 import siteCss from '@/styles.css?url'
 
@@ -44,7 +44,7 @@ function SiteLayout() {
 
           It sits OUTSIDE `BootGate` deliberately: the gate's content wrapper is
           `display: none` until `html.js-hydrated`, so a toast raised during
-          hydration would be mounted but invisible. Sonner positions its list
+          hydration would be mounted but invisible. The toast viewport is
           `fixed`, so nothing in the shell tree is needed for that to work —
           and it must never be moved inside a window frame, whose
           `overflow: hidden` viewport scrolls its content. */}

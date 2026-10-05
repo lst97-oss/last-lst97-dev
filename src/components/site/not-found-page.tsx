@@ -12,11 +12,12 @@ const NOT_FOUND_WINDOW_ID = '404.exe'
 /**
  * Global not-found surface.
  *
- * Registered at both `__root.tsx` (`notFoundComponent`) and `src/router.tsx`
- * (`defaultNotFoundComponent`), so it must render the desktop chrome itself:
- * the header/sidebar live in `_site.tsx`, which is a *child* of the root route
- * and therefore is not in the tree when a match fails to resolve. The
- * composition below mirrors `_site.tsx:16-22` exactly.
+ * Registered in FOUR places — `__root.tsx` (`notFoundComponent`),
+ * `src/router.tsx` (`defaultNotFoundComponent`), `routes/$.tsx`, and
+ * `_site.tsx` — so it must render the desktop chrome itself: the header and
+ * sidebar live in `_site.tsx`, which is a *child* of the root route and
+ * therefore is not in the tree when a match fails to resolve. The composition
+ * below follows `_site.tsx` but deliberately omits `BootGate`.
  *
  * `notFoundComponent` has no `head` hook, so this page inherits the root
  * document title. That is a known limitation of the boundary, not an oversight.
@@ -34,10 +35,8 @@ export function NotFoundPage() {
             className="not-found-window"
             closeHref="/"
             windowId={NOT_FOUND_WINDOW_ID}
-            // Every other non-home window scrolls through the themed
-            // ScrollArea. A long requested path would otherwise grow this
-            // frame, and below 650px the shell clamp is only re-applied for
-            // `window-frame--scroll`, so the overflow would leak onto <body>.
+            // A long requested path would otherwise grow this frame, and below
+            // 650px the shell clamp is only re-applied for `window-frame--scroll`.
             scrollable
           >
             <Eyebrow>

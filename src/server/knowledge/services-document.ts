@@ -5,14 +5,10 @@ const SERVICES_DIRECTORY = 'services'
 /**
  * The immediate parent folder of a services document names the offering it
  * belongs to, and it is the structural source of truth for that fact: the
- * parser rejects a document whose folder is not listed here rather than
- * guessing. Two offerings are sold on `/services` and they are priced on
- * different scales, so a chunk that does not say which one it describes lets
- * the model answer a support question with a website package price.
- *
- * The label is injected into the prefix of every chunk because chunking is a
- * heading-unaware sliding window over `document.text` (`chunking.ts`), so that
- * prefix is the only context a chunk carries into retrieval.
+ * parser rejects an unlisted folder rather than guessing. Two offerings are
+ * priced on different scales, so a chunk that does not say which one it
+ * describes lets the model answer a support question with a package price.
+ * The label reaches chunks through `chunkContextPrefix`, per source-types.ts.
  */
 export const SERVICES_OFFERING_LABELS = {
   packages: 'Website Packages — a new website built from scratch',

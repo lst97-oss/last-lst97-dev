@@ -3,12 +3,6 @@
  * pages have enough content to show the adaptive masonry grid packing.
  *
  * Writes with plain SQL through `pg` rather than the Payload local API.
- * `payload.find()` currently fails on this schema for `projects` — Payload
- * builds a lateral join against a polymorphic `projects_rels` table for the
- * `gallery` upload field, and that table does not exist in the database (the
- * `projects_gallery` table present here has the older `image_id`/`caption`
- * shape). Direct inserts sidestep that unrelated breakage; when the schema and
- * migrations catch up this script can go back to the local API.
  *
  * Idempotent: rows whose slug starts with `demo-` are deleted first, then
  * re-inserted, so repeated runs never accumulate duplicates.

@@ -13,8 +13,6 @@ import { createCollectionStructuredData } from '@/lib/content/structured-data'
 import { createPageMeta } from '@/lib/seo/site-seo'
 
 export const Route = createFileRoute('/_site/projects/')({
-  // Returns undefined when absent so a bare `/projects` keeps its clean URL:
-  // returning 1 would make TanStack redirect `/projects` to `/projects?page=1`.
   validateSearch: (search: Record<string, unknown>): { page?: number; topic?: string } => {
     const page = Number(search.page)
     const topic = typeof search.topic === 'string' && search.topic ? search.topic : undefined
@@ -23,7 +21,6 @@ export const Route = createFileRoute('/_site/projects/')({
       ...(topic ? { topic } : {}),
     }
   },
-  // `deps` in the loader comes from loaderDeps, not from validateSearch.
   loaderDeps: ({ search }) => ({ page: search.page ?? 1, topic: search.topic }),
   loader: async ({ deps }) => {
     // Topics first: the slug in the URL must be resolved to an id before the

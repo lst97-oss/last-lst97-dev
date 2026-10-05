@@ -106,7 +106,17 @@ describe('Payload editorial schemas', () => {
     })
     const upload = Media.upload
     if (!upload || upload === true) throw new Error('Media upload config should be an object')
-    expect(upload.imageSizes?.map(({ name }) => name)).toEqual(['thumbnail', 'card', 'hero'])
+    // The three crops back the covers; the two width-preserving sizes back the
+    // surfaces that paint an image at its own ratio. Every entry must stay
+    // `fit: 'inside'` without a height — `Media` enables `focalPoint`, so a
+    // fixed-height size takes Payload's focal-point branch and CROPS, which is
+    // exactly what an uncropped derivative must not do.
+    expect(upload.imageSizes?.map(({ name }) => name)).toEqual(['thumbnail', 'card', 'hero', 'gallerySm', 'galleryLg'])
+    for (const size of upload.imageSizes?.slice(3) ?? []) {
+      expect(size.fit).toBe('inside')
+      expect(size.height).toBeUndefined()
+      expect(size.withoutEnlargement).toBe(true)
+    }
     expect(field(Media.fields, 'alt')?.required).toBe(true)
   })
 

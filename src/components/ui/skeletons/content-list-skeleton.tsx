@@ -12,19 +12,21 @@ import {
   PixelSkeletonWindow,
 } from '@/components/ui/skeletons/pixel-skeleton'
 
-/**
- * List skeletons mirroring the three Payload-backed index routes. All three
- * loaders page at 9 (`loadPostsPage`, `loadProjectsPage`, `loadChangelogsPage`),
- * so every list renders nine cards and the grid is `xl:grid-cols-3`.
- */
-
 const PAGE_COLUMN = 'mx-auto flex w-full max-w-6xl flex-col gap-6'
 
 /** `CardGrid`'s class string without `.card-masonry`: the masonry row-span
  *  measurement is meaningless before the cards have their real heights. */
 const CARD_GRID = 'grid grid-cols-1 gap-3.5 md:grid-cols-2 xl:grid-cols-3'
 
-/** Mirrors `PageHeading` plus the `page-heading` margin from content-pages.css. */
+/**
+ * Each stub mirrors one real component so the pending state does not jump when
+ * it arrives: `PageHeading` (plus its `page-heading` margin from
+ * content-pages.css), `ContentPagination`'s control row (two arrows, page
+ * squares, gap marker — stubbed on every list because `totalPages` is unknown
+ * while pending, and a plain `div` rather than a `nav` because an unlabelled
+ * landmark with nothing to navigate to is an accessibility defect), and
+ * `ListFilters` (search box, narrower topic filter box, chip row).
+ */
 function ListHeadingSkeleton() {
   return (
     <div className="page-heading mb-7 flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-stretch">
@@ -38,12 +40,6 @@ function ListHeadingSkeleton() {
   )
 }
 
-/**
- * Mirrors `ContentPagination`'s control row: two arrows, page squares, and a
- * gap marker. It is a stub on every list because `totalPages` is unknown while
- * pending. A plain `div` rather than a `nav`: an unlabelled landmark is an
- * accessibility defect, and there is nothing to navigate to yet.
- */
 function PixelSkeletonPagination() {
   return (
     <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
@@ -63,12 +59,6 @@ function PixelSkeletonPagination() {
   )
 }
 
-/**
- * Mirrors `ListFilters`: the archive search box, then the narrower topic filter
- * box, then the chip row. The project listing gained the same filter bar as the
- * blog listing, so both skeletons carry it — otherwise the pending state jumps
- * when the real filters arrive.
- */
 function ListFiltersSkeleton() {
   return (
     <div className="list-filters mb-6 flex flex-col gap-4">

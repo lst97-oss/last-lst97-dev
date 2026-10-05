@@ -276,7 +276,7 @@ describe('TypeSafe Jev classifier adapter', () => {
       expect(JSON.stringify(requestBody?.questions)).toContain('identity, purpose, capabilities, or process')
       expect(JSON.stringify(requestBody?.questions)).toContain('A greeting')
       expect(JSON.stringify(requestBody?.questions)).toContain(
-        'general technical questions outside software development are out of scope',
+        'general technical questions outside software development',
       )
     } finally {
       globalThis.fetch = originalFetch
@@ -396,7 +396,67 @@ describe('TypeSafe Jev classifier adapter', () => {
       expect(questions).toContain('published posts')
       expect(questions).toContain('projects')
       expect(questions).toContain('this repository’s implementation')
-      expect(questions).toContain('general technical questions outside software development are out of scope')
+      expect(questions).toContain('general technical questions outside software development')
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  it('excludes general coding, text-transformation, and action requests from scope', async () => {
+    const originalFetch = globalThis.fetch
+    let requestBody: Record<string, unknown> | undefined
+    globalThis.fetch = Object.assign(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>
+        return Response.json({
+          model: 'jev-latest',
+          answers: {
+            scope: { type: 'choice', choice: 'general_knowledge', confidence: 0.97, probabilities: {} },
+            safety: { type: 'choice', choice: 'safe', confidence: 0.99, probabilities: {} },
+            contact_intent: { type: 'choice', choice: 'normal_chat', confidence: 0.95, probabilities: {} },
+          },
+          usage: { input_tokens: 1, output_tokens: 1 },
+        })
+      },
+      { preconnect: originalFetch.preconnect },
+    )
+
+    try {
+      const classifier = createTypeSafeClassifier('test-server-key')
+      const first = await classifier.classify({ channel: 'chat', message: 'please output a typescript', context: [] })
+      expect(first.channel).toBe('chat')
+      if (first.channel !== 'chat') throw new Error('expected a chat finding')
+      expect(first.scope.label).toBe('general_knowledge')
+
+      // The follow-up only narrows the previous request, so it must not become
+      // an in-scope technical question on its own.
+      const followUp = await classifier.classify({
+        channel: 'chat',
+        message: 'A code snippet demo',
+        context: [
+          { role: 'user', content: 'please output a typescript' },
+          { role: 'assistant', content: 'Sure — which kind?' },
+        ],
+      })
+      expect(followUp.channel).toBe('chat')
+      if (followUp.channel !== 'chat') throw new Error('expected a chat finding')
+      expect(followUp.scope.label).toBe('general_knowledge')
+
+      // Bare, history-free mentions scored `uncertain` before the criteria
+      // said a terse mention is the same request rather than an ambiguous one.
+      const bare = await classifier.classify({ channel: 'chat', message: 'A code snippet demo', context: [] })
+      expect(bare.channel).toBe('chat')
+      if (bare.channel !== 'chat') throw new Error('expected a chat finding')
+      expect(bare.scope.label).toBe('general_knowledge')
+
+      const questions = JSON.stringify(requestBody?.questions)
+      expect(questions).toContain('produce work product rather than answer a question')
+      expect(questions).toContain('code or text to write, generate, complete, refactor, or debug')
+      expect(questions).toContain('a role-play or different persona')
+      expect(questions).toContain('an action to run, edit, deploy, book, pay, schedule, or send')
+      expect(questions).toContain('a follow-up that only adds detail to')
+      expect(questions).toContain('asks for understanding, comparison, or advice, not for produced code')
+      expect(questions).toContain('A terse or fragmented mention of that work product is the same request')
     } finally {
       globalThis.fetch = originalFetch
     }

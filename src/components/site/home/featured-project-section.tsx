@@ -58,8 +58,6 @@ export function HomeFeaturedProjectSection({ projects }: { projects: Project[] }
       <>
         <CardGrid>
           {featuredProjects.slice(page * MAXIMIZED_PAGE_SIZE, (page + 1) * MAXIMIZED_PAGE_SIZE).map((project) => (
-            // Not `featured`: this is a card-grid column, so the capped cover
-            // and the eager cover load of the featured variant are both wrong here.
             <ProjectCard key={project.slug} project={project} />
           ))}
         </CardGrid>
@@ -91,13 +89,7 @@ export function HomeFeaturedProjectSection({ projects }: { projects: Project[] }
                 key={project.slug}
                 role="group"
               >
-                <ProjectCard
-                  featured
-                  // Only the first slide can be the LCP element; the rest load
-                  // lazily as the autoplay brings them on screen.
-                  priority={slideIndex === 0}
-                  project={project}
-                />
+                <ProjectCard featured priority={slideIndex === 0} project={project} />
               </div>
             ))}
           </div>

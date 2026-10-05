@@ -26,8 +26,6 @@ export const Route = createFileRoute('/_site/blog/')({
   // `deps` in the loader comes from loaderDeps, not from validateSearch.
   loaderDeps: ({ search }) => ({ page: search.page ?? 1, topic: search.topic }),
   loader: async ({ deps }) => {
-    // Topics first: the slug has to resolve to an id before the page query can
-    // filter on it. An unknown slug filters nothing rather than erroring.
     const topics = await loadTopics()
     const active = deps.topic ? topics.find((topic) => topic.slug === deps.topic) : undefined
     const posts = await loadPostsPageFiltered(deps.page ?? 1, 9, {

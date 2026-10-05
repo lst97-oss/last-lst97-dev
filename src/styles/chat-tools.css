@@ -4,8 +4,7 @@
   gap: 10px;
 }
 
-/* Help button box lives in chat-help-dialog.tsx via Tailwind.
-   Hover + focus states stay here. */
+/* Hover + focus states stay here. */
 .chat-help-button:hover {
   background: var(--accent);
 }
@@ -25,8 +24,8 @@
   box-shadow: 8px 8px 0 var(--os-ink);
 }
 
-/* The dialog's own padding now lives on the ScrollArea viewport, because
-   the content element is a table box that cannot take the padding itself. */
+/* The dialog's own padding lives on the ScrollArea viewport, because the
+   viewport is the scroll box and padding on it scrolls with the content. */
 .chat-pipeline-dialog [data-dialog-scroll] > [data-slot="scroll-area-viewport"] {
   padding: 24px;
 }
@@ -161,8 +160,23 @@
   height: 10px;
 }
 
-/* Radix already sizes the thumb to the bar's content box, so the bar's
-   padding alone produces the 2px inset the chat thumb gets from its border. */
+/* A bar is kept mounted at every width so the rules above keep matching while
+   it is idle, which means one is painted even when its viewport has nothing to
+   scroll: an empty shell or panel then shows a 10px bar with a full-height
+   thumb that cannot be dragged anywhere. Base UI mirrors the viewport's
+   overflow state onto the bar itself, so the absence of `data-has-overflow-y`
+   (or `x`) is exactly "this axis cannot scroll", and only that bar is removed.
+   A bar that can scroll keeps both its attribute and its 10px width. */
+[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"][data-orientation="vertical"]:not([data-has-overflow-y]) {
+  display: none;
+}
+
+[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"][data-orientation="horizontal"]:not([data-has-overflow-x]) {
+  display: none;
+}
+
+/* Base UI's Thumb is sized to the bar's content box, so the bar's padding
+   alone produces the 2px inset the chat thumb gets from its border. */
 [data-slot="scroll-area"] [data-slot="scroll-area-thumb"] {
   border-radius: 0;
   background: var(--os-yellow);
@@ -177,15 +191,11 @@
   cursor: default;
 }
 
-[data-slot="scroll-area"]
-  [data-slot="scroll-area-scrollbar"][data-orientation="vertical"]
-  [data-slot="scroll-area-thumb"] {
+[data-slot="scroll-area"] [data-slot="scroll-area-thumb"][data-orientation="vertical"] {
   cursor: ns-resize;
 }
 
-[data-slot="scroll-area"]
-  [data-slot="scroll-area-scrollbar"][data-orientation="horizontal"]
-  [data-slot="scroll-area-thumb"] {
+[data-slot="scroll-area"] [data-slot="scroll-area-thumb"][data-orientation="horizontal"] {
   cursor: ew-resize;
 }
 

@@ -94,7 +94,6 @@ h3 {
   margin-bottom: 28px;
 }
 
-/* Button row layout lives in HomeHeroSection via Tailwind. */
 .project-links,
 .form-actions {
   display: flex;
@@ -171,23 +170,21 @@ h3 {
   transition: transform 300ms ease-out;
 }
 
-/* `min-width: 0` is load-bearing, not tidiness. Radix ScrollArea writes
-   `display: table; min-width: 100%` as an inline style on each viewport's
-   direct child, and a table box sizes to its contents — so a slide left at its
-   natural width widens the whole window frame instead of being clipped by it.
+/* `min-width: 0` is load-bearing, not tidiness. The scroll-area viewport sizes
+   to its content unless told otherwise, so a slide left at its natural width
+   widens the whole window frame instead of being clipped by it.
    `min-width: 0` breaks that cycle.
 
    It is not sufficient on its own. The slide's `flex: 0 0 100%` resolves its
-   percentage against the CAROUSEL, which is itself inside that content-sized
-   table wrapper — so the basis is circular and the track fell back to its
-   children's min-content (measured 850px), inflating every home window to
-   920px inside a 610px main column, where `.os-site`'s `overflow: hidden`
-   clipped the right-hand third of each card. `contain: inline-size` on the
-   carousel above breaks the cycle from the other end: it is sized as if it had
-   no contents, so it takes the column width and the transform track is
-   contained by the `overflow: hidden` above instead of escaping it. Same fix
-   as `.rich-text` in `prose.css` and `.mermaid-diagram-shell` in
-   `chat-tools.css`. */
+   percentage against the CAROUSEL, so without the containment below the basis
+   is circular and the track falls back to its children's min-content
+   (measured 850px), inflating every home window to 920px inside a 610px main
+   column, where `.os-site`'s `overflow: hidden` clips the right-hand third of
+   each card. `contain: inline-size` on the carousel above breaks the cycle from
+   the other end: it is sized as if it had no contents, so it takes the column
+   width and the transform track is contained by the `overflow: hidden` above
+   instead of escaping it. Same fix as `.rich-text` in `prose.css` and
+   `.mermaid-diagram-shell` in `chat-tools.css`. */
 .featured-carousel-slide {
   flex: 0 0 100%;
   min-width: 0;

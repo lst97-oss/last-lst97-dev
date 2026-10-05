@@ -1,37 +1,7 @@
 import { afterAll, afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { Window as BrowserWindow } from 'happy-dom'
+import { installBrowserGlobals } from './browser-globals'
 
-const browserWindow = new BrowserWindow({ url: 'http://localhost/' })
-const browserGlobals = [
-  'window',
-  'document',
-  'navigator',
-  'Element',
-  'HTMLElement',
-  'Node',
-  'MutationObserver',
-  'PointerEvent',
-  'MouseEvent',
-  'scrollTo',
-  'IS_REACT_ACT_ENVIRONMENT',
-] as const
-const originalGlobalDescriptors = new Map(
-  browserGlobals.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]),
-)
-
-Object.defineProperties(globalThis, {
-  window: { configurable: true, value: browserWindow },
-  document: { configurable: true, value: browserWindow.document },
-  navigator: { configurable: true, value: browserWindow.navigator },
-  Element: { configurable: true, value: browserWindow.Element },
-  HTMLElement: { configurable: true, value: browserWindow.HTMLElement },
-  Node: { configurable: true, value: browserWindow.Node },
-  MutationObserver: { configurable: true, value: browserWindow.MutationObserver },
-  PointerEvent: { configurable: true, value: browserWindow.PointerEvent },
-  MouseEvent: { configurable: true, value: browserWindow.MouseEvent },
-  scrollTo: { configurable: true, value: browserWindow.scrollTo.bind(browserWindow) },
-  IS_REACT_ACT_ENVIRONMENT: { configurable: true, value: true },
-})
+const { window: browserWindow, restore: restoreBrowserGlobals } = installBrowserGlobals()
 
 const React = await import('react')
 const { act } = React
@@ -71,14 +41,7 @@ afterEach(async () => {
 })
 
 afterAll(() => {
-  for (const key of browserGlobals) {
-    const descriptor = originalGlobalDescriptors.get(key)
-    if (descriptor) {
-      Object.defineProperty(globalThis, key, descriptor)
-    } else {
-      Reflect.deleteProperty(globalThis, key)
-    }
-  }
+  restoreBrowserGlobals()
 })
 
 describe('window frame controls', () => {
@@ -212,6 +175,48 @@ describe('window frame controls', () => {
       await act(async () => mobileRoot.unmount())
       mobileContainer.remove()
       Object.defineProperty(browserWindow, 'innerWidth', { configurable: true, value: originalInnerWidth })
+    }
+  })
+
+  test('renders the back control in the title bar, before the window title', async () => {
+    // A window with no back control is the common case; the control is opt-in
+    // per window rather than always occupying the bar's left edge.
+    expect(container.querySelector('.window-back')).toBeNull()
+
+    const backRoute = createRootRoute({
+      component: () =>
+        React.createElement(WindowFrame, {
+          backLink: { href: '/blog', label: '← BACK TO NOTES' },
+          title: 'note.detail',
+          windowId: 'note.detail',
+          children: 'Detail body',
+        }),
+    })
+    const backRouter = createRouter({
+      routeTree: backRoute,
+      history: createMemoryHistory({ initialEntries: ['/blog'] }),
+    })
+    const backContainer = browserWindow.document.createElement('div')
+    browserWindow.document.body.append(backContainer)
+    const backRoot = createRoot(backContainer as unknown as HTMLDivElement)
+
+    try {
+      await act(async () => backRoot.render(React.createElement(RouterProvider, { router: backRouter })))
+
+      const titlebar = backContainer.querySelector('.window-titlebar')
+      const back = titlebar?.querySelector('a.window-back')
+      expect(back).not.toBeNull()
+      expect(back?.getAttribute('href')).toBe('/blog')
+      expect(back?.getAttribute('aria-label')).toBe('← BACK TO NOTES')
+      // The control reads as browser chrome, so it leads the title rather than
+      // floating in the page body above the cover.
+      expect(titlebar?.querySelector('.window-title')?.textContent).toContain('note.detail')
+      expect(titlebar?.textContent?.indexOf('← BACK TO NOTES')).toBeLessThan(
+        titlebar?.textContent?.indexOf('note.detail') ?? -1,
+      )
+    } finally {
+      await act(async () => backRoot.unmount())
+      backContainer.remove()
     }
   })
 })

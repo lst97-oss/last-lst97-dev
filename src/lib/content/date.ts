@@ -17,9 +17,9 @@ export function formatPublishedDate(value: string): string {
 }
 
 /**
- * Picks the most meaningful date for a list card: the publication date when
- * there is one, otherwise the last update. Returns null when neither is
- * usable so callers can skip rendering a date row entirely.
+ * The most meaningful date for a list card: publication when there is one,
+ * otherwise the last update. Null when neither is usable, so callers can skip
+ * the date row entirely.
  */
 export function contentCardDate(publishedAt: string | null | undefined, updatedAt?: string | null): string | null {
   if (publishedAt) {
@@ -37,11 +37,10 @@ export function contentCardDate(publishedAt: string | null | undefined, updatedA
 const CHARACTERS_PER_MINUTE = 900
 
 /**
- * Estimates reading time from Lexical content by walking the serialized tree
- * and summing the character count of every text node, so it works for any
- * block type without a per-type visitor and counts CJK text correctly — a
- * word-based estimate would treat a whole Chinese sentence as one "word".
- * Returns null when there is no content to measure.
+ * Sums the character count of every text node in the serialized Lexical
+ * tree, so it works for any block type and counts CJK correctly — a word-based
+ * estimate treats a whole Chinese sentence as one "word". Null when there is
+ * no content to measure.
  */
 export function readingTimeMinutes(content: unknown): number | null {
   let characters = 0

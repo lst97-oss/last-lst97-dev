@@ -2,10 +2,9 @@
  * Progress model for the global top-of-page route loading bar.
  *
  * TanStack Router exposes only `status === 'pending'` — there is no byte-level
- * or navigation-progress event — so the percentage shown is a deterministic
- * timer-driven approximation: the bar creeps toward a ceiling while the load is
- * in flight and snaps to 1 when the router goes idle. Kept pure so the curve is
- * testable without a router or a DOM.
+ * or navigation-progress event — so the percentage is a deterministic
+ * timer-driven approximation. Kept pure so the curve is testable without a
+ * router or a DOM.
  */
 
 export const ROUTE_PROGRESS_TICK_MS = 80
@@ -39,13 +38,6 @@ export function advanceProgress(current: number): number {
   return Math.min(ROUTE_PROGRESS_CEILING, clamped + (ROUTE_PROGRESS_CEILING - clamped) * ROUTE_PROGRESS_EASE)
 }
 
-/**
- * A new navigation always restarts the fill, but not from literally zero:
- * seeding `ROUTE_PROGRESS_START` guarantees a few pixels of bar on the very
- * first paint. A load fast enough to resolve in one frame still flashes that
- * sliver complete instead of leaving an invisible zero-width bar on screen for
- * its entire lifetime.
- */
 export function startProgress(_state: RouteProgressState): RouteProgressState {
   return { visible: true, progress: ROUTE_PROGRESS_START }
 }
@@ -57,11 +49,10 @@ export function tickProgress(state: RouteProgressState): RouteProgressState {
 /**
  * A load that never started (the initial idle effect, or a navigation that
  * resolved before the bar ever painted) hides outright; anything else
- * completes to 1 and the CSS transition animates the remaining fill.
- *
- * Note the guard is on a zero progress, not on elapsed time: `startProgress`
- * seeds a visible sliver, so a load that resolves in ~50ms still shows the
- * sliver completing rather than an invisible zero-width bar.
+ * completes to 1 and the CSS transition animates the remaining fill. The guard
+ * is on a zero progress, not on elapsed time: `startProgress` seeds a visible
+ * sliver so a load that resolves in ~50ms shows that sliver completing rather
+ * than an invisible zero-width bar.
  */
 export function finishProgress(state: RouteProgressState): RouteProgressState {
   if (state.progress === 0) return HIDDEN_ROUTE_PROGRESS

@@ -55,15 +55,13 @@ function DetailMetaSkeleton() {
 }
 
 /**
- * The back link, cover, eyebrow, `h1`, lead, and byline preamble both detail
- * pages share, in the order `ContentDetailLayout` renders them.
+ * The cover, eyebrow, `h1`, lead, and byline preamble both detail pages
+ * share, in the order `ContentDetailLayout` renders them. The back control
+ * lives in the window title bar, so it is stubbed by `PixelSkeletonWindow`.
  */
-function DetailPreambleSkeleton({ backLabel, seed }: { backLabel: string; seed: string }) {
+function DetailPreambleSkeleton({ seed }: { seed: string }) {
   return (
     <>
-      <span className="back-link mb-7 inline-block" data-back-label={backLabel}>
-        <PixelSkeletonBar width={40} />
-      </span>
       <PixelSkeletonCover className="mb-6 aspect-video max-h-105" seed={seed} />
       <div className="m-0 mb-3 flex items-center gap-2">
         <PixelSkeletonBlock className="size-2.5" />
@@ -86,8 +84,8 @@ export function ContentDetailSkeleton({
   return (
     <div aria-hidden="true" data-skeleton="content-detail" data-slot="pixel-skeleton">
       <div className={PAGE_COLUMN}>
-        <PixelSkeletonWindow icon={icon} title={windowTitle}>
-          <DetailPreambleSkeleton backLabel={backLabel} seed={windowTitle} />
+        <PixelSkeletonWindow backLabel={backLabel} icon={icon} title={windowTitle}>
+          <DetailPreambleSkeleton seed={windowTitle} />
           <LabelRowSkeleton offset={false} />
           {badges ? <LabelRowSkeleton offset /> : null}
           {topics ? <LabelRowSkeleton offset /> : null}
@@ -109,8 +107,8 @@ export function ProjectDetailSkeleton({ windowTitle, icon, backLabel }: DetailSk
   return (
     <div aria-hidden="true" data-skeleton="project-detail" data-slot="pixel-skeleton">
       <div className={PAGE_COLUMN}>
-        <PixelSkeletonWindow icon={icon} title={windowTitle}>
-          <DetailPreambleSkeleton backLabel={backLabel} seed={windowTitle} />
+        <PixelSkeletonWindow backLabel={backLabel} icon={icon} title={windowTitle}>
+          <DetailPreambleSkeleton seed={windowTitle} />
           <div className="project-detail-meta my-3 flex flex-wrap items-center gap-2">
             <PixelSkeletonStatus />
             <PixelSkeletonBar width={40} />
@@ -134,6 +132,9 @@ export function ProjectDetailSkeleton({ windowTitle, icon, backLabel }: DetailSk
           <div className="project-gallery mt-8">
             <PixelSkeletonBar className="mb-4 h-7 w-32" width={40} />
             <div className="grid gap-4 sm:grid-cols-2">
+              {/* The real tile reserves each image's OWN ratio, which a skeleton
+                  cannot know, so 16:9 is the neutral placeholder rather than a
+                  prediction of the loaded box. */}
               <PixelSkeletonCover className="aspect-video" seed={`${windowTitle}-gallery-0`} />
               <PixelSkeletonCover className="aspect-video" seed={`${windowTitle}-gallery-1`} />
             </div>

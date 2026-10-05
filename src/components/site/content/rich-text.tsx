@@ -217,9 +217,6 @@ function renderListItem(args: JSXConverterArgs<ConverterNode>) {
 }
 
 function buildConverters(proseImages: MediaViewerItem[], diagramLabels: (string | null)[]): JSXConverters {
-  // A cursor, not an index from the converter args: the args carry no position,
-  // and the renderer walks the document in the same order `collectDiagramLabels`
-  // did. Fresh per render, for the same reason the image cursor is.
   let diagramIndex = 0
 
   return {

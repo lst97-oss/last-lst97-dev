@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton'
  *
  * Chrome is re-declared rather than reused from `@/components/site/**`: the
  * real `WindowFrame`, `CardGrid`, and `PageStack` write to `os-store`, measure
- * with `ResizeObserver`, and mount a Radix `ScrollArea`. None of that is
+ * with `ResizeObserver`, and mount a scroll area. None of that is
  * useful while a route is pending, and all of it makes the markup
  * non-deterministic. The class strings below are copied verbatim from those
  * components, so the swap from skeleton to content causes no layout jump.
@@ -83,10 +83,16 @@ export function PixelSkeletonStatus({ className }: { className?: string }) {
  * card shows when it has no cover image — so a pending cover is literally what
  * the loaded card will look like, not an arbitrary grey box. `PlaceholderArt`
  * is a pure presentational leaf, so importing it up here creates no cycle.
- *
  * `className` carries the caller's cover geometry (`-mx-5 aspect-video` for a
  * card, `mb-6 max-h-105` for a detail page); the border and fill are added here
  * because every one of those covers has them.
+ *
+ * The real cover now declares its ratio through `AspectRatio ratio={BOX_ASPECT}`
+ * (src/components/site/content/cover.tsx), and `aspect-video` here is the same
+ * number by coincidence of Tailwind's `--aspect-video`. It must stay spelled
+ * out rather than sharing the constant: these class strings are matched
+ * verbatim by tests/content-skeletons.test.tsx, and a skeleton that reserved a
+ * different box than the loaded card would make the page jump on swap.
  */
 export function PixelSkeletonCover({ seed, className }: { seed: string; className?: string }) {
   return (
@@ -106,17 +112,35 @@ export function PixelSkeletonCover({ seed, className }: { seed: string; classNam
  * icon glyph is kept because it is part of the chrome the reader recognises,
  * not content that was still loading.
  */
-export function PixelSkeletonWindow({ title, icon, children }: { title: string; icon: string; children: ReactNode }) {
+export function PixelSkeletonWindow({
+  title,
+  icon,
+  backLabel,
+  children,
+}: {
+  title: string
+  icon: string
+  /** The pending title-bar back control. A `<span>`, never a link. */
+  backLabel?: string
+  children: ReactNode
+}) {
   return (
     <section
       className="window-frame overflow-hidden border-3 border-border bg-card shadow-os"
       data-window-title={title}
     >
       <div className="window-titlebar flex min-h-9 items-center justify-between gap-3 border-b-3 border-border bg-primary px-2 py-1 pl-3 text-xs font-black tracking-widest text-foreground uppercase">
-        <span aria-hidden="true" className="window-title inline-flex items-center gap-2">
-          <PixelIcon className="text-foreground" glyph={icon} />
-          <PixelSkeletonBar className="h-2.5" width={40} />
-        </span>
+        <div className="inline-flex min-w-0 items-center gap-3">
+          {backLabel ? (
+            <span aria-hidden="true" className="window-back" data-back-label={backLabel}>
+              <PixelSkeletonBar width={40} />
+            </span>
+          ) : null}
+          <span aria-hidden="true" className="window-title inline-flex items-center gap-2">
+            <PixelIcon className="text-foreground" glyph={icon} />
+            <PixelSkeletonBar className="h-2.5" width={40} />
+          </span>
+        </div>
         <span aria-hidden="true" className="inline-flex items-center gap-1.5">
           <PixelSkeletonBlock className="size-2.5" />
           <PixelSkeletonBlock className="size-2.5" />

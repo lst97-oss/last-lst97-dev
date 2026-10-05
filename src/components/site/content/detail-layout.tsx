@@ -15,7 +15,7 @@ import type { TopicSummary } from '@/server/content/types'
 interface ContentDetailLayoutProps {
   windowTitle: string
   icon: string
-  backHref: '/blog' | '/changelog'
+  backHref: '/' | '/blog' | '/changelog' | '/projects'
   backLabel: string
   eyebrow: string
   coverImage: ComponentProps<typeof ContentCover>['image']
@@ -92,10 +92,7 @@ export function ContentDetailLayout({
     // a narrower detail column made the window jump inward on every navigation
     // between a list and one of its entries.
     <PageStack>
-      <WindowFrame title={windowTitle} icon={icon} scrollable>
-        <Link className="back-link mb-7 inline-block text-xs font-black tracking-wider text-accent" to={backHref}>
-          {backLabel}
-        </Link>
+      <WindowFrame backLink={{ href: backHref, label: backLabel }} title={windowTitle} icon={icon} scrollable>
         <MediaTrigger item={coverItem} label={`View full size image: ${title}`}>
           <ContentCover image={coverImage} className="content-cover content-detail-cover" priority />
         </MediaTrigger>

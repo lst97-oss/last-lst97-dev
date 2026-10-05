@@ -1,16 +1,15 @@
-import { Direction } from 'radix-ui'
+import type { TextDirection } from '@base-ui/react/direction-provider'
+import { DirectionProvider as BaseDirectionProvider, useDirection } from '@base-ui/react/direction-provider'
 import * as React from 'react'
 
-function DirectionProvider({
-  dir,
-  direction,
-  children,
-}: React.ComponentProps<typeof Direction.DirectionProvider> & {
-  direction?: React.ComponentProps<typeof Direction.DirectionProvider>['dir']
-}) {
-  return <Direction.DirectionProvider dir={direction ?? dir}>{children}</Direction.DirectionProvider>
+/**
+ * Radix's Direction took `dir`; Base UI's provider takes `direction`, and
+ * `useDirection` comes from the package itself rather than being hand-rolled,
+ * so it reads the provider's context instead of a fresh default.
+ */
+function DirectionProvider({ direction, children }: React.ComponentProps<typeof BaseDirectionProvider>) {
+  return <BaseDirectionProvider direction={direction}>{children}</BaseDirectionProvider>
 }
 
-const useDirection = Direction.useDirection
-
+export type { TextDirection }
 export { DirectionProvider, useDirection }

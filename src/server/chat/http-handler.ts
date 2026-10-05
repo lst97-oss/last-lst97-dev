@@ -127,7 +127,6 @@ async function handleContactActionRequest(
       }
     }
 
-    // Screening must be proven human before it runs, not only before the send.
     // Verified here rather than inside the workflow so an unverified submission
     // never reaches Jev or the refiner.
     if (action.action === 'submit_form') {
@@ -216,10 +215,8 @@ async function verifyChatToken(
 }
 
 /**
- * Fail-closed check for the screening step. Mirrors `verifyChatToken`: a
- * missing verifier, an unreachable siteverify, or an invalid token all stop the
- * request before any model call. Only the log event and copy differ, because
- * this gates form screening rather than chat messages.
+ * Fail-closed check for the screening step, mirroring `verifyChatToken`; only
+ * the log event and copy differ.
  */
 async function verifyContactScreeningToken(
   request: Request,

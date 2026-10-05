@@ -1,11 +1,8 @@
 /**
  * Seeds the G-NAF Address Autocomplete project, its topics, and its tags.
  *
- * Uses the Payload local API rather than raw SQL. `scripts/seed-demo-content.ts`
- * has to write raw `pg` statements because `payload.find()` used to fail on
- * `projects` — Payload built a lateral join against a missing polymorphic
- * `projects_rels` table. That table now exists, so the collection hooks, the
- * version row, and the publication date all apply here.
+ * `scripts/seeding/seed-demo-content.ts` still writes raw `pg` statements
+ * instead of going through the Payload local API.
  *
  * The article body is built from Markdown with `convertMarkdownToLexical`, the
  * same conversion the admin's Markdown mode performs. That matters for the

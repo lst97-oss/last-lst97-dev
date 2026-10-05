@@ -28,21 +28,12 @@ const TECHNICAL_QUESTION_FRAME =
   /\b(?:how|why|what|when|where|which|explain|describe|difference|best|should|would you|do you|can you|tell me|walk me)\b/i
 /**
  * Commercial-offer vocabulary that only the indexed `services` documents can
- * answer: pricing, package contents, add-ons, process, and quotes. A bare
- * "website" is deliberately absent so "how is this website built?" keeps
- * routing to search_knowledge; only an explicit "website design/development/
- * build/project" phrase reaches the offer source.
- */
-/**
- * The service offering is one published page with two halves: the build
- * packages and the Go Support Plan.
- *
- * Two shapes are load-bearing here. A bare "web site" token was removed
- * because it matched "how is this website built?", which must stay on
- * search_knowledge — the site_content-adjacent build question is pinned as a
- * negative case in jev-tool-routing-cases.ts. And the support alternation is
- * built only from multi-word phrases, because a bare "site", "app", "code",
- * "fix", or "support" would swallow it the same way.
+ * answer: pricing, package contents, add-ons, process, and quotes, for the one
+ * published page holding the build packages and the Go Support Plan. The
+ * alternation admits only multi-word phrases, because a bare "site", "app",
+ * "code", "fix", or "support" would swallow the support offer, and a bare
+ * "website" is absent so "how is this website built?" keeps routing to
+ * search_knowledge (pinned as a negative case in jev-tool-routing-cases.ts).
  */
 const SERVICE_SCOPE_REQUEST =
   /\b(?:services?|pricing|price[sd]?|cost|costs|quote|quotation|package[sd]?|packages|how much|rates?|fees?|add-?ons?|revision[sd]?|scope|enquir(?:y|ies)|hire|book(?:ing)?|web ?design|website (?:design|development|build|project)|support plan|technical consultation|production readiness|vibe code|deploy(?:ment|ing)? (?:help|support|fix|rescue)|deployment rescue|broken deploy(?:ment)?|build (?:error|failing)|per[- ]?hour|hourly)\b/i
@@ -296,10 +287,6 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
     if (asksForSitePages(message)) return [{ id: 'site-pages', name: 'site_content', arguments: { op: 'list_pages' } }]
     const collections = siteContentCollections(message)
     const { posts: asksPosts, projects: asksProjects, changelogs: asksChangelogs, topics: asksTopics } = collections
-    // Only route to Payload when the question is really about site/blog/demo
-    // content — bare "which project took most time" is a warehouse question.
-    // "on this site", "in this site", or "published" scope the question to the
-    // live Payload showcase rather than the owned-repository catalogue or RAG.
     const asksAboutSite =
       /\b(?:this|your)\s+(?:site|website|web\s?site|portfolio|blog)\b/i.test(message) ||
       /\b(?:on|in|for|to|of|at)\s+(?:this|your|the)\s+(?:site|website|web\s?site|portfolio|blog|changelog)\b/i.test(
@@ -485,16 +472,11 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
         ? requiredKnowledgeQuery(input.message, input.history, input.topicAnchors)
         : undefined
     // Explicit Jev labels win even when confidence is low. Only the literal
-    // uncertain label delegates that tool's routing decision to regex. For
-    // owner knowledge, however, chat history cannot establish completeness:
-    // every new factual request requires a fresh source lookup. Catalogue
-    // inventory/counts get the symmetric guard: history can never prove a
-    // partial list is the total, so force the catalogue even on Jev skip.
+    // uncertain label delegates that tool's routing decision to regex; the
+    // guards below re-apply the completeness rule where history cannot stand in.
     let jevApprovedTools = availableTools.filter((tool) => decisions?.[tool]?.label === 'use')
-    // The inventory guard is symmetric with the forced-RAG guard above, so it
-    // re-fires on every step. Once the catalogue has already answered this
-    // turn, re-running it would loop on the same page and strand the detail
-    // lookup, so the guard only applies while the catalogue is still pending.
+    // Re-running an already-answered catalogue would loop on the same page and
+    // strand the detail lookup, so the guard only applies while it is pending.
     const catalogueAlreadyAnswered = input.state.catalogueToolExecutedThisStep || input.stepsUsed > 0
     if (isCatalogueInventoryRequest && !catalogueAlreadyAnswered && !jevApprovedTools.includes('list_owned_projects'))
       jevApprovedTools.push('list_owned_projects')

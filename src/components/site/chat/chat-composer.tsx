@@ -5,6 +5,7 @@ import type { ChatConversationViewModel } from '@/components/site/chat/chat-type
 import { pixelButtonVariants } from '@/components/site/os-ui'
 import { TurnstileChallenge } from '@/components/site/turnstile-challenge'
 import { InputGroup, InputGroupTextarea } from '@/components/ui/input-group'
+import { Kbd, KbdGroup } from '@/components/ui/kbd'
 import { CHAT_TURN_LIMIT_MESSAGE, MAX_CHAT_TURNS } from '@/lib/chat-limits'
 
 /**
@@ -38,22 +39,55 @@ export function ChatComposer({ conversation, pending, siteKey }: ChatComposerPro
     const send = sendRef.current
     if (!node || !send) return
 
+    const clearInlineSize = () => {
+      node.style.removeProperty('height')
+      send.style.removeProperty('height')
+      send.style.removeProperty('width')
+    }
+
     const syncComposerSize = () => {
-      node.style.height = 'auto'
-      node.style.height = `${Math.min(node.scrollHeight, CHAT_INPUT_MAX_HEIGHT_PX)}px`
-      if (window.matchMedia('(max-width: 900px)').matches) {
-        send.style.removeProperty('height')
-        send.style.removeProperty('width')
+      // While `BootGate` holds the shell at `display: none` there is no layout
+      // box, so `scrollHeight` and the rect both read zero. Drop the inline size
+      // instead and let the `rows={1}` fallback paint; the observer below
+      // re-syncs from real geometry when the shell is revealed. The test is a
+      // zero layout box rather than `offsetParent`, which is also null for a
+      // visible control inside a `position: fixed` window frame.
+      if (node.offsetWidth === 0 && node.offsetHeight === 0) {
+        clearInlineSize()
         return
       }
-      const height = Math.round(node.getBoundingClientRect().height)
-      send.style.height = `${height}px`
-      send.style.width = `${height}px`
+
+      node.style.height = 'auto'
+      const nextHeight = `${Math.min(node.scrollHeight, CHAT_INPUT_MAX_HEIGHT_PX)}px`
+      if (window.matchMedia('(max-width: 900px)').matches) {
+        // The mobile layout stacks the button under a full-width control, so it
+        // takes its natural size there.
+        send.style.removeProperty('height')
+        send.style.removeProperty('width')
+      } else {
+        const size = `${Math.round(node.getBoundingClientRect().height)}px`
+        send.style.height = size
+        send.style.width = size
+      }
+      // Only write on change. This runs from a ResizeObserver callback, and an
+      // unconditional write re-triggers the observer on every frame.
+      if (node.style.height !== nextHeight) node.style.height = nextHeight
     }
 
     syncComposerSize()
-    window.addEventListener('resize', syncComposerSize)
-    return () => window.removeEventListener('resize', syncComposerSize)
+
+    // The boot gate reveals the shell from a passive effect — which runs after
+    // this one — and can also fail open on the 8s timer in the document head.
+    // Neither changes `message` or `pending`, so nothing else would re-measure.
+    // Observing the textarea catches the reveal, and also the container or the
+    // viewport changing width, which is why this replaces the window listener.
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', syncComposerSize)
+      return () => window.removeEventListener('resize', syncComposerSize)
+    }
+    const observer = new ResizeObserver(syncComposerSize)
+    observer.observe(node)
+    return () => observer.disconnect()
   }, [message, pending])
 
   return (
@@ -111,13 +145,26 @@ export function ChatComposer({ conversation, pending, siteKey }: ChatComposerPro
           aria-label="Send message"
           className={cn(pixelButtonVariants({ tone: 'coral' }), 'os-chat-send shrink-0 p-0')}
           disabled={pending || turnLimitReached || !message.trim() || !siteKey || !turnstileToken}
-          title="Send message (Enter)"
+          title="Send message"
           type="submit"
         >
           <Send aria-hidden="true" className="os-chat-send-icon size-7" strokeWidth={2.5} />
           <span className="os-chat-send-label">SEND</span>
         </button>
       </form>
+
+      {/* Enter sends and Shift+Enter inserts a newline. The hint sits outside
+          `</form>` so the send button keeps the square geometry the layout
+          effect measures, and `responsive.css` hides it below 650px. */}
+      <p className="os-chat-key-hint">
+        <Kbd>ENTER</Kbd> SEND
+        <KbdGroup>
+          <Kbd>SHIFT</Kbd>
+          <span>+</span>
+          <Kbd>ENTER</Kbd>
+        </KbdGroup>
+        NEW LINE
+      </p>
       {!turnLimitReached ? (
         <div className="turnstile-field os-chat-chat-turnstile" role="group" aria-labelledby="chat-turnstile-label">
           <span className="turnstile-label sr-only" id="chat-turnstile-label">

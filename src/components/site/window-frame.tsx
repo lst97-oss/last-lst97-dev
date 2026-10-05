@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import { cn } from 'cn'
 import type { ReactNode } from 'react'
@@ -14,6 +15,12 @@ type WindowFrameProps = {
   title: string
   icon?: string
   children: ReactNode
+  /**
+   * Previous-page control rendered in the title bar, before the title. Narrowed
+   * to the four in-app destinations the content windows link to so the typed
+   * router `to` prop keeps its literal-union inference.
+   */
+  backLink?: { href: '/' | '/blog' | '/changelog' | '/projects'; label: string }
   closeHref?: string
   windowId?: string
   className?: string
@@ -44,6 +51,7 @@ type WindowFrameProps = {
 export function WindowFrame({
   title,
   icon = '▣',
+  backLink,
   children,
   closeHref = '/',
   windowId = title,
@@ -58,12 +66,16 @@ export function WindowFrame({
   // Mobile never uses zoomed/minimized window states; render as a plain stacked card.
   const effectiveMode = isMobile ? 'normal' : windowMode
   const activate = () => focusWindow(windowId)
-  // The themed inner scroller is the only scroll container that can exist: the
-  // shell root is `h-dvh overflow-hidden`, so the page itself can never scroll.
-  // Keep it at every width — dropping it below the mobile breakpoint is what
-  // left long detail pages unreachable on a phone, with their content running
-  // off the bottom of a clipped shell.
+  // See the `scrollable` prop's doc for why this stays on at every width.
   const useThemedScroll = scrollable
+  // A maximized window is `position: fixed` over a document the root lock has
+  // already frozen, and its content box was the one thing that could scroll —
+  // via `overflow: auto`, which paints the browser's own scrollbar. Every
+  // maximized window therefore gets the themed viewport whether or not it opts
+  // into `scrollable`. The `.window-frame--scroll` class and its height cap stay
+  // tied to the prop, because those describe the in-flow normal state, not the
+  // fixed maximized one.
+  const themedContent = useThemedScroll || effectiveMode === 'maximized'
 
   return (
     <section
@@ -85,10 +97,17 @@ export function WindowFrame({
       }}
     >
       <div className="window-titlebar flex min-h-9 items-center justify-between gap-3 border-b-3 border-border bg-primary px-2 py-1 pl-3 text-xs font-black tracking-widest text-foreground uppercase">
-        <span className="window-title inline-flex items-center gap-2">
-          <PixelIcon glyph={icon} className="text-foreground" />
-          {title}
-        </span>
+        <div className="inline-flex min-w-0 items-center gap-3 overflow-hidden">
+          {backLink ? (
+            <Link aria-label={backLink.label} className="window-back shrink-0 whitespace-nowrap" to={backLink.href}>
+              {backLink.label}
+            </Link>
+          ) : null}
+          <span className="window-title inline-flex min-w-0 items-center gap-2">
+            <PixelIcon glyph={icon} className="text-foreground" />
+            <span className="truncate">{title}</span>
+          </span>
+        </div>
         <WindowControls
           closeHref={closeHref}
           controls={controls}
@@ -98,10 +117,10 @@ export function WindowFrame({
         />
       </div>
       <div
-        className={cn('window-content p-6 sm:p-8 lg:p-12', useThemedScroll && 'window-content--scroll')}
+        className={cn('window-content p-6 sm:p-8 lg:p-12', themedContent && 'window-content--scroll')}
         aria-hidden={effectiveMode === 'minimized'}
       >
-        {useThemedScroll ? (
+        {themedContent ? (
           <ScrollArea
             className="min-h-0 min-w-0 flex-1"
             viewportProps={{ className: 'px-6 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-12' }}
@@ -112,9 +131,7 @@ export function WindowFrame({
           children
         )}
         {useThemedScroll && footer ? (
-          <div className="window-footer shrink-0 border-t-3 border-border bg-card px-6 py-4 sm:px-8 lg:px-12">
-            {footer}
-          </div>
+          <div className="window-footer shrink-0 border-t-3 border-border bg-card px-4 py-2 sm:px-5">{footer}</div>
         ) : null}
       </div>
     </section>

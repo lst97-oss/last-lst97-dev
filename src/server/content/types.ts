@@ -12,7 +12,7 @@ export interface CoverImage {
   alt: string | null
   width?: number | null
   height?: number | null
-  sizes?: Partial<Record<'thumbnail' | 'card' | 'hero', ImageSize>>
+  sizes?: Partial<Record<'thumbnail' | 'card' | 'hero' | 'gallerySm' | 'galleryLg', ImageSize>>
 }
 
 export interface ImageSize {

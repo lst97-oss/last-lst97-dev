@@ -1,5 +1,3 @@
-/* Layout (flex, min-height, bg color) lives in DesktopShell via Tailwind.
-   Only the grid background image stays here — complex background layers. */
 .os-site {
   background-image:
     linear-gradient(var(--os-grid) 1px, transparent 1px), linear-gradient(90deg, var(--os-grid) 1px, transparent 1px);
@@ -31,8 +29,6 @@
   pointer-events: none;
 }
 
-/* System bar layout/typography lives in DesktopShell via Tailwind.
-   Remaining states that Tailwind doesn't express: Base UI popup-open + focus ring. */
 .system-menu-item[data-popup-open] {
   background: var(--os-coral);
   color: var(--os-ink);
@@ -263,15 +259,7 @@
   outline-offset: 2px;
 }
 
-/* Health colors + truncation live in DesktopShell via Tailwind data-[health] utilities. */
-
-/* Clock colors + responsive visibility live in DesktopShell via Tailwind. */
-
-/* PixelIcon base lives in pixel-icon.tsx via Tailwind.
-   Per-context color overrides stay here (inheritance-based). */
-
-/* Workspace positioning (relative/z) lives in DesktopShell via Tailwind.
-   Grid columns stay here — custom grid track.
+/* Grid columns stay here — custom grid track.
 
    The shell root is `h-dvh overflow-hidden`, so the workspace is the last
    flex child and must be allowed to shrink below its content height; the
@@ -310,13 +298,20 @@
    re-introduces chrome that paints the full height of the screen; the viewport
    sizes to its content and is bounded by the root's `max-height`, which is
    what scrolls.
-   `align-items` on this element would only centre the Radix inner wrapper (a
-   `display: table; min-width: 100%` div), not the shortcuts inside it, so the
-   items stayed left-aligned. The rule below targets that wrapper instead. */
+
+   The scroll-area viewport lays its children out directly — there is no inner
+   wrapper — so the centring and the gap the old `display: table` wrapper
+   blocked are set here on the viewport itself. `min-width: 0` is what lets the
+   column shrink to the panel's width rather than the intrinsic width of the
+   seven shortcuts. */
 .desktop-shortcuts-viewport {
   box-sizing: border-box;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
   width: 100%;
+  min-width: 0;
   overflow-x: clip;
   padding: 12px 8px;
   border: 1px solid rgba(255, 255, 255, 0.28);
@@ -335,23 +330,7 @@
   backdrop-filter: blur(16px);
 }
 
-/* The Radix viewport renders its children inside a wrapper carrying an INLINE
-   `style="min-width: 100%; display: table"`, which no stylesheet rule can
-   outrank at normal specificity. `display: table` also means the wrapper is not
-   a flex container, so `align-items` and `gap` set on the viewport never
-   reached the shortcuts and they stayed left-aligned inside the panel.
-   `!important` is the only override available for an inline declaration, and
-   it is scoped to this single descendant. */
-.desktop-shortcuts-viewport > div {
-  display: flex !important;
-  width: 100%;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-}
-
-/* Shortcut layout/typography lives in DesktopShell via Tailwind.
-   Active/hover fill stays here (state-based).
+/* Active/hover fill stays here (state-based).
    The border is transparent at rest and only its COLOR changes on active/hover,
    matching `.os-mobile-tab` in the bottom bar. A border that appears from
    `none` would reflow the item and shift every icon below it by 6px. */
@@ -362,10 +341,8 @@
   color: var(--os-ink);
 }
 
-/* Shortcut art box lives in DesktopShell via Tailwind. */
 
-/* Main column padding lives in DesktopShell via Tailwind (responsive px).
-   Grid placement stays here.
+/* Grid placement stays here.
 
    `min-height: 0` is load-bearing: the ScrollArea is a grid item, and a grid
    item's automatic minimum size is its content height, so a long page would
@@ -378,8 +355,8 @@
 /* Non-home routes scroll in their WindowFrame's themed viewport. The shell's
    own ScrollArea still wraps that frame, but it must not expose a second page
    scrollbar; the homepage has no `.window-frame--scroll` and keeps this outer
-   scroller for its dashboard content. Target only the direct Radix children
-   so nested window scrollbars remain visible. */
+   scroller for its dashboard content. Target only the direct scroll-area
+   children so nested window scrollbars remain visible. */
 .os-site:has(.window-frame--scroll) .desktop-main > [data-slot='scroll-area-viewport'] {
   overflow-y: hidden !important;
 }
@@ -388,10 +365,7 @@
   display: none;
 }
 
-/* Page stacks live in os-ui PageStack via Tailwind (max-w-6xl / max-w-4xl). */
 
-/* Window frame base (border/bg/shadow) lives in WindowFrame via Tailwind.
-   Window-mode states stay here — complex positioning. */
 .window-frame.is-active {
   box-shadow: 8px 8px 0 var(--os-coral);
 }
@@ -458,21 +432,37 @@
   overflow: hidden;
   padding: 0;
 }
-
-/* Titlebar layout/typography lives in WindowFrame via Tailwind.
-   Pixel-icon ink override stays (inheritance-based). */
+/* Pixel-icon ink override stays (inheritance-based). */
 .window-title .pixel-icon {
   color: var(--os-ink);
 }
 
-/* Control buttons live in WindowControls via Tailwind (controlClass).
-   Hover fill stays here. */
+/* Previous-page control in a window title bar. The bar's own background is
+   `--primary` (yellow), and coral on yellow measures 1.79:1 — unreadable — so
+   the control inverts: coral fill, ink text (7.03:1). It is unlayered like its
+   neighbours, so it outranks the titlebar's `text-foreground` utility. */
+.window-back {
+  background: var(--os-coral);
+  color: var(--os-ink);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  padding: 3px 7px 3px 5px;
+  border-right: 2px solid var(--border);
+}
+
+.window-back:hover,
+.window-back:focus-visible {
+  background: var(--os-ink);
+  color: var(--os-paper);
+}
+/* Hover fill stays here. */
 .window-control:hover,
 .window-close:hover {
   background: var(--os-coral);
 }
 
-/* Content padding lives in WindowFrame via Tailwind (responsive p-6/sm:p-8/lg:p-12). */
 
 /* Mobile bottom tab bar (see `components/site/mobile-tab-bar.tsx`).
 
@@ -636,7 +626,7 @@ html.js-hydrated [data-boot='skeleton'] {
   display: none;
 }
 
-/* The real dock scrolls through a Radix viewport; the skeleton has no
+/* The real dock scrolls through a scroll-area viewport; the skeleton has no
    ScrollArea, so without this its seven static stubs would overflow the
    viewport's `max-height` and paint outside the dock glass. Layout and gap
    come from `.desktop-shortcuts-viewport > div`. */
@@ -667,84 +657,75 @@ html.js-hydrated [data-boot='skeleton'] {
   box-shadow: 0 0 0 1px var(--os-coral);
 }
 
-/* Toasts (see `components/ui/sonner.tsx`, mounted by `routes/_site.tsx`).
+/* Toasts (see `components/ui/toast.tsx`, mounted by `routes/_site.tsx`).
 
-   The `--normal-*` / `--success-*` / `--border-radius` token mapping is NOT
-   here — sonner's `[data-sonner-toaster][data-sonner-theme=light]` sets those
-   on the element itself at specificity 0,2,0, so only the wrapper's inline
-   `style` can override them.
+   House idiom rather than the primitive's defaults: the site is monospace, 3px
+   ink borders, no radius, offset shadow. `--font-mono` is what `tokens.css`
+   @theme emits.
 
-   House idiom rather than sonner's rounded sans-serif default: the site is
-   monospace, 3px ink borders, no radius, offset shadow. `--font-mono` is what
-   `tokens.css` @theme emits.
-
-   The `[data-sonner-toaster]` attribute qualifier is load-bearing, not
-   redundant: sonner injects `font-family: ui-sans-serif, …` on that attribute
-   selector (0,1,0) from a runtime <style> that lands AFTER this stylesheet, so
-   a bare `.os-toaster` loses on cascade order and the toast renders in system
-   sans while the whole site is monospace. Qualifying raises this to 0,2,0. */
-.os-toaster[data-sonner-toaster] {
+   `ui/toast.tsx` still carries shadcn's `rounded-2xl`, `shadow-lg` and
+   `bg-popover` utilities, because Base UI's stacking, swipe and expand
+   transitions are driven by the `[--toast-*]` variables on that same element
+   and the part is best kept recognisable. This sheet overrides them by plain
+   class rule. A `[data-slot]` selector and a Tailwind utility are both
+   specificity 0,1,0, so where they collide SOURCE ORDER decides — and this
+   partial is unlayered, which outranks Tailwind's `utilities` layer outright.
+   Qualifying a rule with `.os-toast-viewport` raises it to 0,2,0 if a future
+   change ever puts a competing unlayered selector in front of it. */
+.os-toast-viewport {
   font-family: var(--font-mono);
   font-size: 13px;
 }
 
 /* The border and the offset shadow are the OS window idiom, and `--border` is
-   `--os-ink`, so this inverts with `.dark` for free. Sonner's own
-   `box-shadow: 0 4px 12px rgba(0,0,0,.1)` is replaced rather than added to —
-   a soft blur under a hard 3px frame reads as two unrelated surfaces. */
-.os-toaster [data-sonner-toast][data-styled='true'] {
+   `--os-ink`, so this inverts with `.dark` for free. The primitive's own
+   `shadow-lg` is replaced rather than added to — a soft blur under a hard 3px
+   frame reads as two unrelated surfaces. */
+[data-slot='toast'] {
   padding: 12px 14px;
   gap: 10px;
   border: 3px solid var(--border);
+  border-radius: 0;
   box-shadow: var(--shadow-os-sm);
+  background: var(--card);
+  color: var(--card-foreground);
 }
 
-.os-toaster [data-sonner-toast][data-styled='true']:hover {
+[data-slot='toast']:hover {
   box-shadow: var(--shadow-os-xs);
 }
 
-.os-toaster [data-sonner-toast][data-styled='true'] [data-title] {
+[data-slot='toast-title'] {
   font-weight: 700;
 }
 
-/* Sonner hardcodes `#3f3f3f` for the description, which is neither token nor
-   legible on `--card`; the title inherits `--normal-text` already. */
-.os-toaster [data-sonner-toast][data-styled='true'] [data-description] {
+[data-slot='toast-description'] {
   color: var(--muted-foreground);
 }
 
-/* Type is carried by the ICON, not the background. Sonner only reads
-   `--success-bg` / `--error-bg` / `--warning-bg` / `--info-bg` when
-   `richColors` is on, and the mapping this wrapper used to inline
-   (`--*-muted` surfaces) read as a colour wash rather than the site's flat
-   paper cards — worse than no tint at all. The wrapper's lucide icons inherit
-   `currentColor`, so painting `[data-icon]` per `data-type` is both cheaper
-   and legible: `--warning`/`--error`/`--success`/`--info` are the same tokens
-   the rest of the site uses for those meanings, and they are chosen to hold
-   contrast on `--card`. */
-.os-toaster [data-sonner-toast][data-type='success'] [data-icon] {
+/* Type is carried by the ICON, not the background — the same decision the
+   sonner wrapper made. `--warning`/`--error`/`--success`/`--info` are the
+   tokens the rest of the site uses for those meanings, and they are chosen to
+   hold contrast on `--card`. */
+[data-type='success'] [data-slot='toast-icon'] {
   color: var(--success);
 }
 
-.os-toaster [data-sonner-toast][data-type='error'] [data-icon] {
+[data-type='error'] [data-slot='toast-icon'] {
   color: var(--error);
 }
 
-.os-toaster [data-sonner-toast][data-type='warning'] [data-icon] {
+[data-type='warning'] [data-slot='toast-icon'] {
   color: var(--warning);
 }
 
-.os-toaster [data-sonner-toast][data-type='info'] [data-icon] {
+[data-type='info'] [data-slot='toast-icon'] {
   color: var(--info);
 }
 
-/* Close button: sonner draws it as a 20px circle with `border-radius: 50%`,
-   which no other control on the site uses. Square it, keep it 3px-bordered,
-   and park it in the top-right corner. `--toast-close-button-start` /
-   `--toast-close-button-end` are what sonner's own rule reads for `left` /
-   `right`. */
-.os-toaster [data-sonner-toast] [data-close-button] {
-  top: 6px;
+/* Close button: keep it square and 3px-bordered like every other control —
+   no other control on this site is a circle. Parked in the top-right corner. */
+[data-slot='toast-close'] {
   width: 18px;
   height: 18px;
   border: 2px solid var(--border);
@@ -754,11 +735,22 @@ html.js-hydrated [data-boot='skeleton'] {
   box-shadow: var(--shadow-os-xs);
 }
 
-/* `data-button` is sonner's action button — same pixel treatment as the toast
-   itself, inverted so it reads as the primary target. */
-.os-toaster [data-sonner-toast] [data-button],
-.os-toaster [data-sonner-toast] [data-cancel] {
+/* The action button gets the same pixel treatment as the toast itself,
+   inverted so it reads as the primary target. */
+[data-slot='toast-action'] {
   border-radius: 0;
   border: 2px solid var(--border);
   font-weight: 700;
+}
+
+/* Below Tailwind's `sm` the mobile tab bar owns the bottom of every window,
+   and the bar's own *reserve* is declared on `.os-site`, which is not an
+   ancestor of the toast portal — so the height token has to resolve from here
+   or the toast sits underneath the bar. Same 40rem query that
+   `responsive.css` gates the bar and its reserve on, so the two appear and
+   disappear together. */
+@media (width < 40rem) {
+  .os-toast-viewport {
+    bottom: calc(var(--os-tab-bar-height) + 16px);
+  }
 }

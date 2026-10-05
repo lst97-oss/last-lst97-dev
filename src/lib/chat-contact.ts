@@ -53,29 +53,16 @@ const TIMELINE_OPTIONS = [
   { value: 'Flexible — planning ahead', label: 'Flexible, planning ahead' },
 ] as const
 
-/*
- * Support-plan option sets. Prices are duplicated from the published /services
- * copy in src/lib/services/packages.ts on purpose: that module owns the public
- * page and its JSON-LD, and its `price` is a display label that must never be
- * parsed back into a number. PACKAGE_OPTIONS above already carries the same
- * duplicated figures, and a mismatch between the two is caught by
- * tests/server/services-corpus.test.ts rather than by a shared parser.
- */
 /**
  * Every support engagement is reachable as a checkbox rather than a single
- * select, because support work is rarely one thing: a visitor is often fixing a
- * bug AND moving the site to a new host, and a select would force them to
- * choose one and drop the other from the request.
+ * select, because support work is rarely one thing: a visitor is often fixing
+ * a bug AND moving the site to a new host, and a select would drop one.
  *
- * The stored values carry no price. Every item here is billed at the same
- * standard rate, so repeating it on eight rows would be noise that trains the
- * reader to stop reading the option text; the rate is stated once in the field
- * label and the published list travels with the email instead.
- *
- * The Technical Consultation is deliberately absent. It is the A$40/hour base
- * that every engagement starts from rather than one of the standard-rate
- * items, so offering it as a peer would double-bill it. `supportConsultation`
- * is pre-selected and required instead, which is why it is a field of its own.
+ * The stored values carry no price — every item is billed at the same standard
+ * rate, stated once in the field label, with the published list travelling with
+ * the email. The A$40/hour Technical Consultation is deliberately absent: it is
+ * the base every engagement starts from, not a peer item, so `supportConsultation`
+ * is a pre-selected required field of its own instead.
  */
 const SUPPORT_ENGAGEMENT_OPTIONS = [
   { value: 'Production Readiness Review', label: 'Production Readiness Review' },
@@ -525,7 +512,6 @@ export const CHAT_CONTACT_MAX_TOTAL_CHARS = 12_000
 
 type ContactFieldDefinition = (typeof CHAT_CONTACT_TEMPLATES)[ChatContactTemplate]['fields'][number]
 
-/** A field definition that renders a closed set of choices instead of free text. */
 export type ChatContactChoiceField = Extract<ContactFieldDefinition, { control: 'select' | 'checkboxes' }>
 
 export function isChatContactChoiceField(field: ContactFieldDefinition): field is ChatContactChoiceField {
@@ -597,7 +583,6 @@ function fieldsSchema(template: ChatContactTemplate) {
   return z.strictObject(shape)
 }
 
-/** The shared client/server schema for one selected contact template. */
 export function createChatContactDraftSchema(
   template: ChatContactTemplate,
 ): z.ZodType<unknown, ChatContactFieldValues> {

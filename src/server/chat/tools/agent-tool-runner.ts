@@ -155,8 +155,6 @@ export async function runAgentTool(call: AgentToolCall, runner: AgentToolRunner)
       'coding_history',
       parsed.data,
     )
-  // The zod schema above is the guardrail: op/range/project are validated
-  // before any DB access, and project_time requires a project name.
   if (parsed.data.op === 'project_time' && !parsed.data.project) {
     return invalid(call, 'project_time requires { project }', runner)
   }

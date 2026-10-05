@@ -185,9 +185,7 @@ export function createChatContactWorkflow(dependencies: {
       refinement = { ok: false, reason: 'unavailable' }
     }
     if (!refinement.ok) {
-      // Only a provider fault reaches here: a model that answered with unusable
-      // JSON is retried inside the refiner and then falls back to the visitor's
-      // own words, so this no longer fires for a formatting problem.
+      // Only a provider fault reaches here.
       recordOutcome('unavailable')
       return {
         ok: true,

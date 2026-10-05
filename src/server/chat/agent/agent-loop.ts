@@ -218,8 +218,7 @@ export function createChatAgentLoop(
     if (call.name === 'list_owned_projects' && result.status === 'completed') state.catalogueFallback = text
     if (call.name !== 'list_owned_projects') state.toolSummaries.push(`${call.name}: ${text}`)
     // Count mode is the only producer of this prefix, and it is bounded to a few
-    // hundred characters, so it is safe to carry without the toolSummaries cap
-    // that keeps a 6,000-char catalogue dump out of the prompt.
+    // hundred characters, so it is safe to carry.
     if (
       call.name === 'list_owned_projects' &&
       result.status === 'completed' &&

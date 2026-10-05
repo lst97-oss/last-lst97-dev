@@ -41,14 +41,12 @@ async function render(element: ReactElement) {
 /**
  * These are server renders on purpose.
  *
- * The dialog body cannot be asserted from a mounted tree: `radix-ui` ships its
- * components as `forwardRef` objects, and Bun's module interop drops the
- * `$$typeof` symbol off them, so every `DialogContent` throws "Element type is
- * invalid" and a raw `Dialog` renders no portal at all — even with `forceMount`.
- * That is why `tests/media-gallery.test.tsx` covers `MediaViewer` the same way.
- * The interactive path (open, copy, escape) is verified in a real browser; the
- * parts testable here are the markup, the URL builder, and the copy state
- * machine driven directly.
+ * A closed dialog renders only its trigger, so the markup assertions below are
+ * about what is in the SSR payload — which is exactly what a crawler and a
+ * no-JS visitor see. Opening state is a client concern: it needs the portal,
+ * the focus trap and a real layout, so the interactive path (open, copy,
+ * escape) is verified in a browser rather than here. `tests/media-gallery.test.tsx`
+ * covers `MediaViewer` the same way.
  */
 describe('share dialog', () => {
   test('renders the trigger and no dialog body before it is opened', async () => {
@@ -56,7 +54,7 @@ describe('share dialog', () => {
 
     expect(markup).toContain('aria-label="Share this page"')
     expect(markup).toContain('SHARE')
-    // A closed Radix dialog renders only its trigger, so a preview or a target
+    // A closed Base UI dialog renders only its trigger, so a preview or a target
     // in this markup would mean the dialog is not actually gated.
     expect(markup).not.toContain('share-preview')
     expect(markup).not.toContain('share-targets')
