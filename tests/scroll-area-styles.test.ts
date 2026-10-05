@@ -22,6 +22,7 @@ function appendScrollArea() {
   bar.setAttribute('data-orientation', 'vertical')
   const thumb = browser.document.createElement('div')
   thumb.setAttribute('data-slot', 'scroll-area-thumb')
+  thumb.setAttribute('data-orientation', 'vertical')
   bar.append(thumb)
   root.append(viewport, bar)
   browser.document.body.append(root)
@@ -64,21 +65,54 @@ describe('scroll area styles', () => {
     const { thumb } = appendScrollArea()
 
     // A margin here would eat the whole 6px track width and leave an
-    // ungrabbable bar, because Radix already sizes the thumb to the content box.
+    // ungrabbable bar, because the thumb is sized to the content box.
     expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-thumb"]', 'margin')).toBe('')
     expect(browser.getComputedStyle(thumb).marginTop).toBe('')
     expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-thumb"]', 'background')).toBe(
       'var(--os-yellow)',
     )
     expect(declaration('[data-slot="scroll-area"] [data-slot="scroll-area-thumb"]', 'border-radius')).toBe('0px')
-    // Radix does not put data-orientation on the thumb, so the resize cursor is
-    // selected through the orientation-bearing bar that contains it.
+    // The thumb carries its own data-orientation, so the resize cursor is
+    // selected directly rather than through the bar that contains it.
     expect(
-      declaration(
-        '[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"][data-orientation="vertical"] [data-slot="scroll-area-thumb"]',
-        'cursor',
-      ),
+      declaration('[data-slot="scroll-area"] [data-slot="scroll-area-thumb"][data-orientation="vertical"]', 'cursor'),
     ).toBe('ns-resize')
+    expect(
+      declaration('[data-slot="scroll-area"] [data-slot="scroll-area-thumb"][data-orientation="horizontal"]', 'cursor'),
+    ).toBe('ew-resize')
+  })
+
+  test('a bar whose viewport cannot scroll is not painted', () => {
+    // `keepMounted` keeps every bar in the DOM so the width/thumb rules above
+    // keep matching while it is idle, which also painted a 10px bar with a
+    // full-height thumb on shells and panels that had nothing to scroll — a
+    // scrollbar that could not be dragged anywhere. Base UI mirrors the
+    // viewport's overflow state onto the bar, so absence of the attribute is
+    // the signal, and the bar must then be hidden.
+    //
+    // Asserted as hidden vs not hidden rather than as an exact `display`: the
+    // bare element takes its `flex` from the component's Tailwind class, which
+    // happy-dom resolves to `block`. Only the hiding rule is ours.
+    const { bar } = appendScrollArea()
+
+    // No overflow attribute is the idle state, so the bar starts hidden.
+    expect(browser.getComputedStyle(bar).display).toBe('none')
+
+    // Base UI adds the attribute only when that axis really scrolls.
+    bar.setAttribute('data-has-overflow-y', '')
+    expect(browser.getComputedStyle(bar).display).not.toBe('none')
+
+    bar.removeAttribute('data-has-overflow-y')
+    expect(browser.getComputedStyle(bar).display).toBe('none')
+
+    // A horizontal bar is gated on its own axis, so a panel that scrolls
+    // sideways still shows the strip it needs.
+    bar.setAttribute('data-orientation', 'horizontal')
+    bar.setAttribute('data-has-overflow-x', '')
+    expect(browser.getComputedStyle(bar).display).not.toBe('none')
+
+    bar.removeAttribute('data-has-overflow-x')
+    expect(browser.getComputedStyle(bar).display).toBe('none')
   })
 
   test('no dialog-scoped override paints a track, which would darken the surface', () => {

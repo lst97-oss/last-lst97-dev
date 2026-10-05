@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { createSiteStyleWindow } from './site-stylesheet'
+import { createSiteStyleWindow, readResponsiveBlock } from './site-stylesheet'
 
-// The viewer dialog is a Radix DialogContent, so the OS look depends entirely
+// The viewer dialog is a Base UI `Dialog.Popup`, so the OS look depends entirely
 // on these hand-written rules beating the primitive's own `rounded-lg` and
 // `sm:max-w-lg`. `tests/site-stylesheet.ts` is required here: happy-dom never
 // resolves `@import`, so loading src/styles.css directly would leave every
@@ -94,31 +94,29 @@ describe('media viewer styles', () => {
     dialog.remove()
   })
 
-  test('the scroll viewport wrapper is capped so a wide image scales down instead of overflowing', () => {
-    // Radix's viewport wraps its children in a div carrying an inline
-    // `display: table`, whose used width is max(specified width, min-content).
-    // The wrapper's min-content is the image's full intrinsic width, so it grew
-    // past the dialog and became the box `.media-viewer-image`'s `max-width: 100%`
-    // resolved against — the image never scaled down and DialogContent's
-    // `overflow-hidden` clipped it. Both declarations below are load-bearing:
-    // `display` must leave the table formatting context (a table box cannot
-    // shrink below min-content, so `width` alone is inert), and `width` is what
-    // caps it at the viewport once it is a block-level flex container.
+  test('the scroll viewport is capped so a wide image scales down instead of overflowing', () => {
+    // Base UI's scroll-area viewport lays its children out directly — there is
+    // no inner wrapper — so the cap has to live on the viewport itself. Both
+    // declarations are load-bearing: `min-width: 0` lets the viewport shrink
+    // below its content's min-content width, and `max-width: 100%` stops a wide
+    // image from stretching the frame, which is what `.media-viewer-image`'s own
+    // `max-width: 100%` then resolves against.
     const dialog = element('div', 'media-viewer-dialog')
     const scroll = browser.document.createElement('div')
     scroll.setAttribute('data-dialog-scroll', '')
     const viewport = browser.document.createElement('div')
     viewport.setAttribute('data-slot', 'scroll-area-viewport')
-    const wrapper = browser.document.createElement('div')
-    viewport.append(wrapper)
+    const window = element('div', 'media-viewer-window')
+    viewport.append(window)
     scroll.append(viewport)
     dialog.append(scroll)
     browser.document.body.append(dialog)
 
-    const style = browser.getComputedStyle(wrapper)
-    expect(style.display).toBe('flex')
-    expect(style.flexDirection).toBe('column')
-    expect(style.width).toBe('100%')
+    const viewportStyle = browser.getComputedStyle(viewport)
+    // happy-dom keeps a unitless zero as "0" rather than normalising it to "0px".
+    expect(viewportStyle.minWidth === '0' || viewportStyle.minWidth === '0px').toBe(true)
+    expect(viewportStyle.maxWidth).toBe('100%')
+    expect(browser.getComputedStyle(window).width).toBe('100%')
 
     dialog.remove()
   })
@@ -133,11 +131,30 @@ describe('media viewer styles', () => {
     active.remove()
   })
 
-  test('the filmstrip scrolls horizontally so long galleries stay reachable', () => {
-    const strip = element('div', 'media-viewer-filmstrip')
+  test('the filmstrip is a themed ScrollArea rather than a natively-scrolling div', () => {
+    // The strip must draw the project's shared ScrollArea bar instead of the
+    // browser's own, so the assertions cover the themed bar's axis and the
+    // containment that stops the strip's min-content from widening the dialog.
+    // The themed bar rules are scoped under the ScrollArea root, so the fixture
+    // has to nest them the way the component renders.
+    const root = browser.document.createElement('div')
+    root.setAttribute('data-slot', 'scroll-area')
+    root.className = 'media-viewer-filmstrip'
+    const scrollbar = browser.document.createElement('div')
+    scrollbar.setAttribute('data-slot', 'scroll-area-scrollbar')
+    scrollbar.setAttribute('data-orientation', 'horizontal')
+    root.append(scrollbar)
+    browser.document.body.append(root)
 
-    expect(browser.getComputedStyle(strip).overflowX).toBe('auto')
-    expect(browser.getComputedStyle(strip).display).toBe('flex')
+    const strip = root
+
+    expect(browser.getComputedStyle(strip).contain).toBe('inline-size')
+    // happy-dom normalizes a unitless `0` to "0" rather than "0px".
+    expect(browser.getComputedStyle(strip).minWidth).toBe('0')
+    expect(browser.getComputedStyle(scrollbar).height).toBe('10px')
+    // No native horizontal bar.
+    expect(browser.getComputedStyle(strip).overflowX).not.toBe('auto')
+    expect(browser.getComputedStyle(strip).overflowX).not.toBe('scroll')
 
     strip.remove()
   })

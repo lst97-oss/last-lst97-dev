@@ -1,12 +1,17 @@
 'use client'
 
 import { cn } from 'cn'
-import { Label as LabelPrimitive } from 'radix-ui'
 import * as React from 'react'
 
-function Label({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
+/**
+ * Base UI ships no Label primitive, and a label is already a plain element: the
+ * only thing Radix's Root contributed was a `<label>` with a `data-disabled`
+ * hook for form-field context. The native element carries that via
+ * `aria-disabled` on the wrapper, so the class string is unchanged.
+ */
+function Label({ className, ...props }: React.ComponentProps<'label'>) {
   return (
-    <LabelPrimitive.Root
+    <label
       data-slot="label"
       className={cn(
         'flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50',

@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'bun:test'
+import { act, type ReactElement } from 'react'
+import { createRoot } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'
 
 import { CHAT_INPUT_MAX_HEIGHT_PX, ChatComposer } from '../src/components/site/chat/chat-composer'
 import type { ChatConversationViewModel } from '../src/components/site/chat/chat-types'
+import { createSiteStyleWindow } from './site-stylesheet'
 
 function conversation(overrides: Partial<ChatConversationViewModel> = {}): ChatConversationViewModel {
   return {
@@ -40,6 +43,24 @@ describe('ChatComposer', () => {
     // during SSR. `rows={1}` is the pre-hydration height, so a draft that is
     // many lines long must not paint as one tall box on the server.
     expect(html).toContain('rows="1"')
+  })
+
+  it('names both halves of the Enter contract in the key hint', () => {
+    // Enter sends and Shift+Enter newlines are only documented in a code
+    // comment, so the visible hint is the sole place a visitor can learn the
+    // chord. Asserting each key separately is what stops the row silently
+    // losing one half.
+    const html = renderToStaticMarkup(
+      <ChatComposer conversation={conversation({ message: 'hi' })} pending={false} siteKey="site-key" />,
+    )
+
+    expect(html).toContain('os-chat-key-hint')
+    expect(html).toContain('data-slot="kbd"')
+    expect(html).toContain('ENTER')
+    expect(html).toContain('SHIFT')
+    // The key is now shown, so the tooltip no longer repeats it.
+    expect(html).toContain('title="Send message"')
+    expect(html).not.toContain('(Enter)')
   })
 
   it('keeps the composer disabled while a turn is in flight or the limit is reached', () => {

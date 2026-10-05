@@ -115,13 +115,16 @@ function ServicesPage() {
          * site will not deploy". Interleaving them made the page longer than
          * either audience needed.
          *
-         * Both panels stay mounted (forceMount) and are hidden with CSS. Radix
+         * Both panels stay mounted (`keepMounted`) and are hidden with CSS. Base UI
          * unmounts an inactive panel by default, which would leave the support
          * copy out of the server HTML — the exact thin-content defect the
          * unconditional render above exists to prevent.
          */}
         <Tabs className="mt-8" defaultValue="packages">
-          <TabsList className="services-tabs-list" variant="line">
+          {/* `activateOnFocus` restores Radix's automatic activation, where
+              arrowing onto a tab selected it. Base UI defaults to manual
+              activation, so without this the arrow keys only move focus. */}
+          <TabsList className="services-tabs-list" variant="line" activateOnFocus>
             <TabsTrigger className="services-tab" value="packages">
               WEBSITE PACKAGES
             </TabsTrigger>
@@ -130,7 +133,7 @@ function ServicesPage() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent className="services-tab-panel mt-8" forceMount value="packages">
+          <TabsContent className="services-tab-panel mt-8" keepMounted value="packages">
             <section className="mt-8">
               <Eyebrow className="px-2 py-1">PACKAGES</Eyebrow>
               <h2>{SERVICE_SECTION_HEADING}</h2>
@@ -196,7 +199,7 @@ function ServicesPage() {
             </section>
           </TabsContent>
 
-          <TabsContent className="services-tab-panel mt-8" forceMount value="support">
+          <TabsContent className="services-tab-panel mt-8" keepMounted value="support">
             <section className="mt-8">
               <Eyebrow className="px-2 py-1">TECHNICAL SUPPORT</Eyebrow>
               <h2>{SERVICE_SUPPORT_SECTION_HEADING}</h2>

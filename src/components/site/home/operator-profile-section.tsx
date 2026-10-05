@@ -115,7 +115,6 @@ export function HomeOperatorProfileSection({
             <ScrollArea
               className="profile-json-scroll mt-3.5 min-h-0 flex-1"
               scrollbars="both"
-              type="always"
               viewportProps={{
                 className: 'profile-json-viewport',
                 tabIndex: 0,

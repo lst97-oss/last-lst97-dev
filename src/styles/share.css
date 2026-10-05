@@ -22,11 +22,10 @@
   padding: 20px 16px;
 }
 
-/* The repo has no tailwindcss-animate, so DialogContent's animate-in /
-   zoom-in-95 classes are inert. A plain transition on Radix's data-state
-   matches the house idiom. */
-.share-dialog [data-state="open"],
-.share-dialog [data-state="closed"] {
+/* The dialog popup fades and scales through Base UI's transition-status
+   attributes, which matches the house idiom. */
+.share-dialog [data-open],
+.share-dialog [data-closed] {
   transition: opacity 120ms ease, transform 120ms ease;
 }
 

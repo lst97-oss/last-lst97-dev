@@ -5,7 +5,6 @@
  */
 
 :root {
-  /* Raw brand palette (used by shadows/grid/decor only) */
   --os-ink: #17171f;
   --os-ink-soft: #3c3b4a;
   --os-cream: #fff7df;
@@ -19,7 +18,6 @@
   --os-grid: rgba(23, 23, 31, 0.09);
   --os-trail: rgba(201, 143, 0, 0.6);
 
-  /* Core surfaces */
   --background: var(--os-cream);
   --foreground: var(--os-ink);
   --card: var(--os-paper);
@@ -27,13 +25,11 @@
   --popover: var(--os-paper);
   --popover-foreground: var(--os-ink);
 
-  /* Brand actions */
   --primary: var(--os-yellow);
   --primary-foreground: var(--os-ink);
   --secondary: var(--os-teal);
   --secondary-foreground: var(--os-ink);
 
-  /* Neutral UI */
   --muted: #f3ecd2;
   --muted-foreground: var(--os-ink-soft);
   --accent: var(--os-coral);
@@ -42,7 +38,6 @@
   --input: var(--os-ink);
   --ring: var(--os-coral);
 
-  /* Status */
   --success: #1e7a67;
   --success-foreground: var(--os-paper);
   --success-muted: var(--os-teal-soft);
@@ -56,11 +51,9 @@
   --info-foreground: var(--os-paper);
   --info-muted: var(--os-violet-soft);
 
-  /* Dangerous actions */
   --destructive: var(--os-coral);
   --destructive-foreground: var(--os-ink);
 
-  /* Elevation */
   --shadow-os: 8px 8px 0 var(--border);
   --shadow-os-sm: 4px 4px 0 var(--border);
   --shadow-os-xs: 3px 3px 0 var(--border);
@@ -80,7 +73,6 @@
   --os-grid: rgba(255, 247, 223, 0.08);
   --os-trail: rgba(255, 211, 78, 0.6);
 
-  /* Core surfaces */
   --background: #17171f;
   --foreground: #fff7df;
   --card: #20202b;
@@ -88,13 +80,11 @@
   --popover: #20202b;
   --popover-foreground: #fff7df;
 
-  /* Brand actions */
   --primary: #ffd34e;
   --primary-foreground: #17171f;
   --secondary: #64d8c4;
   --secondary-foreground: #17171f;
 
-  /* Neutral UI */
   --muted: #26262f;
   --muted-foreground: #c9c7d1;
   --accent: #ff7969;
@@ -103,7 +93,6 @@
   --input: #e9e2c8;
   --ring: #ff7969;
 
-  /* Status */
   --success: #64d8c4;
   --success-foreground: #17171f;
   --success-muted: #1d3a34;
@@ -117,7 +106,6 @@
   --info-foreground: #17171f;
   --info-muted: #2c2a4d;
 
-  /* Dangerous actions */
   --destructive: #ff7969;
   --destructive-foreground: #17171f;
 }

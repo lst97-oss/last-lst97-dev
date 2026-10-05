@@ -49,14 +49,7 @@ export function ListFilters({
 
   return (
     <div className="list-filters mb-6">
-      {/* A live filter stays visible; the rest stay collapsed so a long topic
-          row never pushes the archive below the fold. */}
-      <Accordion
-        className="list-filter-accordion"
-        collapsible
-        defaultValue={activeTopic ? 'topics' : undefined}
-        type="single"
-      >
+      <Accordion className="list-filter-accordion" defaultValue={activeTopic ? ['topics'] : []}>
         <AccordionItem value="topics">
           <AccordionTrigger className="list-filter-trigger">
             <span className="list-filter-label">

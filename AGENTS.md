@@ -15,7 +15,8 @@ src/server/          Server domain layer, grouped by bounded context:
                      chat, knowledge, moderation, content, wakatime, contact, email, seo,
                      security, observability, http, storage, env.ts, env-schema.ts.
 src/components/site/ Site components (shell, chat, contact, content, home, window, battle).
-src/components/ui/   61 shadcn-style wrappers over Base UI primitives. Generated-style code.
+src/components/ui/   60 shadcn-style wrappers over Base UI primitives (@base-ui/react), plus
+                     skeletons/ (6 files). Zero Radix — see "The ui wrappers are Base UI".
 src/lib/             Client-safe shared code: os-store, chat limits, SEO, Payload admin bridge.
 src/collections/     Payload collections + fields/ + access.ts.
 src/migrations/      Committed Payload migrations (11 registered in index.ts).
@@ -268,6 +269,64 @@ titles/URLs and a generic degraded indicator do. Retrieval happens after moderat
 evidence is wrapped as untrusted (`prompt-evidence.ts`). Sanitized private-repository summaries are
 retrievable by design — they describe work the owner has chosen to present — but review them before
 publishing the repo to a new audience.
+
+## The ui wrappers are Base UI
+
+Every wrapper in `src/components/ui` is built on **`@base-ui/react@1.8.0`**. Neither `radix-ui` nor
+`cmdk` is a dependency: `bun.lock` resolves **zero** `@radix-ui/*` packages and
+`node_modules/@radix-ui` does not exist. `components.json` declares `style: "base-nova"` so a
+future `shadcn add` cannot reintroduce one. `input-otp`, `react-day-picker`, `recharts`,
+`embla-carousel-react` and `react-resizable-panels` remain, and none of them is Radix.
+
+Base UI's vocabulary differs from Radix's, and **there is no `data-state` attribute at all**.
+Anything that selects state must use the Base UI spelling:
+
+| Meaning | Radix (gone) | Base UI |
+|---|---|---|
+| popup/dialog open, collapsible open | `data-state="open"` | `data-open` |
+| popup/dialog closed | `data-state="closed"` | `data-closed` |
+| checkbox/switch/radio on | `data-state="checked"` | `data-checked` |
+| select item chosen | `data-state="checked"` | `data-selected` |
+| tab selected | `data-state="active"` | `data-active` |
+| toggle / accordion-trigger pressed | `data-state="on"` | `data-pressed` / `data-panel-open` |
+| menu/popup trigger for an open popup | `data-state="open"` | `data-popup-open` |
+| enter/exit transition | `data-[state=open]:animate-*` | `data-starting-style:` / `data-ending-style:` |
+
+`data-highlighted`, `data-disabled`, `data-orientation` and `data-side` are unchanged. CSS custom
+properties lost their prefix: `--available-height`, `--anchor-width`, `--transform-origin`,
+`--accordion-panel-height`. `tests/base-ui-attributes.test.tsx` pins this vocabulary, so a wrapper
+that silently reverted to `data-state` fails there rather than shipping an unstyled control.
+
+**Structural differences that bite:**
+
+- **`ScrollArea` renders no wrapper div.** Radix put an inline `display: table; min-width: 100%`
+  on each viewport's only child, and a table box sizes to its contents — that single fact
+  generated the `contain: inline-size` / `min-width: 0` / `display: flex !important` cluster in
+  five CSS files. Those workarounds are gone. **Do not add `ScrollArea.Content`**: it would
+  reintroduce an inline `min-width: fit-content` box. Base UI still sets inline
+  `position: relative` on Root and `overflow: scroll` on the Viewport, so `.desktop-shortcuts`'s
+  `position: fixed !important` and `.desktop-main`'s `overflow-y: hidden !important` are still
+  required.
+- **`asChild` is `render`.** For a Base UI primitive, pass `render={<Button/>}` so the primitive
+  *becomes* that element. For plain polymorphic elements (badge, breadcrumb, bubble, marker,
+  item, sidebar) the wrappers call `useRender({ defaultTagName, render })` directly — no shared
+  Slot shim exists, and `react-dom` is not a dependency.
+- **`Select.Value` resolves its label from `items` on `Select.Root`**, not from the mounted
+  `ItemText`. A `Select` with `value` but no `items` shows the raw value.
+- **Checkbox, Switch and Radio render a `<span role=…>` plus a visually hidden native `<input>`**,
+  not a `<button>`, so `disabled:` variants are dead code — use `data-disabled:`.
+- Generic roots (`Tabs.Root`, `Select.Root`) cannot use `React.ComponentProps`; `Select` is a
+  bare re-export and `Tabs` is a generic function.
+
+**Testing a mounted Base UI component requires `requestAnimationFrame` on `globalThis`** — Base
+UI drives every open/close transition through `@base-ui/utils/useAnimationFrame`, which reads the
+global directly and throws from a layout effect without it. Use `installBrowserGlobals()` from
+`tests/browser-globals.ts` rather than repeating the happy-dom global block, and import React and
+the components with `await import(...)` AFTER the install so module evaluation happens second.
+The old claim that Radix components cannot render under `bun test` was false.
+
+`.migration/` holds one report per migrated component plus `project.md`; read the relevant one
+before changing a wrapper.
 
 ## Code Conventions & Testing Patterns
 

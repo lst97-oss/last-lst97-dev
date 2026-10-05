@@ -24,10 +24,11 @@ interface MermaidDiagramProps {
 /**
  * Renders a Mermaid source string as an SVG the visitor can zoom and pan.
  *
- * `mermaid` stays a dynamic import so its ~1.4 MB `elk` dependency chunk never
- * lands on the initial render path. Nothing here touches `window` before the
- * effect runs, so the component is safe to render during SSR — the toolbar is
- * present in the server HTML and the graphic arrives on hydration.
+ * `mermaid` stays a dynamic import so its heavy dependency chunks never land on
+ * the initial render path (see the exemption in `vite.config.ts`).
+ * Nothing here touches `window` before the effect runs, so the component is
+ * safe to render during SSR — the toolbar is present in the server HTML and
+ * the graphic arrives on hydration.
  */
 export function MermaidDiagram({ id, source, label }: MermaidDiagramProps) {
   const generatedId = useId()
@@ -83,8 +84,9 @@ export function MermaidDiagram({ id, source, label }: MermaidDiagramProps) {
     async function renderDiagram() {
       try {
         // A dynamic import, not a static one: mermaid pulls in a ~1.4 MB `elk`
-        // chunk that must stay off the initial render path (vite.config.ts:86-96
-        // documents the exemption). A static import would put it in the entry.
+        // chunk that must stay off the initial render path (vite.config.ts
+        // `chunkSizeWarningLimit` documents the exemption). A static import
+        // would put it in the entry.
         const { default: mermaid } = await import('mermaid')
         if (!mermaidReady) {
           mermaidReady = Promise.resolve(
@@ -165,11 +167,9 @@ export function MermaidDiagram({ id, source, label }: MermaidDiagramProps) {
       </div>
       <ScrollArea
         className="mermaid-diagram-scroll"
-        type="always"
-        // "both": a diagram wider than the panel now keeps its natural size and
-        // scrolls sideways. With the default "vertical", Radix mounts no
-        // horizontal bar and the viewport clips the overflow, so the excess
-        // would simply disappear instead of being reachable.
+        // "both": a diagram wider than the panel keeps its natural size and
+        // scrolls sideways, and "both" is what mounts the horizontal bar that
+        // makes the overflow reachable.
         scrollbars="both"
         viewportProps={{
           id: viewportId,

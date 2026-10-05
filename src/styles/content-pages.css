@@ -443,9 +443,9 @@
  * those Tailwind defaults, so the site treatment is restated here: square
  * corners, a 2px ink border, and the hard shadow used by every other panel.
  *
- * An inactive panel stays mounted (Radix forceMount) so its copy reaches
- * crawlers; only its visibility changes, which is why the rule targets
- * [data-state] rather than :not([data-state=active]) display:none alone.
+ * An inactive panel stays mounted (`keepMounted`) so its copy reaches
+ * crawlers; Base UI hides it with the `hidden` attribute, which needs no rule
+ * of its own — the panel markup is simply absent from the visible page.
  */
 .services-tabs-list {
   display: flex;
@@ -481,16 +481,13 @@
   outline: 3px solid var(--os-coral);
   outline-offset: -3px;
 }
-.services-tab[data-state="active"] {
+.services-tab[data-active] {
   background: var(--os-coral);
   color: var(--os-ink);
 }
 
 .services-tab-panel:focus-visible {
   outline: none;
-}
-.services-tab-panel[data-state="inactive"] {
-  display: none;
 }
 
 .service-package-card > * {

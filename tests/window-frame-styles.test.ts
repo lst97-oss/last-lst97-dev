@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { build } from 'vite'
-import { createSiteStyleWindow } from './site-stylesheet'
+import { createSiteStyleWindow, readResponsiveBlock } from './site-stylesheet'
 
 /**
  * Runs CSS through the project's real production minifier and returns the
@@ -62,22 +62,12 @@ const shellSource = await Bun.file(new URL('../src/components/site/shell.tsx', i
 
 const { window: browser, styleElement: styles } = await createSiteStyleWindow()
 
-/**
- * The `@media (max-width: 650px)` block from src/styles/responsive.css with
- * comments stripped. Read as text rather than through computed styles because
- * happy-dom does not apply media queries, and `:has()` selectors would need
- * real engine support to resolve.
- */
+/** The `@media (max-width: 650px)` block from src/styles/responsive.css. */
 let mobileBlock: Promise<string> | null = null
 function readMobileBlock(): Promise<string> {
   mobileBlock ??= Bun.file(new URL('../src/styles/responsive.css', import.meta.url))
     .text()
-    .then((css) => {
-      const block = css.replace(/\/\*[\s\S]*?\*\//g, '').split('@media (max-width: 650px) {')[1] ?? ''
-      // Stop at the media query's own closing brace so later blocks cannot
-      // satisfy a matcher meant for this one.
-      return block.slice(0, block.indexOf('\n}'))
-    })
+    .then((css) => readResponsiveBlock(css, '@media (max-width: 650px) {'))
   return mobileBlock
 }
 
@@ -374,7 +364,7 @@ describe('window frame styles', () => {
   })
 
   test('renders the desktop navigation as a compact floating glass dock', () => {
-    // The chrome is on the Radix viewport, not the ScrollArea root: the root is
+    // The chrome is on the ScrollArea viewport, not the root: the root is
     // only the positioning context, and the viewport is what clips and scrolls.
     const sidebar = browser.document.createElement('aside')
     sidebar.className = 'desktop-shortcuts'

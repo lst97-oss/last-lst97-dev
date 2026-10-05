@@ -300,6 +300,8 @@
   text-align: left;
   cursor: pointer;
 }
+/* Base UI's Select.Trigger emits `data-placeholder`, so this muted rule still
+   matches unchanged. */
 .os-chat-contact-select[data-placeholder] {
   color: #51515b;
 }
@@ -307,7 +309,7 @@
   outline: 3px solid var(--os-coral);
   outline-offset: 2px;
 }
-.os-chat-contact-select:disabled {
+.os-chat-contact-select[data-disabled] {
   cursor: wait;
   opacity: 0.7;
 }
@@ -340,7 +342,7 @@
   color: var(--os-ink);
   outline: none;
 }
-.os-chat-contact-select-content [data-slot="select-item"][data-state="checked"] {
+.os-chat-contact-select-content [data-slot="select-item"][data-selected] {
   font-weight: 900;
   background: var(--os-teal-soft);
 }
@@ -385,7 +387,7 @@
   outline: 3px solid var(--os-coral);
   outline-offset: 2px;
 }
-.os-chat-contact-checkbox[data-state="checked"] {
+.os-chat-contact-checkbox[data-checked] {
   border-color: var(--os-ink);
   background: var(--os-teal);
   color: var(--os-ink);

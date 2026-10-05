@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton'
  *
  * Chrome is re-declared rather than reused from `@/components/site/**`: the
  * real `WindowFrame`, `CardGrid`, and `PageStack` write to `os-store`, measure
- * with `ResizeObserver`, and mount a Radix `ScrollArea`. None of that is
+ * with `ResizeObserver`, and mount a scroll area. None of that is
  * useful while a route is pending, and all of it makes the markup
  * non-deterministic. The class strings below are copied verbatim from those
  * components, so the swap from skeleton to content causes no layout jump.

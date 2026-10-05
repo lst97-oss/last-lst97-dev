@@ -24,8 +24,9 @@ describe('home carousel stylesheet', () => {
     // pass vacuously against an empty rule list.
     expect(styles.sheet?.cssRules.length ?? 0).toBeGreaterThan(0)
 
-    // Radix ScrollArea wraps window content in a `display: table; min-width: 100%`
-    // element, which sizes to its contents, so a percentage-width slide track
+    // Base UI's ScrollArea renders no wrapper div, but an earlier Radix build
+    // wrapped window content in a `display: table; min-width: 100%` element,
+    // which sizes to its contents, so a percentage-width slide track
     // inside it has a circular basis and falls back to min-content. Measured on
     // the home page, that inflated every window to 920px inside a 610px column
     // and `.os-site`'s `overflow: hidden` clipped the right of each card.
@@ -41,7 +42,7 @@ describe('home carousel stylesheet', () => {
 
   test('keeps each slide exactly one viewport wide so one index step is one slide', () => {
     // `min-width: 0` on the slide is load-bearing on its own: without it the
-    // Radix table wrapper sizes to the slide's natural width.
+    // track sizes to the slide's natural width.
     expect(declaration('.featured-carousel-slide', 'flex')).toBe('0 0 100%')
     expect(declaration('.featured-carousel-slide', 'min-width')).toBe('0')
     expect(declaration('.featured-carousel-track', 'display')).toBe('flex')

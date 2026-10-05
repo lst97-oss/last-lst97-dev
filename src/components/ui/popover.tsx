@@ -1,41 +1,64 @@
 'use client'
 
+import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
 import { cn } from 'cn'
-import { Popover as PopoverPrimitive } from 'radix-ui'
 import * as React from 'react'
 
-function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
+function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />
 }
 
-function PopoverTrigger({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
+function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
 }
 
+/**
+ * Radix put positioning on the content itself. Base UI splits it: `Positioner`
+ * owns `side`/`align`/the offsets and `Popup` owns the painted surface. Both are
+ * accepted on this public wrapper so no call site changes.
+ */
 function PopoverContent({
   className,
   align = 'center',
   sideOffset = 4,
+  alignOffset,
+  side,
+  children,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+}: PopoverPrimitive.Popup.Props &
+  Pick<PopoverPrimitive.Positioner.Props, 'side' | 'sideOffset' | 'align' | 'alignOffset'>) {
   return (
     <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Content
-        data-slot="popover-content"
-        align={align}
+      <PopoverPrimitive.Positioner
+        data-slot="popover-positioner"
+        className="isolate z-50"
+        side={side}
         sideOffset={sideOffset}
-        className={cn(
-          'z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-hidden data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
-          className,
-        )}
-        {...props}
-      />
+        align={align}
+        alignOffset={alignOffset}
+      >
+        <PopoverPrimitive.Popup
+          data-slot="popover-content"
+          className={cn(
+            'z-50 w-72 origin-(--transform-origin) rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-hidden transition-[opacity,transform,scale] data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95',
+            className,
+          )}
+          {...props}
+        >
+          {children}
+        </PopoverPrimitive.Popup>
+      </PopoverPrimitive.Positioner>
     </PopoverPrimitive.Portal>
   )
 }
 
-function PopoverAnchor({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
-  return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />
+/**
+ * Base UI has no Anchor part. Anchoring is expressed by an element reference
+ * passed to `Popover.Positioner`'s `anchor` prop, so this export stays for import
+ * compatibility but renders inert and is not a positioning anchor.
+ */
+function PopoverAnchor({ ...props }: React.ComponentProps<'span'>) {
+  return <span data-slot="popover-anchor" hidden {...props} />
 }
 
 function PopoverHeader({ className, ...props }: React.ComponentProps<'div'>) {

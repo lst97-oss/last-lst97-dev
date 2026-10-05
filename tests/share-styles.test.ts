@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { SharePreview } from '../src/components/site/share/share-preview'
 import { createSiteStyleWindow } from './site-stylesheet'
 
-// The share dialog is a Radix DialogContent, so the OS look depends entirely on
+// The share dialog is a Base UI `Dialog.Popup`, so the OS look depends entirely on
 // these hand-written rules beating the primitive's own `rounded-lg` and
 // `sm:max-w-lg`. `tests/site-stylesheet.ts` is required here: happy-dom never
 // resolves `@import`, so loading src/styles.css directly would leave every

@@ -1,16 +1,14 @@
 import { describe, expect, test } from 'bun:test'
-import { createElement } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
-
-import { Toaster } from '../src/components/ui/sonner'
 import { createSiteStyleWindow } from './site-stylesheet'
 
 /**
- * The provider used to be missing entirely: `src/components/ui/sonner.tsx`
- * existed, `sonner` was a declared dependency, and nothing in `src/` rendered
- * it. A `toast()` call still returned an id and still threw nothing, so the
- * only symptom was a toast that never appeared — the failure mode these
- * assertions pin.
+ * The toast host is mounted once by `src/routes/_site.tsx` and must never fall
+ * out of the document, or a `toast.add()` returns an id and paints nothing —
+ * the failure mode these assertions exist to catch. Two of the previous tests
+ * were pinned to sonner's SSR output (`aria-live`, `data-react-aria-top-layer`)
+ * and died with it: Base UI's `ToastPortal` renders nothing on the server, so
+ * there is no server markup to assert. Rendering is now proven in
+ * `tests/toast-mount.test.tsx`, which mounts the real host under a DOM.
  */
 
 describe('toast provider', () => {
@@ -36,27 +34,13 @@ describe('toast provider', () => {
     expect(route.indexOf('</BootGate>')).toBeLessThan(route.indexOf('<Toaster />'))
   })
 
-  test('the wrapper renders the toaster list and not a theme provider', () => {
-    // Sonner renders its list lazily — the `<ol data-sonner-toaster>` only
-    // exists once a toast is present — so SSR proves the `aria-live` section
-    // exists without depending on that.
-    const html = renderToStaticMarkup(createElement(Toaster))
+  test('the host is the Base UI wrapper, and no sonner import survives', async () => {
+    expect(await Bun.file(new URL('../src/components/ui/toast.tsx', import.meta.url)).exists()).toBe(true)
+    expect(await Bun.file(new URL('../src/components/ui/sonner.tsx', import.meta.url)).exists()).toBe(false)
 
-    expect(html).toContain('aria-live="polite"')
-    expect(html).toContain('data-react-aria-top-layer="true"')
-  })
-
-  test('the wrapper no longer depends on an unmounted next-themes provider', async () => {
-    const source = await Bun.file(new URL('../src/components/ui/sonner.tsx', import.meta.url)).text()
-
-    // `next-themes` has no `ThemeProvider` anywhere in `src/`, so `useTheme()`
-    // always returned its out-of-context fallback and the `theme` prop was
-    // dead. The dependency and the import both go with it.
-    expect(source).not.toContain('next-themes')
-    expect(source).not.toContain('useTheme')
-    // Pinned to `light` on purpose: nothing sets `html.dark`, so `system`
-    // would let an OS-dark machine push sonner's dark palette over `--card`.
-    expect(source).toContain('theme="light"')
+    const route = await Bun.file(new URL('../src/routes/_site.tsx', import.meta.url)).text()
+    expect(route).toContain('@/components/ui/toast')
+    expect(route).not.toContain('sonner')
   })
 })
 
@@ -66,44 +50,48 @@ describe('toaster stylesheet', () => {
     return Array.from((styleElement as unknown as HTMLStyleElement).sheet?.cssRules ?? []) as unknown as CSSStyleRule[]
   }
 
-  test("qualifies the container so sonner's injected font cannot win", async () => {
-    const found = await rules()
-    const container = found.find((rule) =>
+  /** happy-dom's CSSOM is lossy for shorthands, so shorthand assertions read the authored text. */
+  async function sheetText() {
+    const { styleElement } = await createSiteStyleWindow()
+    return (styleElement as unknown as HTMLStyleElement).textContent ?? ''
+  }
+
+  /** Collapses the wrapping that authored selectors get, then compares exactly. */
+  function ruleFor(found: CSSStyleRule[], selector: string) {
+    return found.find((rule) =>
       rule.selectorText
         ?.split(',')
         .map((part) => part.trim().replace(/\s+/g, ' '))
-        .includes('.os-toaster[data-sonner-toaster]'),
+        .includes(selector),
     )
+  }
 
-    // Sonner injects `font-family: ui-sans-serif, …` on
-    // `[data-sonner-toaster]` (0,1,0) from a runtime <style> that loads AFTER
-    // the site sheet. An unqualified `.os-toaster` loses on cascade order and
-    // the toast renders in system sans while the whole site is monospace — a
-    // regression that is invisible in markup and only measurable in the
-    // computed style.
+  test('paints the container in the site monospace stack', async () => {
+    const found = await rules()
+    const container = ruleFor(found, '.os-toast-viewport')
+
     expect(container).toBeDefined()
-    expect(container?.style.cssText).toContain('font-family')
     expect(container?.style.getPropertyValue('font-family').trim()).toBe('var(--font-mono)')
   })
 
-  test("paints the toast in the OS window idiom, not sonner's soft card", async () => {
-    const { styleElement } = await createSiteStyleWindow()
-    const css = (styleElement as unknown as HTMLStyleElement).textContent ?? ''
+  test('paints the toast in the OS window idiom, not the primitive default', async () => {
+    const css = await sheetText()
 
     // Matched against the stylesheet TEXT, the way `window-frame-styles.test.ts`
-    // does it. happy-dom's CSSOM is lossy for shorthands: `rule.cssText`
-    // re-serialises `border: 3px solid var(--border)` as `border: 3px solid`
-    // plus three longhands all set to `var(--border)`, and `getPropertyValue`
-    // on the shorthand drops the parts. Only the authored text is lossless.
-    const surface = css.match(/\.os-toaster \[data-sonner-toast\]\[data-styled='true'\]\s*\{[^}]*\}/)?.[0]
+    // does it, because happy-dom re-serialises `border: 3px solid var(--border)`
+    // as a bare `border: 3px solid` plus longhands.
+    const surface = css.match(/\[data-slot='toast'\]\s*\{[^}]*\}/)?.[0]
 
     expect(surface).toBeDefined()
     expect(surface).toContain('border: 3px solid var(--border)')
-    // Replaces sonner's own `0 4px 12px rgba(0,0,0,.1)` rather than adding to it.
+    // Replaces the primitive's own `shadow-lg` rather than adding to it — a
+    // soft blur under a hard 3px frame reads as two unrelated surfaces.
     expect(surface).toMatch(/box-shadow:\s*var\(--shadow-os-sm\)/)
+    // Every control on this site is square; no control is a circle.
+    expect(surface).toContain('border-radius: 0')
   })
 
-  test('carries toast type on the icon, since sonner only tints under richColors', async () => {
+  test('carries toast type on the icon, so the type survives a flat paper card', async () => {
     const found = await rules()
 
     for (const [type, token] of [
@@ -112,13 +100,21 @@ describe('toaster stylesheet', () => {
       ['warning', '--warning'],
       ['info', '--info'],
     ] as const) {
-      const rule = found.find((entry) =>
-        entry.selectorText
-          ?.split(',')
-          .map((part) => part.trim().replace(/\s+/g, ' '))
-          .includes(`.os-toaster [data-sonner-toast][data-type='${type}'] [data-icon]`),
-      )
+      const rule = ruleFor(found, `[data-type='${type}'] [data-slot='toast-icon']`)
       expect(rule?.style.getPropertyValue('color').trim()).toBe(`var(${token})`)
     }
+  })
+
+  test('clears the mobile tab bar below the shared 40rem breakpoint', async () => {
+    const css = await sheetText()
+
+    // Same query `responsive.css` gates the bar and its own reserve on, so the
+    // offset and the bar appear and disappear together. The bar's reserve is
+    // declared on `.os-site`, which is not an ancestor of the toast portal, so
+    // the height token has to be applied here.
+    const query = css.match(/@media \(width < 40rem\)\s*\{\s*\.os-toast-viewport\s*\{[^}]*\}/)?.[0]
+
+    expect(query).toBeDefined()
+    expect(query).toContain('--os-tab-bar-height')
   })
 })

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { HTMLStyleElement } from 'happy-dom'
-import { createSiteStyleWindow } from './site-stylesheet'
+import { createSiteStyleWindow, readResponsiveBlock } from './site-stylesheet'
 
 const { window: browser, styleElement: styles } = await createSiteStyleWindow()
 
