@@ -190,35 +190,38 @@ describe('window frame styles', () => {
     frame.remove()
   })
 
-  test('releases the shell height clamp on mobile so a page without a scrollable frame can scroll', async () => {
-    // Below `sm` the shell root stops being a viewport-locked app frame. While
-    // it stayed `h-dvh overflow-hidden`, a page with no `scrollable` WindowFrame
-    // (home) had nowhere to scroll: the document was exactly one viewport tall
-    // and the content column grew past it, so the overflow was clipped and
-    // unreachable. `overflow-y: visible` is load-bearing — `auto` would turn
-    // the shell into a second scroller competing with the page.
+  test('keeps the shell clamped on mobile so the themed scroll column owns the scroll', async () => {
+    // Mobile has ONE scroll model: the `.desktop-main` ScrollArea. The shell
+    // root stays `height: 100dvh` + `overflow: hidden`, so <body> can never
+    // become a scroller and paint the browser's own scrollbar beside the themed
+    // one. This replaces the former release that made <body> the scroller for
+    // pages with no `scrollable` WindowFrame (home) — that release is exactly
+    // what showed the native bar on a phone.
     const mobile = await readMobileBlock()
 
-    expect(mobile).toMatch(/\.os-site\s*\{[^}]*overflow-y:\s*visible/)
-    // A word boundary is required, not selector anchoring: the released rule
-    // keeps `min-height: 100dvh`, whose `height: 100dvh` substring would
-    // otherwise satisfy a matcher meant for the clamped `height` declaration.
-    expect(mobile).not.toMatch(/\.os-site\s*\{[^}]*(^|[\s;])height:\s*100dvh/)
-    // The decorative background must stay contained, and `clip` is the only
-    // value that does that without forcing `overflow-y` to a scroll container.
-    expect(mobile).toMatch(/\.os-site\s*\{[^}]*overflow-x:\s*clip/)
+    expect(mobile).toMatch(/\.os-site\s*\{[^}]*height:\s*100dvh/)
+    expect(mobile).toMatch(/\.os-site\s*\{[^}]*overflow:\s*hidden/)
+    // `min-height: 0` is load-bearing: as a flex child the shell would
+    // otherwise default to `min-height: auto` and refuse to shrink below its
+    // content, re-growing past the viewport and pushing scroll back to <body>.
+    expect(mobile).toMatch(/\.os-site\s*\{[^}]*min-height:\s*0/)
+    // No page may opt back out of the clamp: there is no second scroll model
+    // left to select between.
+    expect(mobile).not.toMatch(/\.os-site:has\(/)
   })
 
-  test('re-applies the shell height clamp on mobile when a scrollable frame owns the scroll', async () => {
-    // Chat, contact, and every list/detail page wrap their content in a
-    // `scrollable` WindowFrame, so the frame's themed ScrollArea must stay the
-    // only reachable scroller. Releasing the clamp for those pages too would
-    // leak page scroll past the frame (a 23px gap on a 390x844 phone) and give
-    // two nested scrollers on one screen.
+  test('the mobile scroll column is a bounded flex box so its viewport can resolve', async () => {
+    // `display: block` sized the column to its content, leaving the themed
+    // ScrollArea viewport with no height to scroll inside and handing the
+    // scroll back to the document. `flex-direction: column` plus `flex: 1 1
+    // auto` on the column and `min-height: 0` give it a definite height it can
+    // shrink within.
     const mobile = await readMobileBlock()
 
-    expect(mobile).toMatch(/\.os-site:has\(\.window-frame--scroll\)\s*\{[^}]*height:\s*100dvh/)
-    expect(mobile).toMatch(/\.os-site:has\(\.window-frame--scroll\)\s*\{[^}]*overflow:\s*hidden/)
+    expect(mobile).toMatch(/\.desktop-workspace\s*\{[^}]*display:\s*flex/)
+    expect(mobile).toMatch(/\.desktop-workspace\s*\{[^}]*flex-direction:\s*column/)
+    expect(mobile).toMatch(/\.desktop-main\s*\{[^}]*flex:\s*1 1 auto/)
+    expect(mobile).toMatch(/\.desktop-main\s*\{[^}]*min-height:\s*0/)
   })
 
   test('the bottom tab bar is fixed and pinned to the viewport bottom', () => {
@@ -284,20 +287,14 @@ describe('window frame styles', () => {
     )
   })
 
-  test('each mobile scroll model reserves the bar space the other way', async () => {
-    const responsive = (await Bun.file(new URL('../src/styles/responsive.css', import.meta.url)).text()).replace(
-      /\/\*[\s\S]*?\*\//g,
-      '',
-    )
-    const narrow = responsive.slice(responsive.indexOf('@media (width < 40rem) {'))
-
-    // Body-scroller pages (home, anything without a `scrollable` frame) scroll
-    // on <body>, so the space has to be in flow under the shell's own padding.
-    expect(narrow).toMatch(
-      /\.os-site:not\(:has\(\.window-frame--scroll\)\)\s*\{[^}]*padding-bottom:\s*var\(--os-tab-bar-reserve\)/,
-    )
-    // Frame-scroller pages instead shrink the frame's height cap, so the last
-    // rows of a long detail page stop above the bar.
+  test('the mobile scroll column reserves the bar space, and the frame cap still shrinks', async () => {
+    // The bar is fixed, so the space is reserved on the element that actually
+    // scrolls. It sits on the ScrollArea Root rather than the viewport because
+    // padding there would reflow content instead of shrinking the scroller.
+    const mobile = await readMobileBlock()
+    expect(mobile).toMatch(/\.desktop-main\s*\{[^}]*padding-bottom:\s*var\(--os-tab-bar-reserve\)/)
+    // A `scrollable` frame still shrinks its own height cap, so the last rows of
+    // a long detail page stop above the bar rather than under it.
     expect(styles.textContent).toMatch(
       /\.window-frame--scroll:not\(\.is-maximized\)\s*\{[^}]*max-height:\s*calc\(100dvh - 7rem - var\(--os-tab-bar-reserve\)\)/,
     )

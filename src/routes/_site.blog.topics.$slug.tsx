@@ -34,10 +34,12 @@ function TopicPage() {
   const { topic, posts, topics } = Route.useLoaderData()
   return (
     <PageStack>
-      <WindowFrame title={`topic://${topic.slug}`} icon="◇" scrollable>
-        <Link className="back-link mb-7 inline-block text-xs font-black tracking-wider text-accent" to="/blog">
-          ← BACK TO NOTES
-        </Link>
+      <WindowFrame
+        backLink={{ href: '/blog', label: '← BACK TO NOTES' }}
+        title={`topic://${topic.slug}`}
+        icon="◇"
+        scrollable
+      >
         <PageHeading
           icon="◇"
           eyebrow="BLOG / TOPIC"

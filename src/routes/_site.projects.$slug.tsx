@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import { createFileRoute, notFound } from '@tanstack/react-router'
 import { cn } from 'cn'
 import { ContentCover } from '@/components/site/content/cover'
 import { DetailMeta } from '@/components/site/content/detail-meta'
@@ -83,7 +83,6 @@ export const Route = createFileRoute('/_site/projects/$slug')({
   component: ProjectPage,
 })
 
-/** Lifecycle, role, and timeframe — each optional, the whole row conditional. */
 function ProjectFacts({
   lifecycle,
   role,
@@ -112,8 +111,6 @@ function ProjectPage() {
   const repositoryUrl = safeAssetHref(project.repositoryUrl)
   const coverItem = toMediaItem(project.coverImage, { altFallback: project.title })
   const readMinutes = readingTimeMinutes(project.content)
-  // The same inputs `head()` passes, so the dialog preview and the emitted
-  // `og:*` tags cannot disagree.
   const share = resolveContentShare({
     title: project.title,
     description: project.summary,
@@ -131,10 +128,12 @@ function ProjectPage() {
 
   return (
     <PageStack>
-      <WindowFrame title={`project://${project.slug}`} icon="▤" scrollable>
-        <Link className="back-link mb-7 inline-block text-xs font-black tracking-wider text-accent" to="/projects">
-          ← BACK TO PROJECTS
-        </Link>
+      <WindowFrame
+        backLink={{ href: '/projects', label: '← BACK TO PROJECTS' }}
+        title={`project://${project.slug}`}
+        icon="▤"
+        scrollable
+      >
         <MediaTrigger item={coverItem} label={`View full size image: ${project.title}`}>
           <ContentCover image={project.coverImage} className="content-cover content-detail-cover" priority />
         </MediaTrigger>

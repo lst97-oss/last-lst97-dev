@@ -39,8 +39,6 @@
 }
 
 @media (max-width: 650px) {
-  /* System bar responsive visibility lives in DesktopShell via Tailwind
-     (max-sm:hidden / max-sm:inline-flex). */
   /* Mobile windows are plain stacked cards: no chrome, no zoom states. */
   .window-controls {
     display: none !important;
@@ -63,7 +61,7 @@
     flex: none;
     overflow: visible;
   }
-  /* A scrollable window keeps its inner ScrollArea on mobile, because the
+  /* A `scrollable` window keeps its inner ScrollArea on mobile, because the
      shell root is `h-dvh overflow-hidden` and the window is then the only
      thing that can scroll. Do NOT reset the height cap here: with the cap
      removed the frame grows past the viewport, the shell clips it, and a long
@@ -89,34 +87,39 @@
     grid-row: auto;
   }
   .desktop-workspace {
-    display: block;
+    /* Was `display: block`. The column becomes a bounded flex box so the
+       `.desktop-main` ScrollArea viewport has a height to resolve against;
+       with `block` the column grew to its content and the scroll stayed on
+       <body>. */
+    display: flex;
+    flex-direction: column;
   }
-  /* Mobile has two scroll models, and which one applies depends on the page.
 
-     Home is a single tall desktop: nothing else can scroll, so <body> is the
-     scroller. The shell root normally clamps to `h-dvh overflow-hidden` to
-     let the desktop ScrollArea own the scroll, but that leaves nothing
-     scrollable on a phone — the document is exactly one viewport tall while
-     `.desktop-main` grows to its content height, so tall pages are clipped
-     and unreachable. Releasing the clamp here is what makes home scroll.
-     `overflow-x: clip` still contains the decorative background without
-     forcing `overflow-y` to `auto`, which would make the shell a second,
-     competing scroller.
-
-     Every other page wraps its content in a `scrollable` WindowFrame, and the
-     user asked for those to scroll the shell, not the page. So when a
-     scrollable frame is present the clamp goes back, and the frame's themed
-     ScrollArea is the only reachable scroller. */
+  /* The scroll column owns the mobile scroll, so it carries its own flex growth
+     and the space the fixed tab bar occupies. `min-height: 0` lets it shrink
+     below its content instead of stretching the shell back past the viewport,
+     and `flex: 1 1 auto` is load-bearing for the same reason — the default
+     `0 1 auto` would size the column to its content and hand the scroll back to
+     <body>. The bar padding sits here, on the ScrollArea Root rather than its
+     viewport, so it shrinks the scroller instead of reflowing content. */
+  .desktop-main {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding-bottom: var(--os-tab-bar-reserve);
+  }
+  /* Mobile scrolls through the themed ScrollArea on every page, so the browser
+     never paints its own bar. The shell root keeps its `h-dvh overflow-hidden`
+     clamp — the release that made <body> the scroller is gone, and with it the
+     second, unthemed scrollbar it produced. */
   .os-site {
-    height: auto;
-    min-height: 100dvh;
-    overflow-x: clip;
-    overflow-y: visible;
-  }
-  .os-site:has(.window-frame--scroll) {
     height: 100dvh;
+    min-height: 0;
     overflow: hidden;
   }
+  /* `.os-site` above applies to every page, so the former
+     `.os-site:has(.window-frame--scroll)` clamp is redundant: there is no
+     longer a second scroll model to select between, and no page whose scroll
+     escapes to <body>. */
   .desktop-shortcuts {
     display: none;
   }
@@ -197,10 +200,6 @@
    unlayered. Keep this block, `.os-mobile-tab-bar { display: none }` in
    `shell.css`, and the header's `max-sm:hidden` at one breakpoint.
 
-   There are two mobile scroll models, selected by whether a `scrollable`
-   WindowFrame is present, and each needs the space reserved a different way:
-   the frame model shrinks the frame's own height cap (see `shell.css`), while
-   the body model has <body> as the scroller and needs in-flow padding here. */
 @media (width < 40rem) {
   /* Declared on `.os-site` rather than `:root` so it inherits into the
      WindowFrame without affecting anything outside the shell. */
@@ -211,14 +210,6 @@
   .os-mobile-tab-bar {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  /* Body-scroller model: home and any page with no `scrollable` WindowFrame.
-     `min-height: 100dvh` above makes the shell exactly a viewport tall, so the
-     padding is what lets its content grow past the fold and still end above the
-     bar instead of beneath it. */
-  .os-site:not(:has(.window-frame--scroll)) {
-    padding-bottom: var(--os-tab-bar-reserve);
   }
 }
 

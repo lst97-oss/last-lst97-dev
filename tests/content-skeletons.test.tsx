@@ -177,11 +177,12 @@ describe('detail skeletons', () => {
   })
 
   test('the detail skeleton mirrors the layout block order', () => {
-    // Back link, cover, title, lead, byline, tags, article body — the order
-    // `ContentDetailLayout` renders, so swapping in the content moves nothing.
+    // Back control (window chrome), cover, title, lead, byline, tags, article
+    // body — the order the loaded page renders, so swapping in the content
+    // moves nothing.
     const html = markup(<ContentDetailSkeleton {...BASE} />)
 
-    const backLink = html.indexOf('back-link')
+    const backLink = html.indexOf('window-back')
     const cover = html.indexOf('aspect-video max-h-105')
     const meta = html.indexOf('detail-meta')
     const tags = html.indexOf('post-tags my-6')
@@ -189,6 +190,8 @@ describe('detail skeletons', () => {
 
     expect(backLink).toBeGreaterThan(-1)
     expect(backLink).toBeLessThan(cover)
+    // The back control is chrome, so it precedes the whole content column.
+    expect(backLink).toBeLessThan(html.indexOf('window-content'))
     expect(cover).toBeLessThan(meta)
     expect(meta).toBeLessThan(tags)
     expect(tags).toBeLessThan(body)

@@ -106,17 +106,35 @@ export function PixelSkeletonCover({ seed, className }: { seed: string; classNam
  * icon glyph is kept because it is part of the chrome the reader recognises,
  * not content that was still loading.
  */
-export function PixelSkeletonWindow({ title, icon, children }: { title: string; icon: string; children: ReactNode }) {
+export function PixelSkeletonWindow({
+  title,
+  icon,
+  backLabel,
+  children,
+}: {
+  title: string
+  icon: string
+  /** The pending title-bar back control. A `<span>`, never a link. */
+  backLabel?: string
+  children: ReactNode
+}) {
   return (
     <section
       className="window-frame overflow-hidden border-3 border-border bg-card shadow-os"
       data-window-title={title}
     >
       <div className="window-titlebar flex min-h-9 items-center justify-between gap-3 border-b-3 border-border bg-primary px-2 py-1 pl-3 text-xs font-black tracking-widest text-foreground uppercase">
-        <span aria-hidden="true" className="window-title inline-flex items-center gap-2">
-          <PixelIcon className="text-foreground" glyph={icon} />
-          <PixelSkeletonBar className="h-2.5" width={40} />
-        </span>
+        <div className="inline-flex min-w-0 items-center gap-3">
+          {backLabel ? (
+            <span aria-hidden="true" className="window-back" data-back-label={backLabel}>
+              <PixelSkeletonBar width={40} />
+            </span>
+          ) : null}
+          <span aria-hidden="true" className="window-title inline-flex items-center gap-2">
+            <PixelIcon className="text-foreground" glyph={icon} />
+            <PixelSkeletonBar className="h-2.5" width={40} />
+          </span>
+        </div>
         <span aria-hidden="true" className="inline-flex items-center gap-1.5">
           <PixelSkeletonBlock className="size-2.5" />
           <PixelSkeletonBlock className="size-2.5" />

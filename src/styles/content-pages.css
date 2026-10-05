@@ -397,10 +397,6 @@
   color: var(--accent);
 }
 
-.back-link {
-  display: inline-block;
-  margin-bottom: 30px;
-}
 
 /* Article body + rich CMS selectors live in prose.css (canonical home). */
 
