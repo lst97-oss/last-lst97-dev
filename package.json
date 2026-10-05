@@ -36,7 +36,7 @@
     "imports:organize": "biome check --formatter-enabled=false --linter-enabled=false --assist-enabled=true --write src/server src/components src/routes",
     "lint:server": "biome lint src/server",
     "test": "bun test",
-    "typecheck": "bunx tsc --noEmit",
+    "typecheck": "bun node_modules/typescript7/bin/tsc --noEmit",
     "knowledge:github:catalog": "bun run scripts/knowledge/sync-project-catalog.ts",
     "seed:demo": "bun scripts/seeding/seed-demo-content.ts",
     "seed:projects": "bun run scripts/seeding/seed.ts projects",
@@ -115,7 +115,7 @@
     "bun-types": "^1.4.2",
     "nitro": "^3.0.260903-beta",
     "sass": "^1.105.1",
-    "typescript": "^6.0.3",
+    "typescript7": "npm:typescript@^7.0.2",
     "vite": "^8.3.2"
   },
   "pnpm": {

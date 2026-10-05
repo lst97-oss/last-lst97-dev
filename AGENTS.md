@@ -112,7 +112,7 @@ exporting `up`/`down` plus a sibling `.json` snapshot, registered by name in `sr
 | `bun run dev:rag` | Dev server + `llama-server` embedding sidecar (kills both on signal) |
 | `bun run build` | `generate:payload-admin-css` → `generate:types` → `generate:importmap` → `deploy:migrate` (no-op unless `DEPLOY_MIGRATE=true`) → `vite build`. The Dockerfile calls this same script; see the flags below. |
 | `bun run test` | `bun test` — the whole suite |
-| `bun run typecheck` | `tsc --noEmit` — the only static check that covers `tests/**` |
+| `bun run typecheck` | TypeScript 7.0.2 `--noEmit` — the only static check that covers `tests/**`. Run it as `bun node_modules/typescript7/bin/tsc`, **not** `bunx tsc`. |
 | `bun run db:migrate` | `bunx payload migrate` |
 | `bun run worker` | Payload jobs worker (`knowledge` queue) |
 | `bun run generate-routes` | `tsr generate`; regenerates `src/routeTree.gen.ts` |
@@ -327,6 +327,42 @@ The old claim that Radix components cannot render under `bun test` was false.
 
 `.migration/` holds one report per migrated component plus `project.md`; read the relevant one
 before changing a wrapper.
+
+## TypeScript 7, and why nothing else is installed
+
+The compiler is **TypeScript 7.0.2** (the Go port) and it is the only TypeScript in the tree. It is
+installed under the alias `typescript7` because **`typescript` must stay unresolvable**, and that is
+load-bearing rather than stylistic:
+
+- TS7 ships **no compiler API**. Its package `exports` are `lib/version.cjs` plus `./unstable/*`
+  (`ast`, `scanner`, `visitor`, `factory`); there is no `createSourceFile`, `transform`,
+  `createPrinter`, or the `ts.SyntaxKind` table. Anything calling `import('typescript')` gets an
+  object with none of those.
+- `@payloadcms/drizzle`'s `blocksToJsonMigrator.js` does exactly that — `ts.createSourceFile`,
+  `ts.transform`, `ctx.factory`, `ts.createPrinter` — inside `updatePayloadConfigFile()`. It is
+  reachable **only** through `buildDynamicPredefinedBlocksToJsonMigration`, which no committed
+  migration in `src/migrations/` imports and this repo never calls. That is the sole reason TS7-only
+  is safe today.
+
+**If a future migration imports `getBlocksToJsonMigrator`, it breaks on TS7.** The fix is to restore
+the side-by-side alias from the TS7 release notes, not to pin TS back:
+
+```json
+"typescript": "npm:@typescript/typescript6@^6.0.2",
+"typescript7": "npm:typescript@^7.0.2"
+```
+
+Keep TS6 at the `typescript` name so the API consumer resolves it, and keep `typecheck` pointed at
+`typescript7` explicitly. There is no `@typescript/native` package on the registry — `typescript@7`
+**is** the native build, and it needs a platform sibling (`@typescript/typescript-darwin-arm64`),
+which is why invoking the tarball directly fails with "Unable to resolve".
+
+`bunx tsc` is no longer the typecheck command: `bunx` resolves a bare `tsc` by package name, not by
+the `typescript` alias, so it silently misses. Use the explicit path.
+
+Both compilers must agree on the project: TS7 type-checks TS6-compatible code identically, so a
+clean TS7 run is the gate. Verify it is really checking by injecting a deliberate type error —
+1.2s on this repo is the native port's speed, not a silent no-op.
 
 ## Code Conventions & Testing Patterns
 
