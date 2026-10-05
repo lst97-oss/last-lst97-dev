@@ -88,9 +88,6 @@ export async function runPayloadKnowledgeSyncTask(
   const postSource = createPayloadContentSource(payload, 'post')
   const projectSource = createPayloadContentSource(payload, 'project')
   const wakaTimeSource = createWakaTimeKnowledgeSource({ endpoint: WAKATIME_SHARE_URL })
-  // `profile` is deliberately absent: the curated biography is merged into the
-  // `github-profile`/`lst97-profile` document by renderGithubProfileMarkdown, so
-  // indexing it here too would store the same text under two source identities.
   const sources = createPayloadKnowledgeSourceList({
     post: postSource,
     project: projectSource,

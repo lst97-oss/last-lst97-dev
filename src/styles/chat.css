@@ -338,6 +338,7 @@
   cursor: wait;
   opacity: 0.7;
 }
+
 .os-chat-contact-select[aria-invalid="true"] {
   border-color: #b42318;
 }
@@ -345,6 +346,7 @@
   flex: none;
   color: var(--os-ink);
 }
+
 
 .os-chat-contact-select-content {
   border: 2px solid var(--os-ink);

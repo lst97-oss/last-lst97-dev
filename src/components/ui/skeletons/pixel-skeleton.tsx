@@ -83,10 +83,16 @@ export function PixelSkeletonStatus({ className }: { className?: string }) {
  * card shows when it has no cover image — so a pending cover is literally what
  * the loaded card will look like, not an arbitrary grey box. `PlaceholderArt`
  * is a pure presentational leaf, so importing it up here creates no cycle.
- *
  * `className` carries the caller's cover geometry (`-mx-5 aspect-video` for a
  * card, `mb-6 max-h-105` for a detail page); the border and fill are added here
  * because every one of those covers has them.
+ *
+ * The real cover now declares its ratio through `AspectRatio ratio={BOX_ASPECT}`
+ * (src/components/site/content/cover.tsx), and `aspect-video` here is the same
+ * number by coincidence of Tailwind's `--aspect-video`. It must stay spelled
+ * out rather than sharing the constant: these class strings are matched
+ * verbatim by tests/content-skeletons.test.tsx, and a skeleton that reserved a
+ * different box than the loaded card would make the page jump on swap.
  */
 export function PixelSkeletonCover({ seed, className }: { seed: string; className?: string }) {
   return (

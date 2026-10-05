@@ -22,19 +22,10 @@ import { AboutSiteDialog } from '@/components/site/shell/about-site-dialog'
  * `sm`. Four tabs carry the primary destinations and a More menu holds the rest,
  * so no page is reachable only by scrolling a menu.
  *
- * It replaces the old header `MENU` button and its vaul bottom sheet: the sheet
- * covered the content it was navigating to, and the header had no room for both
- * the button and the About-this-site control. The bar is `position: fixed` and
- * the shell reserves `--os-tab-bar-reserve` for it (see `styles/shell.css` and
- * the `< 40rem` block in `styles/responsive.css`), so content never scrolls under
- * it in either mobile scroll model.
- *
- * Desktop is untouched: the header dropdowns and the left shortcut dock remain
- * the desktop navigation, and this element is `display: none` above `sm`.
- *
- * Layout, active/hover/focus states and the `display` gate live in CSS rather
- * than Tailwind because unlayered rules beat Tailwind's `utilities` layer, which
- * is what lets one rule win over the responsive utilities on the header.
+ * The bar is `position: fixed` and the shell reserves `--os-tab-bar-reserve` for
+ * it, so content never scrolls under it in either mobile scroll model. Desktop is
+ * untouched: the header dropdowns and the left shortcut dock remain the desktop
+ * navigation, and this element is `display: none` above `sm`.
  */
 
 /** The four primary tabs, in bar order. Ordering is the product contract. */

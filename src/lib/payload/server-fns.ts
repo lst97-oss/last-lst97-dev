@@ -28,8 +28,7 @@ export const payloadServerFn = createServerFn({ method: 'POST', strict: false })
     return result
   })
 
-// Root admin layout data — clientConfig, translations, theme, user,
-// permissions. Called from the _payload layout loader.
+// Root admin layout data, called from the _payload layout loader.
 export const payloadLayoutServerFn = createServerFn({ method: 'GET', strict: false }).handler(
   async (): Promise<unknown> => {
     const { getPayloadImportMap } = await import('./import-map')

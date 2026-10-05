@@ -114,15 +114,9 @@ function responseContentText(
 
 /**
  * Fields the clarity pass may touch. A choice field is a fixed answer the
- * visitor picked from a published list, so "clarifying" it would corrupt the
- * selection — a rewrite of "Business — from A$2,200 (recommended)" into prose
- * is exactly the invention the closed set exists to prevent.
- *
- * A field carrying a `defaultValue` is the same case for a different reason:
- * it is not visitor prose at all, it is a fixed value the form supplied (the
- * support consultation). The parser requires every required refinable field to
- * come back, so offering one would both leak a constant to the model and make
- * the pass fail closed whenever the model sensibly omits it.
+ * visitor picked from a published list, and a `defaultValue` field is a
+ * constant the form supplied — refining either invents prose the closed set
+ * exists to prevent, and the parser would then fail closed.
  */
 function refinableFields(template: ChatContactTemplate): ChatContactField[] {
   return CHAT_CONTACT_TEMPLATES[template].fields

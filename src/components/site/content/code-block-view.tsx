@@ -30,7 +30,7 @@ import yaml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml'
  * `PrismLight` only bundles the grammars registered here, so the highlight
  * weight is proportional to the languages actually used on the site. Every
  * entry maps a Payload Code-block `language` value to a Prism grammar;
- * `HIGHLIGHT_LANGUAGES` below is the authoritative list.
+ * `GRAMMARS` below is the authoritative list.
  */
 const GRAMMARS = {
   bash,

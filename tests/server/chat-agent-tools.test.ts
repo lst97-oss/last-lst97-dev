@@ -154,9 +154,8 @@ describe('agent tool runner', () => {
   }
 
   it('returns every published tier from the services tool within the responder evidence budget', async () => {
-    // The 600-char agent-loop cap cut this output mid-sentence after the
-    // Starter tier, and the answer model invented two packages that do not
-    // exist. The full tier list has to survive to the responder.
+    // The tool-output budget must leave room for the full tier list; the
+    // answer model invented packages that do not exist when it got cut short.
     const published = [
       'The Starter package starts from A$1,000.',
       'The Business package starts from A$2,200.',
@@ -184,7 +183,7 @@ describe('agent tool runner', () => {
     expect(result.output).toContain('Service scope results:')
     for (const tier of published) expect(result.output).toContain(tier)
     expect(result.output).toContain('A$3,500')
-    // Anything past 600 characters is dropped before the responder sees it.
+    // The whole output has to survive the tool-output budget.
     expect(result.output.length).toBeLessThan(6_000)
     expect(result.retrieval?.evidence).toHaveLength(3)
   })
@@ -545,11 +544,11 @@ describe('agent tool runner', () => {
     expect(result.output).toContain('- Contact (/contact) —')
     // URLs live in the citations; the text stays inside the 600-char tool budget.
     expect(result.output).not.toContain('URL:')
-    // Two budgets apply, and the SSE one is the tighter: `agent-loop.ts:166` gives
-    // the responder 600 characters of tool output, while `agent-loop.ts:359` puts
-    // only the first 400 into the `tool_result` summary the chat-service test
-    // reads. Passing the first and failing the second drops the tail section
-    // (Chat) from every site-orientation answer while the tool itself looks green.
+    // Two budgets apply, and the SSE one is the tighter: the agent loop gives
+    // the responder 600 characters of tool output, while only the first 400
+    // reach the `tool_result` summary the chat-service test reads. Passing the
+    // first and failing the second drops the tail section (Chat) from every
+    // site-orientation answer while the tool itself looks green.
     expect(result.output.length).toBeLessThanOrEqual(400)
     expect(result.output).toContain('- Services (/services)')
     expect(result.retrieval?.citations).toEqual([

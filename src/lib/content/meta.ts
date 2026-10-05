@@ -23,7 +23,6 @@ interface ContentMetaInput {
   /** ISO date for `article:modified_time` on article pages. */
   modifiedTime?: string | null
   tags?: readonly string[]
-  /** JSON-LD graph for the page, emitted as a single ld+json script. */
   structuredData?: Record<string, unknown>
 }
 
@@ -59,12 +58,10 @@ export interface ContentShare {
 
 /**
  * The values a social scraper will read, resolved exactly as `createContentMeta`
- * resolves them: SEO overrides beat editorial fields, and the social card prefers
- * the bounded `hero` derivative over the full-resolution original.
- *
- * The share dialog previews these values, so the precedence lives here once
- * rather than being re-derived in a component that would drift from `og:*` the
- * first time an editor filled in an SEO override.
+ * resolves them: SEO overrides beat editorial fields, and the social card
+ * prefers the bounded `hero` derivative over the full-resolution original.
+ * The share dialog previews these, so the precedence lives here once rather
+ * than being re-derived in a component that would drift from `og:*`.
  */
 export function resolveContentShare({
   description: fallbackDescription,
@@ -90,8 +87,6 @@ export function resolveContentShare({
   // only rewrites the cases that are actually broken.
   const imageUrl = absoluteUrl(socialImage.url)
 
-  // A document with no cover gets the branded art with its SEO title and
-  // description rendered into it. Most CMS documents rely on this fallback.
   if (!imageUrl) {
     return {
       url: canonicalUrl(pathname),
@@ -162,15 +157,9 @@ export function createContentMeta({
     { property: 'og:site_name', content: 'LAST//OS' },
   ]
 
-  // `share.image.url` is never empty now, so this block always runs: every
-  // detail page emits a card. The declared size describes the same image URL:
-  // a hero derivative when available, or the generated 1200x630 fallback.
   meta.push({ property: 'og:image', content: share.image.url })
   meta.push({ property: 'og:image:alt', content: share.image.alt })
   if (share.image.isDefault) meta.push({ property: 'og:image:type', content: 'image/webp' })
-  // Only when Payload actually recorded an intrinsic size. A document whose
-  // cover predates the sizes field carries none, and declaring `0` would tell
-  // consumers to size the card from a zero-pixel image.
   if (share.image.width && share.image.height) {
     meta.push(
       { property: 'og:image:width', content: String(share.image.width) },
@@ -195,8 +184,6 @@ export function createContentMeta({
   return {
     meta,
     links: [{ rel: 'canonical', href: share.url }],
-    // JSON-LD goes in `scripts`: the router narrows `head().meta` to plain React
-    // meta props. `<` is escaped so no field value can close the script tag.
     ...(structuredData === undefined
       ? {}
       : {

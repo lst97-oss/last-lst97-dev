@@ -14,12 +14,9 @@ type Post = ComponentProps<typeof PostCard>['post']
 const WINDOW_ID = 'latest-notes.directory'
 
 /**
- * How many notes each strip slide shows. Three is the home page's documented
- * recent-notes budget, and it matches `CardGrid`'s three-across layout, so a
- * full slide fills a row rather than leaving two empty columns.
- *
- * This is notes-per-slide, NOT the number of slides: the strip pages the recent
- * notes three at a time, so a nine-note archive is three slides.
+ * How many notes each strip slide shows — three, matching `CardGrid`'s
+ * three-across layout, so a full slide fills a row. This is notes-per-slide,
+ * NOT the number of slides.
  */
 const STRIP_PAGE_SIZE = 3
 
@@ -39,13 +36,9 @@ const HOME_NOTE_LIMIT = 12
  * `latest-notes.directory` holds the notes the home page shows, in one window
  * and one ordering, capped to `HOME_NOTE_LIMIT`.
  *
- * It used to be two windows over two different lists — a featured-note carousel
- * fed by `-updatedAt` and this grid fed by `-publishedAt` — so the same note could
- * appear in one and not the other. There is now a single `-updatedAt` list.
- *
- * Normal: a rotating strip of the most recently updated notes.
- * Maximized: the same capped set in the `CardGrid` the listings use, six per
- * page. Both surfaces read the capped list, so the window never shows more than
+ * Normal: a rotating strip of the most recently updated notes. Maximized: the
+ * same capped set in the `CardGrid` the listings use, six per page. Both
+ * surfaces read the capped list, so the window never shows more than
  * `HOME_NOTE_LIMIT` notes however it is paged.
  */
 export function HomeRecentNotesSection({ posts }: { posts: Post[] }) {
@@ -53,8 +46,7 @@ export function HomeRecentNotesSection({ posts }: { posts: Post[] }) {
   // archive. Cap once, here, so every surface below — strip, maximized grid,
   // carousel pool size, and the "… of N" aria ranges — counts the same set.
   const recent = useMemo(() => posts.slice(0, HOME_NOTE_LIMIT), [posts])
-  // Chunk the strip into slides of three notes, so each slide fills a full row
-  // rather than leaving two of the three columns empty.
+  // Chunk the strip into full rows rather than leaving columns empty.
   const slides = useMemo(() => {
     const grouped: Post[][] = []
     for (let index = 0; index < recent.length; index += STRIP_PAGE_SIZE) {

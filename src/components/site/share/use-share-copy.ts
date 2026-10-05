@@ -15,10 +15,9 @@ export type ShareCopy = {
 }
 
 /**
- * The clipboard half of the share dialog, as its own hook so the state machine is
- * testable without a mounted Radix dialog — `radix-ui` components do not render
- * under `bun test`, because Bun's module interop drops the `$$typeof` symbol off
- * `forwardRef` components.
+ * The clipboard half of the share dialog, as its own hook so the state machine
+ * is testable on its own — a mounted dialog would drag the whole portal,
+ * focus-trap and scroll-area surface into every assertion.
  *
  * `idle` is the honest default. The clipboard API needs a secure context, so on
  * an insecure origin this stays `idle` and the dialog's read-only link field is

@@ -1,10 +1,6 @@
 /**
- * JSON-LD builders for the CMS-backed pages.
- *
- * `createContentMeta` already assembles the meta/link set; this module supplies
- * the structured data so a detail page can be understood as a post or an
- * application rather than as a generic page, and so an archive can advertise
- * its ordered membership.
+ * JSON-LD builders for the CMS-backed pages, so a detail page can be
+ * understood as a post or an application rather than a generic page.
  */
 
 import { canonicalUrl, SITE_AUTHOR, SITE_NAME, SITE_TAGLINE } from '@/lib/seo/site-seo'
@@ -49,7 +45,6 @@ export interface PostStructuredDataInput {
   readingTimeMinutes?: number | null
 }
 
-/** `BlogPosting` for a published note. */
 export function createPostStructuredData(input: PostStructuredDataInput): Record<string, unknown> {
   const url = canonicalUrl(`/blog/${input.slug}`)
   const image = schemaUrl(input.imageUrl)
@@ -220,15 +215,11 @@ export function createBreadcrumbStructuredData(crumbs: readonly BreadcrumbCrumb[
 }
 
 /**
- * Merges a page entity and its breadcrumb trail into one `@graph` so a single
- * ld+json script carries both. `createContentMeta` accepts one
- * `structuredData` value and emits one script, so a detail page cannot hand it
- * a second one.
- */
-/**
- * `entity` accepts one node or several: a page that publishes more than one
- * entity (e.g. two Service nodes) still has to emit a single ld+json script, so
- * the extra nodes join the same graph instead of a second script.
+ * Merges a page entity and its breadcrumb trail into one `@graph`:
+ * `createContentMeta` accepts one `structuredData` value and emits one
+ * ld+json script, so a detail page cannot hand it a second one. `entity`
+ * accepts one node or several — a page publishing more than one entity (e.g.
+ * two Service nodes) joins the same graph instead of a second script.
  */
 export function withBreadcrumbs(
   entity: Record<string, unknown> | Record<string, unknown>[],
@@ -243,12 +234,6 @@ export function withBreadcrumbs(
 /**
  * `Service` + `OfferCatalog` for /services, carrying the three priced packages
  * so search engines can read the price without scraping the rendered card.
- * `price` must be a number, so the amounts come from
- * `SERVICE_PACKAGE_PRICE_AMOUNT` rather than being parsed out of the display
- * label, and the entity is merged with its breadcrumb trail through
- * `withBreadcrumbs` because `createPageMeta` emits a single ld+json script.
- */
-/**
  * The Go Support Plan is a second Service node rather than extra offers on the
  * build catalog: its entry point is an hourly rate, and a bare numeric `price`
  * on the build catalog would tell crawlers the consultation costs A$40 once.

@@ -113,11 +113,6 @@ export function ProjectCard({
         className={featured ? 'content-cover project-card-cover' : COVER_CLASS}
         fallback={<PlaceholderArt label={project.title} seed={project.slug} />}
         image={project.coverImage}
-        // The featured card is the largest above-the-fold image on the home
-        // page and is the likely LCP element, so it loads eagerly with high
-        // priority. Grid cards stay lazy; one eager image per listing is the
-        // documented budget, and this is that one. The home carousel passes
-        // `priority={slideIndex === 0}` for exactly that reason.
         priority={priority}
         // The window is a 3/5 column of a max-w-6xl page with its own padding,
         // so the cover tops out near 480px rather than tracking the viewport.

@@ -40,8 +40,7 @@ function ContactPage() {
         />
         {/*
          * Always visible, so the recommendation to ask Zita first is read
-         * before the visitor starts typing. It used to sit inside
-         * `.contact-expanded`, which CSS hides until the window is maximized.
+         * before the visitor starts typing.
          */}
         <div className="contact-assistant-notice mt-2">
           <section className="border-2 border-border bg-info-muted p-5 shadow-os-sm">

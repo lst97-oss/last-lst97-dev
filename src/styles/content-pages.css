@@ -229,10 +229,7 @@
   font-size: 12px;
 }
 
-/* Empty states live in os-ui EmptyPanel via Tailwind.
-   Success panel lives in contact-message-form.tsx via Tailwind. */
 
-/* Tag primitives live in os-ui Tag/TagRow via Tailwind. */
 
 .page-heading {
   margin-bottom: 28px;
@@ -408,8 +405,7 @@
   margin-top: 12px;
 }
 
-/* About layout/typography lives in _site.about.tsx via Tailwind.
-   Maximized-state offsets stay here. */
+/* Maximized-state offsets stay here. */
 .about-copy p {
   color: var(--os-ink-soft);
 }
@@ -600,4 +596,3 @@
   display: none;
 }
 
-/* Fact avatar box lives in _site.about.tsx via Tailwind + inline pixelated fit. */

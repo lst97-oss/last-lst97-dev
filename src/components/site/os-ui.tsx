@@ -75,9 +75,6 @@ export function TagRow({ children, className }: { children: ReactNode; className
 }
 
 export function CardGrid({ children, className }: { children: ReactNode; className?: string }) {
-  // The hook returns a bare ref: the masonry class is added in the effect once
-  // every card has a row span, because a grid with `grid-auto-rows: 8px` and no
-  // spans would collapse each card to a single row.
   const ref = useMasonryRows()
 
   return (

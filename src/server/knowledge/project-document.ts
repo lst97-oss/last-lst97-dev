@@ -7,19 +7,11 @@ const PROJECTS_DIRECTORY = 'projects'
  * describes, and it is the structural source of truth for that fact: the parser
  * rejects a document whose folder is not a known project rather than trusting
  * prose. The folder is what lets the corpus be split one file per topic per
- * project — `src/data/projects/<project>/<source-id>.md` — without a document
- * having to restate its own identity in every chunk.
+ * project without a document restating its own identity in every chunk.
  *
- * The label is injected into the prefix of every chunk because chunking is a
- * heading-unaware sliding window over `document.text` (`chunking.ts`), so that
- * prefix is the only context a chunk carries into retrieval. Without it a chunk
- * taken from the middle of the G-NAF ingestion document would answer a question
- * about address search with database loading detail and no idea which project
- * it belonged to.
- *
- * This mirrors `parseServicesDocument`: the folder decides the offering there
- * and the project here, and in both cases a mismatch is rejected rather than
- * defaulted, because a wrong label is worse than a failed index run.
+ * The label is injected via `chunkContextPrefix` because that prefix is the
+ * only context a chunk carries into retrieval. A wrong label is worse than a
+ * failed index run, so a mismatch is rejected rather than defaulted.
  */
 const PROJECT_LABELS = {
   // LAST//OS is the portfolio platform itself, public at

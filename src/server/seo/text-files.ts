@@ -2,7 +2,7 @@
  * Well-known text resources served from the site root.
  *
  * All builders are pure and take the canonical origin so they are testable
- * without a server. `PUBLIC_SECURITY_CONTACT` is intentionally not sourced
+ * without a server. `SECURITY_CONTACT_EMAIL` is intentionally not sourced
  * from env here — the contact address is part of the published policy, not a
  * secret, and rotating it should be a code change you can review.
  */

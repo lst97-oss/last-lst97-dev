@@ -11,15 +11,12 @@ import { loadChangelogsPage } from '@/lib/content/site-data'
 import { createPageMeta } from '@/lib/seo/site-seo'
 
 export const Route = createFileRoute('/_site/changelog/')({
-  // Returns undefined when absent so a bare `/changelog` keeps its clean URL:
-  // returning 1 would redirect `/changelog` to `/changelog?page=1`.
   validateSearch: (search: Record<string, unknown>): { page?: number } => {
     const raw = search.page
     if (raw === undefined || raw === null || raw === '') return {}
     const page = Number(raw)
     return { page: Number.isFinite(page) && page >= 1 ? Math.floor(page) : 1 }
   },
-  // `deps` in the loader comes from loaderDeps, not from validateSearch.
   loaderDeps: ({ search }) => ({ page: search.page ?? 1 }),
   loader: ({ deps }) => loadChangelogsPage(deps.page ?? 1, 9),
   pendingComponent: () => <ChangelogListSkeleton />,

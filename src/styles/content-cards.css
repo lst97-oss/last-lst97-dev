@@ -1,6 +1,3 @@
-/* Card layout/typography lives in content/card.tsx + cover.tsx via Tailwind.
-   Hover fill uses bg-amber-100 (native) instead of #fff4ba. */
-
 /* Single source for cover image containment (also used by detail layout). */
 .content-cover img {
   display: block;

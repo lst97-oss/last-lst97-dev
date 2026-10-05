@@ -1,12 +1,3 @@
-/**
- * Resolves the canonical origin Payload uses for `serverURL`.
- *
- * `serverURL` is security-relevant, not cosmetic: Payload derives the admin
- * cookie's `Secure`/`SameSite` attributes and its CORS origin allow-list from
- * it. A localhost or http value in production breaks admin sign-in and makes
- * every origin look trusted, so this fails loudly at boot instead.
- */
-
 export interface PayloadServerUrlEnv {
   PAYLOAD_PUBLIC_SERVER_URL?: string | null
   PUBLIC_SITE_URL?: string | null
@@ -33,12 +24,16 @@ export class PayloadServerUrlError extends Error {
 }
 
 /**
- * Resolves and validates the Payload origin.
+ * Resolves and validates the canonical origin Payload uses for `serverURL`.
  *
- * Order of preference: `PAYLOAD_PUBLIC_SERVER_URL`, then `PUBLIC_SITE_URL`
- * (the same origin the SEO canonical links use, so the two cannot drift), then
- * localhost in development. In production a missing, loopback, or non-https
- * origin throws rather than silently degrading admin security.
+ * `serverURL` is security-relevant, not cosmetic: Payload derives the admin
+ * cookie's `Secure`/`SameSite` attributes and its CORS origin allow-list from
+ * it, so a localhost or http value in production breaks admin sign-in and makes
+ * every origin look trusted. Order of preference is `PAYLOAD_PUBLIC_SERVER_URL`,
+ * then `PUBLIC_SITE_URL` (the same origin the SEO canonical links use, so the
+ * two cannot drift), then localhost in development; in production a missing,
+ * loopback, or non-https origin throws rather than silently degrading admin
+ * security.
  */
 export function resolvePayloadServerUrl(env: PayloadServerUrlEnv): string {
   const isProduction = env.NODE_ENV === 'production'

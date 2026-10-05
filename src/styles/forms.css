@@ -37,9 +37,6 @@ textarea::-webkit-scrollbar-thumb {
   background-clip: content-box;
 }
 
-/* Contact form layout lives in contact-message-form.tsx via Tailwind. */
-/* Contact form is full-width via Tailwind. */
-
 label > span {
   display: block;
   margin-bottom: 7px;

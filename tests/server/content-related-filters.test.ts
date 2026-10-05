@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-
-import { createPayloadReaders } from '../../src/server/content/payload-readers'
 import { type PayloadDocument } from '../../src/server/content/payload-mappers'
+import { createPayloadReaders } from '../../src/server/content/payload-readers'
 
 type Doc = PayloadDocument & Record<string, unknown>
 
@@ -17,10 +16,7 @@ function doc(slug: string, extra: Record<string, unknown> = {}): Doc {
 
 const NOW = new Date('2026-10-01T00:00:00.000Z')
 
-/**
- * A Payload stand-in that filters in memory using the same rules the real
- * `where` encodes: status/publishedAt always, plus slug, topic-any, and text.
- */
+/** A Payload stand-in that filters in memory using the same rules the real `where` encodes. */
 function fakePayload(docs: Doc[]) {
   const calls: { where: unknown; limit: number }[] = []
   return {
@@ -47,12 +43,8 @@ function matches(clause: Record<string, unknown>, candidate: Doc): boolean {
     if (!condition || typeof condition !== 'object') continue
     const operator = Object.keys(condition)[0]
     const operand = (condition as Record<string, unknown>)[operator]
-    // Payload resolves a relationship through its own store, so the fake keeps
-    // the ids on the document under a plain `topicIds` array.
     const key = field === 'topics' ? 'topicIds' : field
     const value = candidate[key]
-    // A Payload array field is a list of `{ subfield: string }` rows, and `like`
-    // on the field matches any row's text.
     if (Array.isArray(value) && operator === 'like') {
       const text = value.flatMap((row) => Object.values(row as Record<string, unknown>).map(String))
       if (!text.some((entry) => likeMatches(entry, String(operand)))) return false

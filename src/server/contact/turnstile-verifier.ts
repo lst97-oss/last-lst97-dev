@@ -72,8 +72,6 @@ export function createTurnstileVerifier(options: TurnstileVerifierOptions): Turn
 
       const result = payload
 
-      // The test secret's payload omits `action` and reports a fixed
-      // hostname, so only a real secret can satisfy those two checks.
       if (secret === TURNSTILE_TEST_SECRET) return result.success === true
 
       return (

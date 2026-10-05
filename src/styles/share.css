@@ -66,7 +66,10 @@
 }
 
 /* 1200x630 is the OG card ratio every one of these platforms renders at, so
-   previewing at any other ratio would misstate how the card is cropped. */
+   previewing at any other ratio would misstate how the card is cropped. The
+   ratio now comes from the `AspectRatio` that wraps the image
+   (src/components/site/share/share-preview.tsx), and `object-fit` from the
+   image itself, so this rule carries only the box's width and its border. */
 .share-preview-image {
   display: block;
   width: 100%;

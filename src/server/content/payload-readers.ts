@@ -27,7 +27,7 @@ interface PublishedQuery {
   sort?: string
   slug?: string
   topicId?: string | number
-  /** Share ANY of these topics. `topicId` above is AND-joined and needs all of them. */
+  /** Share ANY of these topics. */
   topicIds?: (string | number)[]
   /** Exclude these slugs, so a related lookup can never return the current document. */
   excludeSlugs?: string[]
@@ -234,8 +234,6 @@ export function createPayloadReaders(dependencies: PayloadReaderDependencies = {
       const client = (await getPayload()) as PayloadReaderClient
       const excluded = [input.excludeSlug]
       const sort = 'sortOrder'
-      // Topic matches first. The current document is excluded in BOTH reads, so
-      // it cannot reappear through the recency top-up.
       const related = input.topicIds.length
         ? (
             await findPublishedDocuments(

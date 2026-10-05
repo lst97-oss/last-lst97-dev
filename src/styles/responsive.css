@@ -198,7 +198,7 @@
    instead would leave ~10px of dead padding with no bar between 640 and 650,
    and keying it to a Tailwind utility would lose to `shell.css`, which is
    unlayered. Keep this block, `.os-mobile-tab-bar { display: none }` in
-   `shell.css`, and the header's `max-sm:hidden` at one breakpoint.
+   `shell.css`, and the header's `max-sm:hidden` at one breakpoint. */
 
 @media (width < 40rem) {
   /* Declared on `.os-site` rather than `:root` so it inherits into the

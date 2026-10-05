@@ -8,9 +8,7 @@ import type { PostSummary, ProjectSummary } from '@/server/content/types'
  *
  * Only one renders per page, so the heading id is fixed rather than generated.
  *
- * Cards are NOT `featured`: this is a card-grid column, where the capped,
- * centred featured cover and its eager image load are both wrong — the same
- * reasoning already recorded on `ProjectCard`.
+ * Cards are NOT `featured`; see `ProjectCard`'s `priority` doc.
  */
 export function RelatedContent({
   items,

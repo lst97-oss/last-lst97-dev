@@ -13,7 +13,6 @@ import type {
 type PageInput = { page: number; limit: number }
 type FilterablePageInput = PageInput & { topicIds?: (string | number)[] }
 
-/** What a detail page asks for: the current document's slug, its topic ids, and how many. */
 type RelatedInput = { excludeSlug: string; topicIds: (string | number)[]; limit?: number }
 
 export interface SiteDataSources {

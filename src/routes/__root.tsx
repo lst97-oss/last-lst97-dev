@@ -53,7 +53,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { rel: 'icon', type: 'image/png', href: '/favicon/favicon-96x96.png', sizes: '96x96' },
       { rel: 'apple-touch-icon', href: '/favicon/apple-touch-icon.png', sizes: '180x180' },
       { rel: 'manifest', href: '/favicon/site.webmanifest' },
-      // Policy files: AI-readable site orientation and security contact.
       { rel: 'alternate', type: 'text/plain', href: '/llms.txt', title: 'llms.txt' },
       { rel: 'author', href: '/humans.txt' },
       { rel: 'security.txt', href: '/.well-known/security.txt' },

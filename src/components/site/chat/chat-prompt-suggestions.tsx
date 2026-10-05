@@ -69,15 +69,11 @@ export function ChatPromptSuggestions({ conversation, pending }: ChatPromptSugge
   const [manual, setManual] = useState<boolean | null>(null)
   const listId = useId()
   const disabled = pending || turnLimitReached
-  // A turn in flight means the visitor has moved on to the conversation, so the
-  // panel stays shut for as long as the request runs. This is derived, not an
-  // effect: `pending` flips synchronously on submit, so the panel closes in the
-  // same commit that disables the chips — no frame of stale open panel after a
-  // send, for the send button and the Enter key alike — and the rule holds
-  // during SSR, where an effect never runs at all. `pending` outranks the
-  // visitor's toggle so an explicitly reopened panel still collapses for the
-  // turn in flight; once the reply lands the toggle decides again, so the
-  // panel is not a one-way door.
+  // A turn in flight means the visitor has moved on to the conversation. This is
+  // derived, not an effect: `pending` flips synchronously on submit, so the panel
+  // closes in the same commit that disables the chips, and the rule holds during
+  // SSR. `pending` outranks the visitor's toggle, so the panel is not a one-way
+  // door.
   const open = pending ? false : (manual ?? completedTurns === 0)
 
   if (turnLimitReached) return null
