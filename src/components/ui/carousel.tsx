@@ -95,7 +95,11 @@ function Carousel({
     api.on('select', onSelect)
 
     return () => {
-      api?.off('select', onSelect)
+      // Every subscription this effect opens must be closed by it. `reInit`
+      // was previously left attached, so each re-init added another listener
+      // that outlived the component.
+      api.off('reInit', onSelect)
+      api.off('select', onSelect)
     }
   }, [api, onSelect])
 
