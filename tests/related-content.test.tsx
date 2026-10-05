@@ -95,11 +95,22 @@ describe('ChangelogNeighbours', () => {
     expect(markup).toContain('/changelog/newer')
   })
 
-  test('keeps the missing neighbour column empty rather than dropping the row', async () => {
-    const markup = await render(createElement(ChangelogNeighbours, { previous: null, next: entry('newer') }))
+  test('lets a lone neighbour span the row instead of pairing it with placeholder text', async () => {
+    // On the newest and the oldest release there is only one neighbour. A
+    // half-width two-column grid left the other column holding a bare label,
+    // so the card now spans the full width and neither label renders.
+    for (const neighbours of [
+      { previous: null, next: entry('newer') },
+      { previous: entry('older'), next: null },
+    ]) {
+      const markup = await render(createElement(ChangelogNeighbours, neighbours))
 
-    expect(markup).toContain('/changelog/newer')
-    expect(markup).toContain('Oldest release')
+      const slug = neighbours.previous?.slug ?? neighbours.next?.slug
+      expect(markup.split(`/changelog/${slug}`).length - 1).toBe(1)
+      expect(markup).not.toContain('sm:grid-cols-2')
+      expect(markup).not.toContain('Oldest release')
+      expect(markup).not.toContain('Newest release')
+    }
   })
 
   test('renders nothing when the entry is alone in the archive', async () => {
