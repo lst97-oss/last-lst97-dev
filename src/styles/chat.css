@@ -62,8 +62,33 @@
 }
 
 .os-chat-viewport {
+  /* The wrapper ships `size-full`, which claims the scroller's whole height.
+     Now that a pinned disclaimer sits below the viewport as a sibling, the
+     viewport has to give up that height or the row overflows and the
+     disclaimer is pushed out of the window. `flex: 1` keeps the messages
+     filling whatever is left. */
   box-sizing: border-box;
+  flex: 1 1 auto;
   min-height: 0;
+}
+
+/* The AI disclaimer. It sits on the scroller's own dark surface, so it reads
+   as a caption on the transcript rather than as a notice above the composer:
+   no border, no fill, no shadow. Message text is 14px
+   (BubbleContent's `text-sm`); this is 11px, and the colour is the dark
+   surface's muted foreground rather than the full-brightness paper used for
+   message text. `flex-shrink: 0` keeps it from being squeezed when the
+   maximized window is short. */
+.os-chat-disclaimer {
+  flex-shrink: 0;
+  border: 0;
+  margin: 0;
+  padding: 8px 16px 10px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .os-chat-content {
@@ -603,7 +628,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 16px;
   color: var(--os-ink-soft);
   font-size: 11px;
   font-weight: 700;
@@ -757,7 +781,7 @@
      itself against the textarea in this row. */
   align-items: flex-start;
   gap: 10px;
-  margin-top: 16px;
+  margin-top: 10px;
 }
 
 .os-chat-send-label {
@@ -766,6 +790,23 @@
 
 .os-chat-send {
   align-self: center;
+}
+
+/* Key affordances for the composer's Enter / Shift+Enter contract. The type
+   matches `.os-chat-turn-meta` above; `responsive.css` hides the row below
+   650px, where the phone has no physical Enter key and SEND is a full-width
+   button with a visible label. */
+.os-chat-key-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--os-ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .os-chat-input-group {
@@ -826,15 +867,8 @@
   overflow-wrap: anywhere;
 }
 
-.os-chat-notices {
-  display: grid;
-  gap: 6px;
-  margin-top: 18px;
-  border-left: 3px solid var(--os-coral);
-  padding: 10px 12px;
-  background: #fff4ba;
-}
-
+/* The composer's yellow notice box is gone: the AI disclaimer moved to
+   `.os-chat-disclaimer` at the foot of the transcript. */
 /* Legacy single-line form removed — chat-composer.tsx owns the form. */
 
 /*

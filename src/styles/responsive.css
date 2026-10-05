@@ -137,6 +137,17 @@
   .os-chat-send-label {
     display: inline;
   }
+  /* Keyboard hints are desktop-only: a phone has no physical Enter key, the
+     composer is already a full-width SEND button, and the viewer has tappable
+     PREV/NEXT controls. Keyed to the same 650px band as those rules rather
+     than a Tailwind `max-sm:hidden`, because the unlayered partials outrank
+     the `utilities` layer (see the note below this file's media blocks). */
+  .os-chat-key-hint {
+    display: none;
+  }
+  .media-viewer-key-hint {
+    display: none;
+  }
   .os-chat-scroller {
     height: min(62dvh, 480px);
     max-height: 62dvh;

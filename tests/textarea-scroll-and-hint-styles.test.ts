@@ -166,3 +166,27 @@ describe('contact discard action', () => {
     expect(declaration('.os-chat-contact-actions .pixel-button.danger', 'background')).toBeUndefined()
   })
 })
+
+describe('chat composer key hint', () => {
+  test('is a wrapping uppercase row between the form and the security check', () => {
+    // Enter sends and Shift+Enter newlines; the chips and the prose around them
+    // share the `.os-chat-turn-meta` micro-label language rather than a new one.
+    expect(declaration('.os-chat-key-hint', 'display')).toBe('flex')
+    expect(declaration('.os-chat-key-hint', 'flex-wrap')).toBe('wrap')
+    expect(declaration('.os-chat-key-hint', 'text-transform')).toBe('uppercase')
+    expect(declaration('.os-chat-key-hint', 'margin-top')).toBe('8px')
+    // `.os-chat-turn-meta` is the positive control: it proves the sheet resolves
+    // these selectors at all, so an empty string above would mean "absent",
+    // not "unloaded".
+    expect(declaration('.os-chat-turn-meta', 'letter-spacing')).toBe('0.08em')
+  })
+
+  test('is hidden on a phone, where there is no physical Enter key', async () => {
+    // The 650px band is also where the send button becomes a full-width button
+    // with a visible SEND label, so the hint would be redundant there.
+    const responsive = await Bun.file(new URL('../src/styles/responsive.css', import.meta.url)).text()
+    const mobile = readResponsiveBlock(responsive, '@media (max-width: 650px) {')
+
+    expect(mobile).toMatch(/\.os-chat-key-hint\s*\{\s*display:\s*none;\s*\}/)
+  })
+})

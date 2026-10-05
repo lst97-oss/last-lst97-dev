@@ -137,6 +137,14 @@ export function ChatTranscript({ messages, pending, toolStatus }: ChatTranscript
             ) : null}
           </MessageScrollerContent>
         </MessageScrollerViewport>
+        {/* The AI disclaimer qualifies what the transcript says, so it lives
+            with the transcript rather than under the composer. It is a sibling
+            of the scrolling viewport, not an item inside it, so it stays
+            pinned to the bottom of the window on a long conversation instead
+            of scrolling away with the messages. */}
+        <p className="os-chat-disclaimer">
+          AI can make mistakes or hallucinate. Verify important information with reliable sources.
+        </p>
         <MessageScrollerButton className="rounded-none border-3 border-border bg-primary text-foreground shadow-os-xs hover:bg-accent" />
       </MessageScroller>
     </MessageScrollerProvider>

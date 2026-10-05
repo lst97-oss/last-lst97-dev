@@ -134,12 +134,51 @@
   letter-spacing: 0.08em;
 }
 
-.media-viewer-filmstrip {
+/* Arrow/Escape affordances. Arrows are bound on DialogContent and Escape comes
+   from the dialog primitive; the PREV/NEXT buttons stay copy-only so the chips
+   are the single disclosure. `responsive.css` hides this below 650px. */
+.media-viewer-key-hint {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  color: var(--os-ink-soft);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* The strip is a themed ScrollArea, so the root is the scroll box and the
+   viewport is what scrolls. `contain: inline-size` keeps the strip's own
+   min-content from widening the dialog; `min-width: 0` alone is not enough
+   because the root is a flex item of `.media-viewer-body`. This mirrors the
+   mermaid diagram panel's containment in chat-tools.css. */
+.media-viewer-filmstrip {
   margin-top: 14px;
   padding-top: 10px;
-  overflow-x: auto;
+  contain: inline-size;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.media-viewer-filmstrip > [data-slot="scroll-area-viewport"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Base UI puts no wrapper between the viewport and the row, so the row is laid
+   out by the viewport directly and can shrink to the strip's width. */
+.media-viewer-filmstrip > [data-slot="scroll-area-viewport"] > .media-viewer-filmstrip-row {
+  width: 100%;
+  min-width: 0;
+}
+
+.media-viewer-filmstrip-row {
+  display: flex;
+  gap: 8px;
 }
 
 .media-viewer-thumb {

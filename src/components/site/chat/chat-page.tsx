@@ -31,14 +31,7 @@ export function ChatPage({ siteKey }: ChatPageProps) {
         scrollable
         footer={
           session.contact.state ? null : (
-            <>
-              <ChatComposer conversation={session.conversation} pending={session.status.pending} siteKey={siteKey} />
-              <div className="os-chat-notices">
-                <p className="form-note">
-                  AI can make mistakes or hallucinate. Verify important information with reliable sources.
-                </p>
-              </div>
-            </>
+            <ChatComposer conversation={session.conversation} pending={session.status.pending} siteKey={siteKey} />
           )
         }
       >

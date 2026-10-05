@@ -158,4 +158,32 @@ describe('media viewer styles', () => {
 
     strip.remove()
   })
+
+  test('the filmstrip row keeps each thumbnail at its fixed width', () => {
+    const row = element('div', 'media-viewer-filmstrip-row')
+    const thumb = element('button', 'media-viewer-thumb')
+
+    expect(browser.getComputedStyle(row).display).toBe('flex')
+    expect(browser.getComputedStyle(thumb).flex).toContain('0 0 auto')
+
+    row.remove()
+    thumb.remove()
+  })
+
+  test('the key hint is a centered flex row above the mobile cutoff', async () => {
+    const hint = element('p', 'media-viewer-key-hint')
+    const style = browser.getComputedStyle(hint)
+
+    expect(style.display).toBe('flex')
+    expect(style.justifyContent).toBe('center')
+    expect(style.marginTop).toBe('10px')
+
+    // Below 650px there are no arrow keys and Escape has no touch equivalent,
+    // so the row goes away entirely rather than reflowing.
+    const responsive = await Bun.file(new URL('../src/styles/responsive.css', import.meta.url)).text()
+    const mobile = readResponsiveBlock(responsive, '@media (max-width: 650px) {')
+    expect(mobile).toMatch(/\.media-viewer-key-hint\s*\{\s*display:\s*none;\s*\}/)
+
+    hint.remove()
+  })
 })
