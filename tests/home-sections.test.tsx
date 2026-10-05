@@ -1,16 +1,17 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from '@tanstack/react-router'
-import { act, createElement, type ReactElement } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
-import { createRoot } from 'react-dom/client'
 import type { Window } from 'happy-dom'
-import { createSiteStyleWindow } from './site-stylesheet'
+import { act, createElement, type ReactElement, useState } from 'react'
+import { createRoot } from 'react-dom/client'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { useFeaturedCarousel } from '../src/components/site/home/featured-carousel'
 import { HomeFeaturedProjectSection } from '../src/components/site/home/featured-project-section'
 import { HomeHeroSection } from '../src/components/site/home/hero-section'
 import { HomeOperatorProfileSection } from '../src/components/site/home/operator-profile-section'
 import { HomeRecentNotesSection } from '../src/components/site/home/recent-notes-section'
 import { osStore } from '../src/lib/os-store'
 import type { PostSummary, ProjectSummary } from '../src/server/content/types'
+import { createSiteStyleWindow } from './site-stylesheet'
 
 async function render(element: ReactElement) {
   const route = createRootRoute({ component: () => element })
@@ -345,6 +346,67 @@ describe('featured-project expanded grid', () => {
 
     expect(liveTimers()).toHaveLength(0)
   })
+})
+
+test('never exposes an out-of-range page when the pool shrinks under the reader', async () => {
+  // Thirteen projects over six per page is three pages. The reader moves to
+  // the last one, then a CMS edit drops the pool to seven projects and page 3
+  // stops existing. The clamp has to hold during render, not be corrected by
+  // an effect afterwards: `act` flushes effects before this test can sample
+  // the DOM, so the intermediate frame is only observable at the hook itself.
+  // A DOM-level assertion passes against both implementations.
+  maximizeFeaturedWindow()
+  const thirteen = Array.from({ length: 13 }, (_, index) => project(`p${index + 1}`))
+  let shrink = () => {}
+  let selectPage: (next: number) => void = () => {}
+  const pagePerRender: number[] = []
+  const pageSize = 6
+
+  const Probe = () => {
+    const [projects, setProjects] = useState(thirteen)
+    shrink = () => setProjects(thirteen.slice(0, 7))
+    const carousel = useFeaturedCarousel({
+      autoplayMs: null,
+      count: thirteen.length,
+      poolCount: projects.length,
+      pageSize,
+      windowId: 'featured-project.app',
+    })
+    selectPage = carousel.setPage
+    // Recorded during render, so an effect-based correction has not run yet.
+    pagePerRender.push(carousel.page)
+    return null
+  }
+
+  const { window } = await createSiteStyleWindow()
+  installDomGlobals(window)
+  Object.defineProperty(window, 'innerWidth', { value: 1280, configurable: true })
+  const host = window.document.createElement('div')
+  window.document.body.append(host)
+  const root = createRoot(host as unknown as Element)
+  mountedRoots.push(root)
+  await act(async () => {
+    root.render(createElement(Probe))
+  })
+
+  // Move the reader to the last page (index 2 of 13 projects over six).
+  await act(async () => {
+    selectPage(2)
+  })
+  expect(pagePerRender.at(-1)).toBe(2)
+
+  pagePerRender.length = 0
+  await act(async () => {
+    shrink()
+  })
+
+  expect(pagePerRender.length).toBeGreaterThan(0)
+  // Seven projects over six per page is two pages, so page 3 must never be
+  // handed to the grid, even for one render.
+  for (const page of pagePerRender) {
+    expect(page).toBeLessThan(Math.ceil(7 / pageSize))
+    expect(page).toBeGreaterThanOrEqual(0)
+  }
 })
 
 function maximizeNotesWindow() {
