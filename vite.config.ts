@@ -35,6 +35,20 @@ const projectPath = (relativePath: string) => {
     : `${process.cwd()}/${resolvedPath}`
 }
 
+// Public pages render identical HTML for every visitor, so the shared CDN may
+// hold them. `max-age=0` is deliberate: the browser still revalidates on every
+// navigation, so a deploy or a Payload edit is visible to the editor
+// immediately, while everyone else is served from the edge. The 1h `s-maxage`
+// is the background-refresh window; `stale-while-revalidate` keeps serving the
+// previous copy while that refresh runs, so a slow origin never shows a stall.
+const PUBLIC_CACHE = {
+  'cache-control': 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400',
+}
+
+// Never shared-cache. The admin is authenticated and cookie-bearing, so a
+// stored response is how one operator's session could reach another.
+const PRIVATE_NO_STORE = { 'cache-control': 'private, no-store' }
+
 const config = defineConfig({
   resolve: {
     alias: [
@@ -140,40 +154,50 @@ const config = defineConfig({
     // inside Nitro, so the override has to happen here.
     nitro({
       preset: process.env.NITRO_PRESET ?? 'vercel',
-      // Public pages are server-rendered on every request today, so Vercel's
-      // CDN revalidates each hit (`x-vercel-cache: MISS`) and every visitor
-      // pays the full origin render. `s-maxage` lets the edge serve the page
-      // for an hour, then refresh it in the background while still serving the
-      // stale copy — `stale-while-revalidate` absorbs the Payload admin's
-      // edit-to-live delay without a visible stall.
+      // Public pages were re-rendered on every request (Vercel's default is
+      // `public, max-age=0, must-revalidate`, so every hit was a
+      // `x-vercel-cache: MISS`), which charged each visitor a full origin
+      // render for identical content.
       routeRules: {
-        // Never shared-cache authenticated or per-request state. The Payload
-        // admin and REST API both emit the platform default
-        // `public, max-age=0, must-revalidate`, which on a shared cache is how
-        // one admin's session HTML could reach another visitor. These must be
-        // private and never stored.
-        //
-        // `/api/site/og` is carved out: it is a deterministic, publicly
-        // shareable image that sets its own deliberate `s-maxage=604800` in
-        // `src/server/seo/open-graph-image.ts`, and regenerating it costs a
-        // sharp composite per request. A blanket rule here would silently
-        // disable that and make every social preview re-render. Order matters
-        // — Nitro emits these in insertion order, so the specific path has to
-        // precede the `/api/**` catch-all below.
+        // Never shared-cache authenticated or per-request state: the admin and
+        // the REST API both emit the platform default `public` header, which on
+        // a shared cache is how one operator's session could reach another.
         '/api/site/og': {
           headers: { 'cache-control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400' },
         },
-        '/_payload/**': { headers: { 'cache-control': 'private, no-store' } },
-        '/api/**': { headers: { 'cache-control': 'private, no-store' } },
-        // Public, cacheable surfaces. `s-maxage` (not `max-age`) so the shared
-        // CDN caches while the browser still revalidates, keeping a deploy or
-        // a Payload edit visible on the next navigation for the person who
-        // just made it.
-        '/**': {
-          headers: {
-            'cache-control': 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400',
-          },
-        },
+        // Payload's admin is mounted at `/admin`, NOT `/_payload/**` — the
+        // `/_payload` segment only exists as the TanStack file-route id
+        // (`src/routes/_payload.tsx` registers `/_payload`, whose `admin`
+        // child resolves to the real `/admin` path at runtime). Verified live:
+        // `/admin` returned `x-vercel-cache: HIT` while a rule only ever
+        // guarded `/_payload/**`, so the admin shell was being served from the
+        // edge and an operator saw a stale gallery until a cache-bypassing
+        // reload. Both prefixes are guarded: `/_payload/**` because the route
+        // tree declares it, and `/admin/**` because that is what actually
+        // serves the panel.
+        '/admin/**': { headers: PRIVATE_NO_STORE },
+        '/_payload/**': { headers: PRIVATE_NO_STORE },
+        '/api/**': { headers: PRIVATE_NO_STORE },
+        // Public, cacheable surfaces, enumerated rather than a blanket `/**`.
+        // A catch-all silently cacheable-covers every future route, which is
+        // exactly how `/admin` ended up edge-cached: a route added after the
+        // rule was written is not covered by an exclusion nobody thought to
+        // add. Naming the public pages makes that failure mode impossible —
+        // an unlisted route falls through to Vercel's uncached default.
+
+        // The `.well-known` and `.txt` routes set their own `max-age=3600`
+        // and are left to that.
+        '/': { headers: PUBLIC_CACHE },
+        '/about': { headers: PUBLIC_CACHE },
+        '/services': { headers: PUBLIC_CACHE },
+        '/chat': { headers: PUBLIC_CACHE },
+        '/contact': { headers: PUBLIC_CACHE },
+        '/projects': { headers: PUBLIC_CACHE },
+        '/projects/**': { headers: PUBLIC_CACHE },
+        '/blog': { headers: PUBLIC_CACHE },
+        '/blog/**': { headers: PUBLIC_CACHE },
+        '/changelog': { headers: PUBLIC_CACHE },
+        '/changelog/**': { headers: PUBLIC_CACHE },
       },
     }),
   ],
