@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { authenticatedAccess } from './access'
+import { ensureVersionedMediaFilename } from './hooks/versioned-media-filename'
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -22,6 +23,9 @@ export const Media: CollectionConfig = {
       { name: 'card', width: 768, height: 432, position: 'centre' },
       { name: 'hero', width: 1600, height: 900, position: 'centre' },
     ],
+  },
+  hooks: {
+    beforeChange: [ensureVersionedMediaFilename],
   },
   fields: [
     {
