@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-
 import { ImageGallery, MediaTrigger } from '../src/components/site/share/media/image-gallery'
 import { coverSrcSet, type MediaViewerItem, toMediaItem } from '../src/components/site/share/media/media-item'
 import { MediaViewer } from '../src/components/site/share/media/media-viewer'
@@ -133,6 +132,45 @@ describe('media item conversion', () => {
     // `object-fit: cover`, so only bytes matter.
     expect(toMediaItem(cover())?.thumbSrc).toBeUndefined()
   })
+
+  test('offers the width-preserving derivatives only to an uncropped surface', () => {
+    // `gallerySm`/`galleryLg` are generated with `fit: 'inside'`, so they are
+    // the only derivatives that preserve a square upload's ratio. A viewer item
+    // paints at its own ratio, so it may use them; a 16:9 cover box crops what it
+    // fetches, so it must never be offered one — the browser picks by width and
+    // would stretch a square file into the frame. The 16:9 `card` crop stays
+    // valid in both modes: it matches the box, and it does not match the
+    // square original, so only the box reference can take it.
+    const square = cover({
+      width: 800,
+      height: 800,
+      sizes: {
+        card: { url: '/media/one-768.png', width: 768, height: 432 },
+        gallerySm: { url: '/media/one-640.png', width: 640, height: 640 },
+        galleryLg: { url: '/media/one-1280.png', width: 1280, height: 1280 },
+      },
+    })
+
+    expect(toMediaItem(square)?.srcSet).toBe('/media/one-640.png 640w, /media/one-1280.png 1280w')
+    expect(coverSrcSet(square, 'box')).toBe('/media/one-768.png 768w')
+  })
+
+  test('drops a derivative the tolerance cannot absorb', () => {
+    // `matchesAspect` allows 2% so sharp's whole-pixel scaling cannot empty the
+    // `srcset`; it does not widen to "roughly the right shape". This candidate
+    // is 1280x1024 against a 4:3 original — 6.7% off — so it must be rejected
+    // rather than served into a 4:3 box and distorted.
+    const landscape = cover({
+      width: 1600,
+      height: 1200,
+      sizes: {
+        gallerySm: { url: '/media/one-640.png', width: 640, height: 480 },
+        galleryLg: { url: '/media/one-1280.png', width: 1280, height: 1024 },
+      },
+    })
+
+    expect(toMediaItem(landscape)?.srcSet).toBe('/media/one-640.png 640w')
+  })
 })
 
 describe('image gallery', () => {
@@ -181,6 +219,33 @@ describe('image gallery', () => {
     expect(markup).toContain('sizes="(min-width: 640px) 50vw, 100vw"')
     expect(markup).toContain('loading="lazy"')
     expect(markup).toContain('decoding="async"')
+  })
+
+  test('reserves each image’s own ratio so no tile is cropped', () => {
+    const markup = renderToStaticMarkup(
+      createElement(ImageGallery, {
+        items: [
+          item({ src: '/media/portrait.png', width: 800, height: 1200 }),
+          item({ src: '/media/wide.png', width: 1920, height: 800 }),
+        ],
+      }),
+    )
+
+    // The tile wraps its image in `AspectRatio`, which emits the ratio as an
+    // inline `--ratio` consumed by `aspect-(--ratio)`. A shared 16:9 frame here
+    // is the regression this catches: it would crop both of these.
+    const ratios = [...markup.matchAll(/--ratio:([\d.]+)/g)].map((match) => Number.parseFloat(match[1] as string))
+    expect(ratios).toHaveLength(2)
+    expect(ratios[0]).toBeCloseTo(800 / 1200)
+    expect(ratios[1]).toBeCloseTo(1920 / 800)
+  })
+
+  test('falls back to the covers’ 16:9 box when a tile has no dimensions', () => {
+    // A media document with no `width`/`height` has no ratio to reserve, so it
+    // borrows the covers' box rather than collapsing to the image's own height.
+    const markup = renderToStaticMarkup(createElement(ImageGallery, { items: [item({ src: '/media/unknown.png' })] }))
+
+    expect(Number.parseFloat(/--ratio:([\d.]+)/.exec(markup)?.[1] ?? '0')).toBeCloseTo(16 / 9)
   })
 
   test('renders nothing when there is no viewable image', () => {

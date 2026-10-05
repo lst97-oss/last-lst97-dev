@@ -134,6 +134,9 @@ export function ProjectDetailSkeleton({ windowTitle, icon, backLabel }: DetailSk
           <div className="project-gallery mt-8">
             <PixelSkeletonBar className="mb-4 h-7 w-32" width={40} />
             <div className="grid gap-4 sm:grid-cols-2">
+              {/* The real tile reserves each image's OWN ratio, which a skeleton
+                  cannot know, so 16:9 is the neutral placeholder rather than a
+                  prediction of the loaded box. */}
               <PixelSkeletonCover className="aspect-video" seed={`${windowTitle}-gallery-0`} />
               <PixelSkeletonCover className="aspect-video" seed={`${windowTitle}-gallery-1`} />
             </div>

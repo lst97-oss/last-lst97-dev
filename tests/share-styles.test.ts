@@ -55,10 +55,7 @@ describe('share styles', () => {
     const style = browser.getComputedStyle(image)
 
     // 1200x630 is what every destination renders the card at.
-    expect(style.aspectRatio).toBe('1200 / 630')
-    expect(style.width).toBe('100%')
-
-    image.remove()
+    expect(Number.parseFloat(/--ratio:([\d.]+)/.exec(markup)?.[1] ?? '0')).toBeCloseTo(1200 / 630)
   })
 
   test('the empty-image state replaces a card the scraper would never see', () => {

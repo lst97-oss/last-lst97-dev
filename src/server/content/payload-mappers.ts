@@ -65,7 +65,7 @@ function coverImage(value: unknown): CoverImage {
   const sizes: NonNullable<CoverImage['sizes']> = {}
   if (typeof image.sizes === 'object' && image.sizes !== null) {
     const sourceSizes = image.sizes as Record<string, unknown>
-    for (const name of ['thumbnail', 'card', 'hero'] as const) {
+    for (const name of ['thumbnail', 'card', 'hero', 'gallerySm', 'galleryLg'] as const) {
       const rawSize = sourceSizes[name]
       if (typeof rawSize !== 'object' || rawSize === null) continue
       const size = rawSize as Record<string, unknown>

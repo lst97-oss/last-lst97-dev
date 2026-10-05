@@ -99,6 +99,8 @@ export function HomeSkeleton() {
         <PixelSkeletonWindow icon="✎" title="latest-notes.directory">
           <div className="mb-8 border-b-3 border-border pb-8">
             <div className="grid gap-5 sm:grid-cols-2 sm:items-center">
+              {/* 16:9 is a neutral placeholder, not a prediction: a gallery tile
+                  reserves each image's own ratio, which a skeleton cannot know. */}
               <PixelSkeletonCover className="aspect-video" seed="home-featured-note" />
               <div className="w-full">
                 <div className="m-0 mb-3 flex items-center gap-2">
