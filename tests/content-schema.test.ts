@@ -5,6 +5,7 @@ import { Media } from '../src/collections/Media'
 import { Posts } from '../src/collections/Posts'
 import { Projects } from '../src/collections/Projects'
 import { Topics } from '../src/collections/Topics'
+import { migrations } from '../src/migrations'
 
 type FieldShape = {
   admin?: { date?: { pickerAppearance?: string } }
@@ -16,6 +17,19 @@ type FieldShape = {
   required?: boolean
   type?: string
 }
+type MigrationSnapshot = {
+  tables: Record<string, { columns: Record<string, unknown> }>
+}
+
+const migrationsDir = new URL('../src/migrations/', import.meta.url).pathname
+const NEWEST_MIGRATION = migrations.at(-1)
+if (!NEWEST_MIGRATION) throw new Error('Expected at least one registered Payload migration')
+
+// drizzle derives column names from the collection's camelCase size name by
+// inserting an underscore before each capital, so `gallerySm` becomes
+// `gallery_sm` — NOT `gallerySm`. Getting this wrong makes the guard assert a
+// column that never exists in any snapshot.
+const toSnakeCase = (name: string) => name.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase()
 
 function field(fields: unknown[], name: string): FieldShape | undefined {
   return (fields as FieldShape[]).find((item) => item.name === name)
@@ -124,5 +138,35 @@ describe('Payload editorial schemas', () => {
     expect(Topics.slug).toBe('topics')
     expect(field(Topics.fields, 'title')?.required).toBe(true)
     expect(field(Topics.fields, 'slug')).toMatchObject({ type: 'text', required: false, unique: true })
+  })
+})
+
+describe('Media schema drift guard', () => {
+  const upload = Media.upload
+  if (!upload || upload === true) throw new Error('Media upload config should be an object')
+
+  // A collection field with no migration behind it fails at QUERY time, not
+  // compile time: drizzle selects every `sizes_*` column the collection
+  // declares, so a newly declared image size with no `ADD COLUMN` aborts the
+  // whole media read with `column "sizes_<name>_url" does not exist` — which
+  // takes out every image on the page, not just the new size. Assert the newest
+  // committed snapshot actually carries a column group for each declared size.
+  test('every declared image size has its columns in the newest migration snapshot', async () => {
+    const snapshot = (await Bun.file(`${migrationsDir}/${NEWEST_MIGRATION.name}.json`).json()) as MigrationSnapshot
+    const mediaColumns = Object.keys(snapshot.tables['public.media'].columns)
+
+    for (const { name } of upload.imageSizes ?? []) {
+      expect(mediaColumns).toContain(`sizes_${toSnakeCase(name)}_url`)
+      expect(mediaColumns).toContain(`sizes_${toSnakeCase(name)}_filename`)
+    }
+  })
+
+  test('versions table carries a version_ prefixed column per declared image size', async () => {
+    const snapshot = (await Bun.file(`${migrationsDir}/${NEWEST_MIGRATION.name}.json`).json()) as MigrationSnapshot
+    const versionColumns = Object.keys(snapshot.tables['public._media_v'].columns)
+
+    for (const { name } of upload.imageSizes ?? []) {
+      expect(versionColumns).toContain(`version_sizes_${toSnakeCase(name)}_url`)
+    }
   })
 })
