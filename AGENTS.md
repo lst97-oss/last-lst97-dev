@@ -432,6 +432,19 @@ and do not re-wire the unwired `src/server/knowledge/github/source.ts`.
 - `src/data/github/private/` ships inside the Docker image (`.dockerignore` does not exclude `src/data`).
   Review before publishing to a new audience.
 - `KNOWLEDGE_RAG_ENABLED` defaults to `false`. Leave it off unless you are working on retrieval.
+- **Edge firewall rules live in the Vercel project, not the repo**, and are enforced before the Bun function
+  runs. Three live rules on `lst97-dev`: an IP-keyed `rate_limit` on `POST /api/users/login` (10/60s), plus two
+  `deny` rules covering Bun/Vite disclosure paths (`/@fs`, `/src/`, `/node_modules`, `/.output`, manifests) and
+  Payload bulk-dump/provisioning shapes (`/api/*` except `/api/site` with `limit` in 200/500/1000,
+  `POST /api/payload-migration`, `/api/users/first-user`, `/api/users/register`). Inspect and change them with
+  `vercel firewall rules list` / `rules edit`, and read `vercel firewall diff` before `publish`. Three limits
+  bite: **max 3 custom rules**, **max 25 condition groups per rule**, and **new rate limits are plan-gated**
+  (`Rate limiting is not available for this plan (401)`) — the existing login rule still enforces, so this is
+  entitlement, not rule content. Consolidate into an existing rule rather than adding a fourth. Query
+  comparisons must be exact `eq`: `query op gte` validates but never fires, so an unenumerated `limit` value
+  slips past. Any new broad `/api/` rule must keep `path pre /api/site neg:true`, because
+  `GET /api/site/health` is 7.3k of 13.3k daily requests from two Cloudflare IPs and a throttle that catches it
+  breaks health monitoring.
 
 ## Important Files
 
