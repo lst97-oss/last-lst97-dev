@@ -99,7 +99,13 @@ async function main() {
     changeTypes: ['feature', 'improvement', 'bug_fix'] satisfies ChangelogType[],
     tags: ['Media', 'Chat', 'Navigation', 'Fixes'].map((tag) => ({ tag })),
     status: 'published' as const,
-    publishedAt: '2026-10-06T00:00:00.000Z',
+    // Stamped at the actual v0.5.0 tag moment (2026-10-06 02:31 AEDT), not at UTC
+    // midnight. The sibling seeds use T00:00:00.000Z on the release date, but for
+    // a same-day release that stamp lies in the future and `/changelog` keeps the
+    // row unpublished until UTC midnight. This stamp is already in the past and
+    // still falls on the 6th in Australia/Melbourne, so both the gate and the
+    // displayed date read correctly.
+    publishedAt: '2026-10-05T15:31:09.000Z',
     featured: true,
     content,
     seo: {
