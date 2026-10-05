@@ -109,7 +109,7 @@ exporting `up`/`down` plus a sibling `.json` snapshot, registered by name in `sr
 | `bun install` | Install (Bun is the only supported package manager) |
 | `bun run dev` | `bunx --bun vite dev --port 3000` |
 | `bun run dev:rag` | Dev server + `llama-server` embedding sidecar (kills both on signal) |
-| `bun run build` | `generate:payload-admin-css` → `generate:types` → `generate:importmap` → `vite build`. The Dockerfile calls this same script; see the flags below. |
+| `bun run build` | `generate:payload-admin-css` → `generate:types` → `generate:importmap` → `deploy:migrate` (no-op unless `DEPLOY_MIGRATE=true`) → `vite build`. The Dockerfile calls this same script; see the flags below. |
 | `bun run test` | `bun test` — the whole suite |
 | `bun run typecheck` | `tsc --noEmit` — the only static check that covers `tests/**` |
 | `bun run db:migrate` | `bunx payload migrate` |
@@ -148,6 +148,28 @@ Verified 2026-10-03 at `32dab15`: `docker build -t lastos-verify:local .` exits 
 and `GET /api/site/health` returns `{"status":"ok"}`. Note that booting the image with a *loopback*
 `PAYLOAD_PUBLIC_SERVER_URL` fails by design with `PayloadServerUrlError` — that is the guard working, not
 a regression.
+
+**Production runs on Bun, on both deploy surfaces.** The proof is Nitro's own build-log line,
+`[info] [nitro:vercel] Using \`bun1.x\` runtime.` — read that, not the surrounding tooling.
+`resolveVercelRuntime` (`node_modules/nitro/dist/_presets.mjs`) resolves in three ordered steps:
+explicit `nitro.vercel.functions.runtime` in config, else `vercel.json`'s `bunVersion`, else
+`"Bun" in globalThis`. Nothing sets the first, so on Vercel the deciding term is the **build process
+itself being Bun** — the build command is `bun run build`, so the build *is* Bun and the function is
+emitted as `bun1.x`. That is why removing `vercel.json` does not change the runtime.
+`vite.config.ts` sets only `nitro({ preset: ... })`, no `vercel` block, so no override applies.
+
+Do not read the runtime off the build tooling the other way either: `bunx --bun vite build` and
+`PAYLOAD_BUNX_FLAGS=--bun` describe the build and the Payload *CLI* respectively, and the CLI runs under
+Node on Vercel while the server still runs under Bun. The container is Bun for an independent reason —
+`FROM oven/bun:1.4.2-slim` with `CMD ["bun", ".output/server/index.mjs"]`. The project's `nodeVersion:
+24.x` in Vercel settings is the fallback for what the Beta Bun runtime does not cover, **not** what
+executes the function.
+
+The two platforms also migrate at different moments, deliberately: Vercel sets `DEPLOY_MIGRATE=true` in
+Production env, so `deploy-migrate.ts` migrates inside the build (aborting the deploy rather than shipping
+code against an unmigrated schema), while the container leaves it unset so `docker build` can run against
+a dummy `DATABASE_URL`, and migrates on start instead. A Vercel build log showing
+`[deploy-migrate] migrations applied.` is therefore expected, not a stray side effect.
 
 ## RAG & Knowledge Operations
 
