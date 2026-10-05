@@ -138,7 +138,44 @@ const config = defineConfig({
     // runtimes (the Dockerfile builds with NITRO_PRESET=node-server for a
     // standalone container server). Explicit config wins over the env var
     // inside Nitro, so the override has to happen here.
-    nitro({ preset: process.env.NITRO_PRESET ?? 'vercel' }),
+    nitro({
+      preset: process.env.NITRO_PRESET ?? 'vercel',
+      // Public pages are server-rendered on every request today, so Vercel's
+      // CDN revalidates each hit (`x-vercel-cache: MISS`) and every visitor
+      // pays the full origin render. `s-maxage` lets the edge serve the page
+      // for an hour, then refresh it in the background while still serving the
+      // stale copy — `stale-while-revalidate` absorbs the Payload admin's
+      // edit-to-live delay without a visible stall.
+      routeRules: {
+        // Never shared-cache authenticated or per-request state. The Payload
+        // admin and REST API both emit the platform default
+        // `public, max-age=0, must-revalidate`, which on a shared cache is how
+        // one admin's session HTML could reach another visitor. These must be
+        // private and never stored.
+        //
+        // `/api/site/og` is carved out: it is a deterministic, publicly
+        // shareable image that sets its own deliberate `s-maxage=604800` in
+        // `src/server/seo/open-graph-image.ts`, and regenerating it costs a
+        // sharp composite per request. A blanket rule here would silently
+        // disable that and make every social preview re-render. Order matters
+        // — Nitro emits these in insertion order, so the specific path has to
+        // precede the `/api/**` catch-all below.
+        '/api/site/og': {
+          headers: { 'cache-control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400' },
+        },
+        '/_payload/**': { headers: { 'cache-control': 'private, no-store' } },
+        '/api/**': { headers: { 'cache-control': 'private, no-store' } },
+        // Public, cacheable surfaces. `s-maxage` (not `max-age`) so the shared
+        // CDN caches while the browser still revalidates, keeping a deploy or
+        // a Payload edit visible on the next navigation for the person who
+        // just made it.
+        '/**': {
+          headers: {
+            'cache-control': 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400',
+          },
+        },
+      },
+    }),
   ],
 })
 
