@@ -36,6 +36,13 @@ const TEAM_LASER: Record<BattleTeam, string> = {
 
 const MELEE_PX = 20
 const RANGED_PX = 24
+// Equilateral ranged marker. Apex stays at the RANGED_PX tip; the base is pulled
+// back so all three edges equal RANGED_SIDE_PX (apex altitude is sqrt(3)/2 * side).
+const RANGED_SIDE_PX = (RANGED_PX * 5) / 6
+const RANGED_APEX_X = RANGED_PX / 2
+const RANGED_BASE_X = RANGED_APEX_X - (RANGED_SIDE_PX * Math.sqrt(3)) / 2
+const RANGED_HALF_SIDE_PX = RANGED_SIDE_PX / 2
+
 const SPIN_SEC = 0.45
 // Chunky shapes need no DPR scaling: DPR 1 quarters fill cost and backing memory.
 const CANVAS_SCALE = 1
@@ -128,9 +135,9 @@ function paint(
       context.translate(x, y)
       context.rotate(unit.facing)
       context.beginPath()
-      context.moveTo(RANGED_PX / 2, 0)
-      context.lineTo(-RANGED_PX / 2, RANGED_PX / 2.4)
-      context.lineTo(-RANGED_PX / 2, -RANGED_PX / 2.4)
+      context.moveTo(RANGED_APEX_X, 0)
+      context.lineTo(RANGED_BASE_X, RANGED_HALF_SIDE_PX)
+      context.lineTo(RANGED_BASE_X, -RANGED_HALF_SIDE_PX)
       context.closePath()
       context.fill()
       context.restore()
