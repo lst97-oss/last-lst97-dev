@@ -1,7 +1,9 @@
 import { cn } from 'cn'
 import { useEffect, useRef } from 'react'
 import { PixelIcon } from '@/components/site/pixel-icon'
+import { MediaViewerKeyHint } from '@/components/site/share/media/media-viewer-key-hint'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import type { MediaViewerItem } from './media-item'
 
 export type MediaViewerProps = {
@@ -22,8 +24,8 @@ const controlClass =
  *
  * Controlled: `index === null` means closed, and the caller owns navigation
  * state so one viewer serves either a gallery or a single cover image. Escape,
- * focus trapping, focus restore, and backdrop dismissal all come from Radix —
- * do not re-implement them here.
+ * focus trapping, focus restore, and backdrop dismissal all come from the
+ * dialog primitive — do not re-implement them here.
  *
  * The `WindowFrame` component is deliberately not used: it reads and writes the
  * `osStore` window registry, and its maximized state is `position: fixed` with
@@ -41,7 +43,14 @@ export function MediaViewer({ items, index, onIndexChange, onClose, title = 'ima
   useEffect(() => {
     const strip = filmstripRef.current
     if (!strip) return
-    strip.querySelector<HTMLElement>('[aria-current="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    const viewport = strip.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]')
+    const active = strip.querySelector<HTMLElement>('[aria-current="true"]')
+    if (!viewport || !active) return
+    // Scroll the strip's own viewport directly rather than with
+    // `scrollIntoView`, which walks ancestors and also nudges the dialog's
+    // scroll area and the page.
+    const target = active.offsetLeft - (viewport.clientWidth - active.offsetWidth) / 2
+    viewport.scrollTo({ left: Math.max(0, target) })
   }, [index])
 
   if (index === null || item === null) return null
@@ -138,32 +147,38 @@ export function MediaViewer({ items, index, onIndexChange, onClose, title = 'ima
               </div>
             )}
 
+            {/* Why arrows/Escape are safe to advertise here, and why the row
+                disappears below 650px, is stated in `media-viewer.css`. */}
+            <MediaViewerKeyHint hasMultiple={hasMultiple} />
+
             {hasMultiple ? (
-              <div className="media-viewer-filmstrip" ref={filmstripRef}>
-                {items.map((thumb, thumbIndex) => (
-                  <button
-                    aria-current={thumbIndex === activeIndex ? 'true' : undefined}
-                    aria-label={`View image ${thumbIndex + 1} of ${items.length}`}
-                    className={cn('media-viewer-thumb', thumbIndex === activeIndex && 'is-active')}
-                    key={`${thumb.src}-${thumbIndex}`}
-                    onClick={() => goTo(thumbIndex)}
-                    type="button"
-                  >
-                    {/* Thumbnails are decorative, so `alt` stays empty. They sit
-                      below the fold inside the dialog and the boxes are 84x60
-                      with `object-fit: cover`, so the 320px derivative is the
-                      right source and lazy loading is correct. */}
-                    <img
-                      alt=""
-                      decoding="async"
-                      height={60}
-                      loading="lazy"
-                      src={thumb.thumbSrc ?? thumb.src}
-                      width={84}
-                    />
-                  </button>
-                ))}
-              </div>
+              <ScrollArea className="media-viewer-filmstrip" ref={filmstripRef} scrollbars="horizontal">
+                <div className="media-viewer-filmstrip-row">
+                  {items.map((thumb, thumbIndex) => (
+                    <button
+                      aria-current={thumbIndex === activeIndex ? 'true' : undefined}
+                      aria-label={`View image ${thumbIndex + 1} of ${items.length}`}
+                      className={cn('media-viewer-thumb', thumbIndex === activeIndex && 'is-active')}
+                      key={`${thumb.src}-${thumbIndex}`}
+                      onClick={() => goTo(thumbIndex)}
+                      type="button"
+                    >
+                      {/* Thumbnails are decorative, so `alt` stays empty. They sit
+                        below the fold inside the dialog and the boxes are 84x60
+                        with `object-fit: cover`, so the 320px derivative is the
+                        right source and lazy loading is correct. */}
+                      <img
+                        alt=""
+                        decoding="async"
+                        height={60}
+                        loading="lazy"
+                        src={thumb.thumbSrc ?? thumb.src}
+                        width={84}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
             ) : null}
           </div>
         </div>

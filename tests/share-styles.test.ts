@@ -51,9 +51,21 @@ describe('share styles', () => {
   })
 
   test('the preview image holds the OG card ratio so the crop is honest', () => {
-    const image = element('img', 'share-preview-image')
-    const style = browser.getComputedStyle(image)
+    // The ratio is no longer a CSS declaration: `SharePreview` wraps the image
+    // in `AspectRatio`, which emits it as an inline `--ratio` custom property
+    // consumed by `aspect-(--ratio)`. happy-dom does not evaluate that utility
+    // against a stylesheet, so the assertion has to read the rendered markup.
+    const markup = renderToStaticMarkup(
+      createElement(SharePreview, {
+        url: 'https://example.com/projects/one',
+        title: 'One',
+        description: 'A project',
+        image: { url: '/media/one.png', alt: 'Cover', width: 1200, height: 630, isDefault: false },
+      }),
+    )
 
+    expect(markup).toContain('data-slot="aspect-ratio"')
+    expect(markup).toContain('class="relative aspect-(--ratio) share-preview-image"')
     // 1200x630 is what every destination renders the card at.
     expect(Number.parseFloat(/--ratio:([\d.]+)/.exec(markup)?.[1] ?? '0')).toBeCloseTo(1200 / 630)
   })
