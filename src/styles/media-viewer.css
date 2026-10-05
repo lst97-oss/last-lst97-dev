@@ -22,6 +22,25 @@
   padding: 0;
 }
 
+/* Radix renders the viewport's children inside a wrapper carrying an INLINE
+   `style="min-width: 100%; display: table"`. As a table box its used width is
+   max(specified width, min-content), and the wrapper's min-content is the full
+   intrinsic width of `.media-viewer-image`. So the wrapper grew to the image's
+   own width, that image's `max-width: 100%` — which resolves against the
+   wrapper, not the dialog — never bounded a wide image, and DialogContent's
+   `overflow-hidden` clipped it instead of scaling it down. `width: 100%` alone
+   cannot fix this: the table box refuses to shrink below min-content, which is
+   why the desktop-shortcuts panel in `shell.css` needed `!important` here too.
+   Dropping to a block-level flex column both caps the wrapper at the viewport's
+   content box and matches what the wrapper is asked to lay out — a single
+   stretch-aligned child, the `.media-viewer-window`. `!important` is required
+   solely to outrank the inline `display`, exactly as in `shell.css`. */
+.media-viewer-dialog [data-slot="scroll-area-viewport"] > div {
+  display: flex !important;
+  width: 100%;
+  flex-direction: column;
+}
+
 /* The repo has no tailwindcss-animate, so DialogContent's animate-in /
    zoom-in-95 classes are inert. A plain transition on Radix's data-state
    matches the house idiom (home.css uses the same approach). */
