@@ -1,3 +1,4 @@
+import { payloadParseSearch, payloadStringifySearch } from '@payloadcms/tanstack-start/shared'
 import { createRouter as createTanStackRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import { NotFoundPage } from '@/components/site/not-found-page'
@@ -6,10 +7,11 @@ import { routeTree } from './routeTree.gen'
 
 export function getRouter() {
   const context = getContext()
-
   const router = createTanStackRouter({
     routeTree,
     context,
+    parseSearch: payloadParseSearch,
+    stringifySearch: payloadStringifySearch,
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
