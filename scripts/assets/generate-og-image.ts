@@ -6,7 +6,6 @@
  *
  * Run with `bun run generate:og-image`.
  */
-import sharp from 'sharp'
 import { projectRoot } from '../project-root'
 
 const WIDTH = 1200
@@ -15,10 +14,10 @@ const INPUT_PATH = `${projectRoot}/src/server/seo/og-artwork.webp`
 const OUTPUT_PATH = `${projectRoot}/public/og/default.webp`
 
 const artwork = await Bun.file(INPUT_PATH).arrayBuffer()
-const { width, height } = await sharp(artwork).metadata()
+const { width, height } = await new Bun.Image(artwork).metadata()
 
 if (width !== WIDTH || height !== HEIGHT) {
-  throw new Error(`OG artwork must be ${WIDTH}x${HEIGHT}; received ${width ?? 'unknown'}x${height ?? 'unknown'}`)
+  throw new Error(`OG artwork must be ${WIDTH}x${HEIGHT}; received ${width}x${height}`)
 }
 
 await Bun.write(OUTPUT_PATH, artwork)

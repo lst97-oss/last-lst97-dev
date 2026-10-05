@@ -2,7 +2,7 @@
 
 # Pinned Bun version. Bump via --build-arg BUN_VERSION=... and keep it in
 # sync with the locally used Bun version (`bun --version`).
-ARG BUN_VERSION=1.4.1
+ARG BUN_VERSION=1.4.2
 
 # ---------------------------------------------------------------------------
 # base: shared slim (Debian/glibc) runtime.
