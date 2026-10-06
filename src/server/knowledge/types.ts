@@ -7,6 +7,7 @@ export type KnowledgeSourceType =
   | 'interview'
   | 'project-doc'
   | 'services'
+  | 'blog'
   | 'github'
   | 'github-private'
   | 'github-profile'

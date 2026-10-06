@@ -149,6 +149,7 @@ describe('KnowledgeIndexRepository', () => {
       'profile',
       'interview',
       'services',
+      'blog',
       'github',
       'github-private',
       'github-profile',
@@ -159,7 +160,7 @@ describe('KnowledgeIndexRepository', () => {
       await repository.removeSource(sourceType, 'source-1')
     }
 
-    expect(db.transactionCount).toBe(11)
+    expect(db.transactionCount).toBe(12)
     // `removeSource` also clears the catalogue row for owner-repository types,
     // so the chunk DELETE is not always the first statement. Filtering to the
     // chunk delete keeps this about which types are accepted, not query order.
@@ -170,6 +171,7 @@ describe('KnowledgeIndexRepository', () => {
       'profile',
       'interview',
       'services',
+      'blog',
       'github',
       'github-private',
       'github-profile',

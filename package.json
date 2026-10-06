@@ -18,6 +18,7 @@
     "knowledge:interview:index": "bun run scripts/knowledge/index-interview-knowledge.ts",
     "knowledge:services:index": "bun run scripts/knowledge/index-services-knowledge.ts",
     "knowledge:projects:index": "bun run scripts/knowledge/index-project-docs-knowledge.ts",
+    "knowledge:blog:index": "bun run scripts/knowledge/index-blog-knowledge.ts",
     "wakatime:import": "bun run scripts/knowledge/import-wakatime-history.ts",
     "generate-routes": "tsr generate",
     "generate:payload-admin-css": "bun run scripts/assets/generate-payload-admin-css.ts",
