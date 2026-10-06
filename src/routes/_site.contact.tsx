@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { cn } from 'cn'
-import { AtSign, Briefcase, Users } from 'lucide-react'
+import { AtSign, Briefcase, MessageCircle, Users } from 'lucide-react'
 import { ContactMessageForm } from '@/components/site/contact/contact-message-form'
 import { Eyebrow, PageHeading, PageStack, pixelButtonVariants } from '@/components/site/os-ui'
 import { WindowFrame } from '@/components/site/window-frame'
@@ -17,8 +17,8 @@ const CONTACT_SOCIALS = [
     label: 'LINKEDIN',
     href: 'https://www.linkedin.com/in/lst97',
     Icon: Briefcase,
-    className: 'bg-info',
-    style: { color: 'var(--info-foreground)' } as const,
+    className: '',
+    style: { color: '#ffffff', backgroundColor: '#0a66c2' } as const,
   },
   {
     label: 'THREADS',
@@ -33,6 +33,13 @@ const CONTACT_SOCIALS = [
     Icon: Users,
     className: 'bg-os-violet',
     style: { color: 'var(--os-ink)' } as const,
+  },
+  {
+    label: 'DISCORD',
+    href: 'https://discord.gg/Ju5GVGEccv',
+    Icon: MessageCircle,
+    className: 'bg-info',
+    style: { color: 'var(--info-foreground)' } as const,
   },
 ] as const
 const CONTACT_WINDOW_ID = 'send-message.exe'
