@@ -1,11 +1,40 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-
+import { cn } from 'cn'
+import { AtSign, Briefcase, Users } from 'lucide-react'
 import { ContactMessageForm } from '@/components/site/contact/contact-message-form'
-import { Eyebrow, PageHeading, PageStack } from '@/components/site/os-ui'
+import { Eyebrow, PageHeading, PageStack, pixelButtonVariants } from '@/components/site/os-ui'
 import { WindowFrame } from '@/components/site/window-frame'
 import { createPageMeta } from '@/lib/seo/site-seo'
 import { getTurnstileSiteKeyServerFn } from '@/server/contact/server-functions'
 
+const CONTACT_SOCIALS = [
+  // Closest project tones to the brand fills: LinkedIn deep blue → info,
+  // Facebook bright blue → os-violet, Threads black → os-ink. The label color
+  // rides as an inline style because `text-foreground` from the base button
+  // and the token `text-*` sit at equal specificity — stylesheet order, not
+  // class order, would decide the winner.
+  {
+    label: 'LINKEDIN',
+    href: 'https://www.linkedin.com/in/lst97',
+    Icon: Briefcase,
+    className: 'bg-info',
+    style: { color: 'var(--info-foreground)' } as const,
+  },
+  {
+    label: 'THREADS',
+    href: 'https://www.threads.com/@lst97_',
+    Icon: AtSign,
+    className: 'bg-os-ink',
+    style: { color: 'var(--os-cream)' } as const,
+  },
+  {
+    label: 'FACEBOOK',
+    href: 'https://www.facebook.com/lst097',
+    Icon: Users,
+    className: 'bg-os-violet',
+    style: { color: 'var(--os-ink)' } as const,
+  },
+] as const
 const CONTACT_WINDOW_ID = 'send-message.exe'
 
 export const Route = createFileRoute('/_site/contact')({
@@ -50,11 +79,26 @@ function ContactPage() {
               For questions about the work, background, projects, packages, pricing, or process, Zita answers instantly
               from verified site content, and starting there often saves a round trip.
             </p>
-            <Link className="mt-1 inline-flex text-xs font-black tracking-wider text-accent" to="/chat">
-              START A CHAT <span>→</span>
+            <Link className={cn(pixelButtonVariants(), 'mt-1 no-underline')} to="/chat">
+              START A CHAT <span aria-hidden="true">→</span>
             </Link>
           </section>
         </div>
+        <nav aria-label="Social profiles" className="contact-socials mt-6 flex flex-wrap gap-3">
+          {CONTACT_SOCIALS.map(({ label, href, Icon, className, style }) => (
+            <a
+              className={cn(pixelButtonVariants(), 'no-underline', className)}
+              href={href}
+              key={label}
+              rel="me noopener noreferrer"
+              style={style}
+              target="_blank"
+            >
+              <Icon aria-hidden="true" className="size-3.5 self-center" strokeWidth={2.5} />
+              {label}
+            </a>
+          ))}
+        </nav>
         <ContactMessageForm siteKey={siteKey} />
         {/*
          * Rendered unconditionally so crawlers read this copy from the server
@@ -84,9 +128,6 @@ function ContactPage() {
             </p>
           </section>
         </div>
-        <p className="contact-expand-hint m-0 mt-6 text-xs leading-relaxed font-black tracking-widest text-muted-foreground">
-          MAXIMIZE THIS WINDOW FOR SENDING TIPS &amp; ALTERNATIVES
-        </p>
       </WindowFrame>
     </PageStack>
   )

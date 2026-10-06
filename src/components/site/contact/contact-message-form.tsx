@@ -104,7 +104,7 @@ function ContactMessageFormContent({ siteKey }: { siteKey: string | null }) {
         void form.handleSubmit()
       }}
     >
-      <div className="form-grid grid grid-cols-1 gap-4.5">
+      <div className="form-grid grid grid-cols-1 gap-4.5 sm:grid-cols-2">
         <form.Field name="name" validators={{ onChange: contactSchema.shape.name }}>
           {(fieldApi) => {
             const errorText = fieldErrorText(fieldApi.state.meta.errors)
@@ -227,10 +227,7 @@ function ContactMessageFormContent({ siteKey }: { siteKey: string | null }) {
           {error}
         </p>
       ) : null}
-      <div className="form-actions flex flex-wrap items-center gap-3">
-        <p className="form-note m-0 text-xs text-muted-foreground">
-          Messages are sent directly to the operator’s inbox.
-        </p>
+      <div className="form-actions flex flex-wrap items-center justify-start gap-3">
         <button
           className={cn(pixelButtonVariants({ tone: 'coral' }))}
           disabled={status === 'sending' || !siteKey || !turnstileToken}
@@ -238,6 +235,9 @@ function ContactMessageFormContent({ siteKey }: { siteKey: string | null }) {
         >
           {status === 'sending' ? 'SENDING...' : 'TRANSMIT MESSAGE →'}
         </button>
+        <p className="form-note m-0 text-xs text-muted-foreground">
+          Messages are sent directly to the operator’s inbox.
+        </p>
       </div>
     </form>
   )
