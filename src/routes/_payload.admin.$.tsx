@@ -4,6 +4,8 @@ import { adminRenderServerFn } from '../lib/payload/admin-render'
 import { type AdminRenderResult, buildAdminRenderRequest, getAdminRenderIntent } from '../lib/payload/admin-route'
 
 export const Route = createFileRoute('/_payload/admin/$')({
+  validateSearch: (search: Record<string, unknown>) => search,
+  loaderDeps: ({ search }) => ({ searchKey: JSON.stringify(search) }),
   loader: async ({ location, params }) => {
     const segments = (params._splat ?? '').split('/').filter(Boolean)
     const result = (await adminRenderServerFn({

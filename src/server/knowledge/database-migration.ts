@@ -17,10 +17,10 @@ const migrationStatements = [
     "source_updated_at" timestamptz,
     "indexed_at" timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT "knowledge_chunks_source_chunk_pk" PRIMARY KEY ("source_type", "source_id", "chunk_index"),
-    CONSTRAINT "knowledge_chunks_source_type_check" CHECK ("source_type" IN ('post', 'project', 'profile', 'interview', 'project-doc', 'services', 'github', 'github-private', 'github-profile', 'github-contrib', 'github-contrib-private', 'wakatime'))
+    CONSTRAINT "knowledge_chunks_source_type_check" CHECK ("source_type" IN ('post', 'project', 'profile', 'interview', 'project-doc', 'services', 'blog', 'github', 'github-private', 'github-profile', 'github-contrib', 'github-contrib-private', 'wakatime'))
   )`,
   'ALTER TABLE "knowledge_chunks" DROP CONSTRAINT IF EXISTS "knowledge_chunks_source_type_check"',
-  `ALTER TABLE "knowledge_chunks" ADD CONSTRAINT "knowledge_chunks_source_type_check" CHECK ("source_type" IN ('post', 'project', 'profile', 'interview', 'project-doc', 'services', 'github', 'github-private', 'github-profile', 'github-contrib', 'github-contrib-private', 'wakatime'))`,
+  `ALTER TABLE "knowledge_chunks" ADD CONSTRAINT "knowledge_chunks_source_type_check" CHECK ("source_type" IN ('post', 'project', 'profile', 'interview', 'project-doc', 'services', 'blog', 'github', 'github-private', 'github-profile', 'github-contrib', 'github-contrib-private', 'wakatime'))`,
   'CREATE INDEX IF NOT EXISTS "knowledge_chunks_embedding_hnsw_idx" ON "knowledge_chunks" USING hnsw ("embedding" vector_cosine_ops)',
   `CREATE TABLE IF NOT EXISTS "knowledge_projects" (
     "source_type" varchar(24) NOT NULL CHECK ("source_type" IN ('github', 'github-private')),

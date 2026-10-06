@@ -683,6 +683,30 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
     expected: ['search_knowledge'],
   },
 
+  // Nelson-opinion questions are answered from his recorded views in the blog
+  // corpus, so they reach search_knowledge without any site-publication
+  // framing. Verified live against Jev: each routes search_knowledge/use with
+  // every other source skipped, and pgvector returns the matching blog topic
+  // in the top results.
+  {
+    id: 'opinion-vibe-coding-view',
+    category: 'positive',
+    message: 'What is your view on vibe coding?',
+    expected: ['search_knowledge'],
+  },
+  {
+    id: 'opinion-junior-developers-ai',
+    category: 'positive',
+    message: 'What do you think about AI replacing junior developers?',
+    expected: ['search_knowledge'],
+  },
+  {
+    id: 'opinion-code-is-cheap',
+    category: 'positive',
+    message: 'Do you think code is cheap?',
+    expected: ['search_knowledge'],
+  },
+
   // Commercial-offer questions are answered from the indexed `services`
   // documents. The negative case is the regression guard: the offer vocabulary
   // deliberately omits a bare "website", so a question about how THIS site is

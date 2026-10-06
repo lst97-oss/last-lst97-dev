@@ -14,6 +14,7 @@ export const sourceTypeSchema = z.enum([
   'interview',
   'project-doc',
   'services',
+  'blog',
   'github',
   'github-private',
   'github-profile',
