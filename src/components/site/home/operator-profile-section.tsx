@@ -1,7 +1,9 @@
 import { Link } from '@tanstack/react-router'
+import { cn } from 'cn'
+import { MessageSquare } from 'lucide-react'
 import { CodeBlockView } from '@/components/site/content/code-block-view'
 import { homeWindowControls } from '@/components/site/home/constants'
-import { Eyebrow } from '@/components/site/os-ui'
+import { Eyebrow, pixelButtonVariants } from '@/components/site/os-ui'
 import { WindowFrame } from '@/components/site/window-frame'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
@@ -129,11 +131,9 @@ export function HomeOperatorProfileSection({
             </p>
           )}
         </section>
-        <Link
-          className="text-link profile-read-link mt-1 inline-flex text-xs font-black tracking-wider text-accent"
-          to="/about"
-        >
-          READ PROFILE →
+        <Link className={cn(pixelButtonVariants({ tone: 'yellow' }), 'profile-ask-button mt-1 w-full')} to="/chat">
+          <MessageSquare aria-hidden="true" className="size-4" strokeWidth={2.5} />
+          ASK ME ANYTHING
         </Link>
       </div>
     </WindowFrame>

@@ -127,14 +127,16 @@
    global themed bars (transparent 10px track, solid --os-yellow thumb) used
    by the chat SYSTEM / PIPELINE dialog. The root carries the height, the
    viewport does the scrolling, and the pre must not open its own scroll box
-   or the native bars would come back. */
+   or the native bars would come back. The pre is nested inside CodeBlockView's
+   .code-block wrapper, so the selector must reach through it rather than
+   matching a direct viewport child. */
 .operator-profile-window.is-maximized .profile-json-scroll {
   flex: 1;
   min-height: 0;
   margin: 14px 0 0;
 }
 
-.operator-profile-window.is-maximized .profile-json-scroll [data-slot="scroll-area-viewport"] > pre {
+.operator-profile-window.is-maximized .profile-json-scroll [data-slot="scroll-area-viewport"] .code-block pre {
   margin: 0;
   overflow: visible;
 }
@@ -204,7 +206,7 @@
   height: 10px;
 }
 
-.operator-profile-window.is-maximized .profile-read-link {
+.operator-profile-window.is-maximized .profile-ask-button {
   grid-column: 1;
   grid-row: 4;
   align-self: end;

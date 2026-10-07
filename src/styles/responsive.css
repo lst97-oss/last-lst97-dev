@@ -82,7 +82,7 @@
   .operator-profile-window.is-maximized .profile-expanded-bio,
   .operator-profile-window.is-maximized .profile-coding-details,
   .operator-profile-window.is-maximized .profile-json-details,
-  .operator-profile-window.is-maximized .profile-read-link {
+  .operator-profile-window.is-maximized .profile-ask-button {
     grid-column: 1;
     grid-row: auto;
   }

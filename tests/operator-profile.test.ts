@@ -70,13 +70,13 @@ describe('home operator profile', () => {
 
   test('places language shares below the profile description and lets JSON fill the right column', () => {
     // The profile panel is a single Tailwind flex column, so DOM order is the layout contract:
-    // identity, bio, language card, JSON snapshot, read link.
+    // identity, bio, language card, JSON snapshot, ask button.
     const order = [
       'profile-identity',
       'profile-expanded-bio',
       'profile-coding-details',
       'profile-json-details',
-      'profile-read-link',
+      'profile-ask-button',
     ].map((className) => operatorProfile.indexOf(className))
     expect(order.every((position) => position >= 0)).toBe(true)
     expect(order).toEqual([...order].sort((a, b) => a - b))
