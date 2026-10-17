@@ -83,18 +83,15 @@ async function writeMarkdown(path: string, text: string): Promise<void> {
 }
 
 async function writeMarkdownAtomically(path: string, text: string): Promise<void> {
-  const separator = path.lastIndexOf('/')
-  const directory = path.slice(0, separator)
-  const mkdir = Bun.spawn(['mkdir', '-p', directory], { stdout: 'ignore', stderr: 'ignore' })
-  if ((await mkdir.exited) !== 0) throw new Error('Could not create GitHub knowledge directory')
   const temporaryPath = `${path}.tmp-${crypto.randomUUID()}`
   try {
     await writeMarkdown(temporaryPath, text)
     const move = Bun.spawn(['mv', '-f', temporaryPath, path], { stdout: 'ignore', stderr: 'ignore' })
     if ((await move.exited) !== 0) throw new Error('Could not replace GitHub knowledge report')
   } catch {
-    const cleanup = Bun.spawn(['rm', '-f', temporaryPath], { stdout: 'ignore', stderr: 'ignore' })
-    await cleanup.exited
+    await Bun.file(temporaryPath)
+      .delete()
+      .catch(() => {})
     throw new Error('Could not write GitHub knowledge report')
   }
 }

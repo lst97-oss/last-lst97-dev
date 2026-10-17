@@ -1,5 +1,3 @@
-import { mkdir } from 'node:fs/promises'
-
 import {
   chatBenchmarkCases,
   contactDirectBenchmarkCases,
@@ -161,7 +159,6 @@ async function main(): Promise<void> {
 
   const timestamp = currentDateTimeUtc.replace(/[:.]/g, '-')
   const outPath = config.outPath ?? `benchmarks/decisions-${timestamp}.json`
-  await mkdir(outPath.slice(0, outPath.lastIndexOf('/')) || '.', { recursive: true })
   await Bun.write(
     outPath,
     JSON.stringify(
