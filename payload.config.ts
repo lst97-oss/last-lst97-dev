@@ -14,12 +14,14 @@ import { Projects } from './src/collections/Projects'
 import { Tags } from './src/collections/Tags'
 import { Topics } from './src/collections/Topics'
 import { migrations } from './src/migrations'
+import { checkPinnedPostgresIdentity, decodePostgresCa, withoutSslMode } from './src/server/database/postgres-ca'
 import { getServerEnv } from './src/server/env'
 import { knowledgePayloadTasks } from './src/server/knowledge/payload-tasks'
 import { resolvePayloadServerUrl } from './src/server/security/payload-server-url'
 import { buildR2StorageOptions } from './src/server/storage/r2-storage-config'
 
 const env = getServerEnv()
+const postgresCa = decodePostgresCa(env.POSTGRES_SSL_CA)
 const r2StorageOptions = buildR2StorageOptions(env)
 const projectDirectory =
   typeof Bun !== 'undefined'
@@ -97,7 +99,9 @@ export default buildConfig({
     push: false,
     prodMigrations: migrations,
     pool: {
-      connectionString: env.DATABASE_URL,
+      // With a pinned CA the `sslmode` query parameter must be removed; node-postgres
+      // lets the connection string override the pool's `ssl` option when a mode is present.
+      connectionString: postgresCa ? withoutSslMode(env.DATABASE_URL) : env.DATABASE_URL,
       // The hosted Postgres allows 20 connections in total, and every
       // serverless instance gets its own pools. Three pools share one
       // six-connection budget per instance — this one, the knowledge pool and
@@ -105,6 +109,19 @@ export default buildConfig({
       // still fit under the server limit. Tool calls run sequentially, so the
       // caps cost nothing.
       max: 2,
+      ...(postgresCa
+        ? {
+            ssl: {
+              ca: postgresCa,
+              rejectUnauthorized: true,
+              // Railway's certificate names `localhost` and the private domain,
+              // not the public TCP-proxy host, so node-postgres would reject the
+              // hostname. The pinned CA authenticates the server; the check below
+              // still fails closed if the localhost SAN disappears.
+              checkServerIdentity: checkPinnedPostgresIdentity,
+            },
+          }
+        : {}),
     },
   }),
   email: payloadEmailAdapter,

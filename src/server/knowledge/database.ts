@@ -2,6 +2,7 @@ import type { SQL } from 'bun'
 import { drizzle } from 'drizzle-orm/bun-sql'
 
 import { createBunSqlClient } from '../database/bun-sql'
+import { decodePostgresCa } from '../database/postgres-ca'
 import { getServerEnv } from '../env'
 import { requireIntegrationEnv } from '../env-schema'
 import { createKnowledgeIndexRepository } from './repository'
@@ -24,6 +25,7 @@ export function getKnowledgeIndexRepository() {
     max: 2,
     idleTimeoutSeconds: 30,
     connectionTimeoutSeconds: 5,
+    caPem: decodePostgresCa(env.POSTGRES_SSL_CA),
   })
   repository = createKnowledgeIndexRepository(createKnowledgeDatabase(drizzle(client)))
   return repository

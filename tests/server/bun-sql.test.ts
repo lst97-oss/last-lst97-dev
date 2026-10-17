@@ -52,6 +52,21 @@ describe('Bun SQL client factory', () => {
     }
   })
 
+  it('pins a certificate with verify-full and the localhost SAN by default', async () => {
+    const client = createBunSqlClient({
+      url: 'postgres://u:p@127.0.0.1:1/db?sslmode=no-verify',
+      applicationName: 'last-lst97-test',
+      caPem: '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----',
+    })
+
+    try {
+      expect('sslMode' in client.options ? client.options.sslMode : undefined).toBe(4)
+      expect(client.options.tls).toMatchObject({ serverName: 'localhost' })
+    } finally {
+      await client.close({ timeout: 0 })
+    }
+  })
+
   it('adapts Bun SQL row arrays to the rows port', async () => {
     const rows = [{ id: 1 }]
     const fake = {

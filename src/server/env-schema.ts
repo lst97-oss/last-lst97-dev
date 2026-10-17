@@ -32,6 +32,7 @@ export type ServerEnvSource = Partial<
     | 'OPENROUTER_TIMEOUT_MS'
     | 'PAYLOAD_PUBLIC_SERVER_URL'
     | 'PAYLOAD_SECRET'
+    | 'POSTGRES_SSL_CA'
     | 'PUBLIC_SITE_URL'
     | 'R2_ACCESS_KEY_ID'
     | 'R2_BUCKET'
@@ -137,6 +138,7 @@ export function createServerEnv(source: ServerEnvSource) {
       OPENROUTER_TIMEOUT_MS: z.coerce.number().int().positive().default(20_000),
       PAYLOAD_PUBLIC_SERVER_URL: z.url().optional(),
       PAYLOAD_SECRET: z.string().min(1),
+      POSTGRES_SSL_CA: z.string().trim().min(1).optional(),
       PUBLIC_SITE_URL: z.url().optional(),
       R2_ACCESS_KEY_ID: z.string().min(1).optional(),
       R2_BUCKET: z.string().min(3).max(63).optional(),
@@ -186,6 +188,7 @@ export function createServerEnv(source: ServerEnvSource) {
       OPENROUTER_TIMEOUT_MS: source.OPENROUTER_TIMEOUT_MS,
       PAYLOAD_PUBLIC_SERVER_URL: source.PAYLOAD_PUBLIC_SERVER_URL,
       PAYLOAD_SECRET: source.PAYLOAD_SECRET,
+      POSTGRES_SSL_CA: source.POSTGRES_SSL_CA,
       PUBLIC_SITE_URL: source.PUBLIC_SITE_URL,
       R2_ACCESS_KEY_ID: source.R2_ACCESS_KEY_ID,
       R2_BUCKET: source.R2_BUCKET,

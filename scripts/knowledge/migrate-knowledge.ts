@@ -1,4 +1,5 @@
 import { createBunSqlClient, createQueryPort } from '../../src/server/database/bun-sql'
+import { decodePostgresCa } from '../../src/server/database/postgres-ca'
 import { getServerEnv } from '../../src/server/env'
 import { requireIntegrationEnv } from '../../src/server/env-schema'
 import { migrateKnowledgeDatabase } from '../../src/server/knowledge/database-migration'
@@ -10,6 +11,7 @@ const client = createBunSqlClient({
   applicationName: 'last-lst97-knowledge-migrate',
   max: 1,
   connectionTimeoutSeconds: 5,
+  caPem: decodePostgresCa(env.POSTGRES_SSL_CA),
 })
 
 try {

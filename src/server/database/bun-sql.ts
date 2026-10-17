@@ -22,6 +22,16 @@ export interface BunSqlClientOptions {
   idleTimeoutSeconds?: number
   connectionTimeoutSeconds?: number
   connection?: Record<string, string | boolean | number>
+  /**
+   * Pinned Postgres server certificate. When set, the connection verifies the
+   * chain and the `tlsServerName` SAN instead of trusting any certificate.
+   */
+  caPem?: string
+  /**
+   * SAN that the pinned certificate must match. Railway's certificate names
+   * `localhost` and the private domain, not the public TCP-proxy host.
+   */
+  tlsServerName?: string
 }
 
 /**
@@ -30,6 +40,8 @@ export interface BunSqlClientOptions {
  * milliseconds.
  */
 export function createBunSqlClient(options: BunSqlClientOptions): SQL {
+  const tls = options.caPem ? { ca: options.caPem, serverName: options.tlsServerName ?? 'localhost' } : undefined
+
   return new SQL({
     url: toBunSqlUrl(options.url),
     max: options.max ?? 2,
@@ -39,6 +51,7 @@ export function createBunSqlClient(options: BunSqlClientOptions): SQL {
       application_name: options.applicationName,
       ...options.connection,
     },
+    ...(tls ? { tls } : {}),
   })
 }
 

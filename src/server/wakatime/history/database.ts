@@ -1,6 +1,7 @@
 import type { SQL } from 'bun'
 
 import { createBunSqlClient, createQueryPort } from '../../database/bun-sql'
+import { decodePostgresCa } from '../../database/postgres-ca'
 import { getServerEnv } from '../../env'
 import { requireIntegrationEnv } from '../../env-schema'
 import { type CodingHistoryRepository, createCodingHistoryRepository } from './repository'
@@ -21,6 +22,7 @@ export function getCodingHistoryRepository(): CodingHistoryRepository {
     max: 2,
     idleTimeoutSeconds: 30,
     connectionTimeoutSeconds: 5,
+    caPem: decodePostgresCa(env.POSTGRES_SSL_CA),
   })
   repository = createCodingHistoryRepository(createQueryPort(client))
   return repository
