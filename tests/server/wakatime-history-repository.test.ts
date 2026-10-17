@@ -28,9 +28,18 @@ async function insertHeartbeat(
 describe.skipIf(!testDatabaseUrl)('CodingHistoryRepository with Postgres', () => {
   async function setup() {
     const schema = `wakatime_test_${Bun.randomUUIDv7().replaceAll('-', '')}`
-    const pool = new Pool({ connectionString: testDatabaseUrl, options: `-c search_path=${schema},public` })
-    await pool.query(`CREATE SCHEMA "${schema}"`)
-    await migrateKnowledgeDatabase(pool)
+    // The migration runs with `public` on the path so extension types resolve,
+    // then the rollup tables are dropped and the repository gets a pool whose
+    // search path is the test schema alone. Otherwise `to_regclass` would find
+    // the rollup tables in the test schema or in `public` and the repository
+    // would take the rollup path, leaving the heartbeat fallback untested.
+    const migrationPool = new Pool({ connectionString: testDatabaseUrl, options: `-c search_path=${schema},public` })
+    await migrationPool.query(`CREATE SCHEMA "${schema}"`)
+    await migrateKnowledgeDatabase(migrationPool)
+    await migrationPool.query(
+      `DROP TABLE "${schema}"."wakatime_daily_summary", "${schema}"."wakatime_daily_projects", "${schema}"."wakatime_daily_languages"`,
+    )
+    const pool = new Pool({ connectionString: testDatabaseUrl, options: `-c search_path=${schema}` })
     const ids = [
       '018d821d-7e0a-4e9b-a2ad-3780dc095501',
       '018d821d-7e0a-4e9b-a2ad-3780dc095502',
@@ -69,11 +78,11 @@ describe.skipIf(!testDatabaseUrl)('CodingHistoryRepository with Postgres', () =>
       language: null,
       duration: 60,
     })
-    return { pool, repository: createCodingHistoryRepository(pool), schema }
+    return { pool, migrationPool, repository: createCodingHistoryRepository(pool), schema }
   }
 
   it('aggregates totals, tops, series, and streaks from heartbeat rows', async () => {
-    const { pool, repository, schema } = await setup()
+    const { pool, migrationPool, repository, schema } = await setup()
     try {
       await expect(repository.summary({ from: '2025-01-01', to: '2025-01-31' })).resolves.toEqual({
         totalSeconds: 2160,
@@ -93,19 +102,21 @@ describe.skipIf(!testDatabaseUrl)('CodingHistoryRepository with Postgres', () =>
       await expect(repository.streaks('2025-02-10')).resolves.toEqual({ longestDays: 2, currentDays: 0 })
       await expect(repository.coverage?.()).resolves.toEqual({ through: '2025-01-04' })
     } finally {
-      await pool.query(`DROP SCHEMA "${schema}" CASCADE`).catch(() => {})
+      await migrationPool.query(`DROP SCHEMA "${schema}" CASCADE`).catch(() => {})
       await pool.end()
+      await migrationPool.end()
     }
   })
 
   it('rejects invalid ranges before touching the database', async () => {
-    const { pool, repository, schema } = await setup()
+    const { pool, migrationPool, repository, schema } = await setup()
     try {
       await expect(repository.summary({ from: '2025-02-01', to: '2025-01-01' })).rejects.toThrow('from <= to')
       await expect(repository.summary({ from: 'not-a-date', to: '2025-01-01' })).rejects.toThrow('YYYY-MM-DD')
     } finally {
-      await pool.query(`DROP SCHEMA "${schema}" CASCADE`).catch(() => {})
+      await migrationPool.query(`DROP SCHEMA "${schema}" CASCADE`).catch(() => {})
       await pool.end()
+      await migrationPool.end()
     }
   })
 })
