@@ -46,13 +46,13 @@ function request(
 function createWorkflow(overrides: Record<string, unknown> = {}) {
   const contextSigner = createChatContextSigner(secret)
   const submitted: unknown[] = []
-  const jevInputs: unknown[] = []
+  const decisionInputs: unknown[] = []
   const refinerInputs: unknown[] = []
   const workflow = createChatContactWorkflow({
     contextSigner,
     moderation: {
       checkContactWorkflow: async (input: unknown) => {
-        jevInputs.push(input)
+        decisionInputs.push(input)
         return { allowed: true, missingFields: [], invalidFields: [] }
       },
     } as never,
@@ -68,7 +68,7 @@ function createWorkflow(overrides: Record<string, unknown> = {}) {
     },
     ...overrides,
   } as never)
-  return { contextSigner, workflow, submitted, jevInputs, refinerInputs }
+  return { contextSigner, workflow, submitted, decisionInputs, refinerInputs }
 }
 
 describe('chat contact workflow controller', () => {
@@ -92,7 +92,7 @@ describe('chat contact workflow controller', () => {
   })
 
   it('screens and locks the selected template, then sends only refined content with original PDF source data', async () => {
-    const { contextSigner, workflow, jevInputs, refinerInputs, submitted } = createWorkflow()
+    const { contextSigner, workflow, decisionInputs, refinerInputs, submitted } = createWorkflow()
     const pending = await contextSigner.sign({
       messages: [],
       topicAnchors: [],
@@ -105,8 +105,8 @@ describe('chat contact workflow controller', () => {
     )
     if (!selected.ok || selected.event.type !== 'contact_template_selected')
       throw new Error('template was not selected')
-    expect(jevInputs[0]).toMatchObject({ phase: 'template', template: 'bug_report', fields: {} })
-    expect(JSON.stringify(jevInputs)).not.toContain('Normal private chat detail')
+    expect(decisionInputs[0]).toMatchObject({ phase: 'template', template: 'bug_report', fields: {} })
+    expect(JSON.stringify(decisionInputs)).not.toContain('Normal private chat detail')
 
     const reviewed = await workflow.handle(
       request('submit_form', selected.event.contextToken, { fields: originalBug.fields }),
@@ -148,7 +148,7 @@ describe('chat contact workflow controller', () => {
     })
   })
 
-  it('keeps template and phase locked when Jev says the new content is out of scope', async () => {
+  it('keeps template and phase locked when the decision model says the new content is out of scope', async () => {
     const { contextSigner, workflow } = createWorkflow({
       moderation: {
         checkContactWorkflow: async ({ phase }: { phase: string }) =>
@@ -227,7 +227,7 @@ describe('chat contact workflow controller', () => {
   })
 
   it('selects, screens, reviews, and delivers a quotation through the shared contact workflow', async () => {
-    const { contextSigner, workflow, submitted, jevInputs } = createWorkflow()
+    const { contextSigner, workflow, submitted, decisionInputs } = createWorkflow()
     const signed = await contextSigner.sign({
       messages: [{ role: 'user', content: 'I need a quote.' }],
       topicAnchors: [],
@@ -244,7 +244,7 @@ describe('chat contact workflow controller', () => {
     // `ok` check alone leaves it `string | undefined`.
     if (!selected.ok || selected.event.type !== 'contact_template_selected')
       throw new Error('template was not selected')
-    expect(jevInputs.at(-1)).toMatchObject({ phase: 'template', template: 'quotation' })
+    expect(decisionInputs.at(-1)).toMatchObject({ phase: 'template', template: 'quotation' })
     // A signed context naming the new template has to survive verification, or
     // the visitor is dropped out of the workflow the moment they choose it.
     expect((await contextSigner.verify(selected.event.contextToken))?.workflow).toEqual({

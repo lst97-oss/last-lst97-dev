@@ -12,7 +12,7 @@ function diagnosticsObserver(capture: ChatDiagnosticsCapture | undefined) {
   return capture
     ? {
         onModelCall: capture.addModelCall,
-        onJevDecision: capture.addJevDecision,
+        onDecision: capture.addDecision,
       }
     : undefined
 }

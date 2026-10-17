@@ -4,7 +4,7 @@ import { createAgentPlanner } from '../../src/server/chat/agent/agent-planner'
 import type { ChatTopicAnchor } from '../../src/server/chat/types'
 
 describe('agent planner site-content routing guidance', () => {
-  it('sends argument guidance only for tools approved by Jev', async () => {
+  it('sends argument guidance only for tools approved by the decision model', async () => {
     let plannerSystem = ''
     const planner = createAgentPlanner({
       model: 'test-model',

@@ -138,7 +138,7 @@ function harness(
         calls.relevanceInputs.push(input)
         if (options.relevanceError) throw new Error('private relevance provider failure')
         input.onModelCall?.({
-          provider: 'jev',
+          provider: 'openrouter',
           operation: 'rag_relevance',
           status: 'succeeded',
           inputTokens: 5,
@@ -195,7 +195,7 @@ describe('knowledge retrieval', () => {
     ])
     expect(deps.calls.modelCalls.slice(2)).toMatchObject(
       Array.from({ length: 3 }, () => ({
-        provider: 'jev',
+        provider: 'openrouter',
         operation: 'rag_relevance',
         inputTokens: 5,
         outputTokens: 2,
@@ -238,12 +238,12 @@ describe('knowledge retrieval', () => {
     expect(deps.calls.order.slice(0, 3)).toEqual(['embed', 'search', 'rerank'])
   })
 
-  it('falls back per document while filtering successful unrelated Jev decisions', async () => {
+  it('falls back per document while filtering successful unrelated decisions', async () => {
     const ranked = [0, 1, 2].map((index, rank) => ({ ...candidates[index]!, relevanceScore: 1 - rank / 10 }))
     const deps = harness({
       ranked,
       relevance: ({ candidate }) => {
-        if (candidate.id === 'source-0') throw new Error('private Jev provider failure')
+        if (candidate.id === 'source-0') throw new Error('private the decision model provider failure')
         if (candidate.id === 'source-1') return { isRelevantProbability: 0.1, answerEvidenceProbability: 0.99 }
         return { isRelevantProbability: 0.95, answerEvidenceProbability: 0.95 }
       },

@@ -9,7 +9,7 @@ import type {
   ModerationResult,
 } from './types'
 
-// Scope labels are trusted as returned: Jev's scope confidence produced too
+// Scope labels are trusted as returned: The decision model's scope confidence produced too
 // many false "uncertain" rejections on genuine owner questions. Only safety
 // confidence still gates; an explicit `uncertain` scope label still blocks.
 export function createModerationService(classifier: ModerationClassifier, minimumConfidence: number) {
@@ -47,7 +47,7 @@ export function createModerationService(classifier: ModerationClassifier, minimu
         finding.phase === 'template'
           ? { safety: finding.safety, template_choice: finding.template }
           : { safety: finding.safety, template_fit: finding.templateFit }
-      observer?.onJevDecision({ stage: 'contact_workflow', decisions })
+      observer?.onDecision({ stage: 'contact_workflow', decisions })
 
       if (finding.safety.label !== 'safe') return { allowed: false, reason: 'unsafe' }
       if (!isConfident(finding.safety.confidence, minimumConfidence)) return { allowed: false, reason: 'uncertain' }
@@ -101,7 +101,7 @@ export function createModerationService(classifier: ModerationClassifier, minimu
           observer,
         ))
       if (finding.channel === 'chat') {
-        observer?.onJevDecision({
+        observer?.onDecision({
           stage: 'moderation',
           decisions: {
             scope: finding.scope,
@@ -142,9 +142,9 @@ export function createModerationService(classifier: ModerationClassifier, minimu
   }
 
   const routeTools = async (input: AgentToolRoutingInput, observer?: ModerationDiagnosticsObserver) => {
-    if (!classifier.routeTools) throw new Error('Jev tool routing is unavailable')
+    if (!classifier.routeTools) throw new Error('Tool routing is unavailable')
     const decisions = await classifier.routeTools(input, observer)
-    observer?.onJevDecision({ stage: 'tool_routing', decisions })
+    observer?.onDecision({ stage: 'tool_routing', decisions })
     return decisions
   }
 

@@ -14,7 +14,7 @@ export function ChatPipelineContact() {
       </Eyebrow>
       <h3 id="chat-pipeline-contact-title">When you choose to contact Nelson</h3>
       <p className="chat-pipeline-contact-intro">
-        Jev screens contact intent in normal chat. Only your confirmation starts the separate, context-cleared contact
+        Contact intent is screened in normal chat. Only your confirmation starts the separate, context-cleared contact
         session.
       </p>
       <div className="chat-pipeline-contact-grid">
@@ -25,7 +25,7 @@ export function ChatPipelineContact() {
             <li>Nothing changes until you confirm. Keeping the conversation restores the same chat.</li>
             <li>Starting contact clears the earlier conversation. Those messages are not included in the request.</li>
             <li>
-              Jev screens Email, Bug report, Feature request, Quotation, or Support plan and locks your choice.
+              Your choice of Email, Bug report, Feature request, Quotation, or Support plan is screened, then locked.
               Switching requires a confirmed discard and restart.
             </li>
           </ul>
@@ -35,8 +35,8 @@ export function ChatPipelineContact() {
           <h4>Screen each request</h4>
           <ul>
             <li>
-              Contact-specific Jev decisions screen every input. Server validation checks required fields, email syntax,
-              and size limits. Unsafe, off-topic, uncertain, or incomplete input cannot advance.
+              Contact-specific screening decisions cover every input. Server validation checks required fields, email
+              syntax, and size limits. Unsafe, off-topic, uncertain, or incomplete input cannot advance.
             </li>
             <li>
               Email is sent as written. Bug, feature, quotation, and support plan requests get a meaning-preserving

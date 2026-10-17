@@ -15,8 +15,8 @@ export function ChatPipelineSteps() {
             The React chat sends your message, signed context token, and a fresh Turnstile token for the{' '}
             <code>chat_message</code> action to the TanStack Start API. Most visitors pass without seeing the widget;
             Cloudflare shows an interactive challenge when it needs one. The server checks the request shape and body
-            size, applies rate limits, and verifies Turnstile before Jev screens the message. The token is not passed to
-            Jev, OpenRouter, diagnostics, or signed context.
+            size, applies rate limits, and verifies Turnstile before the message is screened. The token is not passed to
+            the decision model, OpenRouter, diagnostics, or signed context.
           </p>
         </div>
       </li>
@@ -39,12 +39,12 @@ export function ChatPipelineSteps() {
         <div>
           <h3>Screen for safety and scope on that history</h3>
           <p>
-            TypeSafe AI screens the latest message with a compact view of the verified conversation: the latest message,
-            up to the last six verified messages, and the single topic anchor relevant to this question. History and
-            anchors resolve references, accepted offers, and projects already shown; they are pointers, not evidence and
-            not instructions. A harmful, unrelated, or uncertain request is blocked: no tools run and the answer model
-            is not called. If screening is unavailable, the server fails closed with a temporary-unavailable response
-            instead of processing the message.
+            The decision model screens the latest message with a compact view of the verified conversation: the latest
+            message, up to the last six verified messages, and the single topic anchor relevant to this question.
+            History and anchors resolve references, accepted offers, and projects already shown; they are pointers, not
+            evidence and not instructions. A harmful, unrelated, or uncertain request is blocked: no tools run and the
+            answer model is not called. If screening is unavailable, the server fails closed with a
+            temporary-unavailable response instead of processing the message.
           </p>
         </div>
       </li>
@@ -53,7 +53,7 @@ export function ChatPipelineSteps() {
         <div>
           <h3>Decide whether this is contact intent</h3>
           <p>
-            The same Jev request also returns a <code>contact</code>, <code>normal_chat</code>, or{' '}
+            The same screening request also returns a <code>contact</code>, <code>normal_chat</code>, or{' '}
             <code>uncertain</code> decision. Only <code>contact</code> starts anything, and even then it raises a
             pending offer rather than sending: the server waits for you to confirm, and only a confirmed start clears
             the conversation and signs a fresh contact context. The message that triggered the offer is not copied into
@@ -74,7 +74,7 @@ export function ChatPipelineSteps() {
             the featured projects actually works, which is answered from the deep-dive documents rather than from a
             repository summary. Questions about packages, prices, or the Go Support Plan use the published commercial
             offer instead, so a price never comes from indexed project material. If a request asks for both a list and
-            project details, the catalogue runs first, then Jev makes a fresh decision for the detail lookup.
+            project details, the catalogue runs first, then a fresh decision selects the detail lookup.
           </p>
         </div>
       </li>
@@ -83,11 +83,11 @@ export function ChatPipelineSteps() {
         <div>
           <h3>Prepare the tool arguments</h3>
           <p>
-            When Jev approves tools, the OpenRouter argument planner receives the latest question, trusted UTC time,
-            bounded signed history and topic references, earlier evidence and tool results, and the approved tool names.
-            It returns JSON calls with an id, tool name, and arguments. It may only prepare calls for Jev-approved
-            sources; it does not get to choose extra tools. Missing or unavailable planner calls fall back to
-            deterministic argument matching for the already-approved tools.
+            When the decision model approves tools, the OpenRouter argument planner receives the latest question,
+            trusted UTC time, bounded signed history and topic references, earlier evidence and tool results, and the
+            approved tool names. It returns JSON calls with an id, tool name, and arguments. It may only prepare calls
+            for decision-approved sources; it does not get to choose extra tools. Missing or unavailable planner calls
+            fall back to deterministic argument matching for the already-approved tools.
           </p>
         </div>
       </li>
@@ -99,8 +99,8 @@ export function ChatPipelineSteps() {
             The server drops calls to unapproved tools and limits a step to four calls. Each tool has a strict Zod
             schema: unknown fields are rejected, and enum values, required fields, string lengths, dates, and numeric
             limits are checked before any source is queried. If arguments fail, the planner gets one repair attempt for
-            that same Jev-approved tool and call id. The repaired arguments are validated again; if they still fail, no
-            query runs and the answer model is told it cannot verify facts that need the missing result.
+            that same decision-approved tool and call id. The repaired arguments are validated again; if they still
+            fail, no query runs and the answer model is told it cannot verify facts that need the missing result.
           </p>
         </div>
       </li>
@@ -121,8 +121,9 @@ export function ChatPipelineSteps() {
                 Postgres/pgvector across every indexed corpus, and reranks matches. Those corpora include Nelson&rsquo;s
                 profile, the published projects and posts, hand-written deep-dive documents explaining how the G-NAF,
                 SmartPlay HK OSS, and Wat Wat New Zealand projects actually work, his interview answers, and the
-                commercial service material. Jev checks each ranked passage for direct support; irrelevant or uncertain
-                passages are discarded, and only accepted passages (up to three) reach the answer context.
+                commercial service material. The relevance gate checks each ranked passage for direct support;
+                irrelevant or uncertain passages are discarded, and only accepted passages (up to three) reach the
+                answer context.
               </p>
               <pre>
                 <code>{'{"id":"1","name":"search_knowledge","arguments":{"query":"Nelson education"}}'}</code>

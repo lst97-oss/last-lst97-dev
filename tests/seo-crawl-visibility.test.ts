@@ -82,7 +82,7 @@ describe('crawler-visible copy', () => {
     // started typing. This pins its position, not just its presence.
     expect(contactSource.indexOf('ASK THE ASSISTANT FIRST')).toBeLessThan(contactSource.indexOf('<ContactMessageForm'))
     expect(contactSource).toContain('to="/chat"')
-    expect(contactSourceFlat).toContain('Jev can open a structured quotation request')
+    expect(contactSourceFlat).toContain('Zita can open a structured quotation request')
     expect(contactSource).toContain('contact-expand-hint')
     // The assistant panel is the replacement for the old "IN A HURRY?" card, not
     // an addition to it: two assistant prompts compete and the assistant is no

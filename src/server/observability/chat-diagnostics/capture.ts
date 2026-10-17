@@ -1,19 +1,19 @@
 import {
   MAX_CONTEXT_MESSAGE_LENGTH,
   MAX_CONTEXT_MESSAGES,
-  MAX_JEV_DECISIONS,
+  MAX_DECISIONS,
   MAX_MODEL_CALLS,
   MAX_QUERY_LENGTH,
   MAX_RAG_RETRIEVALS,
   MAX_RESPONSE_LENGTH,
 } from './limits'
-import { clampText, sanitizeJevDecision, sanitizeMetadata, sanitizeModelCall, sanitizeRagRetrieval } from './sanitize'
+import { clampText, sanitizeDecision, sanitizeMetadata, sanitizeModelCall, sanitizeRagRetrieval } from './sanitize'
 import type {
+  ChatDecisionDiagnostic,
   ChatDiagnosticsCapture,
   ChatDiagnosticsMetadata,
   ChatDiagnosticsRecord,
   ChatDiagnosticsSink,
-  ChatJevDecisionDiagnostic,
   ChatModelCallDiagnostic,
   ChatRagRetrievalDiagnostic,
 } from './types'
@@ -34,7 +34,7 @@ export function createChatDiagnosticsCapture(
   let metadata = input.metadata
   let history = input.history ?? []
   const modelCalls: ChatModelCallDiagnostic[] = []
-  const jevDecisions: ChatJevDecisionDiagnostic[] = []
+  const decisions: ChatDecisionDiagnostic[] = []
   const ragRetrievals: ChatRagRetrievalDiagnostic[] = []
   let record: ChatDiagnosticsRecord | undefined
 
@@ -50,9 +50,9 @@ export function createChatDiagnosticsCapture(
     addModelCall(call) {
       if (!record && modelCalls.length < MAX_MODEL_CALLS) modelCalls.push(sanitizeModelCall(call))
     },
-    addJevDecision(decision) {
-      if (record || jevDecisions.length >= MAX_JEV_DECISIONS) return
-      jevDecisions.push(sanitizeJevDecision(decision))
+    addDecision(decision) {
+      if (record || decisions.length >= MAX_DECISIONS) return
+      decisions.push(sanitizeDecision(decision))
     },
     addRagRetrieval(retrieval) {
       if (!record && ragRetrievals.length < MAX_RAG_RETRIEVALS) ragRetrievals.push(sanitizeRagRetrieval(retrieval))
@@ -74,7 +74,7 @@ export function createChatDiagnosticsCapture(
           ? { response: clampText(finishInput.response, MAX_RESPONSE_LENGTH) }
           : {}),
         modelCalls,
-        jevDecisions,
+        decisions,
         ragRetrievals,
       }
       try {

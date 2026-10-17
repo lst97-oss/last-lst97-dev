@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { createJevKnowledgeRelevanceGate } from '../../src/server/knowledge/jev-relevance-gate'
+import { createKnowledgeRelevanceGate } from '../../src/server/knowledge/relevance-gate'
 import type { KnowledgeCandidate } from '../../src/server/knowledge/types'
 
 const candidate: KnowledgeCandidate = {
@@ -17,16 +17,16 @@ function response(body: unknown, status = 200): Response {
   })
 }
 
-describe('createJevKnowledgeRelevanceGate', () => {
+describe('createKnowledgeRelevanceGate', () => {
   it('sends one bounded SystemOne request and returns the two Noul probabilities', async () => {
     let requestUrl = ''
     let requestBody: Record<string, unknown> | undefined
     const modelCalls: unknown[] = []
-    const gate = createJevKnowledgeRelevanceGate({ apiKey: 'test-server-key' }, async (input, init) => {
+    const gate = createKnowledgeRelevanceGate({ apiKey: 'test-server-key' }, async (input, init) => {
       requestUrl = String(input)
       requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>
       return response({
-        model: 'jev-1.13',
+        model: 'perplexity/pplx-decider-v1.2-20261016',
         answers: {
           is_relevant: { type: 'noul', noul: 0.82 },
           contains_answer_evidence: { type: 'noul', noul: 0.91 },
@@ -41,8 +41,8 @@ describe('createJevKnowledgeRelevanceGate', () => {
       onModelCall: (call) => modelCalls.push(call),
     })
 
-    expect(requestUrl).toEndWith('/v1/systemone')
-    expect(requestBody).toMatchObject({ model: 'jev-latest' })
+    expect(requestUrl).toEndWith('/alpha/decisions')
+    expect(requestBody).toMatchObject({ model: 'perplexity/pplx-decider-v1.2' })
     expect(requestBody?.questions).toMatchObject({
       is_relevant: { type: 'noul' },
       contains_answer_evidence: { type: 'noul' },
@@ -53,9 +53,9 @@ describe('createJevKnowledgeRelevanceGate', () => {
     ])
     expect(modelCalls).toEqual([
       {
-        provider: 'jev',
+        provider: 'openrouter',
         operation: 'rag_relevance',
-        model: 'jev-1.13',
+        model: 'perplexity/pplx-decider-v1.2-20261016',
         status: 'succeeded',
         inputTokens: 1,
         outputTokens: 1,
@@ -73,12 +73,12 @@ describe('createJevKnowledgeRelevanceGate', () => {
     expect(scores).toEqual({ isRelevantProbability: 0.82, answerEvidenceProbability: 0.91 })
   })
 
-  it('truncates query and document state fields before sending them to Jev', async () => {
+  it('truncates query and document state fields before sending them to the decision model', async () => {
     let requestBody: Record<string, unknown> | undefined
-    const gate = createJevKnowledgeRelevanceGate({ apiKey: 'test-server-key' }, async (_input, init) => {
+    const gate = createKnowledgeRelevanceGate({ apiKey: 'test-server-key' }, async (_input, init) => {
       requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>
       return response({
-        model: 'jev-latest',
+        model: 'perplexity/pplx-decider-v1.2',
         answers: {
           is_relevant: { type: 'noul', noul: 0.7 },
           contains_answer_evidence: { type: 'noul', noul: 0.7 },
@@ -111,30 +111,26 @@ describe('createJevKnowledgeRelevanceGate', () => {
       { is_relevant: { type: 'choice', choice: 'yes' }, contains_answer_evidence: { type: 'noul', noul: 0.9 } },
       { is_relevant: { type: 'noul', noul: 0.9 } },
     ]) {
-      const gate = createJevKnowledgeRelevanceGate({ apiKey: 'test-server-key' }, async () =>
+      const gate = createKnowledgeRelevanceGate({ apiKey: 'test-server-key' }, async () =>
         response({
-          model: 'jev-latest',
+          model: 'perplexity/pplx-decider-v1.2',
           answers,
           usage: { input_tokens: 1, output_tokens: 1 },
         }),
       )
 
-      await expect(gate.assess({ query: 'question', candidate })).rejects.toThrow(
-        'Jev knowledge relevance decision failed',
-      )
+      await expect(gate.assess({ query: 'question', candidate })).rejects.toThrow('Knowledge relevance decision failed')
     }
   })
 
   it('sanitizes provider failures and rejects an empty API key', async () => {
-    const gate = createJevKnowledgeRelevanceGate({ apiKey: 'test-server-key' }, async () =>
+    const gate = createKnowledgeRelevanceGate({ apiKey: 'test-server-key' }, async () =>
       response({ private: 'provider detail' }, 503),
     )
 
-    await expect(gate.assess({ query: 'question', candidate })).rejects.toThrow(
-      'Jev knowledge relevance decision failed',
-    )
-    expect(() => createJevKnowledgeRelevanceGate({ apiKey: '  ' })).toThrow(
-      'Missing required server environment variable: TYPESAFE_API_KEY',
+    await expect(gate.assess({ query: 'question', candidate })).rejects.toThrow('Knowledge relevance decision failed')
+    expect(() => createKnowledgeRelevanceGate({ apiKey: '  ' })).toThrow(
+      'Missing decision-model API key for the relevance gate',
     )
   })
 })

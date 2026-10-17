@@ -9,11 +9,12 @@ import { getServerEnv, requiredServerEnv } from '../env'
 import { getKnowledgeIndexRepository } from '../knowledge/database'
 import { createEmbeddingClient } from '../knowledge/embedding-client'
 import { createQueryEmbeddingConfig } from '../knowledge/embedding-provider-config'
-import { createJevKnowledgeRelevanceGate } from '../knowledge/jev-relevance-gate'
 import type { ProjectCatalogQuery } from '../knowledge/project-catalog'
+import { createKnowledgeRelevanceGate } from '../knowledge/relevance-gate'
 import { createRetrieveKnowledge } from '../knowledge/retrieve'
 import { createSiliconFlowReranker } from '../knowledge/siliconflow-reranker'
 import { getModerationService } from '../moderation/runtime'
+import { OPENROUTER_DECISION_BASE_URL, OPENROUTER_DECISION_PATH } from '../moderation/system-one-client'
 import type { ChatDiagnosticsSink } from '../observability/chat-diagnostics'
 import { createDiscordDiagnosticsSink } from '../observability/chat-diagnostics'
 import { logger } from '../observability/logger'
@@ -41,7 +42,7 @@ export function verifyChatTurnstile(token: string, expectedHostname: string): Pr
 }
 
 /**
- * Screening runs two model calls (Jev, then the OpenRouter refiner) before the
+ * Screening runs two model calls (decision screen, then the OpenRouter refiner) before the
  * visitor ever reaches review, so it is gated like any other paid work: a
  * separate action means a `chat_message` token cannot be replayed here.
  */
@@ -87,7 +88,12 @@ function createKnowledgeRetriever() {
       apiKey: requiredServerEnv('SILICONFLOW_API_KEY'),
       timeoutMs: env.KNOWLEDGE_EMBEDDING_TIMEOUT_MS,
     }),
-    relevanceGate: createJevKnowledgeRelevanceGate({ apiKey: requiredServerEnv('TYPESAFE_API_KEY') }),
+    relevanceGate: createKnowledgeRelevanceGate({
+      apiKey: env.DECISION_API_KEY?.trim() || requiredServerEnv('OPENROUTER_API_KEY'),
+      baseUrl: OPENROUTER_DECISION_BASE_URL,
+      path: OPENROUTER_DECISION_PATH,
+      model: env.DECISION_MODEL,
+    }),
     logger,
   })
 }

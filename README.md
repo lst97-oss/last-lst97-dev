@@ -25,7 +25,7 @@ the retrieval index and the WakaTime heartbeat warehouse. They are deliberately 
 - **Framework:** TanStack Start 1.168 with RSC enabled, React 19, TanStack Router (file routes), Vite 8, Nitro 3.
 - **CMS:** Payload CMS v4 canary (`4.0.0-canary.37`) on `@payloadcms/db-postgres`, with `@payloadcms/tanstack-start@4.0.0-canary.37`.
 - **UI:** Tailwind CSS v4, 61 shadcn-style wrappers over Base UI primitives, lucide-react icons.
-- **AI:** OpenRouter (planner + responder), TypeSafe `Jev` (decision model), SiliconFlow (reranking + query embeddings), local `llama-server` (document embeddings).
+- **AI:** OpenRouter (decision model, planner, responder), SiliconFlow (reranking + query embeddings), local `llama-server` (document embeddings).
 - **Quality:** Bun test (109 test files), Biome 2.5.14, TypeScript 6.
 
 ## Quick start
@@ -85,9 +85,9 @@ The chat is an agentic loop over five read-only tools, defined as a single tuple
 - `coding_history` — the imported heartbeat warehouse (per-project totals, daily series, streaks)
 - `site_content` — currently published Payload posts, projects, changelogs, and topics
 
-`Jev` decides which sources a turn needs; an OpenRouter planner prepares tool arguments for only the
+`The decision model` selects which sources a turn needs; an OpenRouter planner prepares tool arguments for only the
 approved tools; a separate OpenRouter responder writes the answer in Nelson's first person. Retrieval
-searches 10 vector candidates, reranks to 10, gates the top 3 through a Jev relevance check, and injects
+searches 10 vector candidates, reranks to 10, gates the top 3 through a decision-model relevance check, and injects
 surviving evidence wrapped as untrusted data.
 
 Full architecture, tool contracts, and change checklist: [`src/server/chat/AGENTS.md`](src/server/chat/AGENTS.md).
@@ -135,11 +135,11 @@ to touch the database — run `bun run db:migrate` with `DATABASE_URL` pointing 
 `db:migrate:check` is the read-only counterpart: `bun run dev` runs it first and refuses to start when a
 committed migration is unregistered, so a schema change cannot be developed against unnoticed.
 
-> **Hosted Postgres and `sslmode`.** Zeabur's endpoint requires TLS and presents a self-signed
-> certificate, so its `DATABASE_URL` needs `?sslmode=no-verify` appended. Without it the connection fails
-> with `no pg_hba.conf entry ... no encryption`, and with `sslmode=require` it fails as
-> `self-signed certificate`. A value written before the endpoint was moved behind TLS will carry neither
-> parameter and will fail the same way; re-add `?sslmode=no-verify` when editing `DATABASE_URL`.
+> **Hosted Postgres and `sslmode`.** The hosted production endpoint (Railway) requires TLS and presents
+> a self-signed certificate, so its `DATABASE_URL` needs `?sslmode=no-verify` appended. Without it the
+> connection fails with `no pg_hba.conf entry ... no encryption`, and with `sslmode=require` it fails as
+> `self-signed certificate`. Re-add `?sslmode=no-verify` whenever you edit `DATABASE_URL` — a value that
+> loses the parameter fails the same way.
 
 ### Preview builds do not work
 

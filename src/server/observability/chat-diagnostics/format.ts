@@ -150,7 +150,7 @@ export function formatChatDiagnosticMessages(record: ChatDiagnosticsRecord): Dis
     }
   }
 
-  for (const decision of safe.jevDecisions) {
+  for (const decision of safe.decisions) {
     const fields = Object.entries(decision.decisions).map(([name, value]) => ({
       name: name.slice(0, 256),
       value: `**${value.label}** · confidence ${value.confidence.toFixed(2)}`,
@@ -158,7 +158,7 @@ export function formatChatDiagnosticMessages(record: ChatDiagnosticsRecord): Dis
     for (let offset = 0; offset < fields.length || offset === 0; offset += MAX_EMBED_FIELDS) {
       messages.push(
         embedPayload({
-          title: `Jev decision · ${decision.stage}${offset > 0 ? ` · part ${Math.floor(offset / MAX_EMBED_FIELDS) + 1}` : ''}`,
+          title: `Decision · ${decision.stage}${offset > 0 ? ` · part ${Math.floor(offset / MAX_EMBED_FIELDS) + 1}` : ''}`,
           color: decision.stage === 'moderation' ? 0xe0a43a : 0x8b6ee8,
           fields: fields.slice(offset, offset + MAX_EMBED_FIELDS),
           timestamp: safe.startedAtUtc,
@@ -176,7 +176,7 @@ export function formatChatDiagnosticMessages(record: ChatDiagnosticsRecord): Dis
       value: [
         `**${candidate.isPublic ? 'Public' : 'Private'}** · ${candidate.sourceType}`,
         `Source: ${candidate.sourceId}`,
-        `Rerank ${candidate.rerankScore?.toFixed(3) ?? '—'} · Jev ${candidate.relevanceProbability?.toFixed(2) ?? '—'} · evidence ${candidate.answerEvidenceProbability?.toFixed(2) ?? '—'}`,
+        `Rerank ${candidate.rerankScore?.toFixed(3) ?? '—'} · Gate ${candidate.relevanceProbability?.toFixed(2) ?? '—'} · evidence ${candidate.answerEvidenceProbability?.toFixed(2) ?? '—'}`,
         `Decision: ${candidate.outcome} · final: ${candidate.finalSelected ? 'yes' : 'no'}`,
         `> ${candidate.excerpt || '(no excerpt)'}`,
       ]

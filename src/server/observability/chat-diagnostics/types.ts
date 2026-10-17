@@ -25,7 +25,7 @@ export type ChatDiagnosticsOutcome =
   | 'aborted'
   | 'invalid_context'
   | 'turn_limit'
-export type ChatDiagnosticsProvider = 'jev' | 'openrouter' | 'siliconflow'
+export type ChatDiagnosticsProvider = 'openrouter' | 'siliconflow'
 export type ChatModelCallFailureCategory =
   | 'provider_connection_failed'
   | 'provider_timeout'
@@ -53,7 +53,7 @@ export interface ChatModelCallDiagnostic {
   costUsd?: number
 }
 
-export interface ChatJevDecisionDiagnostic {
+export interface ChatDecisionDiagnostic {
   stage: 'moderation' | 'tool_routing' | 'contact_workflow'
   decisions: Record<string, { label: string; confidence: number }>
 }
@@ -89,7 +89,7 @@ export interface ChatDiagnosticsRecord {
   history: Array<{ role: 'user' | 'assistant'; content: string }>
   response?: string
   modelCalls: ChatModelCallDiagnostic[]
-  jevDecisions: ChatJevDecisionDiagnostic[]
+  decisions: ChatDecisionDiagnostic[]
   ragRetrievals: ChatRagRetrievalDiagnostic[]
 }
 
@@ -120,7 +120,7 @@ export interface ChatDiagnosticsCapture {
   setContext(message: string, history: Array<{ role: 'user' | 'assistant'; content: string }>): void
   setMetadata(metadata?: ChatDiagnosticsMetadata): void
   addModelCall(call: ChatModelCallDiagnostic): void
-  addJevDecision(decision: ChatJevDecisionDiagnostic): void
+  addDecision(decision: ChatDecisionDiagnostic): void
   addRagRetrieval(retrieval: ChatRagRetrievalDiagnostic): void
   finish(input: { outcome: ChatDiagnosticsOutcome; response?: string }): ChatDiagnosticsRecord
 }

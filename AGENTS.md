@@ -32,8 +32,7 @@ scripts/knowledge/   RAG indexing CLIs: sync, index, reindex, migrate,
                      WakaTime import, GitHub catalogue.
 scripts/dev/         Runtime helpers: `embedding-process.ts` (a library, no
                      npm script), sidecar start/stop, `knowledge-worker.ts`,
-                     `dev-with-embedding.ts`, and `evaluate-jev-tool-routing.ts`
-                     (ad hoc, no npm script).
+                     and `dev-with-embedding.ts`.
 scripts/database/    `check-payload-migrations.ts`, `deploy-migrate.ts`.
 scripts/assets/      `generate-payload-admin-css.ts`, `generate-og-image.ts`.
 scripts/seeding/     Content seeds, one directory per collection
@@ -83,7 +82,7 @@ because its handler pulls in server-only modules.
 
 **RAG flow.** Retrieval: `src/server/knowledge/retrieve.ts` (`RetrieveKnowledge.execute`) is the only
 entry chat calls — pgvector search (10 candidates) → SiliconFlow rerank →
-`src/server/knowledge/jev-relevance-gate.ts` → evidence budget → `src/server/knowledge/prompt-evidence.ts`
+`src/server/knowledge/relevance-gate.ts` → evidence budget → `src/server/knowledge/prompt-evidence.ts`
 (untrusted wrapper). Indexing: `*-source.ts` → `chunking` → `index-source` →
 `repository.upsertSourceChunks`, driven by Payload hooks/tasks and the CLI scripts. Chunk dedupe is by
 source identity `type:sourceId`, never by chunk id. RAG is opt-in via `KNOWLEDGE_RAG_ENABLED` and
@@ -123,10 +122,8 @@ exporting `up`/`down` plus a sibling `.json` snapshot, registered by name in `sr
 
 RAG maintenance scripts: `knowledge:migrate`, `knowledge:sync`, `knowledge:github:sync`,
 `knowledge:github:reindex`, `knowledge:github:catalog`, `knowledge:interview:index`,
-`knowledge:services:index`, `knowledge:projects:index`, `wakatime:import`.
-`scripts/dev/embedding-process.ts` is a library (no npm script);
-`scripts/dev/evaluate-jev-tool-routing.ts` is run ad hoc as
-`bun scripts/dev/evaluate-jev-tool-routing.ts`.
+`knowledge:services:index`, `knowledge:projects:index`, `knowledge:blog:index`, `wakatime:import`.
+`scripts/dev/embedding-process.ts` is a library (no npm script).
 
 **The container build is the only caller that sets `PAYLOAD_BUNX_FLAGS` / `PAYLOAD_CLI_ARGS`.** The
 Dockerfile calls `bun run build` instead of repeating the chain, so the image cannot skip a step the
@@ -227,9 +224,9 @@ chunking is a heading-unaware sliding window. The two offerings are priced on di
 used by both — a support standard engagement and a build add-on revision round — so the corpus
 names which is which wherever the figure appears.
 
-**Retrieval budget.** pgvector 10 candidates → SiliconFlow rerank (≤10) → Jev `Noul` gate on the top
-3. A document reaches the prompt only when both direct-support probabilities are ≥ `0.60`; a single
-Jev failure keeps that document as a reranker fallback and marks the result degraded. Private-repository
+**Retrieval budget.** pgvector 10 candidates → SiliconFlow rerank (≤10) → the decision-model `Noul`
+relevance gate on the top 3. A document reaches the prompt only when both direct-support probabilities
+are ≥ `0.60`; a single gate failure keeps that document as a reranker fallback and marks the result degraded. Private-repository
 summaries stay eligible for the gate and render a `private` citation badge — the model may describe
 what such a project does, its technology, and its structure. The browser receives citation titles/URLs
 and a generic degraded indicator, never chunk text or provider scores. Retrieval runs **after**
@@ -241,7 +238,7 @@ moderation, never before.
 category percentages with the activity share so hours for AI Coding / human Coding / Writing Docs can
 be estimated. `coding_history` stays the source for arbitrary dates, named projects, series, trends,
 and streaks, and reports the warehouse import cutoff (currently 22 September 2026) rather than
-claiming liveness. `list_owned_projects` is Jev-routed off `knowledge_projects` (≤10 records) and
+claiming liveness. `list_owned_projects` is decision-routed off `knowledge_projects` (≤10 records) and
 returns `matchingTotal` computed **before** the cap plus a per-dimension breakdown, so counts are
 server-authoritative and never inferred from the visible page; kind/topic counts are multi-valued and
 overlap rather than partitioning. Owned public and private repos are included; contributions are not.
@@ -259,9 +256,10 @@ credentials, indexed content, and private repository identifiers.
 **Production.** A dedicated PostgreSQL database with pgvector, `KNOWLEDGE_DATABASE_URL` separate from
 Payload's `DATABASE_URL`; `knowledge:migrate` changes only the knowledge schema. Point
 `KNOWLEDGE_EMBEDDING_URL` (+ `KNOWLEDGE_EMBEDDING_API_KEY`) at an OpenAI-compatible service and set
-the server-only `SILICONFLOW_API_KEY` and `TYPESAFE_API_KEY`. Run the Payload knowledge worker as a
+the server-only `SILICONFLOW_API_KEY`; the decision model reads
+`OPENROUTER_API_KEY` (or a dedicated `DECISION_API_KEY`). Run the Payload knowledge worker as a
 separate process beside the web service. Never expose the embedding service or secrets to browser
-code. Production owns its own embedding endpoint and TypeSafe account; `llama-server` is a local-only
+code. Production owns its own embedding endpoint and OpenRouter decision-model access; `llama-server` is a local-only
 convenience. Rotate remote DB credentials in the provider dashboard — there are no local volumes.
 
 **Privacy boundary.** Retrieved chunk text and provider scores never reach the browser; only citation
@@ -424,7 +422,7 @@ These produce *confidently wrong* results rather than obvious errors. Each has b
 - **Prove a negative-path verification reached the branch.** A `removedCount: 0` result is identical
   whether cleanup ran correctly or the setup step silently threw. Use a positive control, and note that
   `pg` needs `$1` placeholders — `%s` is client-side printf and throws at runtime, not at typecheck.
-- **Some tests pin exact prompt wording.** `tests/server/typesafe-classifier.test.ts`,
+- **Some tests pin exact prompt wording.** `tests/server/decision-classifier.test.ts`,
   `tests/server/openrouter-knowledge-prompt.test.ts`, and `tests/server/agent-planner.test.ts` assert
   `toContain` substrings of prompt text and will fail on a benign reword. Re-pin to the substring
   expressing the new intent; never delete the assertion and never loosen it so the old text also passes.
@@ -509,6 +507,6 @@ duplicate their content here.
 - `src/server/knowledge/AGENTS.md` — RAG module: pipeline position, invariants, conventions, and an
   explicit "do not fix without a change request" list (unwired `github/source.ts`, the
   public-only vs `allowPrivate` split, worker caps, tracked private summaries).
-- `src/server/chat/AGENTS.md` — chat and moderation: module map, Jev/planner/responder responsibilities,
+- `src/server/chat/AGENTS.md` — chat and moderation: module map, decision-model/planner/responder responsibilities,
   request flow, contact state machine, source boundaries, diagnostics, change checklist.
-- `src/server/moderation/AGENTS.md` — Jev, TypeSafe, and the tool-routing contract shared with chat.
+- `src/server/moderation/AGENTS.md` — the decision model, its prompt craft, and the tool-routing contract shared with chat.

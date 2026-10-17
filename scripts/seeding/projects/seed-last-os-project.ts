@@ -25,8 +25,8 @@
  * because the project is not finished.
  *
  * Writes to whatever DATABASE_URL is loaded — exporting a production URL before
- * running this points it at production. Against the Zeabur endpoint that URL
- * needs `?sslmode=no-verify`: the certificate is self-signed, so plain
+ * running this points it at production. Against the hosted endpoint (Railway)
+ * that URL needs `?sslmode=no-verify`: the certificate is self-signed, so plain
  * `sslmode=require` fails with "self-signed certificate" and omitting it fails
  * with "no pg_hba.conf entry ... no encryption".
  */
@@ -102,10 +102,10 @@ const ARCHITECTURE_DIAGRAM = `flowchart TB
   start --> chat["CHAT DOMAIN"]
   start --> contact["CONTACT DOMAIN"]
   content --> payload["PAYLOAD CMS"]
-  chat --> jev["JEV · DECISION"]
+  chat --> decider["DECISION MODEL"]
   chat --> planner["OPENROUTER PLANNER"]
   chat --> responder["OPENROUTER RESPONDER"]
-  jev --> tools["BOUNDED READ-ONLY TOOLS"]
+  decider --> tools["BOUNDED READ-ONLY TOOLS"]
   planner --> tools
   tools --> responder
   contact --> email["EMAIL WORKFLOW"]
@@ -216,15 +216,15 @@ flowchart TB
 
 Rather than asking one model to make every decision, the system separates model responsibilities.
 
-**Jev** is the decision model. It decides whether a request is in scope, whether it is safe, which knowledge source should be used, whether retrieved evidence appears relevant, and whether the visitor is trying to start a contact workflow. It does not write the visitor-facing response.
+**The decision model** decides whether a request is in scope, whether it is safe, which knowledge source should be used, whether retrieved evidence appears relevant, and whether the visitor is trying to start a contact workflow. It does not write the visitor-facing response.
 
-The **OpenRouter planner** prepares the arguments needed to call approved tools once Jev has approved a set. The planner cannot add a source Jev did not approve, which keeps tool authority separate from argument generation.
+The **OpenRouter planner** prepares the arguments needed to call approved tools once the decision model has approved a set. The planner cannot add a source the decision model did not approve, which keeps tool authority separate from argument generation.
 
 The **OpenRouter responder** writes the final answer. It receives verified conversation context, retrieved evidence, bounded tool results, and the latest visitor message, and is responsible for language and presentation rather than for deciding which sources exist.
 
 \`\`\`mermaid
 flowchart TB
-  jev2["JEV · DECISION"] --> planner2["OPENROUTER PLANNER"] --> tools2["VERIFIED TOOLS"] --> responder2["OPENROUTER RESPONDER"]
+  decider2["DECISION MODEL"] --> planner2["OPENROUTER PLANNER"] --> tools2["VERIFIED TOOLS"] --> responder2["OPENROUTER RESPONDER"]
 \`\`\`
 
 The simpler alternative — one model deciding, retrieving, reasoning and answering — was deliberately avoided. Separating the roles gives explicit control over source selection and makes the system far easier to debug.
@@ -246,7 +246,7 @@ Retrieval is a multi-stage process rather than a single vector query.
 \`\`\`mermaid
 flowchart TB
   question["USER QUESTION"] --> embedq["QUERY EMBEDDING"] --> search["PGVECTOR SEARCH"] --> cands["TOP CANDIDATES"]
-  cands --> rerank["SEMANTIC RERANKER"] --> top["TOP EVIDENCE"] --> gate["JEV RELEVANCE GATE"] --> ctx["RESPONDER CONTEXT"]
+  cands --> rerank["SEMANTIC RERANKER"] --> top["TOP EVIDENCE"] --> gate["RELEVANCE GATE"] --> ctx["RESPONDER CONTEXT"]
 \`\`\`
 
 Vector distance alone does not necessarily identify the best passage, so candidates are reranked through a dedicated semantic reranking stage before they become answer evidence. A separate relevance decision then runs before evidence reaches the responder, which reduces the risk of merely retrieving text that is vector-similar but not actually useful.
@@ -324,7 +324,7 @@ flowchart TB
   c1 & c2 & c3 & c4 & c5 & c6 --> protected["PROTECTED ENDPOINT"]
 \`\`\`
 
-**Moderation** is also treated as an engineering problem. Jev classifies chat scope, chat safety, contact intent, contact safety, and template fit, and the system fails closed when a high-risk classification cannot be resolved confidently. At the same time the thresholds are calibrated to avoid blocking legitimate enquiries, which is a deliberate balance between false positives and false negatives.
+**Moderation** is also treated as an engineering problem. The decision model classifies chat scope, chat safety, contact intent, contact safety, and template fit, and the system fails closed when a high-risk classification cannot be resolved confidently. At the same time the thresholds are calibrated to avoid blocking legitimate enquiries, which is a deliberate balance between false positives and false negatives.
 
 **Rate limiting** uses separate budgets for chat and contact. That separation matters because screening a contact submission can cost two model calls, so leaving it on the chat bucket would make the most expensive path the cheapest to drive.
 
@@ -526,7 +526,7 @@ async function main() {
       'Vite 8',
       'Nitro 3',
       'OpenRouter',
-      'TypeSafe Jev',
+      'Perplexity decider (via OpenRouter)',
       'SiliconFlow',
       'Qwen3-Embedding-0.6B',
       'Zod',

@@ -284,7 +284,7 @@ export function createChatAgentLoop(
     state.projectSourceIds = projectListState.shownProjectIds
     state.activeProjectFilters = projectListState.activeFilters
     const runner = runnerFor(history, topicAnchors, today, projectListState, message, diagnostics)
-    const jevRoutingRequired =
+    const decisionRoutingRequired =
       initialDecisions !== undefined || typeof dependencies.moderation.routeTools === 'function'
     let stepsUsed = 0
     let argumentRepairUsed = false
@@ -302,7 +302,7 @@ export function createChatAgentLoop(
           stepsUsed,
           currentDateTimeUtc,
           today,
-          jevRoutingRequired,
+          decisionRoutingRequired,
           diagnostics,
           ...(step === 0 && initialDecisions !== undefined ? { initialDecisions } : {}),
         },

@@ -128,7 +128,7 @@ async function handleContactActionRequest(
     }
 
     // Verified here rather than inside the workflow so an unverified submission
-    // never reaches Jev or the refiner.
+    // never reaches the decision screen or the refiner.
     if (action.action === 'submit_form') {
       const screeningError = await verifyContactScreeningToken(request, requestId, action.turnstileToken, dependencies)
       if (screeningError) return screeningError

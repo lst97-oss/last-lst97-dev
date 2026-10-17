@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { AgentToolName } from '../../src/server/chat/tools/agent-tools'
-import { jevToolRoutingCases } from './jev-tool-routing-cases'
+import { toolRoutingCases } from './decisions-benchmark-cases/routing-cases'
 
 const tools: AgentToolName[] = [
   'search_knowledge',
@@ -11,32 +11,32 @@ const tools: AgentToolName[] = [
   'services',
 ]
 
-describe('Jev tool-routing baseline', () => {
+describe('tool-routing baseline', () => {
   it('contains unique, categorized, per-tool positive and negative cases', () => {
-    const ids = jevToolRoutingCases.map(({ id }) => id)
+    const ids = toolRoutingCases.map(({ id }) => id)
     expect(new Set(ids).size).toBe(ids.length)
-    expect(jevToolRoutingCases.length).toBeGreaterThanOrEqual(32)
-    expect(jevToolRoutingCases.some(({ category }) => category === 'positive')).toBe(true)
-    expect(jevToolRoutingCases.some(({ category }) => category === 'negative')).toBe(true)
+    expect(toolRoutingCases.length).toBeGreaterThanOrEqual(32)
+    expect(toolRoutingCases.some(({ category }) => category === 'positive')).toBe(true)
+    expect(toolRoutingCases.some(({ category }) => category === 'negative')).toBe(true)
 
-    for (const testCase of jevToolRoutingCases) {
+    for (const testCase of toolRoutingCases) {
       expect(testCase.expected.every((tool) => tools.includes(tool))).toBe(true)
     }
     for (const tool of tools) {
-      expect(jevToolRoutingCases.some(({ expected }) => expected.includes(tool))).toBe(true)
-      expect(jevToolRoutingCases.some(({ expected }) => !expected.includes(tool))).toBe(true)
+      expect(toolRoutingCases.some(({ expected }) => expected.includes(tool))).toBe(true)
+      expect(toolRoutingCases.some(({ expected }) => !expected.includes(tool))).toBe(true)
     }
   })
 
   it('keeps assistant-directed second-person queries out of personal-source expectations', () => {
-    const byId = new Map(jevToolRoutingCases.map((testCase) => [testCase.id, testCase]))
+    const byId = new Map(toolRoutingCases.map((testCase) => [testCase.id, testCase]))
     expect(byId.get('knowledge-current-project')?.expected).toEqual(['coding_history', 'search_knowledge'])
     expect(byId.get('negative-assistant-routing')?.expected).toEqual([])
     expect(byId.get('negative-assistant-pipeline')?.expected).toEqual([])
   })
 
   it('covers multi-turn follow-ups with signed source anchors', () => {
-    const byId = new Map(jevToolRoutingCases.map((testCase) => [testCase.id, testCase]))
+    const byId = new Map(toolRoutingCases.map((testCase) => [testCase.id, testCase]))
     expect(byId.get('followup-education-after-experience')?.expected).toEqual(['search_knowledge'])
     expect(byId.get('followup-project-after-unrelated-turns')?.expected).toEqual(['search_knowledge'])
     expect(byId.get('followup-partial-education-answer-requeries')?.expected).toEqual(['search_knowledge'])
@@ -54,7 +54,7 @@ describe('Jev tool-routing baseline', () => {
     // that turn produced. Cases with no `history` are single-turn probes that
     // legitimately have no prior anchor, so they are excluded rather than
     // forced to invent one.
-    for (const testCase of jevToolRoutingCases.filter(
+    for (const testCase of toolRoutingCases.filter(
       ({ id, history }) =>
         id.startsWith('followup-') &&
         (history?.length ?? 0) > 0 &&
@@ -68,7 +68,7 @@ describe('Jev tool-routing baseline', () => {
   })
 
   it('covers repeat owned-project discovery separately from the published showcase', () => {
-    const byId = new Map(jevToolRoutingCases.map((testCase) => [testCase.id, testCase]))
+    const byId = new Map(toolRoutingCases.map((testCase) => [testCase.id, testCase]))
     expect(byId.get('projects-next-batch')?.expected).toEqual(['list_owned_projects'])
     expect(byId.get('projects-all-owned-inventory')?.expected).toEqual(['list_owned_projects'])
     expect(byId.get('positive-you-projects')?.expected).toEqual(['list_owned_projects'])
@@ -80,7 +80,7 @@ describe('Jev tool-routing baseline', () => {
   })
 
   it('routes an all-project coding-time follow-up to historical per-project data', () => {
-    const byId = new Map(jevToolRoutingCases.map((testCase) => [testCase.id, testCase]))
+    const byId = new Map(toolRoutingCases.map((testCase) => [testCase.id, testCase]))
     expect(byId.get('history-all-projects-all-time')?.expected).toEqual(['coding_history'])
   })
 })

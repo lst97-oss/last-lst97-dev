@@ -42,7 +42,7 @@ export interface ChatProjectListState {
   /** Retained when verifying older signed context tokens; no longer drives intent routing. */
   clarificationAsked: boolean
   shownProjectIds: string[]
-  /** True after Jev selects an owned-project inventory lookup. */
+  /** True after the decision model selects an owned-project inventory lookup. */
   shortlistStarted?: boolean
   activeFilters?: ProjectCatalogFilters
 }

@@ -34,8 +34,8 @@
  * sibling's vocabulary.
  *
  * Writes to whatever DATABASE_URL is loaded — exporting a production URL before
- * running this points it at production. Against the Zeabur endpoint that URL
- * needs `?sslmode=no-verify`: the certificate is self-signed.
+ * running this points it at production. Against the hosted endpoint (Railway)
+ * that URL needs `?sslmode=no-verify`: the certificate is self-signed.
  */
 import { convertMarkdownToLexical, editorConfigFactory } from '@payloadcms/richtext-lexical'
 import type { Payload, RichTextField } from 'payload'

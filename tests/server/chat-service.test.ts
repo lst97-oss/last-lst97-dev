@@ -157,7 +157,7 @@ describe('createChatService', () => {
     expect(JSON.stringify(records[0])).not.toContain('I have a bug')
   })
 
-  it('runs the direct project catalogue when Jev selects it', async () => {
+  it('runs the direct project catalogue when the decision model selects it', async () => {
     const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
     let catalogueCalls = 0
     let knowledgeCalls = 0
@@ -232,7 +232,7 @@ describe('createChatService', () => {
     expect(result.status === 'replied' ? result.text : '').toContain('python-cli')
   })
 
-  it('asks Jev for a fresh RAG decision after a catalogue result when details are requested', async () => {
+  it('asks the decision model for a fresh RAG decision after a catalogue result when details are requested', async () => {
     const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
     let routeCount = 0
     const toolOrder: string[] = []
@@ -438,7 +438,7 @@ describe('createChatService', () => {
     expect(routingUnavailable).toBe(true)
   })
 
-  it('retains bounded tool topic anchors for Jev after transcript truncation', async () => {
+  it('retains bounded tool topic anchors for the decision model after transcript truncation', async () => {
     const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
     const observedAnchors: ChatTopicAnchor[][] = []
     let responderHistoryLength = 0
@@ -1052,7 +1052,7 @@ describe('createChatService', () => {
     expect(result).toMatchObject({ status: 'replied', citations, contextToken: 'signed' })
   })
 
-  it('uses Jev-approved knowledge lookup for a question about Nelson’s current project', async () => {
+  it('uses decision-approved knowledge lookup for a question about Nelson’s current project', async () => {
     const evidence: KnowledgeEvidence[] = [
       {
         id: 'active-project',
@@ -1394,7 +1394,7 @@ describe('createChatService.sendStream', () => {
     expect(responderCalled).toBe(false)
   })
 
-  it('streams a broad project request normally when Jev does not select inventory', async () => {
+  it('streams a broad project request normally when the decision model does not select inventory', async () => {
     const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
     let responderCalled = false
     const service = createChatService(
@@ -1879,7 +1879,7 @@ describe('createChatService.sendStream', () => {
     expect(events[events.length - 1]).toMatchObject({ type: 'done' })
   })
 
-  it('asks the catalogue for exact totals when Jev is uncertain about a count question', async () => {
+  it('asks the catalogue for exact totals when the decision model is uncertain about a count question', async () => {
     let received: { op?: string } | undefined
     const service = createChatService(streamingResponder(['ok']), {
       moderation: {
@@ -2167,7 +2167,7 @@ describe('createChatService.sendStream', () => {
   }
 
   /**
-   * Reproduces the reported failure: Jev answers a site-scoped question from the
+   * Reproduces the reported failure: the decision model answers a site-scoped question from the
    * owned-project catalogue and skips site_content. The forced guard must add the
    * Payload lookup back so the responder can describe the published showcase.
    */
@@ -2194,7 +2194,7 @@ describe('createChatService.sendStream', () => {
     })
   }
 
-  it('answers site-orientation questions with the section list even when Jev skips it', async () => {
+  it('answers site-orientation questions with the section list even when the decision model skips it', async () => {
     const { reader, ops } = siteContentFakes()
 
     const events = await collect(catalogueOnlyService(reader), 'what can i do on this site?')
@@ -2304,7 +2304,7 @@ describe('createChatService.sendStream', () => {
     expect(citationEvent).toBeUndefined()
   })
 
-  it('reaches the published showcase for a site-scoped project question even when Jev skips it', async () => {
+  it('reaches the published showcase for a site-scoped project question even when the decision model skips it', async () => {
     const { reader, ops } = siteContentFakes({
       listProjectsPage: async () => ({
         items: [
@@ -2399,7 +2399,7 @@ describe('createChatService.sendStream', () => {
     expect(ops).toEqual(['list_posts', 'list_projects', 'list_changelogs'])
   })
 
-  it('records a redacted non-streamed query, Jev decision, RAG candidates, and reported usage', async () => {
+  it('records a redacted non-streamed query, decision, RAG candidates, and reported usage', async () => {
     const signer = createChatContextSigner('a-secret-key-with-at-least-32-characters')
     const records: Array<Record<string, unknown>> = []
     const service = createChatService(
@@ -2423,14 +2423,14 @@ describe('createChatService.sendStream', () => {
           checkContact: async () => ({ allowed: true }),
           checkChat: async (_input, observer) => {
             observer?.onModelCall({
-              provider: 'jev',
+              provider: 'openrouter',
               operation: 'moderation',
-              model: 'jev-latest',
+              model: 'perplexity/pplx-decider-v1.2',
               status: 'succeeded',
               inputTokens: 15,
               outputTokens: 2,
             })
-            observer?.onJevDecision({
+            observer?.onDecision({
               stage: 'moderation',
               decisions: {
                 scope: { label: 'owner_projects', confidence: 0.98 },
@@ -2512,12 +2512,12 @@ describe('createChatService.sendStream', () => {
       outcome: 'complete',
       metadata: { ipAddress: '203.0.113.8', browser: { name: 'Chrome', operatingSystem: 'macOS', device: 'desktop' } },
     })
-    expect(record?.jevDecisions).toHaveLength(1)
+    expect(record?.decisions).toHaveLength(1)
     expect(record?.ragRetrievals).toMatchObject([
       { candidates: [{ sourceId: 'lst97/SIT320-Project-MD5', finalSelected: true }] },
     ])
     expect(record?.modelCalls).toMatchObject([
-      { provider: 'jev', operation: 'moderation', inputTokens: 15, outputTokens: 2 },
+      { provider: 'openrouter', operation: 'moderation', inputTokens: 15, outputTokens: 2 },
       { provider: 'openrouter', operation: 'planner', inputTokens: 30, outputTokens: 5 },
       { provider: 'siliconflow', operation: 'query_embedding', inputTokens: 20 },
       {
@@ -2553,7 +2553,7 @@ describe('createChatService.sendStream', () => {
       moderation: {
         checkContact: async () => ({ allowed: true }),
         checkChat: async (_input, observer) => {
-          observer?.onJevDecision({
+          observer?.onDecision({
             stage: 'moderation',
             decisions: { scope: { label: 'owner_context', confidence: 0.9 } },
           })

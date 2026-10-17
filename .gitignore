@@ -38,3 +38,5 @@ __pycache__/
 # `npx shadcn@latest skills add`; not product code and not read by the app.
 .agents/
 skills-lock.json
+# Decision-model benchmark artifacts: local analysis output, never shipped.
+benchmarks/

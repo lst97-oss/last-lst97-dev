@@ -55,7 +55,7 @@ describe('chat diagnostics', () => {
     )
 
     capture.addModelCall({ provider: 'openrouter', operation: 'response', status: 'succeeded' })
-    capture.addJevDecision({
+    capture.addDecision({
       stage: 'tool_routing',
       decisions: { search_knowledge: { label: 'use', confidence: 0.9 } },
     })
@@ -107,7 +107,7 @@ describe('chat diagnostics', () => {
       history: [],
       response: 'Try the formatted diagnostic view.',
       modelCalls: [],
-      jevDecisions: [],
+      decisions: [],
       ragRetrievals: [
         {
           query: 'token debugging',
@@ -177,7 +177,7 @@ describe('chat diagnostics', () => {
       query: 'hello',
       history: [],
       modelCalls: [],
-      jevDecisions: [],
+      decisions: [],
       ragRetrievals: [],
     }
 
@@ -210,7 +210,7 @@ describe('chat diagnostics', () => {
       query: 'hello',
       history: [],
       modelCalls: [],
-      jevDecisions: [],
+      decisions: [],
       ragRetrievals: [],
     }
 

@@ -3,9 +3,9 @@ import { describe, expect, it } from 'bun:test'
 import { CHAT_CONTACT_FLOW_DIAGRAM, CHAT_PIPELINE_DIAGRAM } from '../src/components/site/chat/chat-pipeline-diagram'
 
 describe('chat pipeline diagram', () => {
-  it('gates reranked knowledge passages through Jev before including them in the answer evidence', () => {
+  it('gates reranked knowledge passages through the relevance gate before including them in the answer evidence', () => {
     expect(CHAT_PIPELINE_DIAGRAM).toContain('RERANK KNOWLEDGE RESULTS')
-    expect(CHAT_PIPELINE_DIAGRAM).toContain('JEV RELEVANCE CHECK')
+    expect(CHAT_PIPELINE_DIAGRAM).toContain('RELEVANCE CHECK')
     expect(CHAT_PIPELINE_DIAGRAM).toContain('DISCARD PASSAGE')
     expect(CHAT_PIPELINE_DIAGRAM).toContain('COLLECT ACCEPTED KNOWLEDGE')
   })
@@ -33,12 +33,12 @@ describe('chat pipeline diagram', () => {
     expect(CHAT_PIPELINE_DIAGRAM).toContain('No source query runs')
   })
 
-  it('verifies the signed context and Jev history decision before screening', () => {
+  it('verifies the signed context and history context decision before screening', () => {
     expect(CHAT_PIPELINE_DIAGRAM).toContain('VERIFY SIGNED CONTEXT')
     expect(CHAT_PIPELINE_DIAGRAM).toContain('HMAC signature')
     expect(CHAT_PIPELINE_DIAGRAM).toContain('CONTEXT REJECTED')
     expect(CHAT_PIPELINE_DIAGRAM).toContain('VERIFIED CONVERSATION CONTEXT')
-    expect(CHAT_PIPELINE_DIAGRAM).toContain('JEV HISTORY CONTEXT DECISION')
+    expect(CHAT_PIPELINE_DIAGRAM).toContain('HISTORY CONTEXT DECISION')
     expect(CHAT_PIPELINE_DIAGRAM).toContain('last 6 verified messages')
   })
 
@@ -49,9 +49,9 @@ describe('chat pipeline diagram', () => {
     expect(CHAT_PIPELINE_DIAGRAM).toContain('Next turn returns this token')
   })
 
-  it('decides contact intent in the same Jev screening request and hands off to the contact workflow', () => {
+  it('decides contact intent in the same screening request and hands off to the contact workflow', () => {
     expect(CHAT_PIPELINE_DIAGRAM).toContain('CONTACT INTENT?')
-    expect(CHAT_PIPELINE_DIAGRAM).toContain('From the same Jev screening request')
+    expect(CHAT_PIPELINE_DIAGRAM).toContain('From the same screening request')
     expect(CHAT_PIPELINE_DIAGRAM).toContain('CONTACT WORKFLOW · SEE THE SECOND DIAGRAM')
     expect(CHAT_PIPELINE_DIAGRAM).toContain('nothing is sent until you confirm')
   })
@@ -64,7 +64,7 @@ describe('chat pipeline diagram', () => {
   })
 
   it('screens template choice and the submitted form before any refinement happens', () => {
-    expect(CHAT_CONTACT_FLOW_DIAGRAM).toContain('JEV TEMPLATE SCREEN')
+    expect(CHAT_CONTACT_FLOW_DIAGRAM).toContain('TEMPLATE SCREEN')
     expect(CHAT_CONTACT_FLOW_DIAGRAM).toContain('FILL AND SCREEN THE FORM')
     expect(CHAT_CONTACT_FLOW_DIAGRAM).toContain('per-field presence')
     expect(CHAT_CONTACT_FLOW_DIAGRAM).toContain('STOP · CONTACT REQUEST NOT ADVANCED')
@@ -90,7 +90,7 @@ describe('chat pipeline diagram', () => {
   it('numbers only the normal chat pipeline and leaves the separate contact flow unnumbered', () => {
     const stepPattern = new RegExp(`(\\d{2}) ${String.fromCharCode(0xb7)} `, 'g')
     // Source order is not stage order: "11 · RESULTS FOR THIS TURN" is declared
-    // next to the Jev routing branch, so assert the set, not the sequence.
+    // next to the routing branch, so assert the set, not the sequence.
     const numbers = [...CHAT_PIPELINE_DIAGRAM.matchAll(stepPattern)]
       .map((match) => Number(match[1]))
       .sort((a, b) => a - b)

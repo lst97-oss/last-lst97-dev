@@ -1,13 +1,19 @@
-import { noul, TypeSafeClient } from '@typesafe-ai/sdk'
+import {
+  createSystemOneClient,
+  noul,
+  OPENROUTER_DECISION_BASE_URL,
+  OPENROUTER_DECISION_PATH,
+} from '../moderation/system-one-client'
 
 import type { KnowledgeRelevancePort, KnowledgeRelevanceScores } from './types'
 
 const DEFAULT_TIMEOUT_MS = 5_000
+const DEFAULT_MODEL = 'perplexity/pplx-decider-v1.2'
 const MAX_QUERY_LENGTH = 2_000
 const MAX_DOCUMENT_ID_LENGTH = 200
 const MAX_DOCUMENT_TITLE_LENGTH = 500
 const MAX_DOCUMENT_TEXT_LENGTH = 6_000
-const DECISION_ERROR = 'Jev knowledge relevance decision failed'
+const DECISION_ERROR = 'Knowledge relevance decision failed'
 
 const RELEVANCE_QUESTIONS = {
   is_relevant: noul('Does this document directly support a fact or answer requested by the current question?', {
@@ -37,29 +43,33 @@ function readNoulProbability(answers: Record<string, unknown>, key: string): num
   return value.noul
 }
 
-export interface JevKnowledgeRelevanceConfig {
+export interface KnowledgeRelevanceConfig {
   apiKey: string
   timeoutMs?: number
+  /** API root override; defaults to the OpenRouter API. */
+  baseUrl?: string
+  /** Endpoint path appended to `baseUrl`; defaults to OpenRouter's Decisions endpoint. */
+  path?: string
+  /** Model override; defaults to the Perplexity decider on OpenRouter. */
+  model?: string
 }
 
-export function createJevKnowledgeRelevanceGate(
-  config: JevKnowledgeRelevanceConfig,
+export function createKnowledgeRelevanceGate(
+  config: KnowledgeRelevanceConfig,
   fetcher?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
 ): KnowledgeRelevancePort {
   const apiKey = config.apiKey.trim()
-  if (!apiKey) throw new Error('Missing required server environment variable: TYPESAFE_API_KEY')
+  if (!apiKey) throw new Error('Missing decision-model API key for the relevance gate')
 
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS
-  if (!Number.isInteger(timeoutMs) || timeoutMs <= 0)
-    throw new Error('Jev knowledge relevance configuration is invalid')
+  if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) throw new Error('Knowledge relevance configuration is invalid')
 
-  const client = new TypeSafeClient({
+  const client = createSystemOneClient({
     apiKey,
-    defaultModel: 'jev-latest',
-    timeout: timeoutMs,
-    retry: { maxRetries: 0, apiConnectionError: false, apiTimeoutError: false },
-    logLevel: 'off',
-    ...(fetcher ? { fetch: fetcher } : {}),
+    timeoutMs,
+    baseUrl: config.baseUrl ?? OPENROUTER_DECISION_BASE_URL,
+    path: config.path ?? OPENROUTER_DECISION_PATH,
+    ...(fetcher ? { fetcher } : {}),
   })
 
   return {
@@ -67,6 +77,7 @@ export function createJevKnowledgeRelevanceGate(
       let reported = false
       try {
         const response = await client.systemOne({
+          model: config.model ?? DEFAULT_MODEL,
           state: {
             query: input.query.slice(0, MAX_QUERY_LENGTH),
             document: {
@@ -79,7 +90,7 @@ export function createJevKnowledgeRelevanceGate(
           questions: RELEVANCE_QUESTIONS,
         })
         input.onModelCall?.({
-          provider: 'jev',
+          provider: 'openrouter',
           operation: 'rag_relevance',
           model: response.model,
           status: 'succeeded',
@@ -87,13 +98,13 @@ export function createJevKnowledgeRelevanceGate(
           outputTokens: response.usage.output_tokens,
         })
         reported = true
-        const answers = response.answers as unknown as Record<string, unknown>
+        const answers = response.answers
         return {
           isRelevantProbability: readNoulProbability(answers, 'is_relevant'),
           answerEvidenceProbability: readNoulProbability(answers, 'contains_answer_evidence'),
         }
       } catch {
-        if (!reported) input.onModelCall?.({ provider: 'jev', operation: 'rag_relevance', status: 'failed' })
+        if (!reported) input.onModelCall?.({ provider: 'openrouter', operation: 'rag_relevance', status: 'failed' })
         throw new Error(DECISION_ERROR)
       }
     },
