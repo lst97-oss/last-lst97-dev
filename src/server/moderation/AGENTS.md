@@ -1,20 +1,31 @@
-# Jev moderation and decision prompts
+# Decision-model moderation and routing prompts
 
 This note governs `src/server/moderation`. It is the prompt-level reference for
-Jev, the TypeSafe decision model. `src/server/chat/AGENTS.md` owns chat behaviour
-and links here; this file owns what Jev is asked, with which labels, and under
+the decision model — an OpenRouter-served, System One compatible decider
+(`DECISION_MODEL`, default `perplexity/pplx-decider-v1.2`).
+`src/server/chat/AGENTS.md` owns chat behaviour
+and links here; this file owns what the decision model is asked, with which labels, and under
 what thresholds. Keep it current whenever a prompt constant, criteria map, or
 threshold changes.
 
-Jev never writes user-facing prose. It classifies, labels, and routes; the
+The decision model never writes user-facing prose. It classifies, labels, and routes; the
 OpenRouter planner prepares tool arguments and the responder writes the answer.
 
 ## Decision surface
 
-`createTypeSafeClassifier(apiKey)` (`typesafe-classifier.ts`) is the only export.
-It builds one `TypeSafeClient` and returns the four `ModerationClassifier`
-methods, each of which makes exactly one `client.systemOne({ state, questions })`
-call:
+Production wires the decision model through `src/server/moderation/runtime.ts`:
+`getModerationService()` builds a `createSystemOneClient` fetch client against
+OpenRouter's Decisions API (`https://openrouter.ai/api/alpha/decisions`), using
+`DECISION_MODEL` (default `perplexity/pplx-decider-v1.2`) and `DECISION_API_KEY`
+(falling back to `OPENROUTER_API_KEY`), and hands it to
+`createDecisionClassifier(...)` from `decision-classifier.ts`, which owns the
+four `ModerationClassifier` methods, each of which makes exactly one
+`client.systemOne({ state, questions })` call. The same fetch client serves the
+benchmark decider arms and the RAG relevance gate. It retries transient
+failures (connection errors, timeouts,
+429, 5xx) a bounded number of times with a jittered delay, honoring
+`Retry-After` up to a 2s ceiling; non-transient failures and invalid responses
+are never retried.
 
 | Method | Used by | Decides |
 |---|---|---|
@@ -23,17 +34,24 @@ call:
 | `classifyContactWorkflow` | locked chat contact workflow | template-phase safety + template choice, form-phase safety + template fit |
 | `routeTools` | later agent-loop steps | use/skip/uncertain per source, with this turn's evidence |
 
-Client config: `defaultModel: 'jev-latest'`, `timeout: 5_000`, retries disabled
-(`maxRetries: 0`), `logLevel: 'off'`. A failed call throws; the service layer
-converts every throw into `{ unavailable: true }` and the caller fails closed.
+Client config: model from `DECISION_MODEL`, `timeoutMs: 5_000` per attempt,
+`maxAttempts: 3` with a jittered 250 ms base delay (two retries), then give up.
+A failed call throws; the service layer converts every throw into
+`{ unavailable: true }` and the caller fails closed.
 
-Answers are coerced through `typesafe-classifier/answers.ts`. `requiredAnswer`
-throws on an unknown label or non-finite confidence; `readToolDecisions` does
-the same per tool.
+Answers are coerced through `decision/answers.ts`. `normalizeAnswers`
+reads each answer into `{ choice, confidence }`; `confidence` is optional in
+the System One schema, so an omitted value is filled from the answer's
+probability map (the chosen label's entry first), and an answer with neither
+yields `0`, which the gates treat as "not confident" — a normal rejection,
+never an outage. Entries without a string `choice` are dropped, so
+`requiredAnswer` and `readToolDecisions` keep throwing on unknown labels
+exactly as before. `tests/server/decision-classifier.test.ts` pins both the
+fill and the degradation.
 
 ## Prompt map
 
-All constants live in `typesafe-classifier/prompts.ts`.
+All constants live in `decision/prompts.ts`.
 
 | Constant | Backs | Sent by |
 |---|---|---|
@@ -50,7 +68,7 @@ All constants live in `typesafe-classifier/prompts.ts`.
 | `contactFormTemplateFitQuestion` + `contactFormTemplateFitCriteria` | `template_fit` | `classifyContactWorkflow` |
 
 Both contact-channel questions are specific to a message the visitor has already
-chosen to submit, and both were tuned against live `jev-latest` scores rather
+chosen to submit, and both were tuned against the previous decision model's live scores rather
 than written blind. Both carry the measured numbers in the comments in
 `prompts.ts`; re-measure before rewording, because the wording is load-bearing
 for confidence calibration and not just for readability.
@@ -60,7 +78,7 @@ for confidence calibration and not just for readability.
 Both contact questions are confidence-gated at `MODERATION_MIN_CONFIDENCE`, so
 wording changes are behaviour changes, not style edits. Every rejected category
 has to survive inside one `unsafe` description rather than as its own label:
-measured against `jev-latest`, a nine-label safety map scored a genuine
+measured against the previous decision model, a nine-label safety map scored a genuine
 quotation request 0.69 and the server rejected it, while the binary form scored
 the same message 0.89–0.94 and still scored script payloads, prompt injection,
 secrets, threats, sexual content and spam 0.99–1.0.
@@ -75,9 +93,84 @@ complaint, and short quote must all clear 0.75, while spam, phishing, script
 payloads, `javascript:` URIs, prompt injection, leaked credentials, sexual
 content, and threats must all be blocked.
 
+### Crafting for the decision models
+
+Perplexity's Decisions API guide (`docs.perplexity.ai/docs/decisions/quickstart`,
+read 2026-10-17) shapes how these prompts are built:
+
+- **Group facets of one decision; split competing candidates.** The guide says
+  `pplx-decider-v1.2` benefits from grouping related questions, while
+  `pplx-decider-flash-v1.2` is grouping-sensitive and wants one question per
+  request by default. The chat call groups scope + safety + contact intent +
+  every tool's use/skip as facets of one routing decision, which is the
+  documented good grouping; the relevance gate sends one document per request.
+  The same question scores differently depending on its grouping, so keep
+  grouping fixed when comparing runs or tuning thresholds.
+- **`choice` criteria are applicability rules.** Each option's description
+  should say when that option applies. `confidence` is the model's own
+  certainty — not the top probability; it drops when the runner-up is close —
+  and that is what the 0.6 gate consumes.
+- **Thresholds need margin.** Identical requests usually return identical
+  numbers to about the second decimal. 0.6 was revalidated flat across
+  0.50–0.90 by the decision-model benchmark.
+- **Retries honor `Retry-After`.** 429/5xx are retried in
+  `system-one-client.ts` using the header's delay, capped at 2s per delay.
+- **Aliases move; versioned names do not.** `pplx-decider-latest` follows the
+  newest version and Perplexity's guidance is to revalidate thresholds when
+  the model changes; production pins `perplexity/pplx-decider-v1.2` through
+  `DECISION_MODEL`.
+- **Name the real corpora and pin the vocabulary production misses.** The tool
+  descriptions name the material kinds the index actually holds — profile
+  facts, project deep-dives, interview Q&A, blog essays, repository reports —
+  and draw three boundary pairs the decider confused: “post / article / blog”
+  is publication state on `site_content` but written content and recorded
+  views on `search_knowledge`; “this site” is what it publishes
+  (`site_content`) versus how it is built (`search_knowledge`); and coding
+  time is exactly one of `coding_stats` (preset aggregates, no project, no
+  explicit date) or `coding_history` (projects, dates, breakdowns, series,
+  trends, streaks). The routing corpus pins each line
+  (`post-latest-informal`, `blog-where-to-read`, `written-about-ai-testing`,
+  `post-content-opinion`, `site-implementation-not-services`,
+  `coding-yesterday`, `opinion-ai-code-review`), and the chat surface scores
+  the production path with an exact tool set (`chat-post-latest`,
+  `chat-written-about-ai`, `chat-opinion-code-cheap`,
+  `chat-site-implementation`).
+- **Prompts are not the backstop for a missed call.** `agent/tool-selection.ts`
+  adds an owner-voice guard: `OWNER_VOICE_FRAME` (“do you think”, “your
+  view/take”, “have you written”, “you wrote”) combined with
+  `OWNER_VOICE_TOPIC` forces one `search_knowledge` call when a recorded view
+  or written answer exists, even if the decision model skipped every source.
+  `tests/server/chat-tool-selection.test.ts` pins the forced path and the
+  assistant-capability negative.
+
+Prompt-craft check 2026-10-17 (grouped chat call, five samples each): three
+criteria edits plus one corpus reword flipped every measured `v1.2` chat miss —
+“What is your email address?” scores `safe` 0.68–0.70 (was `secret_extraction`
+0.38), “Thanks, that helps!” `assistant_usage` 1.00 (was `general_knowledge`
+0.23), site criticism keeps `contact_intent` `normal_chat` 0.79–0.83 (was
+`uncertain` 0.13), and an unambiguous on-behalf request scores `on_behalf`
+0.94–0.96. Hostile controls held: secret-extraction attacks stayed 0.99–1.00
+on both models.
+
+Tool-routing craft, same day, measured on the extended corpus (97 routing
+cases, 59 chat cases, three repeats each): pass one scored routing 78.4%
+exact-set (228/291 records) and exposed three deterministic regressions from
+the first wording — interview-style questions went unretrieved, a
+named-project “explain” question also picked up the catalogue, and “break down
+by language” went to the shares instead of the warehouse. Pass two —
+software-development questions named in the `search_knowledge` description,
+skills and ownership-versus-contribution exclusions, a breakdown sentence on
+`coding_stats`, and the bare-language rule in `general_knowledge` — reached
+**86.6% exact-set (252/291 records, 84/97 cases) with chat at 100% benign
+pass, 0 false rejects, 0 hostile false accepts, 12/12 exact tool sets, and 0
+errors across 468 calls**. The 13 remaining case misses are all pre-existing
+over-fires: negative or out-of-scope questions the scope gate blocks before
+tools run, plus three site-publication questions that also pick up
+`search_knowledge` (one extra relevance-gated call, never a missing one).
+
 ## Label sets are contracts
 
-The keys of a criteria map are the only labels Jev may return for that question,
+The keys of a criteria map are the only labels the decision model may return for that question,
 and `requiredAnswer` throws on anything else. That throw surfaces as
 `{ unavailable: true }` and an HTTP 503, never as a wrong-category error.
 
@@ -87,7 +180,7 @@ trap:
 - The direct contact channel derives it with `Object.keys(criteria)`, so the map
   and its consumer cannot drift.
 - The chat contact workflow still passes hand-written arrays to `requiredAnswer`
-  (`typesafe-classifier.ts`). Those are duplicated label lists and they are the
+  (`decision-classifier.ts`). Those are duplicated label lists and they are the
   place drift happens: a label added to `contactFormSafetyCriteria` is rejected
   at runtime until that array is updated too.
 
@@ -101,7 +194,7 @@ Two consequences worth internalising:
 ## Two contact paths, deliberately different
 
 The direct `/contact` page and the locked chat contact workflow both screen with
-Jev but are not the same path.
+the decision model but are not the same path.
 
 | | Direct `/contact` | Chat contact workflow |
 |---|---|---|
@@ -125,7 +218,7 @@ may leak to whoever submitted the message.
 
 `MODERATION_MIN_CONFIDENCE` (default `0.6`) is declared in
 `src/server/env-schema.ts` and read once in `runtime.ts`. It is applied only
-through `isConfident` in `service.ts`, and it gates **every** Jev safety and
+through `isConfident` in `service.ts`, and it gates **every** decision-model safety and
 contact-intent decision — chat scope safety, chat contact workflow screening,
 tool routing confidence, and the direct `/contact` screen alike. Changing it is
 not a contact-only change.
@@ -136,6 +229,17 @@ scored `0.99`–`1.0` and the remaining rejections were borderline-but-genuine
 messages. At `0.75` a nine-label safety map rejected a real quotation request at
 `0.69`; the binary rewrite fixed the wording, and the lower floor adds margin
 for unusual phrasing on top of that.
+
+Checked again on 2026-10-17 with the decision-model benchmark (chat sweeps
+0.50–0.90 for the previous model and `perplexity/pplx-decider-v1.2`): both are flat
+across the sweep, so chat outcomes are label-driven rather than
+confidence-driven and `0.6` stays. The deciders also returned confidence and
+probabilities on every captured decision, so optional confidence never broke
+the gate; the contact and relevance failures observed for the OpenRouter route
+were transient request errors, and `system-one-client.ts` absorbs most of them
+with bounded retries (post-fix: 3 `unavailable` + 9 errors of 2,256 `v1.2`
+calls; 7 of the 9 are the SDK-bound relevance gate, which the migration moves
+onto the retrying client).
 
 The two failure modes pull in opposite directions:
 
@@ -195,7 +299,7 @@ left that exact turn at `uncertain` 0.64 with no history. It was never a leak �
 the visitor gets the rephrase prompt instead of the scope message, so the rule
 belongs in the label rather than in the gate.
 
-Measured against `jev-latest` on 2026-10-06, final wording, 44 cases: **28
+Measured against the previous decision model on 2026-10-06, final wording, 44 cases: **28
 out-of-scope all `general_knowledge`, 16 in-scope all accepted, zero
 `uncertain`.** The reported turn 0.99, its follow-up 1.00, bare "A code snippet
 demo" 0.97, "Code." 0.92. Out-of-scope floor was "pay my invoice for me" 0.56
@@ -209,23 +313,53 @@ Re-measure both directions before trusting any rewording here. The positive
 controls matter as much as the negatives, because the failure this fixed was
 silent over-inclusion, not a rejection.
 
+Refined 2026-10-17, after the measurement above (which used the earlier
+wording): generic software-development questions stay in scope only in their
+interview form — explaining, comparing, or asking Nelson’s view on an industry
+topic — and are answered from his recorded experience; opinions count as
+answerable whether the material lives in the interview corpus, a blog post, or
+the RAG index. A request for a decision or hands-on help on the visitor’s own
+project or work (“should I use server components or client components for a
+dashboard like this?”, “review my schema”, “improve my algorithm”) is out of
+scope even though it is technical. The decision-model benchmark corpus pins
+both sides (`chat-technical-interview-style`, `chat-opinion-vibe-coding`,
+`chat-opinion-ai-juniors`, `chat-out-own-project-advice`,
+`chat-out-review-my-schema`); re-measure the scope matrix with the new wording
+before trusting counts.
+
+First measurement with the new wording (2026-10-17, previous model, chat prompt,
+five samples per message): “review my schema” flips from `technical_question`
+to `general_knowledge` (0.74–0.82); “should I use server components or client
+components for a dashboard like this?” weakens from 1.00 to 0.60–0.68
+`technical_question` but still passes — the one corpus case the refinement does
+not yet bind; “How would you handle the remaining cents when splitting an
+expense?” was already `general_knowledge` (0.96+) under the previous wording,
+so scenario-style interview hypotheticals are a pre-existing gap, not a
+regression. The decision-model benchmark corpus reports both as baseline
+misses.
+
 ## Prompt budget
 
-`tests/server/typesafe-classifier.test.ts` pins
-`JSON.stringify(requestBody.questions).length < 12_000` on the chat-and-tools
-path. **Measured headroom is about 150 characters, not the ~1,400 the
-measurement command below suggests** — that command stubs every question text
-with `"x"` and so undercounts. To get the real number, log
-`JSON.stringify(requestBody.questions).length` inside the budget test itself;
-it was 11,849 before the 2026-10-06 scope change and 11,986 after it. The
-scope question duplicated its own criteria descriptions, so they were
-condensed to pay for the work-product exclusion. The contact-channel constants
+`tests/server/decision-classifier.test.ts` pins
+`JSON.stringify(requestBody.questions).length < 13_000` on the chat-and-tools
+path. The ceiling moved from 12,000 to 13,000 on 2026-10-17, when production
+moved to `perplexity/pplx-decider-v1.2` (256K context): the extra room pays for
+corpus vocabulary in the source descriptions without trading away accuracy
+wording. **Everything else is measured, not estimated** — the measurement
+command below stubs every question text with `"x"` and undercounts, so log
+`JSON.stringify(requestBody.questions).length` inside the budget test itself.
+It was 11,849 before the 2026-10-06 scope change, 11,986 after it, 11,981
+after the 2026-10-17 technical-scope refinement (interview-style questions stay
+in scope, visitor-project decisions and hands-on help do not, and opinions on
+recorded topics are answerable), 11,984 after the same day's contact-criteria
+craft, and 12,104 after the tool-vocabulary craft and owner-voice guard — about
+900 characters of headroom under the new ceiling. The contact-channel constants
 are not in that payload, so they are unconstrained by this budget.
 
 Measure after any prompt edit rather than eyeballing it:
 
 ```bash
-bun -e 'import("./src/server/moderation/typesafe-classifier/prompts.ts").then(p=>{const t=["search_knowledge","list_owned_projects","coding_stats","coding_history","site_content","services"];const q=JSON.stringify({scope:{q:p.chatScopeQuestion,c:p.chatScopeCriteria},safety:{q:"x",c:p.chatSafetyCriteria},contact_intent:{q:p.contactIntentQuestion,c:p.contactIntentCriteria},...Object.fromEntries(t.map(x=>[x,{q:"x",c:p.toolUseCriteria}]))});console.log(q.length)})'
+bun -e 'import("./src/server/moderation/decision/prompts.ts").then(p=>{const t=["search_knowledge","list_owned_projects","coding_stats","coding_history","site_content","services"];const q=JSON.stringify({scope:{q:p.chatScopeQuestion,c:p.chatScopeCriteria},safety:{q:"x",c:p.chatSafetyCriteria},contact_intent:{q:p.contactIntentQuestion,c:p.contactIntentCriteria},...Object.fromEntries(t.map(x=>[x,{q:"x",c:p.toolUseCriteria}]))});console.log(q.length)})'
 ```
 
 Several tests pin exact prompt substrings — `'portfolio assistant'` in the
@@ -235,13 +369,13 @@ loosen one so both old and new wording pass.
 
 ## Change checklist
 
-When changing a Jev prompt or criteria map:
+When changing a decision prompt or criteria map:
 
 1. Update this file's prompt map and label-set sections if a constant is added,
    renamed, or re-pointed.
 2. Update the consumer's accepted-label list in the same change, or derive it
    from the map keys.
-3. Update `tests/server/typesafe-classifier.test.ts` for request shape and
+3. Update `tests/server/decision-classifier.test.ts` for request shape and
    `tests/server/moderation.test.ts` for gating behaviour.
 4. Re-measure the prompt budget above.
 5. Re-pin any exact-wording assertion to the new intent rather than loosening it.

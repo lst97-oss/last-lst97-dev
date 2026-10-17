@@ -6,4 +6,4 @@ Chat diagnostics use the same validated address and may record Vercel's country,
 
 Vercel provides the ingress boundary for these headers. Do not route production traffic through a separate Cloudflare Tunnel for this application. Cloudflare R2 and Turnstile settings are unrelated and remain configured through their existing integrations.
 
-Configure independent values of at least 32 characters for `RATE_LIMIT_HASH_SECRET` and `CHAT_CONTEXT_SIGNING_SECRET`. `TYPESAFE_API_KEY` is also required by the chat integration. Keep these values in Vercel's environment-variable settings and out of source control.
+Configure independent values of at least 32 characters for `RATE_LIMIT_HASH_SECRET` and `CHAT_CONTEXT_SIGNING_SECRET`. `OPENROUTER_API_KEY` (or a dedicated `DECISION_API_KEY`) is also required by the chat integration's decision model. Keep these values in Vercel's environment-variable settings and out of source control.

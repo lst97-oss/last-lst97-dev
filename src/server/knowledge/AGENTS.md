@@ -2,7 +2,7 @@
 
 ## Role / pipeline position
 
-Read path (chat, wired in `server/chat/runtime.ts`): message → `query-resolution` → `embedding-client` (query) → `repository.search` (pgvector over all rows) → `siliconflow-reranker` → dedupe/top-3 → `jev-relevance-gate` (per-document direct-support decision) → evidence budget → `prompt-evidence` (untrusted block) → citations to the browser. `retrieve.ts` is the only entry the chat calls (`RetrieveKnowledge.execute`).
+Read path (chat, wired in `server/chat/runtime.ts`): message → `query-resolution` → `embedding-client` (query) → `repository.search` (pgvector over all rows) → `siliconflow-reranker` → dedupe/top-3 → `relevance-gate` (per-document direct-support decision) → evidence budget → `prompt-evidence` (untrusted block) → citations to the browser. `retrieve.ts` is the only entry the chat calls (`RetrieveKnowledge.execute`).
 
 Write path (worker/jobs/CLIs): `*-source.ts` → `chunking` → `index-source` (embed document) → `repository.upsertSourceChunks`. Triggered by Payload hooks/tasks (`payload-hooks`, `payload-tasks`, `payload-runtime`, `jobs`) and by the CLIs in `scripts/knowledge/` (`sync-knowledge`, `sync-github-knowledge`, `reindex-github-reports`, `index-interview-knowledge`, `index-services-knowledge`, `migrate-knowledge`, `import-wakatime-history`).
 
@@ -27,7 +27,7 @@ Note: `database-migration.ts` also owns the WakaTime heartbeat/rollup tables bec
 - Validate at the boundary with zod (`safeParse`) or explicit asserts, then trust the parsed value; throw fixed sanitized messages.
 - Sizes are named constants near the top (`MAX_*`); dimensions `1024` are asserted in `repository`, `embedding-client`, and `index-source`. Durations are `timeoutMs`; timing logs use `durationMs: Math.max(0, Math.round(now() - startedAt))`.
 - Sources are `async fetch(sourceId) => KnowledgeDocument | null` with a single well-known id (`operator-profile`, `wakatime-all-time`) and optional `listDocuments`; ids are the sync/dedupe key.
-- Constants tuned together: reranker `MAX_CANDIDATES = 10` with `retrieve.VECTOR_CANDIDATE_LIMIT = 10`; reranker `top_n` clamp and `FINAL_CANDIDATE_LIMIT = 3`; Jev relevance thresholds are `0.60` for both direct-support Noul probabilities; `evidenceBudget` default 5,000 chars (cap 20,000).
+- Constants tuned together: reranker `MAX_CANDIDATES = 10` with `retrieve.VECTOR_CANDIDATE_LIMIT = 10`; reranker `top_n` clamp and `FINAL_CANDIDATE_LIMIT = 3`; `relevance-gate` thresholds are `0.60` for both direct-support Noul probabilities; `evidenceBudget` default 5,000 chars (cap 20,000).
 - Dedupe is by source identity (`type:sourceId`), not chunk id — several chunks of one post would otherwise surface as K1/K2/K3 with the same title/URL.
 - Cron and retry policy live in `payload-tasks.ts` (`KNOWLEDGE_SYNC_CRON` in `jobs.ts`); `payload.config.ts` registers the tasks and auto-run queue.
 - RAG is opt-in: `KNOWLEDGE_RAG_ENABLED=false` by default. `chat` degrades (`knowledgeUnavailable`) when retrieval fails; it must never block a reply.
