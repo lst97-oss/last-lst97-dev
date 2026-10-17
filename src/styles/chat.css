@@ -645,7 +645,7 @@
 }
 
 /* Example chips are a desktop affordance: below the two-column breakpoint the
-   grid would stack eight rows and crowd the composer. */
+   tabs and chips would crowd the composer. */
 @media (max-width: 900px) {
   .os-chat-suggestions {
     display: none;
@@ -692,10 +692,71 @@
   line-height: 1;
 }
 
-/* Collapsed state: the summary stays, the grid is removed from layout and from
-   the accessibility tree. */
-.os-chat-suggestions--closed .os-chat-suggestions-list {
+/* Collapsed state: the summary stays, the tabs and grid are removed from
+   layout and from the accessibility tree. */
+.os-chat-suggestions--closed .os-chat-suggestions-body {
   display: none;
+}
+
+.os-chat-suggestions-body {
+  margin-top: 8px;
+}
+
+/* The tab list is the Base UI `Tabs.List`; these unlayered rules override the
+   wrapper's utility defaults (rounded, muted fill, fixed height) to keep the
+   pixel-OS frame, and the 4px gap separates the tab buttons. The tab root
+   already spaces the list from the chips panel (`gap-2`). */
+.os-chat-suggestions-tablist {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  width: 100%;
+  height: auto;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.os-chat-suggestions-tab {
+  box-sizing: border-box;
+  flex: none;
+  height: auto;
+  border: 2px solid var(--os-ink);
+  border-radius: 0;
+  padding: 3px 7px;
+  background: var(--os-paper);
+  color: var(--os-ink-soft);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background-color 100ms ease-out, color 100ms ease-out;
+}
+
+/* Base UI marks the selected tab with `data-active` (pinned by
+   `tests/base-ui-attributes.test.tsx`). The wrapper draws its selected
+   underline with an `::after` pseudo-element; the pixel frame does not use it. */
+.os-chat-suggestions-tab::after {
+  display: none;
+}
+
+.os-chat-suggestions-tab:hover:not([data-active]) {
+  background: #fff4ba;
+}
+
+.os-chat-suggestions-tab[data-active] {
+  background: var(--os-ink);
+  color: var(--os-paper);
+}
+
+.os-chat-suggestions-tab:focus-visible {
+  outline: 3px solid var(--os-coral);
+  outline-offset: 2px;
 }
 
 .os-chat-suggestions-list {

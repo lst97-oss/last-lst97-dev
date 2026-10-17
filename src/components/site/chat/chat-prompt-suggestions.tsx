@@ -1,48 +1,8 @@
 import { cn } from 'cn'
 import { useId, useState } from 'react'
+import { CHAT_PROMPT_GROUPS } from '@/components/site/chat/chat-prompt-groups'
 import type { ChatConversationViewModel } from '@/components/site/chat/chat-types'
-
-/**
- * One clickable example per chat tool. Every prompt here is a phrase the real
- * routing recognises, so clicking one both teaches the shape of a good question
- * and exercises a genuine source rather than a decorative sample. Keep the wording
- * aligned with the Jev routing descriptions in
- * `src/server/moderation/typesafe-classifier/prompts.ts`.
- */
-const SUGGESTIONS = [
-  {
-    tool: 'OWNED CATALOGUE',
-    prompt: 'Show me all your projects.',
-  },
-  {
-    tool: 'PROJECT COUNT',
-    prompt: 'How many projects do you have in total?',
-  },
-  {
-    tool: 'CODING TIME',
-    prompt: 'How much time have you spent on the canto-101 project?',
-  },
-  {
-    tool: 'WAKATIME SHARE',
-    prompt: 'What is your WakaTime activity for the last 7 days?',
-  },
-  {
-    tool: 'THIS SITE',
-    prompt: 'What is the latest project published on this site?',
-  },
-  {
-    tool: 'CHANGELOG',
-    prompt: 'What is the latest entry in this site changelog?',
-  },
-  {
-    tool: 'SITE MAP',
-    prompt: 'What can I do on this site?',
-  },
-  {
-    tool: 'KNOWLEDGE',
-    prompt: 'What is your background and tech stack?',
-  },
-] as const
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 interface ChatPromptSuggestionsProps {
   conversation: ChatConversationViewModel
@@ -50,15 +10,21 @@ interface ChatPromptSuggestionsProps {
 }
 
 /**
- * A collapsible list of tool-shaped example questions, expanded by default and
+ * A collapsible, grouped list of example questions, expanded by default and
  * collapsed automatically once the first turn lands so it stops competing with
  * the transcript. The visitor can reopen it at any time.
+ *
+ * Groups are `Tabs` (Base UI) over the corpora the chat actually indexes, so a
+ * visitor can aim at projects, writing, technical answers, coding activity, the
+ * site, or the commercial offer without reading a list of every tool; the
+ * primitive owns roving focus and arrow-key navigation, and `chat.css` owns the
+ * pixel styling.
  *
  * Selecting an example fills the composer instead of sending, so it can be read
  * and edited first; the signed context and turn counter are untouched.
  *
- * Desktop only: `chat.css` hides the panel below 900px, where a stacked grid of
- * eight chips would crowd the composer.
+ * Desktop only: `chat.css` hides the panel below 900px, where tabs and chips
+ * would crowd the composer.
  */
 export function ChatPromptSuggestions({ conversation, pending }: ChatPromptSuggestionsProps) {
   const { completedTurns, turnLimitReached } = conversation
@@ -67,7 +33,7 @@ export function ChatPromptSuggestions({ conversation, pending }: ChatPromptSugge
   // Deriving the default from props matters: an effect-only collapse renders one
   // frame of the open panel after a turn starts, and never runs during SSR.
   const [manual, setManual] = useState<boolean | null>(null)
-  const listId = useId()
+  const bodyId = useId()
   const disabled = pending || turnLimitReached
   // A turn in flight means the visitor has moved on to the conversation. This is
   // derived, not an effect: `pending` flips synchronously on submit, so the panel
@@ -81,32 +47,47 @@ export function ChatPromptSuggestions({ conversation, pending }: ChatPromptSugge
   return (
     <div className={cn('os-chat-suggestions', !open && 'os-chat-suggestions--closed')}>
       <button
-        aria-controls={listId}
+        aria-controls={bodyId}
         aria-expanded={open}
         className="os-chat-suggestions-summary"
         onClick={() => setManual(!open)}
         type="button"
       >
-        <span className="os-chat-suggestions-label">TRY A TOOL</span>
+        <span className="os-chat-suggestions-label">TRY A QUESTION</span>
         <span aria-hidden="true" className="os-chat-suggestions-chevron">
           {open ? '−' : '+'}
         </span>
       </button>
-      <ul className="os-chat-suggestions-list" id={listId}>
-        {SUGGESTIONS.map((suggestion) => (
-          <li key={suggestion.tool}>
-            <button
-              className="os-chat-suggestion"
-              disabled={disabled}
-              onClick={() => setMessage(suggestion.prompt)}
-              type="button"
-            >
-              <span className="os-chat-suggestion-tool">{suggestion.tool}</span>
-              <span className="os-chat-suggestion-prompt">{suggestion.prompt}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      <div className="os-chat-suggestions-body" id={bodyId}>
+        <Tabs defaultValue={CHAT_PROMPT_GROUPS[0]!.id}>
+          <TabsList aria-label="Example question groups" className="os-chat-suggestions-tablist">
+            {CHAT_PROMPT_GROUPS.map((group) => (
+              <TabsTrigger className="os-chat-suggestions-tab" key={group.id} value={group.id}>
+                {group.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {CHAT_PROMPT_GROUPS.map((group) => (
+            <TabsContent className="os-chat-suggestions-panel" key={group.id} value={group.id}>
+              <ul className="os-chat-suggestions-list">
+                {group.prompts.map((example) => (
+                  <li key={example.prompt}>
+                    <button
+                      className="os-chat-suggestion"
+                      disabled={disabled}
+                      onClick={() => setMessage(example.prompt)}
+                      type="button"
+                    >
+                      <span className="os-chat-suggestion-tool">{example.source}</span>
+                      <span className="os-chat-suggestion-prompt">{example.prompt}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
     </div>
   )
 }

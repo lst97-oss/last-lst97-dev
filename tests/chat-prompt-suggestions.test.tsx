@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 
+import { CHAT_PROMPT_GROUPS } from '../src/components/site/chat/chat-prompt-groups'
 import { ChatPromptSuggestions } from '../src/components/site/chat/chat-prompt-suggestions'
 import type { ChatConversationViewModel } from '../src/components/site/chat/chat-types'
 
@@ -22,43 +23,62 @@ function conversation(overrides: Partial<ChatConversationViewModel> = {}): ChatC
 }
 
 describe('ChatPromptSuggestions', () => {
-  it('renders one example per chat tool, expanded on the first turn', () => {
+  it('renders one tab per question group, expanded on the first turn', () => {
     const html = renderToStaticMarkup(<ChatPromptSuggestions conversation={conversation()} pending={false} />)
 
     expect(html).toContain('aria-expanded="true"')
-    // Every registered source is represented, so a visitor can see what the chat can do.
-    for (const label of [
-      'OWNED CATALOGUE',
-      'PROJECT COUNT',
-      'CODING TIME',
-      'WAKATIME SHARE',
-      'THIS SITE',
-      'CHANGELOG',
-      'SITE MAP',
-      'KNOWLEDGE',
-    ])
-      expect(html).toContain(label)
+    expect(html).toContain('role="tablist"')
+    expect(html).toContain('role="tab"')
+    expect(html).toContain('role="tabpanel"')
+    expect(html).toContain('data-active')
+    for (const group of CHAT_PROMPT_GROUPS) expect(html).toContain(group.label)
+    // Only the active group's prompts mount; the rest live behind their tabs.
+    for (const example of CHAT_PROMPT_GROUPS[0]!.prompts) expect(html).toContain(example.prompt)
   })
 
-  it('uses prompts the real router recognises, not placeholder filler', () => {
-    const html = renderToStaticMarkup(<ChatPromptSuggestions conversation={conversation()} pending={false} />)
+  it('groups prompts by the corpora the chat actually indexes', () => {
+    expect(CHAT_PROMPT_GROUPS.map((group) => group.label)).toEqual([
+      'ABOUT',
+      'PROJECTS',
+      'WRITING',
+      'TECHNICAL',
+      'CODING',
+      'SITE',
+      'SERVICES',
+    ])
 
-    // These phrasings drive site_content, list_owned_projects, and coding_history.
-    expect(html).toContain('What is the latest project published on this site?')
-    expect(html).toContain('What is the latest entry in this site changelog?')
-    expect(html).toContain('What can I do on this site?')
-    expect(html).toContain('How many projects do you have in total?')
+    const prompts = CHAT_PROMPT_GROUPS.flatMap((group) => group.prompts)
+    expect(new Set(prompts.map((example) => example.prompt)).size).toBe(prompts.length)
+    for (const example of prompts) {
+      expect(example.source.length).toBeGreaterThan(0)
+      expect(example.prompt.length).toBeGreaterThan(10)
+    }
+
+    // One representative prompt per corpus, pinned so a reword cannot silently
+    // drop a source from the panel.
+    for (const expected of [
+      'What is your professional background and tech stack?',
+      'Show me all your projects.',
+      'How does the G-NAF address autocomplete route broad-prefix queries?',
+      'Do you think code is cheap?',
+      'How do you make a deployment safe when the API and database release separately?',
+      'What is your all-time language breakdown?',
+      'What is the latest changelog entry?',
+      'What is the Go Support Plan?',
+    ])
+      expect(prompts.some((example) => example.prompt === expected)).toBe(true)
   })
 
   it('addresses the visitor in the second person, since the subject is Nelson', () => {
-    const html = renderToStaticMarkup(<ChatPromptSuggestions conversation={conversation()} pending={false} />)
-
     // The chat's scope policy reads "you/your" as Nelson, so a first-person
     // example would be answered as though the visitor were asking about himself.
-    expect(html).toContain('How much time have you spent on the canto-101 project?')
-    expect(html).toContain('What is your WakaTime activity for the last 7 days?')
-    expect(html).not.toContain('have I spent')
-    expect(html).not.toContain('my WakaTime')
+    // The single exception is the site-orientation question, which asks what the
+    // visitor can do here.
+    const firstPersonAboutNelson = /\b(?:my|have I)\b|\bI (?:spent|worked|built|coded|studied|graduated)\b/
+    for (const example of CHAT_PROMPT_GROUPS.flatMap((group) => group.prompts)) {
+      if (example.prompt === 'What can I do on this site?') continue
+      expect(example.prompt).not.toMatch(firstPersonAboutNelson)
+    }
   })
 
   it('collapses once a turn has completed but stays reopenable', () => {
