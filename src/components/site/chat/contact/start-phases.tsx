@@ -17,7 +17,7 @@ export function ChatContactConfirmationPhase({
   return (
     <div className="os-chat-contact-card">
       <p>
-        Starting clears the current conversation. Jev will screen this new contact session without the earlier chat
+        Starting clears the current conversation. The new contact session is screened fresh without the earlier chat
         context, and none of those earlier messages will be included in your email.
       </p>
       <div className="os-chat-contact-actions">

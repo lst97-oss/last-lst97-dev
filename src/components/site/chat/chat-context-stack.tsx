@@ -27,7 +27,7 @@ const SYSTEM_FRAMES = [
   {
     id: 'evidence',
     label: 'PERSONAL KNOWLEDGE CONTEXT — UNTRUSTED EVIDENCE',
-    body: 'Accepted passages only, inside <untrusted_evidence> tags, each with a [K#] citation, title, source URL, and visibility. Passages that failed the Jev relevance gate are absent.',
+    body: 'Accepted passages only, inside <untrusted_evidence> tags, each with a [K#] citation, title, source URL, and visibility. Passages that failed the relevance gate are absent.',
     trust: 'retrieved',
   },
   {

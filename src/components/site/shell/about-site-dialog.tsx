@@ -56,7 +56,7 @@ export function AboutSiteDialog({ open, onOpenChange }: { open: boolean; onOpenC
           <SpecRow icon={Server} label="Server" value="Nitro · server-sent events" />
           <SpecRow icon={Database} label="Content" value="Payload CMS · PostgreSQL" />
           <SpecRow icon={Braces} label="Retrieval" value="pgvector · SiliconFlow rerank" />
-          <SpecRow icon={Heart} label="Chat models" value="TypeSafe · OpenRouter" />
+          <SpecRow icon={Heart} label="Chat models" value="Perplexity decider · OpenRouter" />
         </dl>
 
         <div className="about-site-actions">

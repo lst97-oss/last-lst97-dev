@@ -50,8 +50,9 @@ export function ChatHelpDialog({ privacyNotice }: { privacyNotice: string | unde
         <ChatContextStack />
         <ChatPipelineContact />
         <p className="chat-pipeline-footnote">
-          The workflow uses TypeScript, React, TanStack Start, server-sent events, TypeSafe AI, Postgres/pgvector,
-          SiliconFlow, Payload CMS, WakaTime, and OpenRouter. Enabled services and model settings can change.
+          The workflow uses TypeScript, React, TanStack Start, server-sent events, Perplexity decider,
+          Postgres/pgvector, SiliconFlow, Payload CMS, WakaTime, and OpenRouter. Enabled services and model settings can
+          change.
         </p>
         {privacyNotice ? (
           <p className="chat-pipeline-privacy" role="note">

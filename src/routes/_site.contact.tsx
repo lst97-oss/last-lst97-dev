@@ -130,7 +130,7 @@ function ContactPage() {
             <h2 className="mb-3 text-3xl leading-tight">Context gets answers.</h2>
             <p className="mb-3 leading-relaxed text-muted-foreground">
               Project inquiries land best with a link and a timeline. Bug reports help most with steps to reproduce.
-              Open-source ideas are welcome any time. Requesting a website price? Start a chat and Jev can open a
+              Open-source ideas are welcome any time. Requesting a website price? Start a chat and Zita can open a
               structured quotation request that collects the details a fixed price needs.
             </p>
           </section>

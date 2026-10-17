@@ -7,9 +7,9 @@ export type ChatPrivacyNoticePhase =
   | 'delivered'
 
 const NORMAL_CHAT_NOTICE =
-  'Jev screens messages. Cloudflare checks each send; OpenRouter generates replies. Chat content and visit details may go to private Discord diagnostics.'
+  'OpenRouter screens messages and generates replies. Cloudflare checks each send. Chat content and visit details may go to private Discord diagnostics.'
 const CONTACT_NOTICE =
-  'Jev screens contact text; Cloudflare checks the send. If sent, it goes to Nelson; OpenRouter refines bug and feature reports, with the original attached. Don’t include secrets or private learner data.'
+  'OpenRouter screens contact text; Cloudflare checks the send. If sent, it goes to Nelson; OpenRouter refines bug and feature reports, with the original attached. Don’t include secrets or private learner data.'
 
 export function getChatPrivacyNotice(phase: ChatPrivacyNoticePhase): string | undefined {
   if (phase === 'delivered') return undefined
