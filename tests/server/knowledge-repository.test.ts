@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'bun:test'
-import { sql } from '@payloadcms/db-postgres'
-import { drizzle } from 'drizzle-orm/node-postgres'
+import { sql } from 'drizzle-orm'
+import { drizzle } from 'drizzle-orm/bun-sql'
 import { PgDialect } from 'drizzle-orm/pg-core'
-import { Pool } from 'pg'
 
+import { createBunSqlClient, createQueryPort } from '../../src/server/database/bun-sql'
 import { migrateKnowledgeDatabase } from '../../src/server/knowledge/database-migration'
 import { projectCatalogFiltersSchema } from '../../src/server/knowledge/project-catalog'
 import type { KnowledgeChunk } from '../../src/server/knowledge/repository'
 import { createKnowledgeIndexRepository } from '../../src/server/knowledge/repository'
+import { createKnowledgeDatabase } from '../../src/server/knowledge/repository/database-adapter'
 
 const dialect = new PgDialect()
 
@@ -30,6 +31,25 @@ function createDatabase(rows: unknown[] = []) {
     execute,
   }
 }
+
+function createDrizzleDatabase(rows: unknown[] = []) {
+  const execute = async (_query: ReturnType<typeof sql>) => rows
+  return {
+    execute,
+    transaction: async <T>(callback: (transaction: { execute: typeof execute }) => Promise<T>) => callback({ execute }),
+  }
+}
+
+describe('Bun SQL database adapter', () => {
+  it('normalizes row arrays to the rows port in and out of transactions', async () => {
+    const database = createKnowledgeDatabase(createDrizzleDatabase([{ source_id: 'lst97/tool' }]))
+
+    await expect(database.execute(sql`select 1`)).resolves.toEqual({ rows: [{ source_id: 'lst97/tool' }] })
+    await expect(database.transaction((transaction) => transaction.execute(sql`select 1`))).resolves.toEqual({
+      rows: [{ source_id: 'lst97/tool' }],
+    })
+  })
+})
 
 const chunks: KnowledgeChunk[] = [
   {
@@ -553,16 +573,21 @@ const testDatabaseUrl = Bun.env.KNOWLEDGE_TEST_DATABASE_URL
 describe.skipIf(!testDatabaseUrl)('KnowledgeIndexRepository with pgvector Postgres', () => {
   it('persists 1024-dimensional vectors, ranks public and private chunks by cosine, and rolls back failed replacement', async () => {
     const schema = `knowledge_test_${Bun.randomUUIDv7().replaceAll('-', '')}`
-    const pool = new Pool({
-      connectionString: testDatabaseUrl,
-      options: `-c search_path=${schema},public`,
+    const client = createBunSqlClient({
+      url: testDatabaseUrl!,
+      applicationName: 'last-lst97-knowledge-test',
+      connection: { search_path: `${schema},public` },
     })
-    const db = drizzle(pool)
-    const repository = createKnowledgeIndexRepository(db)
+    const repository = createKnowledgeIndexRepository(createKnowledgeDatabase(drizzle(client)))
 
     try {
-      await pool.query(`CREATE SCHEMA "${schema}"`)
-      await migrateKnowledgeDatabase(pool as never)
+      await client.unsafe(`CREATE SCHEMA "${schema}"`)
+      const migrationConnection = await client.reserve()
+      try {
+        await migrateKnowledgeDatabase(createQueryPort(migrationConnection))
+      } finally {
+        migrationConnection.release()
+      }
 
       const visible: KnowledgeChunk = {
         ...chunks[0]!,
@@ -581,7 +606,7 @@ describe.skipIf(!testDatabaseUrl)('KnowledgeIndexRepository with pgvector Postgr
         ['post:post-1:1', false],
       ])
 
-      await pool.query(
+      await client.unsafe(
         `ALTER TABLE "knowledge_chunks" ADD CONSTRAINT "test_no_force_rollback" CHECK (content <> 'force rollback')`,
       )
       await expect(
@@ -594,8 +619,47 @@ describe.skipIf(!testDatabaseUrl)('KnowledgeIndexRepository with pgvector Postgr
       const afterRollback = await repository.search(visible.embedding, 10)
       expect(afterRollback.map(({ text }) => text).sort()).toEqual([visible.text, hidden.text].sort())
     } finally {
-      await pool.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`)
-      await pool.end()
+      await client.unsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`)
+      await client.close()
+    }
+  })
+
+  it('rolls back the dedicated migration on a reserved Bun SQL connection', async () => {
+    const schema = `knowledge_rollback_test_${Bun.randomUUIDv7().replaceAll('-', '')}`
+    const client = createBunSqlClient({
+      url: testDatabaseUrl!,
+      applicationName: 'last-lst97-knowledge-rollback-test',
+      connection: { search_path: `${schema},public` },
+    })
+
+    try {
+      await client.unsafe(`CREATE SCHEMA "${schema}"`)
+      const migrationConnection = await client.reserve()
+      try {
+        const executor = createQueryPort(migrationConnection)
+        let calls = 0
+        await expect(
+          migrateKnowledgeDatabase({
+            query: async (statement) => {
+              calls += 1
+              // Fail after CREATE TABLE has run so the assertion proves the
+              // transaction rolled the table back, not that it never started.
+              if (calls === 4) throw new Error('forced migration failure')
+              return executor.query(statement)
+            },
+          }),
+        ).rejects.toThrow('Knowledge database migration failed')
+      } finally {
+        migrationConnection.release()
+      }
+
+      const [row] = await client.unsafe<Array<{ table_name: string | null }>>(
+        `SELECT to_regclass('${schema}.knowledge_chunks') AS "table_name"`,
+      )
+      expect(row.table_name).toBeNull()
+    } finally {
+      await client.unsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`)
+      await client.close()
     }
   })
 })

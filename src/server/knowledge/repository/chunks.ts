@@ -1,4 +1,4 @@
-import { sql } from '@payloadcms/db-postgres'
+import { sql } from 'drizzle-orm'
 import { updateOwnedProjectCatalogWithinTransaction } from './catalog'
 import {
   assertChunkSource,

@@ -1,10 +1,11 @@
-import { Pool } from 'pg'
+import type { SQL } from 'bun'
 
+import { createBunSqlClient, createQueryPort } from '../../database/bun-sql'
 import { getServerEnv } from '../../env'
 import { requireIntegrationEnv } from '../../env-schema'
 import { type CodingHistoryRepository, createCodingHistoryRepository } from './repository'
 
-let pool: Pool | undefined
+let client: SQL | undefined
 let repository: CodingHistoryRepository | undefined
 
 export function getCodingHistoryRepository(): CodingHistoryRepository {
@@ -12,22 +13,22 @@ export function getCodingHistoryRepository(): CodingHistoryRepository {
 
   const env = getServerEnv()
   const connectionString = requireIntegrationEnv('KNOWLEDGE_DATABASE_URL', env.KNOWLEDGE_DATABASE_URL)
-  pool = new Pool({
-    connectionString,
+  client = createBunSqlClient({
+    url: connectionString,
+    applicationName: 'last-lst97-wakatime',
     // Two of six connections this serverless instance may hold; the budget and
     // its arithmetic live in payload.config.ts.
     max: 2,
-    idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 5_000,
-    application_name: 'last-lst97-wakatime',
+    idleTimeoutSeconds: 30,
+    connectionTimeoutSeconds: 5,
   })
-  repository = createCodingHistoryRepository(pool)
+  repository = createCodingHistoryRepository(createQueryPort(client))
   return repository
 }
 
 export async function closeCodingHistoryDatabase(): Promise<void> {
-  const currentPool = pool
-  pool = undefined
+  const currentClient = client
+  client = undefined
   repository = undefined
-  if (currentPool) await currentPool.end()
+  if (currentClient) await currentClient.close()
 }

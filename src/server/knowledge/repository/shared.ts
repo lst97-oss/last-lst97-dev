@@ -1,5 +1,5 @@
-import { sql } from '@payloadcms/db-postgres'
 import type { SQL } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { PROJECT_SOFTWARE_KINDS } from '../project-catalog'
 import type { KnowledgeCandidate, KnowledgeSourceReference, KnowledgeSourceType } from '../types'
