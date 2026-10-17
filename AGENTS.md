@@ -40,7 +40,7 @@ scripts/seeding/     Content seeds, one directory per collection
                      discovers and runs them sequentially; each seed file is
                      self-executing and slug-keyed against its collection.
                      Empty directories are skipped, not an error.
-tests/               146 test files (67 flat + 79 under tests/server/), plus
+tests/               168 test files (79 flat + 89 under tests/server/), plus
                      tests/site-stylesheet.ts, the shared CSS loader.
 docs/                Operational docs, research, and dated superpowers specs/plans.
 ```
@@ -102,6 +102,23 @@ separate by design. `postgresAdapter` runs with `push: false` and `prodMigration
 changes go through committed migrations in `src/migrations/`, each a `YYYYMMDD_HHMMSS_snake_case` `.ts`
 exporting `up`/`down` plus a sibling `.json` snapshot, registered by name in `src/migrations/index.ts`.
 
+Payload's adapter still uses `pg` internally; that cannot be replaced without replacing the adapter. Our
+direct connections use `Bun.SQL`: `src/server/database/bun-sql.ts` owns the shared client factory,
+`drizzle-orm/bun-sql` executes the knowledge repository's SQL, and `KNOWLEDGE_DATABASE_URL` is shared by the
+knowledge and WakaTime pools. `Bun.SQL` rejects node-postgres's `sslmode=no-verify`, so the factory rewrites
+it to `require` (TLS without certificate verification) when no CA is pinned.
+
+`POSTGRES_SSL_CA` optionally pins the Railway server certificate (base64 PEM from the service's
+`PG_SSL_CERT_B64`, or a raw PEM). When set, Payload's node-postgres pool verifies the chain and requires the
+pinned `localhost` SAN (node-postgres cannot check the dialed public host because the certificate does not
+name it), and the Bun SQL clients verify the chain plus the same `localhost` SAN. Re-read `PG_SSL_CERT_B64`
+after a Railway certificate rotation. Leave the variable unset for the local Docker Postgres, which has no
+TLS.
+
+Do not statically import `src/server/knowledge/database.ts` from anything reachable by
+`payload.config.ts`: the local Payload CLI runs under Node, so `payload-runtime.ts` loads it with a dynamic
+import.
+
 ## Development Commands
 
 | Command | Purpose |
@@ -111,7 +128,7 @@ exporting `up`/`down` plus a sibling `.json` snapshot, registered by name in `sr
 | `bun run dev:rag` | Dev server + `llama-server` embedding sidecar (kills both on signal) |
 | `bun run build` | `generate:payload-admin-css` → `generate:types` → `generate:importmap` → `deploy:migrate` (no-op unless `DEPLOY_MIGRATE=true`) → `vite build`. The Dockerfile calls this same script; see the flags below. |
 | `bun run test` | `bun test` — the whole suite |
-| `bun run typecheck` | TypeScript 7.0.2 `--noEmit` — the only static check that covers `tests/**`. Run it as `bun node_modules/typescript7/bin/tsc`, **not** `bunx tsc`. |
+| `bun run typecheck` | `bun check` — the built-in TypeScript checker that covers `tests/**` and does not emit |
 | `bun run db:migrate` | `bunx payload migrate` |
 | `bun run worker` | Payload jobs worker (`knowledge` queue) |
 | `bun run generate-routes` | `tsr generate`; regenerates `src/routeTree.gen.ts` |
@@ -159,7 +176,7 @@ emitted as `bun1.x`. That is why removing `vercel.json` does not change the runt
 Do not read the runtime off the build tooling the other way either: `bunx --bun vite build` and
 `PAYLOAD_BUNX_FLAGS=--bun` describe the build and the Payload *CLI* respectively, and the CLI runs under
 Node on Vercel while the server still runs under Bun. The container is Bun for an independent reason —
-`FROM oven/bun:1.4.2-slim` with `CMD ["bun", ".output/server/index.mjs"]`. The project's `nodeVersion:
+`FROM oven/bun:1.4.3-slim` with `CMD ["bun", ".output/server/index.mjs"]`. The project's `nodeVersion:
 24.x` in Vercel settings is the fallback for what the Beta Bun runtime does not cover, **not** what
 executes the function.
 
@@ -326,41 +343,29 @@ The old claim that Radix components cannot render under `bun test` was false.
 `.migration/` holds one report per migrated component plus `project.md`; read the relevant one
 before changing a wrapper.
 
-## TypeScript 7, and why nothing else is installed
+## Type checking: `bun check`
 
-The compiler is **TypeScript 7.0.2** (the Go port) and it is the only TypeScript in the tree. It is
-installed under the alias `typescript7` because **`typescript` must stay unresolvable**, and that is
-load-bearing rather than stylistic:
+The type checker is Bun's built-in `bun check`, run as `bun run typecheck`. It reads the nearest
+`tsconfig.json`, covers `src/**`, `scripts/**`, and `tests/**`, and does not emit. On this repo it checks
+about 610 files in under half a second. Verify it is really checking by injecting a deliberate type error —
+an instant-looking run is the native checker's speed, not a silent no-op.
 
-- TS7 ships **no compiler API**. Its package `exports` are `lib/version.cjs` plus `./unstable/*`
-  (`ast`, `scanner`, `visitor`, `factory`); there is no `createSourceFile`, `transform`,
-  `createPrinter`, or the `ts.SyntaxKind` table. Anything calling `import('typescript')` gets an
-  object with none of those.
-- `@payloadcms/drizzle`'s `blocksToJsonMigrator.js` does exactly that — `ts.createSourceFile`,
-  `ts.transform`, `ctx.factory`, `ts.createPrinter` — inside `updatePayloadConfigFile()`. It is
-  reachable **only** through `buildDynamicPredefinedBlocksToJsonMigration`, which no committed
-  migration in `src/migrations/` imports and this repo never calls. That is the sole reason TS7-only
-  is safe today.
+`typescript` must stay unresolvable. That is load-bearing rather than stylistic:
 
-**If a future migration imports `getBlocksToJsonMigrator`, it breaks on TS7.** The fix is to restore
-the side-by-side alias from the TS7 release notes, not to pin TS back:
+- `@payloadcms/drizzle`'s `blocksToJsonMigrator.js` calls `import('typescript')` and uses
+  `ts.createSourceFile`, `ts.transform`, `ctx.factory`, `ts.createPrinter` inside
+  `updatePayloadConfigFile()`. It is reachable **only** through `buildDynamicPredefinedBlocksToJsonMigration`,
+  which no committed migration in `src/migrations/` imports and this repo never calls.
+- **If a future migration imports `getBlocksToJsonMigrator`, it breaks.** The fix is to install TypeScript 6
+  under the `typescript` name, per the TS7 release notes, and leave `typecheck` on `bun check`:
 
 ```json
-"typescript": "npm:@typescript/typescript6@^6.0.2",
-"typescript7": "npm:typescript@^7.0.2"
+"typescript": "npm:@typescript/typescript6@^6.0.2"
 ```
 
-Keep TS6 at the `typescript` name so the API consumer resolves it, and keep `typecheck` pointed at
-`typescript7` explicitly. There is no `@typescript/native` package on the registry — `typescript@7`
-**is** the native build, and it needs a platform sibling (`@typescript/typescript-darwin-arm64`),
-which is why invoking the tarball directly fails with "Unable to resolve".
-
-`bunx tsc` is no longer the typecheck command: `bunx` resolves a bare `tsc` by package name, not by
-the `typescript` alias, so it silently misses. Use the explicit path.
-
-Both compilers must agree on the project: TS7 type-checks TS6-compatible code identically, so a
-clean TS7 run is the gate. Verify it is really checking by injecting a deliberate type error —
-1.2s on this repo is the native port's speed, not a silent no-op.
+There is no `@typescript/native` package on the registry — `typescript@7` **is** the native build, and it
+needs a platform sibling (`@typescript/typescript-darwin-arm64`), which is why invoking the tarball directly
+fails with "Unable to resolve".
 
 ## Code Conventions & Testing Patterns
 
@@ -408,8 +413,8 @@ selectors wrap across lines (collapse whitespace when matching `selectorText`).
 
 These produce *confidently wrong* results rather than obvious errors. Each has been hit in this repo.
 
-- **Never read an exit code off a pipeline.** `bunx tsc --noEmit 2>&1 | tail -3; echo $?` reports `tail`'s
-  status. Capture first, read second: `bunx tsc --noEmit >/tmp/tsc.txt 2>&1; echo $?`, or use
+- **Never read an exit code off a pipeline.** `bun check 2>&1 | tail -3; echo $?` reports `tail`'s
+  status. Capture first, read second: `bun check >/tmp/check.txt 2>&1; echo $?`, or use
   `${PIPESTATUS[0]}`. Same for `bun test … | grep …`, where `grep` exits 1 on "no matches".
 - **Build output is not `dist/`.** Fresh output is `.vercel/output/` (default preset) or `.output/`
   (`NITRO_PRESET=node-server`). `dist/` is stale from an earlier config revision, which also makes
@@ -488,6 +493,8 @@ and do not re-wire the unwired `src/server/knowledge/github/source.ts`.
 | `vendor/payload-tanstack-vite/README.md` | Why the Vite plugins are vendored and when to re-copy them |
 | `payload.config.ts` | Adapter, collections, `importMapFile`, jobs, conditional email/storage |
 | `src/server/env-schema.ts` | The zod env contract and every default |
+| `src/server/database/bun-sql.ts` | Shared Bun SQL pool, TLS-mode translation, and `{ rows }` query port |
+| `src/server/database/postgres-ca.ts` | `POSTGRES_SSL_CA` decoding and the node-postgres `sslmode` stripping |
 | `src/server/chat/types.ts` | `CHAT_TOOL_NAMES`, `ChatWorkflowContext`, and the tool tuple every agent path reads |
 | `src/lib/services/packages.ts` | Authoritative prices, add-ons, process, and tech for both `/services` and the services RAG corpus |
 | `scripts/project-root.ts` | Depth-independent repo root for every CLI script; use it instead of re-deriving |
