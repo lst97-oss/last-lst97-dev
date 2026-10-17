@@ -135,11 +135,11 @@ to touch the database — run `bun run db:migrate` with `DATABASE_URL` pointing 
 `db:migrate:check` is the read-only counterpart: `bun run dev` runs it first and refuses to start when a
 committed migration is unregistered, so a schema change cannot be developed against unnoticed.
 
-> **Hosted Postgres and `sslmode`.** Zeabur's endpoint requires TLS and presents a self-signed
-> certificate, so its `DATABASE_URL` needs `?sslmode=no-verify` appended. Without it the connection fails
-> with `no pg_hba.conf entry ... no encryption`, and with `sslmode=require` it fails as
-> `self-signed certificate`. A value written before the endpoint was moved behind TLS will carry neither
-> parameter and will fail the same way; re-add `?sslmode=no-verify` when editing `DATABASE_URL`.
+> **Hosted Postgres and `sslmode`.** The hosted production endpoint (Railway) requires TLS and presents
+> a self-signed certificate, so its `DATABASE_URL` needs `?sslmode=no-verify` appended. Without it the
+> connection fails with `no pg_hba.conf entry ... no encryption`, and with `sslmode=require` it fails as
+> `self-signed certificate`. Re-add `?sslmode=no-verify` whenever you edit `DATABASE_URL` — a value that
+> loses the parameter fails the same way.
 
 ### Preview builds do not work
 

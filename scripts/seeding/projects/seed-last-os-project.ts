@@ -25,8 +25,8 @@
  * because the project is not finished.
  *
  * Writes to whatever DATABASE_URL is loaded — exporting a production URL before
- * running this points it at production. Against the Zeabur endpoint that URL
- * needs `?sslmode=no-verify`: the certificate is self-signed, so plain
+ * running this points it at production. Against the hosted endpoint (Railway)
+ * that URL needs `?sslmode=no-verify`: the certificate is self-signed, so plain
  * `sslmode=require` fails with "self-signed certificate" and omitting it fails
  * with "no pg_hba.conf entry ... no encryption".
  */
