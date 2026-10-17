@@ -16,7 +16,10 @@ export function getKnowledgeIndexRepository() {
   const connectionString = requireIntegrationEnv('KNOWLEDGE_DATABASE_URL', env.KNOWLEDGE_DATABASE_URL)
   pool = new Pool({
     connectionString,
-    max: 5,
+    // Two of six connections this serverless instance may hold; the budget and
+    // its arithmetic live in payload.config.ts. Chat tool calls run
+    // sequentially, so this is headroom, not contention.
+    max: 2,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
     application_name: 'last-lst97-knowledge',

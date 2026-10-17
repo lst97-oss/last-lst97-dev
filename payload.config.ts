@@ -98,6 +98,13 @@ export default buildConfig({
     prodMigrations: migrations,
     pool: {
       connectionString: env.DATABASE_URL,
+      // The hosted Postgres allows 20 connections in total, and every
+      // serverless instance gets its own pools. Three pools share one
+      // six-connection budget per instance — this one, the knowledge pool and
+      // the WakaTime history pool, each capped at 2 — so three warm instances
+      // still fit under the server limit. Tool calls run sequentially, so the
+      // caps cost nothing.
+      max: 2,
     },
   }),
   email: payloadEmailAdapter,
