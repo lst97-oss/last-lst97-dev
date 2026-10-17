@@ -1,7 +1,7 @@
-import type { AgentToolName } from '../../src/server/chat/tools/agent-tools'
-import type { ChatMessage, ChatTopicAnchor } from '../../src/server/chat/types'
+import type { AgentToolName } from '../../../src/server/chat/tools/agent-tools'
+import type { ChatMessage, ChatTopicAnchor } from '../../../src/server/chat/types'
 
-export interface JevToolRoutingCase {
+export interface ToolRoutingCase {
   id: string
   category: 'positive' | 'negative' | 'context'
   message: string
@@ -13,10 +13,10 @@ export interface JevToolRoutingCase {
 }
 
 /**
- * Human-reviewed baseline for Jev tool routing. Keep examples varied and
+ * Human-reviewed baseline for tool routing. Keep examples varied and
  * source-oriented; these are not intended as phrase-matching rules.
  */
-export const jevToolRoutingCases: JevToolRoutingCase[] = [
+export const toolRoutingCases: ToolRoutingCase[] = [
   // search_knowledge: positive and near-boundary examples
   {
     id: 'knowledge-profile',
@@ -139,6 +139,12 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
     id: 'stats-today',
     category: 'positive',
     message: 'How many hours have you coded today?',
+    expected: ['coding_history'],
+  },
+  {
+    id: 'coding-yesterday',
+    category: 'positive',
+    message: 'How many hours did you code yesterday?',
     expected: ['coding_history'],
   },
   {
@@ -269,6 +275,30 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
     category: 'positive',
     message: 'Find your published article about security.',
     expected: ['site_content'],
+  },
+  {
+    id: 'post-latest-informal',
+    category: 'positive',
+    message: "What's your latest post?",
+    expected: ['site_content'],
+  },
+  {
+    id: 'blog-where-to-read',
+    category: 'positive',
+    message: 'Where can I read your blog posts?',
+    expected: ['site_content'],
+  },
+  {
+    id: 'written-about-ai-testing',
+    category: 'positive',
+    message: 'Have you written anything about AI and testing?',
+    expected: ['search_knowledge'],
+  },
+  {
+    id: 'post-content-opinion',
+    category: 'positive',
+    message: 'You wrote that code is cheap — can you explain that idea?',
+    expected: ['search_knowledge'],
   },
 
   // Verified context should prevent redundant retrieval for stable facts.
@@ -616,6 +646,12 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
     expected: [],
   },
   {
+    id: 'negative-own-blog-advice',
+    category: 'negative',
+    message: 'How should I structure my own blog?',
+    expected: [],
+  },
+  {
     id: 'negative-writing-about-portfolio',
     category: 'negative',
     message: 'Help me write a portfolio project description for a weather app.',
@@ -685,7 +721,7 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
 
   // Nelson-opinion questions are answered from his recorded views in the blog
   // corpus, so they reach search_knowledge without any site-publication
-  // framing. Verified live against Jev: each routes search_knowledge/use with
+  // framing. Verified live: each routes search_knowledge/use with
   // every other source skipped, and pgvector returns the matching blog topic
   // in the top results.
   {
@@ -704,6 +740,12 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
     id: 'opinion-code-is-cheap',
     category: 'positive',
     message: 'Do you think code is cheap?',
+    expected: ['search_knowledge'],
+  },
+  {
+    id: 'opinion-ai-code-review',
+    category: 'positive',
+    message: "What's your take on AI code review?",
     expected: ['search_knowledge'],
   },
 
@@ -725,7 +767,14 @@ export const jevToolRoutingCases: JevToolRoutingCase[] = [
     expected: ['services'],
   },
   { id: 'services-quote', category: 'positive', message: 'How do I request a quote?', expected: ['services'] },
-  { id: 'site-implementation-not-services', category: 'negative', message: 'How is this website built?', expected: [] },
+  // Negative for `services` only: how THIS site is built is answered from the
+  // site implementation documents via search_knowledge — never with a price list.
+  {
+    id: 'site-implementation-not-services',
+    category: 'negative',
+    message: 'How is this website built?',
+    expected: ['search_knowledge'],
+  },
   // The Go Support Plan is the same published page, so it routes to the same
   // source. These phrases are the ones a visitor with a broken deployment
   // actually types; none of them contain "services" or "pricing".
