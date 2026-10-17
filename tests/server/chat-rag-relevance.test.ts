@@ -78,7 +78,7 @@ function dependencies() {
   }
 }
 
-describe('Jev post-reranker relevance gate in chat', () => {
+describe('the decision model post-reranker relevance gate in chat', () => {
   it('omits an unrelated reranked document from send evidence, context, and citations', async () => {
     const responderInputs: ChatResponderInput[] = []
     const responder: ChatStreamingResponder = {

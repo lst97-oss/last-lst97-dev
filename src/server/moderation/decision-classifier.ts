@@ -1,8 +1,7 @@
-import { choice, TypeSafeClient } from '@typesafe-ai/sdk'
 import type { ChatContactField, ChatContactTemplate } from '../../lib/chat-contact'
 import type { ChatMessage } from '../chat/types'
-import type { ModerationChannel, ModerationClassifier, ModerationDiagnosticsObserver } from './types'
-import { optionalContactIntent, readToolDecisions, requiredAnswer } from './typesafe-classifier/answers'
+import type { ChatDiagnosticsProvider } from '../observability/chat-diagnostics'
+import { normalizeAnswers, optionalContactIntent, readToolDecisions, requiredAnswer } from './decision/answers'
 import {
   chatSafetyCriteria,
   chatScopeCriteria,
@@ -23,36 +22,59 @@ import {
   serializeChatState,
   serializeRoutingState,
   toolQuestions,
-} from './typesafe-classifier/prompts'
+} from './decision/prompts'
+import { choice, type SystemOneQuestions, type SystemOneResult } from './system-one-client'
+import type { ModerationChannel, ModerationClassifier, ModerationDiagnosticsObserver } from './types'
 
-function reportJevUsage(
+/** One transport call. The binding closes over its model, base URL, key, and timeout. */
+export type SystemOneCall = (request: {
+  state: string | object
+  questions: SystemOneQuestions
+}) => Promise<SystemOneResult>
+
+export interface DecisionClassifierOptions {
+  systemOne: SystemOneCall
+  /** Diagnostics label for the transport that serves these decisions. */
+  provider?: ChatDiagnosticsProvider
+}
+
+function reportUsage(
   observer: ModerationDiagnosticsObserver | undefined,
+  provider: ChatDiagnosticsProvider,
   operation: string,
-  response: { model: string; usage: { input_tokens: number; output_tokens: number } },
+  response: SystemOneResult,
   status: 'succeeded' | 'failed' = 'succeeded',
 ): void {
   observer?.onModelCall({
-    provider: 'jev',
+    provider,
     operation,
     model: response.model,
     status,
     ...(Number.isFinite(response.usage.input_tokens) ? { inputTokens: response.usage.input_tokens } : {}),
     ...(Number.isFinite(response.usage.output_tokens) ? { outputTokens: response.usage.output_tokens } : {}),
+    ...(response.usage.cost !== undefined && Number.isFinite(response.usage.cost)
+      ? { costUsd: response.usage.cost }
+      : {}),
   })
 }
 
-function reportJevFailure(observer: ModerationDiagnosticsObserver | undefined, operation: string): void {
-  observer?.onModelCall({ provider: 'jev', operation, status: 'failed' })
+function reportFailure(
+  observer: ModerationDiagnosticsObserver | undefined,
+  provider: ChatDiagnosticsProvider,
+  operation: string,
+): void {
+  observer?.onModelCall({ provider, operation, status: 'failed' })
 }
 
-export function createTypeSafeClassifier(apiKey: string): ModerationClassifier {
-  const client = new TypeSafeClient({
-    apiKey,
-    defaultModel: 'jev-latest',
-    timeout: 5_000,
-    retry: { maxRetries: 0, apiConnectionError: false, apiTimeoutError: false },
-    logLevel: 'off',
-  })
+/**
+ * The four decision methods, shared by every transport. The classification,
+ * prompts, label validation, and diagnostics are identical across transports;
+ * only `systemOne` differs between providers, which is what the migration
+ * benchmark varies.
+ */
+export function createDecisionClassifier(options: DecisionClassifierOptions): ModerationClassifier {
+  const provider = options.provider ?? 'openrouter'
+  const systemOne = options.systemOne
 
   return {
     async classify(
@@ -63,7 +85,7 @@ export function createTypeSafeClassifier(apiKey: string): ModerationClassifier {
       const operation = isChat ? 'moderation' : 'contact_classification'
       try {
         if (isChat) {
-          const response = await client.systemOne({
+          const response = await systemOne({
             state: serializeChatState(input.message, input.context ?? [], input.currentDateTimeUtc),
             questions: {
               scope: choice(chatScopeQuestion, chatScopeCriteria),
@@ -74,18 +96,17 @@ export function createTypeSafeClassifier(apiKey: string): ModerationClassifier {
               contact_intent: choice(contactIntentQuestion, contactIntentCriteria),
             },
           })
-          reportJevUsage(observer, operation, response)
-          const contactIntent = optionalContactIntent(
-            response.answers as unknown as Record<string, { choice: string; confidence: number }>,
-          )
+          reportUsage(observer, provider, operation, response)
+          const answers = normalizeAnswers(response.answers)
+          const contactIntent = optionalContactIntent(answers)
           return {
             channel: 'chat',
-            scope: { label: response.answers.scope.choice, confidence: response.answers.scope.confidence },
-            safety: { label: response.answers.safety.choice, confidence: response.answers.safety.confidence },
+            scope: { label: answers.scope.choice, confidence: answers.scope.confidence },
+            safety: { label: answers.safety.choice, confidence: answers.safety.confidence },
             ...(contactIntent ? { contactIntent } : {}),
           }
         }
-        const response = await client.systemOne({
+        const response = await systemOne({
           state: JSON.stringify({
             session: 'direct_contact_page',
             submitted_message: input.message,
@@ -97,22 +118,22 @@ export function createTypeSafeClassifier(apiKey: string): ModerationClassifier {
             safety: choice(contactSubmissionSafetyQuestion, contactSubmissionSafetyCriteria),
           },
         })
-        reportJevUsage(observer, operation, response)
-        const answers = response.answers as unknown as Record<string, { choice: string; confidence: number }>
+        reportUsage(observer, provider, operation, response)
+        const answers = normalizeAnswers(response.answers)
         return {
           channel: 'contact',
           intent: requiredAnswer(answers, 'intent', Object.keys(contactCriteria)),
           safety: requiredAnswer(answers, 'safety', Object.keys(contactSubmissionSafetyCriteria)),
         }
       } catch (error) {
-        reportJevFailure(observer, operation)
+        reportFailure(observer, provider, operation)
         throw error
       }
     },
 
     async classifyChatWithTools(input, observer) {
       try {
-        const response = await client.systemOne({
+        const response = await systemOne({
           state: serializeChatState(
             input.message,
             input.context,
@@ -130,8 +151,8 @@ export function createTypeSafeClassifier(apiKey: string): ModerationClassifier {
             ...toolQuestions(input.availableTools),
           },
         })
-        reportJevUsage(observer, 'moderation_and_routing', response)
-        const answers = response.answers as unknown as Record<string, { choice: string; confidence: number }>
+        reportUsage(observer, provider, 'moderation_and_routing', response)
+        const answers = normalizeAnswers(response.answers)
         const contactIntent = optionalContactIntent(answers)
         return {
           finding: {
@@ -143,7 +164,7 @@ export function createTypeSafeClassifier(apiKey: string): ModerationClassifier {
           toolDecisions: readToolDecisions(answers, input.availableTools),
         }
       } catch (error) {
-        reportJevFailure(observer, 'moderation_and_routing')
+        reportFailure(observer, provider, 'moderation_and_routing')
         throw error
       }
     },
@@ -161,7 +182,7 @@ export function createTypeSafeClassifier(apiKey: string): ModerationClassifier {
       const isTemplateSelection = input.phase === 'template'
       const decisionKey = isTemplateSelection ? 'template_choice' : 'template_fit'
       try {
-        const response = await client.systemOne({
+        const response = await systemOne({
           state: JSON.stringify({
             session: 'fresh_contact_only',
             phase: input.phase,
@@ -182,12 +203,13 @@ export function createTypeSafeClassifier(apiKey: string): ModerationClassifier {
             ),
           },
         })
-        reportJevUsage(
+        reportUsage(
           observer,
+          provider,
           input.phase === 'template' ? 'contact_template_selection' : 'contact_form_screening',
           response,
         )
-        const answers = response.answers as unknown as Record<string, { choice: string; confidence: number }>
+        const answers = normalizeAnswers(response.answers)
         const safety = requiredAnswer(answers, 'safety', [
           'safe',
           'harmful',
@@ -216,24 +238,25 @@ export function createTypeSafeClassifier(apiKey: string): ModerationClassifier {
               templateFit: requiredAnswer(answers, 'template_fit', ['matches_template', 'out_of_scope', 'uncertain']),
             }
       } catch (error) {
-        reportJevFailure(observer, input.phase === 'template' ? 'contact_template_selection' : 'contact_form_screening')
+        reportFailure(
+          observer,
+          provider,
+          input.phase === 'template' ? 'contact_template_selection' : 'contact_form_screening',
+        )
         throw error
       }
     },
 
     async routeTools(input, observer) {
       try {
-        const response = await client.systemOne({
+        const response = await systemOne({
           state: serializeRoutingState(input),
           questions: toolQuestions(input.availableTools),
         })
-        reportJevUsage(observer, 'tool_routing', response)
-        return readToolDecisions(
-          response.answers as unknown as Record<string, { choice: string; confidence: number }>,
-          input.availableTools,
-        )
+        reportUsage(observer, provider, 'tool_routing', response)
+        return readToolDecisions(normalizeAnswers(response.answers), input.availableTools)
       } catch (error) {
-        reportJevFailure(observer, 'tool_routing')
+        reportFailure(observer, provider, 'tool_routing')
         throw error
       }
     },

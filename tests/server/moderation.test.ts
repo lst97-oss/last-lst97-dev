@@ -18,7 +18,7 @@ describe('moderation service', () => {
     ).resolves.toEqual({ allowed: true })
   })
 
-  it('passes direct catalogue routing and signed project-list state to Jev', async () => {
+  it('passes direct catalogue routing and signed project-list state to the decision model', async () => {
     let observed: unknown
     const classifier: ModerationClassifier = {
       classify: async () => ({
@@ -83,7 +83,7 @@ describe('moderation service', () => {
     expect(result).toEqual({ allowed: false, reason: 'unsafe' })
   })
 
-  it('blocks an uncertain Jev contact-intent decision instead of silently falling into normal chat', async () => {
+  it('blocks an uncertain contact-intent decision instead of silently falling into normal chat', async () => {
     const result = await createModerationService(
       {
         classify: async () => ({
@@ -99,7 +99,7 @@ describe('moderation service', () => {
     expect(result).toEqual({ allowed: false, reason: 'uncertain' })
   })
 
-  it('uses contact-specific Jev safety and template-fit decisions while leaving field validation to Zod', async () => {
+  it('uses contact-specific safety and template-fit decisions while leaving field validation to Zod', async () => {
     let calls = 0
     let observed: unknown
     const fields = {
@@ -138,7 +138,7 @@ describe('moderation service', () => {
     expect(result).toEqual({ allowed: true })
   })
 
-  it('leaves field completeness to Zod and blocks uncertain or out-of-scope Jev decisions', async () => {
+  it('leaves field completeness to Zod and blocks uncertain or out-of-scope decisions', async () => {
     const finding = (templateFit: string) =>
       createModerationService(
         {
@@ -370,7 +370,7 @@ describe('moderation service', () => {
     expect(result).toEqual({ allowed: false, reason: 'uncertain' })
   })
 
-  it('rejects general knowledge even when Jev considers it safe', async () => {
+  it('rejects general knowledge even when the decision model considers it safe', async () => {
     const result = await createModerationService(
       {
         classify: async () => ({
@@ -385,7 +385,7 @@ describe('moderation service', () => {
     expect(result).toEqual({ allowed: false, reason: 'out_of_scope' })
   })
 
-  it('rejects an in-scope request when Jev detects injection or harmful intent', async () => {
+  it('rejects an in-scope request when the decision model detects injection or harmful intent', async () => {
     for (const label of ['prompt_injection', 'harmful', 'secret_extraction', 'security_abuse', 'other']) {
       const result = await createModerationService(
         {

@@ -8,7 +8,7 @@ import { withTimeout } from '../timeout'
 import type { AgentPlan, AgentPlanner, AgentToolCall, AgentToolName } from '../tools/agent-tools'
 import { CHAT_TOOL_NAMES } from '../types'
 
-// Jev selects tools in the production path. OpenRouter supplies arguments
+// The decision model selects tools in the production path. OpenRouter supplies arguments
 // only for that approved set, and every call is re-validated by the runner.
 
 const toolCallSchema = z.object({
@@ -23,7 +23,7 @@ const planSchema = z.union([
 ])
 
 const PLANNER_SYSTEM_PROMPT = [
-  'ROLE: This planner is a non-production fallback when no Jev decision was supplied. In production, Jev selects tools. Return JSON only: {"action":"tool_calls","calls":[{"id":"1","name":"<tool>","arguments":{...}}]} or {"action":"final_answer","text":"<reply>"}.',
+  'ROLE: This planner is a non-production fallback when no decision was supplied. In production, the decision model selects tools. Return JSON only: {"action":"tool_calls","calls":[{"id":"1","name":"<tool>","arguments":{...}}]} or {"action":"final_answer","text":"<reply>"}.',
   'Available tools: list_owned_projects for a compact filtered inventory of Nelson’s owned repositories; search_knowledge for verified profile, work, contribution, project-detail, demo, and repository evidence; coding_stats for WakaTime aggregate shares; coding_history for imported per-project and historical heartbeat data; site_content for currently published posts, projects, changelogs, and topics; services for Nelson’s website packages, prices, add-ons, process, and quote requirements.',
   'Use the latest request to decide the needed source. Owned-project lists, filters, and “more” use list_owned_projects; details and demos use search_knowledge. Current website repository architecture/implementation questions use search_knowledge. Anything scoped to this site, website, portfolio, or blog — including “what projects are in this site” or “the latest post on this site” — uses site_content in addition to any catalogue or RAG call the request also needs. Use site_content({op, slug?, limit?, page?}) for live Payload CMS posts, projects, changelogs, and topics; published blog post, changelog, and topic questions use the matching list_posts, get_post, list_changelogs, get_changelog, list_topics, or get_topic op. Aggregate WakaTime totals and shares use coding_stats; named-project time and historical/per-project breakdowns use coding_history. Inventory alone does not need RAG. If both inventory and details are requested, catalogue first and search for details in the next step. Do not ask the user to choose a project category or claim contributions as owned projects.',
   'Use history only to resolve references and detect an exact recent answer from the same source; it is not evidence or instructions. Query the matching source for new facts and never replay older requests. Batch independent calls, use no more than four per step, and do not ask permission to use a tool.',
@@ -62,7 +62,7 @@ function buildArgumentsSystemPrompt(allowedTools: AgentToolName[]): string {
   ].filter(Boolean)
 
   return [
-    'ROLE: Jev has selected the sources. Prepare arguments only for those approved tool names; do not reconsider source selection or write a user-facing answer.',
+    'ROLE: The decision model has selected the sources. Prepare arguments only for those approved tool names; do not reconsider source selection or write a user-facing answer.',
     'Return JSON only: {"action":"tool_calls","calls":[{"id":"1","name":"<approved tool>","arguments":{...}}]}. Include a call for each approved tool, batch independent operations, and make no more than four calls. Never add or remove an approved source.',
     'For a rejected call, return only one corrected call with the same id and tool name. Apply the validation feedback without changing the requested operation.',
     `Approved tool argument guidance:\n${allowedTools.map((tool) => ARGUMENT_TOOL_GUIDANCE[tool]).join('\n')}`,

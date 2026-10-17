@@ -43,7 +43,8 @@ export type ServerEnvSource = Partial<
     | 'SMTP_USER'
     | 'TURNSTILE_SITE_KEY'
     | 'TURNSTILE_SECRET_KEY'
-    | 'TYPESAFE_API_KEY'
+    | 'DECISION_API_KEY'
+    | 'DECISION_MODEL'
     | 'RATE_LIMIT_HASH_SECRET'
     | 'SILICONFLOW_API_KEY'
     | 'UNSLOTH_EMBEDDING_MODEL_PATH',
@@ -60,7 +61,7 @@ export type IntegrationEnvKey =
   | 'SMTP_APP_PASSWORD'
   | 'SMTP_USER'
   | 'TURNSTILE_SECRET_KEY'
-  | 'TYPESAFE_API_KEY'
+  | 'DECISION_API_KEY'
   | 'RATE_LIMIT_HASH_SECRET'
   | 'SILICONFLOW_API_KEY'
 
@@ -122,7 +123,7 @@ export function createServerEnv(source: ServerEnvSource) {
         .enum(['true', 'false'])
         .default('false')
         .transform((value) => value === 'true'),
-      // Gates every Jev safety and contact-intent decision. Lowered from 0.75 on
+      // Gates every decision-model safety and contact-intent decision. Lowered from 0.75 on
       // 2026-10-02 after calibration work made the contact questions reliable at
       // the low end; hostile payloads still score 0.99-1.0, so the reduced floor
       // buys tolerance for unusual-but-genuine enquiries without admitting them.
@@ -147,7 +148,10 @@ export function createServerEnv(source: ServerEnvSource) {
       SMTP_USER: z.email().optional(),
       TURNSTILE_SITE_KEY: z.string().min(1).optional(),
       TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
-      TYPESAFE_API_KEY: z.string().min(1).optional(),
+      // Decision model for moderation and the RAG relevance gate. Served over
+      // OpenRouter's Decisions API; the key falls back to OPENROUTER_API_KEY.
+      DECISION_API_KEY: z.string().min(1).optional(),
+      DECISION_MODEL: z.string().min(1).default('perplexity/pplx-decider-v1.2'),
       RATE_LIMIT_HASH_SECRET: z.string().min(32).optional(),
       SILICONFLOW_API_KEY: z.string().min(1).optional(),
       UNSLOTH_EMBEDDING_MODEL_PATH: z.string().min(1).optional(),
@@ -193,7 +197,8 @@ export function createServerEnv(source: ServerEnvSource) {
       SMTP_USER: source.SMTP_USER,
       TURNSTILE_SITE_KEY: source.TURNSTILE_SITE_KEY,
       TURNSTILE_SECRET_KEY: source.TURNSTILE_SECRET_KEY,
-      TYPESAFE_API_KEY: source.TYPESAFE_API_KEY,
+      DECISION_API_KEY: source.DECISION_API_KEY,
+      DECISION_MODEL: source.DECISION_MODEL,
       RATE_LIMIT_HASH_SECRET: source.RATE_LIMIT_HASH_SECRET,
       SILICONFLOW_API_KEY: source.SILICONFLOW_API_KEY,
       UNSLOTH_EMBEDDING_MODEL_PATH: source.UNSLOTH_EMBEDDING_MODEL_PATH,

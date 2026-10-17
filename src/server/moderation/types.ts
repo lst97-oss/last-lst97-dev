@@ -1,7 +1,7 @@
 import type { ChatContactFieldValues, ChatContactTemplate } from '../../lib/chat-contact'
 import type { AgentToolName, AgentToolRoutingInput, AgentToolUseDecisions } from '../chat/tools/agent-tools'
 import type { ChatMessage, ChatProjectListState, ChatTopicAnchor } from '../chat/types'
-import type { ChatJevDecisionDiagnostic, ChatModelCallDiagnostic } from '../observability/chat-diagnostics'
+import type { ChatDecisionDiagnostic, ChatModelCallDiagnostic } from '../observability/chat-diagnostics'
 
 export type ModerationChannel = 'contact' | 'chat'
 
@@ -25,7 +25,7 @@ export type ModerationFinding =
 
 export interface ModerationDiagnosticsObserver {
   onModelCall(call: ChatModelCallDiagnostic): void
-  onJevDecision(decision: ChatJevDecisionDiagnostic): void
+  onDecision(decision: ChatDecisionDiagnostic): void
 }
 
 export interface ModerationClassifier {

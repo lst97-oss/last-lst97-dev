@@ -73,7 +73,7 @@ function errorForModeration(reason: string | undefined, contextToken: string): C
   }
   return {
     type: 'contact_blocked',
-    text: 'Jev could not safely classify this request. Please revise it and retry in this contact session.',
+    text: 'This request could not be safely screened. Please revise it and retry in this contact session.',
     contextToken,
   }
 }
@@ -319,7 +319,7 @@ export function createChatContactWorkflow(dependencies: {
       const observer = diagnostics
         ? {
             onModelCall: diagnostics.addModelCall,
-            onJevDecision: diagnostics.addJevDecision,
+            onDecision: diagnostics.addDecision,
           }
         : undefined
       let outcome: 'complete' | 'blocked' | 'unavailable' = 'complete'

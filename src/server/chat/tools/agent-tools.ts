@@ -46,7 +46,7 @@ export interface AgentPlanner {
     evidence: string
     toolOutputs: string
     stepsUsed: number
-    /** When present, Jev has already selected the tools; generate arguments only for these names. */
+    /** When present, the decision model has already selected the tools; generate arguments only for these names. */
     allowedTools?: AgentToolName[]
     /** Repair one rejected call without changing its tool or call id. */
     repair?: { call: AgentToolCall; rejection: string }

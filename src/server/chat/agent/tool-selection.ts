@@ -24,6 +24,19 @@ const ASSISTANT_USAGE_REQUEST =
  */
 const SOFTWARE_DEVELOPMENT_TOPIC =
   /\b(?:react|next\.js|typescript|javascript|node\.js|deno|bun|sql|postgresql|mysql|mongodb|redis|database|index|indexes|indexing|query|queries|orm|rest|restful|api|apis|http|https|graphql|websocket|authentication|authorization|idempotency|promise|async|await|middleware|component|components|state management|server|backend|frontend|full stack|fullstack|microservices|cache|caching|cdn|latency|throughput|scalability|optimization|optimisation|memory leak|security|owasp|encryption|reverse engineering|assembly|compiler|operating system|linux|kernel|regex|code review|technical debt|design pattern|architecture|scale|scaling|system design|observability|monitoring|metrics|logging|tracing|incident|email delivery|webhook|retrieval augmented|rag|vector search|embedding|prompt engineering)\b/i
+/**
+ * Owner-voice frames for questions answered from Nelson's recorded writing and
+ * interview answers: "do you think code is cheap?", "what's your take on AI
+ * code review?", "have you written anything about testing?". The blog and
+ * interview corpora hold his actual views, so the guard must force
+ * search_knowledge even when the decision model skips it; without the backstop
+ * those turns answer generically from model knowledge. The topic gate keeps the
+ * frame narrow — a bare "do you think" about an unrelated subject stays off.
+ */
+const OWNER_VOICE_FRAME =
+  /\b(?:do you think|your (?:view|take|opinion|thoughts?)|what do you (?:think|believe)|have you (?:written|wrote)|you wrote|what did you write)\b/i
+const OWNER_VOICE_TOPIC =
+  /\b(?:ai|artificial intelligence|code|coding|software|engineering|engineers?|developers?|development|programming|juniors?|seniors?|career|industry|vibe coding|code review|testing|documentation|open source|blog)\b/i
 const TECHNICAL_QUESTION_FRAME =
   /\b(?:how|why|what|when|where|which|explain|describe|difference|best|should|would you|do you|can you|tell me|walk me)\b/i
 /**
@@ -33,7 +46,7 @@ const TECHNICAL_QUESTION_FRAME =
  * alternation admits only multi-word phrases, because a bare "site", "app",
  * "code", "fix", or "support" would swallow the support offer, and a bare
  * "website" is absent so "how is this website built?" keeps routing to
- * search_knowledge (pinned as a negative case in jev-tool-routing-cases.ts).
+ * search_knowledge (pinned as a negative case in the routing benchmark corpus).
  */
 const SERVICE_SCOPE_REQUEST =
   /\b(?:services?|pricing|price[sd]?|cost|costs|quote|quotation|package[sd]?|packages|how much|rates?|fees?|add-?ons?|revision[sd]?|scope|enquir(?:y|ies)|hire|book(?:ing)?|web ?design|website (?:design|development|build|project)|support plan|technical consultation|production readiness|vibe code|deploy(?:ment|ing)? (?:help|support|fix|rescue)|deployment rescue|broken deploy(?:ment)?|build (?:error|failing)|per[- ]?hour|hourly)\b/i
@@ -43,7 +56,7 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
     return capture
       ? {
           onModelCall: capture.addModelCall,
-          onJevDecision: capture.addJevDecision,
+          onDecision: capture.addDecision,
         }
       : undefined
   }
@@ -68,7 +81,9 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
   ): string | undefined {
     const query = resolveKnowledgeQuery(message, history, topicAnchors)
     if (ASSISTANT_USAGE_REQUEST.test(message) && !/\b(?:nelson|lst97|his|him)\b/i.test(message)) return undefined
-    if (!PERSONAL_KNOWLEDGE_FACT.test(query) && !SOFTWARE_DEVELOPMENT_TOPIC.test(query)) return undefined
+    const asksForRecordedView = OWNER_VOICE_FRAME.test(query) && OWNER_VOICE_TOPIC.test(query)
+    if (!PERSONAL_KNOWLEDGE_FACT.test(query) && !SOFTWARE_DEVELOPMENT_TOPIC.test(query) && !asksForRecordedView)
+      return undefined
 
     if (/\b(?:demo|demos|live[- ]?site|live[- ]?url|deployment|deployed)\b/i.test(query)) {
       return `Nelson's projects, live demo URLs, deployed websites, and project links. Original question: ${query}`.slice(
@@ -365,7 +380,7 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
       currentDateTimeUtc: string
       today: string
       initialDecisions?: AgentToolUseDecisions
-      jevRoutingRequired: boolean
+      decisionRoutingRequired: boolean
       diagnostics?: ChatDiagnosticsCapture
     },
     onArgumentsStart?: () => void,
@@ -376,9 +391,9 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
     const acceptedCalls = acceptedToolCalls(input.message, input.history, availableTools, input.today)
 
     // Keep the injected planner seam usable in isolated consumers that do not
-    // have the production Jev classifier. The production runtime always routes
-    // through Jev before any tool can run.
-    if (!input.jevRoutingRequired) {
+    // have the production decision classifier. The production runtime always routes
+    // through the decision model before any tool can run.
+    if (!input.decisionRoutingRequired) {
       if (dependencies.planner) {
         try {
           onArgumentsStart?.()
@@ -471,15 +486,19 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
       !(projectInventoryRequest && !projectDetailsRequested)
         ? requiredKnowledgeQuery(input.message, input.history, input.topicAnchors)
         : undefined
-    // Explicit Jev labels win even when confidence is low. Only the literal
+    // Explicit decision labels win even when confidence is low. Only the literal
     // uncertain label delegates that tool's routing decision to regex; the
     // guards below re-apply the completeness rule where history cannot stand in.
-    let jevApprovedTools = availableTools.filter((tool) => decisions?.[tool]?.label === 'use')
+    let decisionApprovedTools = availableTools.filter((tool) => decisions?.[tool]?.label === 'use')
     // Re-running an already-answered catalogue would loop on the same page and
     // strand the detail lookup, so the guard only applies while it is pending.
     const catalogueAlreadyAnswered = input.state.catalogueToolExecutedThisStep || input.stepsUsed > 0
-    if (isCatalogueInventoryRequest && !catalogueAlreadyAnswered && !jevApprovedTools.includes('list_owned_projects'))
-      jevApprovedTools.push('list_owned_projects')
+    if (
+      isCatalogueInventoryRequest &&
+      !catalogueAlreadyAnswered &&
+      !decisionApprovedTools.includes('list_owned_projects')
+    )
+      decisionApprovedTools.push('list_owned_projects')
     // Site-scoped guard: a question naming this site/website/portfolio, or asking
     // what is published/featured on it, is about live Payload content that no
     // other source can answer. Neither the owned-project catalogue nor RAG holds
@@ -494,31 +513,33 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
               input.message,
             ) ||
             /\b(?:published|featured)\b/i.test(input.message))))
-    if (isSiteScopedRequest && !jevApprovedTools.includes('site_content')) jevApprovedTools.push('site_content')
+    if (isSiteScopedRequest && !decisionApprovedTools.includes('site_content'))
+      decisionApprovedTools.push('site_content')
     // Offer-scope guard: a pricing, package, process or quote question has exactly
     // one source, and it is not the project catalogue, the published Payload
     // content, or Nelson's implementation notes.
     const asksForServiceScope = availableTools.includes('services') && SERVICE_SCOPE_REQUEST.test(input.message)
-    if (asksForServiceScope && !jevApprovedTools.includes('services')) jevApprovedTools.push('services')
-    if (requiredQuery && !jevApprovedTools.includes('search_knowledge')) jevApprovedTools.push('search_knowledge')
+    if (asksForServiceScope && !decisionApprovedTools.includes('services')) decisionApprovedTools.push('services')
+    if (requiredQuery && !decisionApprovedTools.includes('search_knowledge'))
+      decisionApprovedTools.push('search_knowledge')
     // A catalogue-plus-details request stays sequential: the catalogue runs
-    // first, then the detail lookup gets its own fresh Jev decision. Collapse
+    // first, then the detail lookup gets its own fresh decision-model decision. Collapse
     // to the catalogue only for inventory-only requests; dropping RAG here
     // would discard exactly the detail lookup `projectDetailsRequested` kept.
     // A site-scoped request still needs Payload alongside the catalogue: the
     // catalogue knows what Nelson owns, the CMS knows what is published here.
-    const siteScopedKept = isSiteScopedRequest && jevApprovedTools.includes('site_content')
+    const siteScopedKept = isSiteScopedRequest && decisionApprovedTools.includes('site_content')
     if (
       !projectDetailsRequested &&
-      jevApprovedTools.includes('list_owned_projects') &&
-      jevApprovedTools.includes('search_knowledge')
+      decisionApprovedTools.includes('list_owned_projects') &&
+      decisionApprovedTools.includes('search_knowledge')
     )
-      jevApprovedTools = siteScopedKept ? ['list_owned_projects', 'site_content'] : ['list_owned_projects']
+      decisionApprovedTools = siteScopedKept ? ['list_owned_projects', 'site_content'] : ['list_owned_projects']
     const uncertainTools = availableTools.filter((tool) => decisions?.[tool]?.label === 'uncertain')
     const regexCalls = deterministicPlans(input.message, uncertainTools, input.today)
     let plannerCalls: AgentToolCall[] = []
     let argumentsUnavailable = false
-    if (jevApprovedTools.length > 0 && dependencies.planner) {
+    if (decisionApprovedTools.length > 0 && dependencies.planner) {
       try {
         onArgumentsStart?.()
         const plan = await dependencies.planner.planNextStep({
@@ -529,16 +550,16 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
           evidence: input.state.evidence,
           toolOutputs: input.state.toolOutputs,
           stepsUsed: input.stepsUsed,
-          allowedTools: jevApprovedTools,
+          allowedTools: decisionApprovedTools,
           onModelCall: input.diagnostics?.addModelCall,
         })
         if (plan?.kind === 'tool_calls') {
-          const approved = new Set(jevApprovedTools)
+          const approved = new Set(decisionApprovedTools)
           plannerCalls = plan.calls.filter((call) => approved.has(call.name)).slice(0, 4)
         }
         const siteCollections = siteContentCollections(input.message)
         const wantsSeveralSiteCollections = Object.values(siteCollections).filter(Boolean).length > 1
-        if (wantsSeveralSiteCollections && jevApprovedTools.includes('site_content')) {
+        if (wantsSeveralSiteCollections && decisionApprovedTools.includes('site_content')) {
           const siteFallbacks = matchSiteContentPlans(input.message)
           for (const call of siteFallbacks) {
             if (!plannerCalls.some((planned) => toolKey(planned) === toolKey(call)) && plannerCalls.length < 4)
@@ -546,7 +567,7 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
           }
         }
         const plannedTools = new Set(plannerCalls.map((call) => call.name))
-        const missingApprovedTools = jevApprovedTools.filter((tool) => !plannedTools.has(tool))
+        const missingApprovedTools = decisionApprovedTools.filter((tool) => !plannedTools.has(tool))
         if (missingApprovedTools.length > 0) {
           const fallbackCalls =
             acceptedCalls.length > 0
@@ -564,25 +585,25 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
         argumentsUnavailable = false
       } catch (error) {
         dependencies.logger?.warn('chat.agent_arguments.unavailable', { error })
-        // Jev remains the authority on whether a source is needed. If the
+        // The decision model remains the authority on whether a source is needed. If the
         // argument model is unavailable, deterministic parsing may still
         // prepare calls for those already approved tools.
         plannerCalls =
           acceptedCalls.length > 0
-            ? acceptedCalls.filter((call) => jevApprovedTools.includes(call.name))
-            : deterministicPlans(input.message, jevApprovedTools, input.today)
+            ? acceptedCalls.filter((call) => decisionApprovedTools.includes(call.name))
+            : deterministicPlans(input.message, decisionApprovedTools, input.today)
         const preparedTools = new Set(plannerCalls.map((call) => call.name))
-        argumentsUnavailable = jevApprovedTools.some((tool) => !preparedTools.has(tool))
+        argumentsUnavailable = decisionApprovedTools.some((tool) => !preparedTools.has(tool))
       }
-    } else if (jevApprovedTools.length > 0) {
+    } else if (decisionApprovedTools.length > 0) {
       // Without an argument planner, use deterministic argument extraction
-      // for Jev-approved tools; it cannot add or veto a tool name.
+      // for decision-approved tools; it cannot add or veto a tool name.
       plannerCalls =
         acceptedCalls.length > 0
-          ? acceptedCalls.filter((call) => jevApprovedTools.includes(call.name))
-          : deterministicPlans(input.message, jevApprovedTools, input.today)
+          ? acceptedCalls.filter((call) => decisionApprovedTools.includes(call.name))
+          : deterministicPlans(input.message, decisionApprovedTools, input.today)
       const preparedTools = new Set(plannerCalls.map((call) => call.name))
-      argumentsUnavailable = jevApprovedTools.some((tool) => !preparedTools.has(tool))
+      argumentsUnavailable = decisionApprovedTools.some((tool) => !preparedTools.has(tool))
     }
 
     if (requiredQuery) {
@@ -607,15 +628,16 @@ export function createChatToolSelection(dependencies: ChatServiceDependencies) {
     ) {
       calls = calls.filter((call) => call.name === 'list_owned_projects')
     }
-    const scheduledJeVTools = new Set(calls.map((call) => call.name))
-    const catalogueFirst = scheduledJeVTools.has('list_owned_projects') && jevApprovedTools.includes('search_knowledge')
+    const scheduledDecisionTools = new Set(calls.map((call) => call.name))
+    const catalogueFirst =
+      scheduledDecisionTools.has('list_owned_projects') && decisionApprovedTools.includes('search_knowledge')
     if (requiredQuery) {
-      argumentsUnavailable = jevApprovedTools.some(
-        (tool) => !scheduledJeVTools.has(tool) && !(catalogueFirst && tool === 'search_knowledge'),
+      argumentsUnavailable = decisionApprovedTools.some(
+        (tool) => !scheduledDecisionTools.has(tool) && !(catalogueFirst && tool === 'search_knowledge'),
       )
     } else {
-      argumentsUnavailable ||= jevApprovedTools.some(
-        (tool) => !scheduledJeVTools.has(tool) && !(catalogueFirst && tool === 'search_knowledge'),
+      argumentsUnavailable ||= decisionApprovedTools.some(
+        (tool) => !scheduledDecisionTools.has(tool) && !(catalogueFirst && tool === 'search_knowledge'),
       )
     }
     return { calls, unavailable: false, argumentsUnavailable }

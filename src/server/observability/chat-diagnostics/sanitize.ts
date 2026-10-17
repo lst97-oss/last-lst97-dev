@@ -2,7 +2,7 @@ import {
   MAX_CANDIDATE_EXCERPT,
   MAX_CONTEXT_MESSAGE_LENGTH,
   MAX_CONTEXT_MESSAGES,
-  MAX_JEV_DECISIONS,
+  MAX_DECISIONS,
   MAX_MODEL_CALLS,
   MAX_QUERY_LENGTH,
   MAX_RAG_CANDIDATES,
@@ -10,9 +10,9 @@ import {
   MAX_RESPONSE_LENGTH,
 } from './limits'
 import type {
+  ChatDecisionDiagnostic,
   ChatDiagnosticsMetadata,
   ChatDiagnosticsRecord,
-  ChatJevDecisionDiagnostic,
   ChatModelCallDiagnostic,
   ChatRagRetrievalDiagnostic,
 } from './types'
@@ -110,7 +110,7 @@ export function sanitizeRagRetrieval(retrieval: ChatRagRetrievalDiagnostic): Cha
   }
 }
 
-export function sanitizeJevDecision(decision: ChatJevDecisionDiagnostic): ChatJevDecisionDiagnostic {
+export function sanitizeDecision(decision: ChatDecisionDiagnostic): ChatDecisionDiagnostic {
   return {
     stage: decision.stage,
     decisions: Object.fromEntries(
@@ -198,7 +198,7 @@ export function sanitizeRecord(record: ChatDiagnosticsRecord): ChatDiagnosticsRe
     })),
     ...(typeof record.response === 'string' ? { response: clampText(record.response, MAX_RESPONSE_LENGTH) } : {}),
     modelCalls: record.modelCalls.slice(0, MAX_MODEL_CALLS).map(sanitizeModelCall),
-    jevDecisions: record.jevDecisions.slice(0, MAX_JEV_DECISIONS).map(sanitizeJevDecision),
+    decisions: record.decisions.slice(0, MAX_DECISIONS).map(sanitizeDecision),
     ragRetrievals: record.ragRetrievals.slice(0, MAX_RAG_RETRIEVALS).map(sanitizeRagRetrieval),
   }
 }
