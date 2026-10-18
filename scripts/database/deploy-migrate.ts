@@ -12,7 +12,7 @@
  * migrations, because an image can sit built for a long time before it boots).
  */
 
-const enabled = process.env.DEPLOY_MIGRATE === 'true'
+const enabled = Bun.env.DEPLOY_MIGRATE === 'true'
 
 if (!enabled) {
   console.info(
@@ -25,7 +25,7 @@ if (!enabled) {
 // opt-in above is the real gate, and a platform that sets the flag is expected
 // to supply a real DATABASE_URL too. The check stays as a fast failure for the
 // case where someone enables the flag in an environment with no URL at all.
-if (!process.env.DATABASE_URL) {
+if (!Bun.env.DATABASE_URL) {
   console.error('[deploy-migrate] DATABASE_URL is unset. Refusing to migrate against an unknown database.')
   process.exit(1)
 }
@@ -35,7 +35,7 @@ if (!process.env.DATABASE_URL) {
 export {}
 
 const migration = Bun.spawn(['bunx', 'payload', 'migrate', '--force-accept-warning'], {
-  env: process.env,
+  env: { ...Bun.env },
   stdout: 'inherit',
   stderr: 'inherit',
 })

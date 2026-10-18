@@ -135,6 +135,9 @@ function ContactPage() {
             </p>
           </section>
         </div>
+        <p className="contact-expand-hint m-0 mt-6 text-xs leading-relaxed font-black tracking-widest text-muted-foreground">
+          MAXIMIZE THIS WINDOW FOR WHAT HAPPENS NEXT &amp; FIRST-MESSAGE TIPS
+        </p>
       </WindowFrame>
     </PageStack>
   )

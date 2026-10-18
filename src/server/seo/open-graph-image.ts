@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer'
 import { create as createFont, type Font } from 'fontkit'
 import sharp from 'sharp'
 import { z } from 'zod'

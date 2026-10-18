@@ -21,12 +21,12 @@ the retrieval index and the WakaTime heartbeat warehouse. They are deliberately 
 
 ## Stack
 
-- **Runtime / package manager:** Bun 1.4.2 (`bun.lock`, `bun test`, `bunx --bun`). No `engines` or `packageManager` field exists.
+- **Runtime / package manager:** Bun 1.4.3 (`bun.lock`, `bun test`, `bunx --bun`). No `engines` or `packageManager` field exists.
 - **Framework:** TanStack Start 1.168 with RSC enabled, React 19, TanStack Router (file routes), Vite 8, Nitro 3.
 - **CMS:** Payload CMS v4 canary (`4.0.0-canary.37`) on `@payloadcms/db-postgres`, with `@payloadcms/tanstack-start@4.0.0-canary.37`.
 - **UI:** Tailwind CSS v4, 61 shadcn-style wrappers over Base UI primitives, lucide-react icons.
 - **AI:** OpenRouter (decision model, planner, responder), SiliconFlow (reranking + query embeddings), local `llama-server` (document embeddings).
-- **Quality:** Bun test (109 test files), Biome 2.5.14, TypeScript 6.
+- **Quality:** Bun test (168 test files), Biome 2.5.15, `bun check`.
 
 ## Quick start
 
@@ -52,7 +52,7 @@ model file, no `llama-server`, and no SiliconFlow key — the site and ordinary 
 | `bun run dev:rag` | Dev server plus a local `llama-server` embedding sidecar |
 | `bun run build` | `generate:payload-admin-css` → `generate:types` → `generate:importmap` → `deploy:migrate` (no-op unless `DEPLOY_MIGRATE=true`) → `vite build` |
 | `bun run test` | Full `bun test` suite |
-| `bun run typecheck` | `tsc --noEmit` — the only static check that sees `tests/**` |
+| `bun run typecheck` | `bun check` — the built-in TypeScript checker that covers `tests/**` |
 | `bun run db:migrate` | Apply committed Payload migrations |
 | `bun run worker` | Payload jobs worker for the `knowledge` queue |
 | `bun run check:server` / `lint:server` / `format:server` | Biome over `src/server` only |
@@ -69,7 +69,7 @@ script (`bun ./dist/server/server.js`) a dead path against a current build.
 **Production runs on Bun.** Vercel's function runtime is Bun because the build command is
 `bun run build` — Nitro detects a Bun build process and emits a `bun1.x` function; the build log line
 `[nitro:vercel] Using \`bun1.x\` runtime.` is the proof. The container is Bun independently, via
-`oven/bun:1.4.2-slim` and `bun .output/server/index.mjs`. Don't infer this from the rest of the tooling:
+`oven/bun:1.4.3-slim` and `bun .output/server/index.mjs`. Don't infer this from the rest of the tooling:
 the Payload CLI runs under Node on Vercel while the server still runs under Bun. The two platforms also
 migrate at different moments — Vercel sets `DEPLOY_MIGRATE=true` so migrations run inside the build,
 while the container migrates on start so the image can be built against a dummy database URL.
@@ -110,7 +110,7 @@ still have every box unticked. Treat the code and the per-directory `AGENTS.md` 
 ## Deployment
 
 Vercel is the production target (`nitro` preset `vercel`, runtime `bun1.x`). A Docker image is also
-provided: four stages on `oven/bun:1.4.2-slim`, non-root `bun` user, port 3000, a healthcheck against
+provided: four stages on `oven/bun:1.4.3-slim`, non-root `bun` user, port 3000, a healthcheck against
 `/api/site/health`, and an entrypoint that runs `payload migrate` before serving unless `SKIP_MIGRATIONS=true`.
 
 `PUBLIC_SITE_URL` must be the real public origin in production — canonical links, `og:url`,

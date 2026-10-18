@@ -22,7 +22,7 @@ describe('deploy-time migrations', () => {
     // The Docker build stage passes a dummy DATABASE_URL with no server behind
     // it. An unconditional migrate would fail `docker build`, so the script must
     // exit 0 when the flag is absent rather than attempting a connection.
-    expect(deployMigrate).toContain("process.env.DEPLOY_MIGRATE === 'true'")
+    expect(deployMigrate).toContain("Bun.env.DEPLOY_MIGRATE === 'true'")
     expect(deployMigrate).toMatch(/if \(!enabled\) \{[\s\S]*?process\.exit\(0\)/)
   })
 

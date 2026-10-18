@@ -171,7 +171,7 @@ export function createSystemOneClient(config: SystemOneClientConfig): SystemOneC
   const retryDelayMs = config.retryDelayMs ?? DEFAULT_SYSTEM_ONE_RETRY_DELAY_MS
   if (!Number.isInteger(retryDelayMs) || retryDelayMs < 0) throw new Error('System One retry configuration is invalid')
 
-  const sleep = config.sleep ?? ((delayMs: number) => new Promise<void>((resolve) => setTimeout(resolve, delayMs)))
+  const sleep = config.sleep ?? ((delayMs: number) => Bun.sleep(delayMs))
 
   const baseUrl = stripTrailingSlashes(config.baseUrl?.trim() || DEFAULT_BASE_URL)
   const path = config.path?.trim() || DEFAULT_PATH

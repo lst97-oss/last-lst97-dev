@@ -1,12 +1,14 @@
-import { drizzle } from 'drizzle-orm/node-postgres'
-import { Pool } from 'pg'
+import type { SQL } from 'bun'
+import { drizzle } from 'drizzle-orm/bun-sql'
 
+import { createBunSqlClient } from '../database/bun-sql'
+import { decodePostgresCa } from '../database/postgres-ca'
 import { getServerEnv } from '../env'
 import { requireIntegrationEnv } from '../env-schema'
-import type { KnowledgeDatabase } from './repository'
 import { createKnowledgeIndexRepository } from './repository'
+import { createKnowledgeDatabase } from './repository/database-adapter'
 
-let pool: Pool | undefined
+let client: SQL | undefined
 let repository: ReturnType<typeof createKnowledgeIndexRepository> | undefined
 
 export function getKnowledgeIndexRepository() {
@@ -14,23 +16,24 @@ export function getKnowledgeIndexRepository() {
 
   const env = getServerEnv()
   const connectionString = requireIntegrationEnv('KNOWLEDGE_DATABASE_URL', env.KNOWLEDGE_DATABASE_URL)
-  pool = new Pool({
-    connectionString,
+  client = createBunSqlClient({
+    url: connectionString,
+    applicationName: 'last-lst97-knowledge',
     // Two of six connections this serverless instance may hold; the budget and
     // its arithmetic live in payload.config.ts. Chat tool calls run
     // sequentially, so this is headroom, not contention.
     max: 2,
-    idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 5_000,
-    application_name: 'last-lst97-knowledge',
+    idleTimeoutSeconds: 30,
+    connectionTimeoutSeconds: 5,
+    caPem: decodePostgresCa(env.POSTGRES_SSL_CA),
   })
-  repository = createKnowledgeIndexRepository(drizzle(pool) as unknown as KnowledgeDatabase)
+  repository = createKnowledgeIndexRepository(createKnowledgeDatabase(drizzle(client)))
   return repository
 }
 
 export async function closeKnowledgeDatabase(): Promise<void> {
-  const currentPool = pool
-  pool = undefined
+  const currentClient = client
+  client = undefined
   repository = undefined
-  if (currentPool) await currentPool.end()
+  if (currentClient) await currentClient.close()
 }

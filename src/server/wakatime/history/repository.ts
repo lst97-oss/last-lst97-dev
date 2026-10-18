@@ -57,7 +57,7 @@ export interface HistoryCoverage {
   through: string | null
 }
 
-interface PgPool {
+interface SqlQueryPort {
   query(text: string, params?: unknown[]): Promise<{ rows: unknown[] }>
 }
 
@@ -103,7 +103,7 @@ interface RollupSupport {
   supported: boolean | null
 }
 
-async function rollupsAvailable(pool: PgPool, cache: RollupSupport): Promise<boolean> {
+async function rollupsAvailable(pool: SqlQueryPort, cache: RollupSupport): Promise<boolean> {
   if (cache.supported !== null) return cache.supported
   try {
     const result = await pool.query(
@@ -123,7 +123,7 @@ async function rollupsAvailable(pool: PgPool, cache: RollupSupport): Promise<boo
   return cache.supported
 }
 
-export function createCodingHistoryRepository(pool: PgPool): CodingHistoryRepository {
+export function createCodingHistoryRepository(pool: SqlQueryPort): CodingHistoryRepository {
   const support: RollupSupport = { supported: null }
   async function rows<T>(statement: string, params: unknown[], schema: z.ZodType<T>): Promise<T[]> {
     let result: { rows: unknown[] }

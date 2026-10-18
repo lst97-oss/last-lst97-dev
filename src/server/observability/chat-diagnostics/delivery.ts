@@ -22,7 +22,7 @@ function webhookUrl(value: string): URL {
 }
 
 function pause(durationMs: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, durationMs))
+  return Bun.sleep(durationMs)
 }
 
 export function createDiscordDiagnosticsSink(config: {

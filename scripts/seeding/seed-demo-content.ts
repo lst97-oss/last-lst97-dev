@@ -2,14 +2,14 @@
  * Seeds demo projects, posts, and changelog entries so the public listing
  * pages have enough content to show the adaptive masonry grid packing.
  *
- * Writes with plain SQL through `pg` rather than the Payload local API.
+ * Writes with plain SQL through `Bun.SQL` rather than the Payload local API.
  *
  * Idempotent: rows whose slug starts with `demo-` are deleted first, then
  * re-inserted, so repeated runs never accumulate duplicates.
  *
  * LOCAL ONLY — writes to whatever DATABASE_URL is loaded.
  */
-import { Client } from 'pg'
+import { createBunSqlClient } from '../../src/server/database/bun-sql'
 
 // Web Crypto, available as a global under Bun. It must be called off `crypto`
 // itself: destructuring `randomUUID` and invoking the bare reference throws
@@ -249,116 +249,117 @@ const DEMO_CHANGELOGS: ChangelogSeed[] = [
 ]
 
 async function main() {
-  const url = process.env.DATABASE_URL
+  const url = Bun.env.DATABASE_URL
   if (!url) throw new Error('DATABASE_URL is not set')
 
-  const client = new Client({ connectionString: url })
-  await client.connect()
+  const client = createBunSqlClient({
+    url,
+    applicationName: 'last-lst97-seed-demo',
+    max: 1,
+    connectionTimeoutSeconds: 5,
+  })
 
   try {
-    await client.query('BEGIN')
+    await client.begin(async (tx) => {
+      for (const table of ['projects', 'posts', 'changelogs']) {
+        await tx.unsafe(`DELETE FROM ${table} WHERE slug LIKE $1`, [`${DEMO_PREFIX}%`])
+      }
+      // Array/relationship child rows are keyed by parent, so clear the demo
+      // parents' children first (FK cascade is not configured on this schema).
+      await tx.unsafe(`DELETE FROM projects_technologies WHERE _parent_id NOT IN (SELECT id FROM projects)`)
+      await tx.unsafe(`DELETE FROM posts_tags WHERE _parent_id NOT IN (SELECT id FROM posts)`)
+      await tx.unsafe(`DELETE FROM changelogs_tags WHERE _parent_id NOT IN (SELECT id FROM changelogs)`)
+      await tx.unsafe(`DELETE FROM changelogs_change_types WHERE parent_id NOT IN (SELECT id FROM changelogs)`)
 
-    for (const table of ['projects', 'posts', 'changelogs']) {
-      await client.query(`DELETE FROM ${table} WHERE slug LIKE $1`, [`${DEMO_PREFIX}%`])
-    }
-    // Array/relationship child rows are keyed by parent, so clear the demo
-    // parents' children first (FK cascade is not configured on this schema).
-    await client.query(`DELETE FROM projects_technologies WHERE _parent_id NOT IN (SELECT id FROM projects)`)
-    await client.query(`DELETE FROM posts_tags WHERE _parent_id NOT IN (SELECT id FROM posts)`)
-    await client.query(`DELETE FROM changelogs_tags WHERE _parent_id NOT IN (SELECT id FROM changelogs)`)
-    await client.query(`DELETE FROM changelogs_change_types WHERE parent_id NOT IN (SELECT id FROM changelogs)`)
-
-    for (const p of DEMO_PROJECTS) {
-      const { rows } = await client.query(
-        `INSERT INTO projects (title, slug, summary, content, role, project_status, start_date, end_date, featured, sort_order, status, published_at, created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'published',$11,$12,$12) RETURNING id`,
-        [
-          p.title,
-          p.slug,
-          p.summary,
-          JSON.stringify(richText(p.summary)),
-          p.role,
-          p.projectStatus,
-          p.startDate,
-          p.endDate,
-          p.featured,
-          p.sortOrder,
-          NOW,
-          NOW,
-        ],
-      )
-      const id = rows[0].id
-      for (const [order, technology] of p.technologies.entries()) {
-        await client.query(
-          // Array child tables key on a varchar `id` with no default, unlike
-          // the integer sequence keys the parent tables use.
-          `INSERT INTO projects_technologies (id, _parent_id, _order, technology) VALUES ($1,$2,$3,$4)`,
-          [randomUUID(), id, order, technology],
+      for (const p of DEMO_PROJECTS) {
+        const [row] = await tx.unsafe<Array<{ id: number }>>(
+          `INSERT INTO projects (title, slug, summary, content, role, project_status, start_date, end_date, featured, sort_order, status, published_at, created_at, updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'published',$11,$12,$12) RETURNING id`,
+          [
+            p.title,
+            p.slug,
+            p.summary,
+            // JSONB columns accept the object directly. JSON.stringify() would
+            // send a string, which Bun SQL stores as a JSON string.
+            richText(p.summary),
+            p.role,
+            p.projectStatus,
+            p.startDate,
+            p.endDate,
+            p.featured,
+            p.sortOrder,
+            NOW,
+            NOW,
+          ],
         )
+        const id = row.id
+        for (const [order, technology] of p.technologies.entries()) {
+          await tx.unsafe(
+            // Array child tables key on a varchar `id` with no default, unlike
+            // the integer sequence keys the parent tables use.
+            `INSERT INTO projects_technologies (id, _parent_id, _order, technology) VALUES ($1,$2,$3,$4)`,
+            [randomUUID(), id, order, technology],
+          )
+        }
+        console.log(`  project: ${p.slug}`)
       }
-      console.log(`  project: ${p.slug}`)
-    }
 
-    for (const p of DEMO_POSTS) {
-      const { rows } = await client.query(
-        `INSERT INTO posts (title, slug, excerpt, content, status, published_at, created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$7) RETURNING id`,
-        [p.title, p.slug, p.excerpt, JSON.stringify(richText(p.excerpt)), p.status, p.publishedAt, NOW],
+      for (const p of DEMO_POSTS) {
+        const [row] = await tx.unsafe<Array<{ id: number }>>(
+          `INSERT INTO posts (title, slug, excerpt, content, status, published_at, created_at, updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$7) RETURNING id`,
+          [p.title, p.slug, p.excerpt, richText(p.excerpt), p.status, p.publishedAt, NOW],
+        )
+        const id = row.id
+        for (const [order, tag] of p.tags.entries()) {
+          await tx.unsafe(`INSERT INTO posts_tags (id, _parent_id, _order, tag) VALUES ($1,$2,$3,$4)`, [
+            randomUUID(),
+            id,
+            order,
+            tag,
+          ])
+        }
+        console.log(`  post: ${p.slug} (${p.status})`)
+      }
+
+      for (const c of DEMO_CHANGELOGS) {
+        const [row] = await tx.unsafe<Array<{ id: number }>>(
+          `INSERT INTO changelogs (title, slug, version, excerpt, content, status, published_at, created_at, updated_at)
+           VALUES ($1,$2,$3,$4,$5,'published',$6,$7,$7) RETURNING id`,
+          [c.title, c.slug, c.version, c.excerpt, richText(c.excerpt), c.publishedAt, NOW],
+        )
+        const id = row.id
+        for (const [order, tag] of c.tags.entries()) {
+          await tx.unsafe(`INSERT INTO changelogs_tags (id, _parent_id, _order, tag) VALUES ($1,$2,$3,$4)`, [
+            randomUUID(),
+            id,
+            order,
+            tag,
+          ])
+        }
+        for (const [order, type] of c.changeTypes.entries()) {
+          // This table predates the `_parent_id`/`_order` convention the other
+          // array tables use; it stores parent_id/order/value instead.
+          await tx.unsafe(`INSERT INTO changelogs_change_types (parent_id, "order", value) VALUES ($1,$2,$3)`, [
+            id,
+            order,
+            type,
+          ])
+        }
+        console.log(`  changelog: ${c.slug}`)
+      }
+
+      const [counts] = await tx.unsafe<Array<{ projects: string; posts: string; changelogs: string }>>(
+        `SELECT
+           (SELECT count(*) FROM projects WHERE slug LIKE $1) AS projects,
+           (SELECT count(*) FROM posts   WHERE slug LIKE $1) AS posts,
+           (SELECT count(*) FROM changelogs WHERE slug LIKE $1) AS changelogs`,
+        [`${DEMO_PREFIX}%`],
       )
-      const id = rows[0].id
-      for (const [order, tag] of p.tags.entries()) {
-        await client.query(`INSERT INTO posts_tags (id, _parent_id, _order, tag) VALUES ($1,$2,$3,$4)`, [
-          randomUUID(),
-          id,
-          order,
-          tag,
-        ])
-      }
-      console.log(`  post: ${p.slug} (${p.status})`)
-    }
-
-    for (const c of DEMO_CHANGELOGS) {
-      const { rows } = await client.query(
-        `INSERT INTO changelogs (title, slug, version, excerpt, content, status, published_at, created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,'published',$6,$7,$7) RETURNING id`,
-        [c.title, c.slug, c.version, c.excerpt, JSON.stringify(richText(c.excerpt)), c.publishedAt, NOW],
-      )
-      const id = rows[0].id
-      for (const [order, tag] of c.tags.entries()) {
-        await client.query(`INSERT INTO changelogs_tags (id, _parent_id, _order, tag) VALUES ($1,$2,$3,$4)`, [
-          randomUUID(),
-          id,
-          order,
-          tag,
-        ])
-      }
-      for (const [order, type] of c.changeTypes.entries()) {
-        // This table predates the `_parent_id`/`_order` convention the other
-        // array tables use; it stores parent_id/order/value instead.
-        await client.query(`INSERT INTO changelogs_change_types (parent_id, "order", value) VALUES ($1,$2,$3)`, [
-          id,
-          order,
-          type,
-        ])
-      }
-      console.log(`  changelog: ${c.slug}`)
-    }
-
-    await client.query('COMMIT')
-
-    const counts = await client.query(
-      `SELECT
-         (SELECT count(*) FROM projects WHERE slug LIKE $1) AS projects,
-         (SELECT count(*) FROM posts   WHERE slug LIKE $1) AS posts,
-         (SELECT count(*) FROM changelogs WHERE slug LIKE $1) AS changelogs`,
-      [`${DEMO_PREFIX}%`],
-    )
-    console.log(`\nDone. ${JSON.stringify(counts.rows[0])}`)
-  } catch (error) {
-    await client.query('ROLLBACK')
-    throw error
+      console.log(`\nDone. ${JSON.stringify(counts)}`)
+    })
   } finally {
-    await client.end()
+    await client.close()
   }
 }
 

@@ -2,7 +2,6 @@ import type { Payload } from 'payload'
 
 import { getServerEnv } from '../env'
 import { logger } from '../observability/logger'
-import { getKnowledgeIndexRepository } from './database'
 import { createEmbeddingClient } from './embedding-client'
 import { resolveIndexEmbeddingConfig } from './embedding-provider-config'
 import { createIndexKnowledgeSource } from './index-source'
@@ -10,6 +9,7 @@ import type { KnowledgeListSource } from './jobs'
 import { createKnowledgeSourceSynchronizer } from './jobs'
 import type { PayloadKnowledgeRecord } from './payload-source'
 import { createPayloadKnowledgeSource } from './payload-source'
+import type { KnowledgeIndexRepository } from './repository'
 import type { KnowledgeDocument, KnowledgeSource } from './source-types'
 import type { KnowledgeSourceType } from './types'
 import { createWakaTimeKnowledgeSource } from './wakatime-source'
@@ -50,9 +50,16 @@ function createPayloadContentSource(payload: Payload, type: 'post' | 'project') 
   })
 }
 
-function createKnowledgeDependencies(source: KnowledgeSource) {
+// `payload.config.ts` is loaded under Node by the local Payload CLI. Keep the
+// Bun SQL client behind a dynamic import so generate:types and migrate do not
+// evaluate `drizzle-orm/bun-sql` (which imports the `bun` module).
+async function getKnowledgeRepository(): Promise<KnowledgeIndexRepository> {
+  const { getKnowledgeIndexRepository } = await import('./database')
+  return getKnowledgeIndexRepository()
+}
+
+function createKnowledgeDependencies(source: KnowledgeSource, repository: KnowledgeIndexRepository) {
   const env = getServerEnv()
-  const repository = getKnowledgeIndexRepository()
   const embedding = createEmbeddingClient(resolveIndexEmbeddingConfig(env))
   return { indexer: createIndexKnowledgeSource({ source, embedding, repository, logger }) }
 }
@@ -62,7 +69,8 @@ export async function runPayloadKnowledgeIndexTask(
   input: { sourceType: 'post' | 'project'; sourceId: string },
 ): Promise<{ status: string; chunkCount: number }> {
   const source = createPayloadContentSource(payload, input.sourceType)
-  const { indexer } = createKnowledgeDependencies(source)
+  const repository = await getKnowledgeRepository()
+  const { indexer } = createKnowledgeDependencies(source, repository)
   return indexer.execute(input.sourceId)
 }
 
@@ -94,7 +102,7 @@ export async function runPayloadKnowledgeSyncTask(
     wakatime: wakaTimeSource,
   })
   const env = getServerEnv()
-  const repository = getKnowledgeIndexRepository()
+  const repository = await getKnowledgeRepository()
   const embedding = createEmbeddingClient(resolveIndexEmbeddingConfig(env))
   const indexers = new Map<KnowledgeSourceType, ReturnType<typeof createIndexKnowledgeSource>>()
   for (const source of sources) {

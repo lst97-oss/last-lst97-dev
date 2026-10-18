@@ -1,5 +1,7 @@
-import { Pool } from 'pg'
+import type { SQL } from 'bun'
 
+import { createBunSqlClient, createQueryPort } from '../../src/server/database/bun-sql'
+import { decodePostgresCa } from '../../src/server/database/postgres-ca'
 import { getServerEnv } from '../../src/server/env'
 import { requireIntegrationEnv } from '../../src/server/env-schema'
 import { migrateKnowledgeDatabase } from '../../src/server/knowledge/database-migration'
@@ -17,10 +19,10 @@ function toPgTextArrayLiteral(values: string[]): string {
   return `{${values.map((value) => `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`).join(',')}}`
 }
 
-async function insertBatch(pool: Pool, rows: PreparedHeartbeatRow[]): Promise<void> {
+async function insertBatch(client: SQL, rows: PreparedHeartbeatRow[]): Promise<void> {
   for (let offset = 0; offset < rows.length; offset += INSERT_BATCH_SIZE) {
     const batch = rows.slice(offset, offset + INSERT_BATCH_SIZE)
-    await pool.query(
+    await client.unsafe(
       `WITH "input" AS (
          SELECT * FROM UNNEST(
            $1::uuid[], $2::date[], $3::timestamptz[], $4::text[], $5::text[], $6::text[],
@@ -34,30 +36,71 @@ async function insertBatch(pool: Pool, rows: PreparedHeartbeatRow[]): Promise<vo
           "is_write", "duration_seconds", "entity_hash", "dependencies"::text[], "ai_coding"
         FROM "input" ON CONFLICT ("waka_id") DO NOTHING`,
       [
-        batch.map((row) => row.wakaId),
-        batch.map((row) => row.day),
-        batch.map((row) => row.time),
-        batch.map((row) => row.project ?? ''),
-        batch.map((row) => row.language ?? ''),
-        batch.map((row) => row.category ?? ''),
-        batch.map((row) => row.type ?? ''),
-        batch.map((row) => row.branch ?? ''),
-        batch.map((row) => row.isWrite),
-        batch.map((row) => row.durationSeconds),
-        batch.map((row) => row.entityHash),
-        batch.map((row) => toPgTextArrayLiteral(row.dependencies)),
-        batch.map((row) => row.aiCoding),
+        // `sql.unsafe` does not serialize a plain JS array for a cast; the
+        // explicit `array()` helper sends a PostgreSQL array literal.
+        client.array(
+          batch.map((row) => row.wakaId),
+          'UUID',
+        ),
+        client.array(
+          batch.map((row) => row.day),
+          'DATE',
+        ),
+        client.array(
+          batch.map((row) => row.time),
+          'TIMESTAMPTZ',
+        ),
+        client.array(
+          batch.map((row) => row.project ?? ''),
+          'TEXT',
+        ),
+        client.array(
+          batch.map((row) => row.language ?? ''),
+          'TEXT',
+        ),
+        client.array(
+          batch.map((row) => row.category ?? ''),
+          'TEXT',
+        ),
+        client.array(
+          batch.map((row) => row.type ?? ''),
+          'TEXT',
+        ),
+        client.array(
+          batch.map((row) => row.branch ?? ''),
+          'TEXT',
+        ),
+        client.array(
+          batch.map((row) => row.isWrite),
+          'BOOLEAN',
+        ),
+        client.array(
+          batch.map((row) => row.durationSeconds),
+          'DOUBLE PRECISION',
+        ),
+        client.array(
+          batch.map((row) => row.entityHash),
+          'TEXT',
+        ),
+        client.array(
+          batch.map((row) => toPgTextArrayLiteral(row.dependencies)),
+          'TEXT',
+        ),
+        client.array(
+          batch.map((row) => row.aiCoding),
+          'BOOLEAN',
+        ),
       ],
     )
   }
 }
 
-async function refreshDayRollups(pool: Pool, days: string[]): Promise<void> {
+async function refreshDayRollups(client: SQL, days: string[]): Promise<void> {
   const unique = [...new Set(days)].sort()
   if (unique.length === 0) return
   for (let offset = 0; offset < unique.length; offset += ROLLUP_REFRESH_DAYS) {
     const slice = unique.slice(offset, offset + ROLLUP_REFRESH_DAYS)
-    await pool.query(
+    await client.unsafe(
       `WITH "fresh" AS (
          SELECT
            "day",
@@ -70,9 +113,9 @@ async function refreshDayRollups(pool: Pool, days: string[]): Promise<void> {
        ON CONFLICT ("day") DO UPDATE SET
          "total_seconds" = EXCLUDED."total_seconds",
          "heartbeat_count" = EXCLUDED."heartbeat_count"`,
-      [slice],
+      [client.array(slice, 'DATE')],
     )
-    await pool.query(
+    await client.unsafe(
       `WITH "fresh" AS (
          SELECT "day", COALESCE(NULLIF("project", ''), '(unknown)') AS "project",
            COALESCE(SUM("duration_seconds"), 0) AS "seconds", COUNT(*)::int AS "heartbeats"
@@ -83,9 +126,9 @@ async function refreshDayRollups(pool: Pool, days: string[]): Promise<void> {
        ON CONFLICT ("day", "project") DO UPDATE SET
          "seconds" = EXCLUDED."seconds",
          "heartbeats" = EXCLUDED."heartbeats"`,
-      [slice],
+      [client.array(slice, 'DATE')],
     )
-    await pool.query(
+    await client.unsafe(
       `WITH "fresh" AS (
          SELECT "day", COALESCE(NULLIF("language", ''), '(unknown)') AS "language",
            COALESCE(SUM("duration_seconds"), 0) AS "seconds", COUNT(*)::int AS "heartbeats"
@@ -96,7 +139,7 @@ async function refreshDayRollups(pool: Pool, days: string[]): Promise<void> {
        ON CONFLICT ("day", "language") DO UPDATE SET
          "seconds" = EXCLUDED."seconds",
          "heartbeats" = EXCLUDED."heartbeats"`,
-      [slice],
+      [client.array(slice, 'DATE')],
     )
   }
 }
@@ -179,14 +222,29 @@ if (!dumpPath) fail('Provide the dump path as an argument or WAKATIME_DUMP_PATH'
 
 const env = getServerEnv()
 const connectionString = requireIntegrationEnv('KNOWLEDGE_DATABASE_URL', env.KNOWLEDGE_DATABASE_URL)
-const pool = new Pool({ connectionString, max: 2, connectionTimeoutMillis: 5_000 })
+const client = createBunSqlClient({
+  url: connectionString,
+  applicationName: 'last-lst97-wakatime-import',
+  max: 2,
+  connectionTimeoutSeconds: 5,
+  caPem: decodePostgresCa(env.POSTGRES_SSL_CA),
+})
 
 try {
-  await migrateKnowledgeDatabase(pool)
+  // The migration sends BEGIN/COMMIT itself, so it needs one pinned connection.
+  // A pooled Bun SQL client closes a connection returned inside a transaction.
+  const migrationConnection = await client.reserve()
+  try {
+    await migrateKnowledgeDatabase(createQueryPort(migrationConnection))
+  } finally {
+    migrationConnection.release()
+  }
   let importId = 0
   try {
-    const ledger = await pool.query(`INSERT INTO "wakatime_imports" ("status") VALUES ('running') RETURNING "id"`)
-    importId = (ledger.rows[0] as { id: number }).id
+    const [ledger] = await client.unsafe<Array<{ id: number }>>(
+      `INSERT INTO "wakatime_imports" ("status") VALUES ('running') RETURNING "id"`,
+    )
+    importId = ledger.id
 
     let days = 0
     let heartbeats = 0
@@ -195,8 +253,8 @@ try {
     let pending: PreparedHeartbeatRow[] = []
     let touchedDays: string[] = []
     async function flush(): Promise<void> {
-      if (pending.length > 0) await insertBatch(pool, pending)
-      if (touchedDays.length > 0) await refreshDayRollups(pool, touchedDays)
+      if (pending.length > 0) await insertBatch(client, pending)
+      if (touchedDays.length > 0) await refreshDayRollups(client, touchedDays)
       pending = []
       touchedDays = []
     }
@@ -219,12 +277,12 @@ try {
       if (days % 50 === 0) console.info(JSON.stringify({ event: 'wakatime.history.import.progress', days, heartbeats }))
     }
     await flush()
-    await pool.query(`VACUUM (ANALYZE) "wakatime_heartbeats"`)
-    await pool.query(`VACUUM (ANALYZE) "wakatime_daily_summary"`)
-    await pool.query(`VACUUM (ANALYZE) "wakatime_daily_projects"`)
-    await pool.query(`VACUUM (ANALYZE) "wakatime_daily_languages"`)
+    await client.unsafe(`VACUUM (ANALYZE) "wakatime_heartbeats"`)
+    await client.unsafe(`VACUUM (ANALYZE) "wakatime_daily_summary"`)
+    await client.unsafe(`VACUUM (ANALYZE) "wakatime_daily_projects"`)
+    await client.unsafe(`VACUUM (ANALYZE) "wakatime_daily_languages"`)
 
-    await pool.query(
+    await client.unsafe(
       `UPDATE "wakatime_imports" SET "completed_at" = now(), "days_count" = $2,
        "heartbeat_count" = $3, "range_start" = $4, "range_end" = $5, "status" = 'completed' WHERE "id" = $1`,
       [importId, days, heartbeats, rangeStart, rangeEnd],
@@ -232,11 +290,11 @@ try {
     console.info(JSON.stringify({ event: 'wakatime.history.import.completed', days, heartbeats, rangeStart, rangeEnd }))
   } catch (error) {
     if (importId > 0)
-      await pool.query(`UPDATE "wakatime_imports" SET "completed_at" = now(), "status" = 'failed' WHERE "id" = $1`, [
+      await client.unsafe(`UPDATE "wakatime_imports" SET "completed_at" = now(), "status" = 'failed' WHERE "id" = $1`, [
         importId,
       ])
     throw error
   }
 } finally {
-  await pool.end()
+  await client.close()
 }

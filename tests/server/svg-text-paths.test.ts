@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'bun:test'
-import { readFile } from 'node:fs/promises'
 import { create as createFont, type Font } from 'fontkit'
 import { renderSvgTextPaths } from '../../src/server/seo/svg-text-paths'
 
 describe('Open Graph SVG text paths', () => {
   it('renders bundled font glyphs as vector paths instead of host-font text nodes', async () => {
-    const archivoBytes = await readFile(
-      new URL('../../src/server/seo/fonts/archivo-black-regular.ttf', import.meta.url),
+    const archivoBytes = Buffer.from(
+      await Bun.file(new URL('../../src/server/seo/fonts/archivo-black-regular.ttf', import.meta.url)).arrayBuffer(),
     )
-    const jetBrainsBytes = await readFile(
-      new URL('../../src/server/seo/fonts/jetbrains-mono-variable.ttf', import.meta.url),
+    const jetBrainsBytes = Buffer.from(
+      await Bun.file(new URL('../../src/server/seo/fonts/jetbrains-mono-variable.ttf', import.meta.url)).arrayBuffer(),
     )
     const title = renderSvgTextPaths(createFont(archivoBytes) as Font, 'LAST//OS', {
       x: 82,
