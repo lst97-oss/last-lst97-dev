@@ -14,7 +14,7 @@ describe('interview Markdown document parser', () => {
     body,
   ].join('\n')
 
-  it('builds a public interview document whose embedded text carries the question', () => {
+  it('builds a public interview document whose chunk context carries the category and question', () => {
     const parsed = parseInterviewDocument('src/data/interview/remaining-cents-split.md', document)
 
     expect(parsed?.source.type).toBe('interview')
@@ -24,8 +24,11 @@ describe('interview Markdown document parser', () => {
     )
     expect(parsed?.source.url).toBe('https://www.lst97.dev/chat')
     expect(parsed?.isPublic).toBe(true)
-    expect(parsed?.text).toBe(
-      `## Applied Project Questions\n\n### An expense of $100 is split equally among three people. How would you handle the remaining cents?\n\n${body}`,
+    // The body is windowed on its own; the category and question reach every
+    // chunk through the repeated prefix instead of only the first chunk.
+    expect(parsed?.text).toBe(body)
+    expect(parsed?.chunkContextPrefix).toBe(
+      `## Applied Project Questions\n\n### An expense of $100 is split equally among three people. How would you handle the remaining cents?`,
     )
   })
 

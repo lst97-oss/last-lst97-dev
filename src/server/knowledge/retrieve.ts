@@ -13,7 +13,16 @@ import type {
   RerankerPort,
 } from './types'
 
-const VECTOR_CANDIDATE_LIMIT = 10
+// The vector arm draws a wide pool so that candidates a narrow top-10 would
+// have missed can still reach the reranker. The backward-compatibility guard:
+// the repository clamps at MAX_VECTOR_SEARCH_RESULTS, which must stay >= this.
+const VECTOR_CANDIDATE_LIMIT = 30
+// The reranker accepts at most ten candidates and only the top three survive
+// the relevance gate, so the pool is trimmed to a diverse ten first. Several
+// chunks of one source would otherwise crowd out other sources — the final
+// selection dedupes to one chunk per source anyway.
+const RERANK_CANDIDATE_LIMIT = 10
+const MAX_CHUNKS_PER_SOURCE_FOR_RERANK = 2
 const FINAL_CANDIDATE_LIMIT = 3
 const DEFAULT_EVIDENCE_BUDGET = 5_000
 const MIN_RELEVANCE_PROBABILITY = 0.6
@@ -81,6 +90,29 @@ function wantsDemoLinks(query: string): boolean {
 
 function sourceIdentity(candidate: KnowledgeCandidate): string {
   return `${candidate.source.type}:${candidate.source.sourceId}`
+}
+
+/**
+ * Trims the wide candidate pool to the reranker's input: at most
+ * `RERANK_CANDIDATE_LIMIT` candidates in pool order, with at most
+ * `MAX_CHUNKS_PER_SOURCE_FOR_RERANK` chunks per source identity. The cap keeps
+ * one source's chunk cluster from consuming the whole rerank window; two
+ * chunks are kept so the reranker can still choose between the two best
+ * passages of a source. Callers pass the result to `reranker.rerank`, which
+ * rejects more than ten candidates.
+ */
+function selectForRerank(candidates: KnowledgeCandidate[]): KnowledgeCandidate[] {
+  const selected: KnowledgeCandidate[] = []
+  const chunksPerSource = new Map<string, number>()
+  for (const candidate of candidates) {
+    if (selected.length === RERANK_CANDIDATE_LIMIT) break
+    const identity = sourceIdentity(candidate)
+    const count = chunksPerSource.get(identity) ?? 0
+    if (count >= MAX_CHUNKS_PER_SOURCE_FOR_RERANK) continue
+    chunksPerSource.set(identity, count + 1)
+    selected.push(candidate)
+  }
+  return selected
 }
 
 function isPublicCitationUrl(value: string): boolean {
@@ -233,12 +265,14 @@ export function createRetrieveKnowledge(dependencies: RetrieveKnowledgeDependenc
 
       const candidatesById = new Map(candidates.map((candidate) => [candidate.id, candidate]))
       const rerankScores = new Map<string, number>()
+      const rerankCandidates = selectForRerank(candidates)
+      const rerankEligibleIds = new Set(rerankCandidates.map(({ id }) => id))
       let selected: KnowledgeCandidate[]
       let degraded = false
       try {
         const ranked = await dependencies.reranker.rerank({
           query,
-          candidates: candidates.slice(0, VECTOR_CANDIDATE_LIMIT),
+          candidates: rerankCandidates,
           limit: FINAL_CANDIDATE_LIMIT,
           onModelCall: input.diagnostics?.onModelCall,
         })
@@ -312,7 +346,7 @@ export function createRetrieveKnowledge(dependencies: RetrieveKnowledgeDependenc
       input.diagnostics?.onRetrieval?.({
         query,
         degraded,
-        candidates: candidates.slice(0, VECTOR_CANDIDATE_LIMIT).map((candidate, index) => {
+        candidates: candidates.map((candidate, index) => {
           const assessment = relevanceById.get(candidate.id)
           return {
             id: candidate.id,
@@ -322,6 +356,7 @@ export function createRetrieveKnowledge(dependencies: RetrieveKnowledgeDependenc
             isPublic: candidate.isPublic,
             excerpt: candidate.text.slice(0, 300),
             retrievedRank: index + 1,
+            rerankEligible: rerankEligibleIds.has(candidate.id),
             ...(rerankScores.has(candidate.id) ? { rerankScore: rerankScores.get(candidate.id) } : {}),
             ...(assessment?.scores
               ? {

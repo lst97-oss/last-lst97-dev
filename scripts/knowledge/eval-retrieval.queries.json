@@ -1,0 +1,226 @@
+{
+  "version": 1,
+  "notes": [
+    "expect entries are '<sourceType>:<sourceId>' identities; a query is a hit when any expected identity reaches the final evidence.",
+    "Demo labels point at the repository reports that carry 'Project demo:' URLs. Project deep-dive bodies mention 'demo' only rhetorically, which is why no project-doc is expected for a demo query.",
+    "blog-code-is-cheap accepts post:21 ('Code Is Cheap. Software Is Not.') because the published post answers the same question as the blog section that shares its corpus."
+  ],
+  "queries": [
+    {
+      "id": "gnaf-query-routing",
+      "kind": "mechanism",
+      "query": "How does a typed address query become a chosen PostgreSQL search strategy?",
+      "expect": ["project-doc:gnaf-query-routing"]
+    },
+    {
+      "id": "gnaf-data-ingestion",
+      "kind": "mechanism",
+      "query": "How is a 16 million address dataset loaded and refreshed?",
+      "expect": ["project-doc:gnaf-data-ingestion"]
+    },
+    {
+      "id": "smartplay-retry",
+      "kind": "mechanism",
+      "query": "What happens after a crawl request fails: how are failures classified, retried and dead-lettered?",
+      "expect": ["project-doc:smartplay-retry-and-resilience"]
+    },
+    {
+      "id": "wwnz-settlement",
+      "kind": "mechanism",
+      "query": "How do splits, balances and debt coverage resolve into a settlement?",
+      "expect": ["project-doc:wwnz-settlement-calculation"]
+    },
+    {
+      "id": "wwnz-currency",
+      "kind": "mechanism",
+      "query": "How are currency conversions and historical exchange rates handled?",
+      "expect": ["project-doc:wwnz-currency-and-media"]
+    },
+    {
+      "id": "wwnz-conflict",
+      "kind": "mechanism",
+      "query": "How do you stop a spreadsheet edit from silently overwriting someone else's change?",
+      "expect": ["project-doc:wwnz-conflict-protection"]
+    },
+    {
+      "id": "best-maker-pdf",
+      "kind": "mechanism",
+      "query": "How does a quotation become a PDF, and why is it cached by content?",
+      "expect": ["project-doc:best-maker-document-rendering-and-delivery"]
+    },
+    {
+      "id": "best-maker-boundaries",
+      "kind": "mechanism",
+      "query": "Why is the business core a single service while everything slow is separate?",
+      "expect": ["project-doc:best-maker-service-boundaries"]
+    },
+    {
+      "id": "best-maker-openapi",
+      "kind": "mechanism",
+      "query": "How does a breaking API change fail the build instead of the browser?",
+      "expect": ["project-doc:best-maker-openapi-generated-client"]
+    },
+    {
+      "id": "best-maker-reconciliation",
+      "kind": "mechanism",
+      "query": "How do expenses, income, bank transactions and a spreadsheet stay consistent?",
+      "expect": ["project-doc:best-maker-payment-reconciliation"]
+    },
+    {
+      "id": "best-maker-quote-to-cash",
+      "kind": "mechanism",
+      "query": "How does a measured job become a paid invoice that can be settled in instalments?",
+      "expect": ["project-doc:best-maker-quote-to-cash"]
+    },
+    {
+      "id": "canton-lyric-timings",
+      "kind": "mechanism",
+      "query": "How does a song get word-level lyric timings?",
+      "expect": ["project-doc:canton101-lyric-timing-alignment"]
+    },
+    {
+      "id": "canton-quality-gates",
+      "kind": "mechanism",
+      "query": "Which gates stop an API contract break or a schema mismatch from shipping?",
+      "expect": ["project-doc:canton101-quality-gates"]
+    },
+    {
+      "id": "lastos-retrieval-pipeline",
+      "kind": "mechanism",
+      "query": "How does retrieval move from vector candidates to gated evidence?",
+      "expect": ["project-doc:last-os-knowledge-retrieval"]
+    },
+    {
+      "id": "lastos-deployment",
+      "kind": "mechanism",
+      "query": "How are deployment, migrations and configuration treated as architecture?",
+      "expect": ["project-doc:last-os-deployment-and-operations"]
+    },
+    {
+      "id": "lastos-abuse-controls",
+      "kind": "mechanism",
+      "query": "How do the abuse controls layer, and where do they fail closed?",
+      "expect": ["project-doc:last-os-security-and-abuse"]
+    },
+    {
+      "id": "github-claude-code-sub-agents",
+      "kind": "identifier",
+      "query": "What is the claude-code-sub-agents repository and what does it do?",
+      "expect": ["github:lst97/claude-code-sub-agents"]
+    },
+    {
+      "id": "github-gnaf-autocomplete",
+      "kind": "identifier",
+      "query": "Tell me about the gnaf-autocomplete project.",
+      "expect": ["github:lst97/gnaf-autocomplete"]
+    },
+    {
+      "id": "github-splittab",
+      "kind": "identifier",
+      "query": "What does the SplitTab repository do and how is it structured?",
+      "expect": ["github-private:lst97/SplitTab"]
+    },
+    {
+      "id": "github-wwnz",
+      "kind": "identifier",
+      "query": "How is the wwnz app structured?",
+      "expect": ["github-private:lst97/wwnz"]
+    },
+    {
+      "id": "github-storyforge",
+      "kind": "identifier",
+      "query": "What is StoryForge?",
+      "expect": ["github-private:lst97/StoryForge"]
+    },
+    {
+      "id": "github-cantolyr",
+      "kind": "identifier",
+      "query": "Show me the CantoLyr repository summary.",
+      "expect": ["github:lst97/CantoLyr"]
+    },
+    {
+      "id": "smartplay-crawler",
+      "kind": "identifier",
+      "query": "How does the smartplay-hk-oss crawler pipeline work end to end?",
+      "expect": ["project-doc:smartplay-crawler-pipeline", "github:lst97/smartplay-hk-oss"]
+    },
+    {
+      "id": "services-starter-price",
+      "kind": "price",
+      "query": "How much does the Starter website package cost?",
+      "expect": ["services:starter-package"]
+    },
+    {
+      "id": "services-business-plus",
+      "kind": "price",
+      "query": "What is included in the Business Plus package?",
+      "expect": ["services:business-plus-package"]
+    },
+    {
+      "id": "services-support-hourly",
+      "kind": "price",
+      "query": "How much does the Go Support Plan cost per hour?",
+      "expect": ["services:go-support-plan", "services:support-pricing-summary"]
+    },
+    {
+      "id": "services-add-ons",
+      "kind": "price",
+      "query": "Can I purchase extra revision rounds after a website build?",
+      "expect": ["services:add-ons"]
+    },
+    {
+      "id": "interview-remaining-cents",
+      "kind": "personal",
+      "query": "How would you handle the remaining cents when splitting $100 among three people?",
+      "expect": ["interview:remaining-cents-split"]
+    },
+    {
+      "id": "interview-authn-authz",
+      "kind": "personal",
+      "query": "What's the difference between authentication and authorization?",
+      "expect": ["interview:authentication-vs-authorization"]
+    },
+    {
+      "id": "interview-foreign-key-indexes",
+      "kind": "personal",
+      "query": "Why do foreign keys need indexes?",
+      "expect": ["interview:foreign-keys-and-indexes"]
+    },
+    {
+      "id": "interview-production-monitoring",
+      "kind": "personal",
+      "query": "How do you monitor a production system?",
+      "expect": ["interview:production-monitoring-metrics"]
+    },
+    {
+      "id": "profile-background",
+      "kind": "personal",
+      "query": "Tell me about Nelson's professional background.",
+      "expect": ["github-profile:lst97-profile"]
+    },
+    {
+      "id": "blog-ai-debugging",
+      "kind": "personal",
+      "query": "How do software engineers use AI for debugging?",
+      "expect": ["blog:engineers-ai-debugging"]
+    },
+    {
+      "id": "blog-code-is-cheap",
+      "kind": "personal",
+      "query": "What did AI change about the cost of writing code?",
+      "expect": ["blog:code-is-cheap-what-ai-changed", "post:21"]
+    },
+    {
+      "id": "gnaf-demo",
+      "kind": "demo",
+      "query": "Is there a live demo of the address autocomplete I can open?",
+      "expect": ["github:lst97/gnaf-autocomplete"]
+    },
+    {
+      "id": "deployed-demos",
+      "kind": "demo",
+      "query": "Which projects have a deployed demo link?",
+      "expect": ["github:lst97/smartplay-hk-oss", "github:lst97/gnaf-autocomplete"]
+    }
+  ]
+}

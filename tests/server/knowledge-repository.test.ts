@@ -485,7 +485,7 @@ describe('KnowledgeIndexRepository', () => {
     expect(db.queries[0]?.params).toContain('developer-tool')
   })
 
-  it('searches all chunks by cosine distance, carries visibility, and caps candidates at ten', async () => {
+  it('searches all chunks by exact cosine distance, carries visibility, and caps candidates at the configured maximum', async () => {
     const db = createDatabase([
       {
         source_type: 'post',
@@ -501,11 +501,16 @@ describe('KnowledgeIndexRepository', () => {
     const repository = createKnowledgeIndexRepository(db)
 
     const result = await repository.search(chunks[0]!.embedding, 50)
+    const statement = db.queries.find(({ sql: query }) => query.includes('"embedding" <=>'))
 
-    expect(db.queries[0]?.sql).not.toContain('"is_public" = true')
-    expect(db.queries[0]?.sql).toContain('"embedding" <=>')
-    expect(db.queries[0]?.sql).toContain('LIMIT $2')
-    expect(db.queries[0]?.params.at(-1)).toBe(10)
+    // The exact scan runs inside a transaction whose only other statement
+    // disables index scans, so the ORDER BY cannot take the HNSW shortcut.
+    expect(db.transactionCount).toBe(1)
+    expect(db.queries[0]?.sql).toContain('SET LOCAL enable_indexscan = off')
+    expect(statement?.sql).not.toContain('"is_public" = true')
+    expect(statement?.sql).toContain('"embedding" <=>')
+    expect(statement?.sql).toContain('LIMIT $2')
+    expect(statement?.params.at(-1)).toBe(40)
     expect(result).toEqual([
       {
         id: 'post:post-1:0',
@@ -531,8 +536,9 @@ describe('KnowledgeIndexRepository', () => {
     const repository = createKnowledgeIndexRepository(db)
 
     const result = await repository.search(chunks[0]!.embedding, 10)
+    const statement = db.queries.find(({ sql: query }) => query.includes('"embedding" <=>'))
 
-    expect(db.queries[0]?.sql).not.toContain('WHERE "is_public" = true')
+    expect(statement?.sql).not.toContain('WHERE "is_public" = true')
     expect(result).toEqual([
       {
         id: 'github-private:lst97/secret-tool:0',

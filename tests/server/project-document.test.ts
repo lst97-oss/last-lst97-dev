@@ -18,7 +18,7 @@ describe('project deep-dive Markdown document parser', () => {
 
   const gnafPath = 'src/data/projects/gnaf-address-autocomplete/gnaf-query-routing.md'
 
-  it('builds a public project document whose embedded text carries the project, category and title', () => {
+  it('builds a public project document whose chunk context carries the project, category and title', () => {
     const parsed = parseProjectDocument(gnafPath, document)
 
     expect(parsed?.source.type).toBe('project-doc')
@@ -26,11 +26,11 @@ describe('project deep-dive Markdown document parser', () => {
     expect(parsed?.source.title).toBe('How the G-NAF search router picks a strategy')
     expect(parsed?.source.url).toBe('https://www.lst97.dev/projects/gnaf-address-autocomplete')
     expect(parsed?.isPublic).toBe(true)
-    // The prefix is the only context a heading-unaware chunk keeps, so it is
-    // where the project, the category and the title have to live.
-    expect(parsed?.text).toBe(
-      '## Project: G-NAF Address Autocomplete\n\n## Search Architecture\n\n### How the G-NAF search router picks a strategy\n\n' +
-        body,
+    // The body is windowed on its own; the project, category and title reach
+    // every chunk through the repeated prefix instead of only the first chunk.
+    expect(parsed?.text).toBe(body)
+    expect(parsed?.chunkContextPrefix).toBe(
+      '## Project: G-NAF Address Autocomplete\n\n## Search Architecture\n\n### How the G-NAF search router picks a strategy',
     )
   })
 
@@ -39,8 +39,12 @@ describe('project deep-dive Markdown document parser', () => {
     // Nothing in the body says so, which is the point: the folder decides.
     const smartplayPath = 'src/data/projects/smartplay-hk-oss/gnaf-query-routing.md'
 
-    expect(parseProjectDocument(gnafPath, document)?.text).toStartWith('## Project: G-NAF Address Autocomplete')
-    expect(parseProjectDocument(smartplayPath, document)?.text).toStartWith('## Project: SmartPlay HK OSS')
+    expect(parseProjectDocument(gnafPath, document)?.chunkContextPrefix).toStartWith(
+      '## Project: G-NAF Address Autocomplete',
+    )
+    expect(parseProjectDocument(smartplayPath, document)?.chunkContextPrefix).toStartWith(
+      '## Project: SmartPlay HK OSS',
+    )
   })
 
   it('recognises only the known project folders, and no inherited object key', () => {
@@ -116,7 +120,7 @@ describe('project deep-dive Markdown document parser', () => {
     )
 
     expect(parsed?.isPublic).toBe(false)
-    expect(parsed?.text).toStartWith('## Project: Wat Wat New Zealand')
+    expect(parsed?.chunkContextPrefix).toStartWith('## Project: Wat Wat New Zealand')
   })
 
   it('marks Canto101 documents private so the responder never implies the source is public', () => {
@@ -134,7 +138,7 @@ describe('project deep-dive Markdown document parser', () => {
     const parsed = parseProjectDocument('src/data/projects/canton-101/canton101-quality-gates.md', privateDocument)
 
     expect(parsed?.isPublic).toBe(false)
-    expect(parsed?.text).toStartWith('## Project: Canto101')
+    expect(parsed?.chunkContextPrefix).toStartWith('## Project: Canto101')
   })
 
   it('rejects a Canto101 document claiming Public, so its private repositories stay unpublished', () => {

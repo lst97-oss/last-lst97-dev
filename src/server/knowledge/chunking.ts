@@ -95,6 +95,15 @@ function buildChunk(document: KnowledgeDocument, chunkIndex: number, chunkText: 
   }
 }
 
+/**
+ * Windows `document.text` on a sliding character budget and prepends the
+ * document's `chunkContextPrefix` to every chunk. The prefix is concatenated
+ * rather than budgeted, which keeps the chunk count a function of the body
+ * alone — a long title must not change how many chunks a document produces.
+ * Repeating it on every chunk is the point of the prefix: the window only
+ * preserves the start of the text, so without it a later chunk carries no
+ * document context at all.
+ */
 export function chunkKnowledgeDocument(
   document: KnowledgeDocument,
   options: ChunkingOptions = {},
@@ -103,6 +112,7 @@ export function chunkKnowledgeDocument(
 
   const text = normalizeText(document.text)
   if (!text) return []
+  const prefix = documentPrefix(document)
 
   const chunks: KnowledgeTextChunk[] = []
   let start = 0
@@ -117,7 +127,7 @@ export function chunkKnowledgeDocument(
     end = adjustCodePointBoundary(text, end)
 
     const chunkText = text.slice(start, end).trim()
-    if (chunkText) chunks.push(buildChunk(document, chunks.length, chunkText))
+    if (chunkText) chunks.push(buildChunk(document, chunks.length, `${prefix}${chunkText}`.trim()))
 
     if (end >= text.length) break
     start = adjustCodePointBoundary(text, Math.max(start + 1, end - overlapChars))
@@ -126,20 +136,56 @@ export function chunkKnowledgeDocument(
   return chunks
 }
 
-const HEADING_LINE = /^#{1,6}\s/
+const HEADING_LINE = /^(#{1,6})\s+(.+?)\s*$/
+const MAX_BREADCRUMB_CHARS = 200
 
-function splitHeadingSegments(text: string): string[] {
-  const segments: string[] = []
+interface HeadingSegment {
+  /**
+   * The headings that enclose this segment, outermost first, with the
+   * segment's own heading excluded — that heading travels with the segment
+   * text. Empty for a preamble before the first heading.
+   */
+  ancestry: string[]
+  text: string
+}
+
+/**
+ * Splits Markdown on heading boundaries and records each segment's enclosing
+ * heading path. A nested section's chunk then carries the ancestry its own
+ * heading line does not state, so the section context survives chunking
+ * without repeating the section's own heading.
+ */
+function splitHeadingSegments(text: string): HeadingSegment[] {
+  const segments: HeadingSegment[] = []
+  const headingStack: string[] = []
+  let ancestry: string[] = []
   let current: string[] = []
+  const flush = () => {
+    if (current.length > 0) segments.push({ ancestry, text: current.join('\n') })
+    current = []
+  }
   for (const line of text.split('\n')) {
-    if (HEADING_LINE.test(line) && current.length > 0) {
-      segments.push(current.join('\n'))
-      current = []
+    const heading = line.match(HEADING_LINE)
+    if (heading) {
+      flush()
+      // HEADING_LINE requires both groups, so the defaults only satisfy the
+      // indexed-access type — a match always carries hashes and a title.
+      const [, hashes = '', title = ''] = heading
+      const level = hashes.length
+      ancestry = headingStack.slice(0, level - 1).filter(Boolean)
+      headingStack.length = level - 1
+      headingStack[level - 1] = title.trim()
     }
     current.push(line)
   }
-  if (current.length > 0) segments.push(current.join('\n'))
+  flush()
   return segments
+}
+
+function breadcrumbPrefix(ancestry: string[]): string {
+  if (ancestry.length === 0) return ''
+  const path = ancestry.join(' → ')
+  return `## ${path.length > MAX_BREADCRUMB_CHARS ? path.slice(0, MAX_BREADCRUMB_CHARS) : path}\n\n`
 }
 
 /**
@@ -162,15 +208,21 @@ export function chunkHeadingDelimitedDocument(
 
   const prefix = documentPrefix(document)
   const chunks: KnowledgeTextChunk[] = []
+  // Groups of small adjacent segments carry the breadcrumb of their first
+  // member: the group opens on that heading, and the later members' own
+  // headings travel with their text.
+  let groupBreadcrumb = ''
   const emit = (group: string) => {
     const trimmed = group.trim()
-    if (trimmed) chunks.push(buildChunk(document, chunks.length, `${prefix}${trimmed}`.trim()))
+    if (trimmed) chunks.push(buildChunk(document, chunks.length, `${prefix}${groupBreadcrumb}${trimmed}`.trim()))
+    groupBreadcrumb = ''
   }
 
   let group = ''
   for (const segment of splitHeadingSegments(text)) {
-    const trimmedSegment = segment.trim()
+    const trimmedSegment = segment.text.trim()
     if (!trimmedSegment) continue
+    const breadcrumb = breadcrumbPrefix(segment.ancestry)
     if (trimmedSegment.length > maxChars) {
       emit(group)
       group = ''
@@ -182,7 +234,7 @@ export function chunkHeadingDelimitedDocument(
         { maxChars, overlapChars },
       )
       for (const chunk of windowed) {
-        chunks.push(buildChunk(document, chunks.length, `${prefix}${chunk.text}`.trim()))
+        chunks.push(buildChunk(document, chunks.length, `${prefix}${breadcrumb}${chunk.text}`.trim()))
       }
       continue
     }
@@ -190,8 +242,10 @@ export function chunkHeadingDelimitedDocument(
     if (group && candidate.length > maxChars) {
       emit(group)
       group = trimmedSegment
+      groupBreadcrumb = breadcrumb
       continue
     }
+    if (!group) groupBreadcrumb = breadcrumb
     group = candidate
   }
   emit(group)

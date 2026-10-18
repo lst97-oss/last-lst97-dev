@@ -7,6 +7,10 @@ import type { KnowledgeChunk } from './types'
 
 export const DIMENSIONS = 1024
 const MAX_SEARCH_RESULTS = 10
+// Vector retrieval draws a wider pool than the keyword lookups so the
+// reranker can be fed a diverse shortlist. It must stay >= the retrieval
+// pipeline's candidate pool; see VECTOR_CANDIDATE_LIMIT in retrieve.ts.
+export const MAX_VECTOR_SEARCH_RESULTS = 40
 export const sourceTypeSchema = z.enum([
   'post',
   'project',
@@ -176,8 +180,8 @@ export function mapSearchRows(rows: unknown[]): KnowledgeCandidate[] {
   })
 }
 
-export function boundedSearchLimit(limit: number): number {
-  return Math.max(1, Math.min(MAX_SEARCH_RESULTS, Math.floor(Number.isFinite(limit) ? limit : 1)))
+export function boundedSearchLimit(limit: number, max = MAX_SEARCH_RESULTS): number {
+  return Math.max(1, Math.min(max, Math.floor(Number.isFinite(limit) ? limit : 1)))
 }
 
 export function normalizedProjectName(name: string): string {

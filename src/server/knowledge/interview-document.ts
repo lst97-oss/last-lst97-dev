@@ -24,8 +24,12 @@ export function parseInterviewDocument(path: string, text: string): KnowledgeDoc
 
   return {
     source: { type: 'interview', sourceId, title, url: url.href },
-    text: `## ${category}\n\n### ${title}\n\n${body}`,
+    text: body,
     isPublic: true,
     sourceUpdatedAt: null,
+    // Chunking is a sliding window over `text` alone. The prefix repeats on
+    // every chunk, so a chunk that begins mid-answer still states its category
+    // and question before it states anything else.
+    chunkContextPrefix: `## ${category}\n\n### ${title}`,
   }
 }

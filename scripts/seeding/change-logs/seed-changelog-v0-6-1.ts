@@ -6,9 +6,9 @@
  * do, not which files changed. Implementation detail lives in the GitHub
  * release notes, which this entry links to.
  *
- * Drafted ahead of the release: status stays `draft` so seeding it early cannot
- * put it on the public timeline. Flipping it to `published` at the v0.6.1 tag
- * lets `ensurePublicationDate` stamp the date.
+ * Seeded at the v0.6.1 tag as `published`, so `ensurePublicationDate` stamps
+ * the date at write time. It stayed `draft` until the tag so seeding it ahead
+ * of the release could not put it on the public timeline.
  *
  * Idempotent: matched by slug and updated in place.
  */
@@ -71,11 +71,10 @@ async function main() {
       'Database connections now verify the server certificate instead of only encrypting traffic, the connection pool can no longer be oversubscribed by concurrent instances, and the contact window points to its hidden guidance again.',
     changeTypes: ['security', 'improvement', 'bug_fix'] satisfies ChangelogType[],
     tags: ['Security', 'Infrastructure', 'Fixes'].map((tag) => ({ tag })),
-    // Draft until the v0.6.1 tag: a published row with a future UTC stamp would
-    // sit invisible on /changelog anyway, and seeding it early must not publish
-    // release notes for code that is not deployed yet. Publishing from the
-    // admin panel (or flipping this literal) stamps the date via the hook.
-    status: 'draft' as const,
+    // Published at the v0.6.1 tag. Unlike the v0.5.0/v0.6.0 siblings there is no
+    // explicit `publishedAt`: the hook stamps the write moment, which is already
+    // in the past at read time.
+    status: 'published' as const,
     featured: false,
     content,
     seo: {

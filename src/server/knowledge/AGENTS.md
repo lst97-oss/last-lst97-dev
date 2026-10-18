@@ -2,7 +2,7 @@
 
 ## Role / pipeline position
 
-Read path (chat, wired in `server/chat/runtime.ts`): message → `query-resolution` → `embedding-client` (query) → `repository.search` (pgvector over all rows) → `siliconflow-reranker` → dedupe/top-3 → `relevance-gate` (per-document direct-support decision) → evidence budget → `prompt-evidence` (untrusted block) → citations to the browser. `retrieve.ts` is the only entry the chat calls (`RetrieveKnowledge.execute`).
+Read path (chat, wired in `server/chat/runtime.ts`): message → `query-resolution` → `embedding-client` (query) → `repository.search` (exact pgvector scan, 30 candidates) → diversity trim (≤10) → `siliconflow-reranker` → dedupe/top-3 → `relevance-gate` (per-document direct-support decision) → evidence budget → `prompt-evidence` (untrusted block) → citations to the browser. `retrieve.ts` is the only entry the chat calls (`RetrieveKnowledge.execute`). `scripts/knowledge/eval-retrieval.ts` (`bun run knowledge:eval`) measures every stage against a golden query set; it reads the index and never writes.
 
 Write path (worker/jobs/CLIs): `*-source.ts` → `chunking` → `index-source` (embed document) → `repository.upsertSourceChunks`. Triggered by Payload hooks/tasks (`payload-hooks`, `payload-tasks`, `payload-runtime`, `jobs`) and by the CLIs in `scripts/knowledge/` (`sync-knowledge`, `sync-github-knowledge`, `reindex-github-reports`, `index-interview-knowledge`, `index-services-knowledge`, `migrate-knowledge`, `import-wakatime-history`).
 
@@ -13,6 +13,7 @@ Note: `database-migration.ts` also owns the WakaTime heartbeat/rollup tables bec
 ## Invariants
 
 - **Private evidence is retrievable and labelled.** `repository.search` returns every row and carries `is_public`; `retrieve` keeps non-http(s) URLs out but serves private chunks, stamps `isPublic: false` on the citation, and `prompt-evidence` labels them "private repository (sanitized summary; safe to summarize for the user)". The policy in `chat/openrouter-responder.ts` allows describing the project while forbidding claims that a visitor can view the source. Re-filtering to public-only in SQL would silently drop these — do not.
+- **Vector search is exact, not approximate.** `repository.search` runs `SET LOCAL enable_indexscan = off` inside a transaction so the `ORDER BY "embedding" <=> …` cannot take an HNSW walk: an approximate walk can miss the true nearest chunk, and no reranker or gate can recover a chunk that never entered the pool. The sequential scan costs single-digit milliseconds at this corpus size; revisit above roughly 10^4–10^5 chunks, where a high `hnsw.ef_search` is the right trade. `SET LOCAL` only applies inside a transaction, which is why the search runs through `database.transaction` rather than a bare `execute`.
 - **Evidence is untrusted data.** `prompt-evidence` wraps text in `<untrusted_evidence>` with `<`/`>`/`&` escaped and JSON-quoted content; never render chunk text as instructions.
 - **No fabrication.** `renderGithubRepositorySummary` must emit `Unknown: …` rows and limitations instead of guessing when evidence is missing; `analyzeGithubRepository` marks inferences (`inferred: true`).
 - **Sanitize before persisting.** `assertSafeGithubMarkdown` / `sanitizeEvidenceText` / `inspectSensitivePath` gate any GitHub-derived markdown; secrets, credential assignments, PEM blocks, and emails never reach files, the index, or logs. Logs use `[private]` for non-public source ids.
@@ -28,7 +29,8 @@ Note: `database-migration.ts` also owns the WakaTime heartbeat/rollup tables bec
 - Validate at the boundary with zod (`safeParse`) or explicit asserts, then trust the parsed value; throw fixed sanitized messages.
 - Sizes are named constants near the top (`MAX_*`); dimensions `1024` are asserted in `repository`, `embedding-client`, and `index-source`. Durations are `timeoutMs`; timing logs use `durationMs: Math.max(0, Math.round(now() - startedAt))`.
 - Sources are `async fetch(sourceId) => KnowledgeDocument | null` with a single well-known id (`operator-profile`, `wakatime-all-time`) and optional `listDocuments`; ids are the sync/dedupe key.
-- Constants tuned together: reranker `MAX_CANDIDATES = 10` with `retrieve.VECTOR_CANDIDATE_LIMIT = 10`; reranker `top_n` clamp and `FINAL_CANDIDATE_LIMIT = 3`; `relevance-gate` thresholds are `0.60` for both direct-support Noul probabilities; `evidenceBudget` default 5,000 chars (cap 20,000).
+- Constants tuned together: `retrieve.VECTOR_CANDIDATE_LIMIT = 30`, with the repository clamp `MAX_VECTOR_SEARCH_RESULTS = 40` (keep the clamp ≥ the pool, or the pool silently shrinks); `RERANK_CANDIDATE_LIMIT = 10` matching reranker `MAX_CANDIDATES = 10`; `MAX_CHUNKS_PER_SOURCE_FOR_RERANK = 2`, because the final selection dedupes to one chunk per source and one source's chunk cluster must not fill the rerank window; `FINAL_CANDIDATE_LIMIT = 3`; `relevance-gate` thresholds are `0.60` for both direct-support Noul probabilities; `evidenceBudget` default 5,000 chars (cap 20,000).
+- Chunk text opens with the document's `chunkContextPrefix` — repeated on **every** chunk, not just the first — and `chunkHeadingDelimitedDocument` additionally prefixes a nested section with its ancestor breadcrumb (`## Section → Subsection`) before the body. The parsers put identity headers (`## Project: …`, the offering label, the interview question, the report title) in `chunkContextPrefix`, never in `text`: `text` is windowed, so a header left in `text` reaches the first chunk only.
 - Dedupe is by source identity (`type:sourceId`), not chunk id — several chunks of one post would otherwise surface as K1/K2/K3 with the same title/URL.
 - Cron and retry policy live in `payload-tasks.ts` (`KNOWLEDGE_SYNC_CRON` in `jobs.ts`); `payload.config.ts` registers the tasks and auto-run queue.
 - RAG is opt-in: `KNOWLEDGE_RAG_ENABLED=false` by default. `chat` degrades (`knowledgeUnavailable`) when retrieval fails; it must never block a reply.
@@ -50,9 +52,10 @@ Note: `database-migration.ts` also owns the WakaTime heartbeat/rollup tables bec
   the only source of truth for a document's offering — never infer it from prose — and
   `parseServicesDocument` rejects an unknown folder instead of defaulting, so a mistyped path
   fails the index run rather than silently merging both offerings. The label is emitted as the
-  FIRST line of the chunk prefix, because `chunking` is a heading-unaware sliding window and any
-  later chunk loses the body headers. `sourceId` stays the bare file name, so `source_id` rows
-  are unchanged by the split and no stale-row purge is needed.
+  FIRST line of the chunk prefix; `chunking` repeats that prefix on every chunk, so a chunk that
+  begins mid-document still states its offering before it states anything else. `sourceId` stays
+  the bare file name, so `source_id` rows are unchanged by the split and no stale-row purge is
+  needed.
 
 ## Do not "fix" without a change request
 

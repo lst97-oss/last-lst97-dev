@@ -87,11 +87,12 @@ describe('project deep-dive corpus', () => {
 
     for (const { relativePath, text } of entries) {
       const parsed = parseProjectDocument(relativePath, text)
-      // Chunking is a heading-unaware sliding window, so a chunk taken from the
-      // middle of a document carries only this prefix. If the project line ever
+      // Chunking repeats this prefix on every chunk, so a chunk taken from the
+      // middle of a document still carries the project line first. If it ever
       // stops coming first, a mid-document chunk answers with no idea which
       // project it came from.
-      expect(parsed?.text.startsWith('## Project: ')).toBe(true)
+      expect(parsed?.chunkContextPrefix?.startsWith('## Project: ')).toBe(true)
+      expect(parsed?.text).not.toContain('## Project: ')
       expect(parsed?.text).not.toContain('- **Visibility:**')
     }
   })

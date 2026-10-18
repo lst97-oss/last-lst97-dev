@@ -98,12 +98,12 @@ export function parseProjectDocument(path: string, text: string): KnowledgeDocum
 
   return {
     source: { type: 'project-doc', sourceId, title, url: url.href },
-    // Chunking is a heading-unaware sliding window over `text` alone, so this
-    // prefix is the only context a chunk carries. The project line comes first:
-    // a chunk that begins mid-document still states which project it describes
-    // before it states anything else.
-    text: `## Project: ${PROJECT_LABELS[project]}\n\n## ${category}\n\n### ${title}\n\n${body}`,
+    text: body,
     isPublic: visibility === 'Public',
     sourceUpdatedAt: null,
+    // Chunking is a sliding window over `text` alone. The prefix repeats on
+    // every chunk, so a chunk that begins mid-document still states which
+    // project it describes before it states anything else.
+    chunkContextPrefix: `## Project: ${PROJECT_LABELS[project]}\n\n## ${category}\n\n### ${title}`,
   }
 }

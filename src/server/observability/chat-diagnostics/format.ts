@@ -177,7 +177,7 @@ export function formatChatDiagnosticMessages(record: ChatDiagnosticsRecord): Dis
         `**${candidate.isPublic ? 'Public' : 'Private'}** · ${candidate.sourceType}`,
         `Source: ${candidate.sourceId}`,
         `Rerank ${candidate.rerankScore?.toFixed(3) ?? '—'} · Gate ${candidate.relevanceProbability?.toFixed(2) ?? '—'} · evidence ${candidate.answerEvidenceProbability?.toFixed(2) ?? '—'}`,
-        `Decision: ${candidate.outcome} · final: ${candidate.finalSelected ? 'yes' : 'no'}`,
+        `Decision: ${candidate.outcome} · reranked: ${candidate.rerankEligible ? 'yes' : 'no'} · final: ${candidate.finalSelected ? 'yes' : 'no'}`,
         `> ${candidate.excerpt || '(no excerpt)'}`,
       ]
         .join('\n')
