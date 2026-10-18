@@ -97,6 +97,7 @@ export function sanitizeRagRetrieval(retrieval: ChatRagRetrievalDiagnostic): Cha
       isPublic: candidate.isPublic,
       excerpt: clampText(candidate.excerpt, MAX_CANDIDATE_EXCERPT),
       retrievedRank: Math.max(0, Math.floor(candidate.retrievedRank)),
+      rerankEligible: candidate.rerankEligible === true,
       ...(isFiniteNonNegative(candidate.rerankScore) ? { rerankScore: candidate.rerankScore } : {}),
       ...(isFiniteNonNegative(candidate.relevanceProbability)
         ? { relevanceProbability: candidate.relevanceProbability }

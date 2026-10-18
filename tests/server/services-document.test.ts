@@ -21,7 +21,7 @@ describe('services Markdown document parser', () => {
 
   const packagesPath = 'src/data/services/packages/packages-and-pricing.md'
 
-  it('builds a public services document whose embedded text carries the offering, topic and question', () => {
+  it('builds a public services document whose chunk context carries the offering, topic and question', () => {
     const parsed = parseServicesDocument(packagesPath, document)
 
     expect(parsed?.source.type).toBe('services')
@@ -29,10 +29,11 @@ describe('services Markdown document parser', () => {
     expect(parsed?.source.title).toBe('How much does a website cost?')
     expect(parsed?.source.url).toBe('https://www.lst97.dev/services')
     expect(parsed?.isPublic).toBe(true)
-    // The prefix is the only context a heading-unaware chunk keeps, so it is
-    // where the offering, the topic and the question have to live.
-    expect(parsed?.text).toBe(
-      `## ${SERVICES_OFFERING_LABELS.packages}\n\n## Packages and Pricing\n\n### How much does a website cost?\n\n${body}`,
+    // The body is windowed on its own; the offering, topic and question reach
+    // every chunk through the repeated prefix instead of only the first chunk.
+    expect(parsed?.text).toBe(body)
+    expect(parsed?.chunkContextPrefix).toBe(
+      `## ${SERVICES_OFFERING_LABELS.packages}\n\n## Packages and Pricing\n\n### How much does a website cost?`,
     )
   })
 
@@ -41,8 +42,12 @@ describe('services Markdown document parser', () => {
     // says so, which is the point: the folder is the only source of truth.
     const supportPath = 'src/data/services/support/packages-and-pricing.md'
 
-    expect(parseServicesDocument(packagesPath, document)?.text).toStartWith(`## ${SERVICES_OFFERING_LABELS.packages}`)
-    expect(parseServicesDocument(supportPath, document)?.text).toStartWith(`## ${SERVICES_OFFERING_LABELS.support}`)
+    expect(parseServicesDocument(packagesPath, document)?.chunkContextPrefix).toStartWith(
+      `## ${SERVICES_OFFERING_LABELS.packages}`,
+    )
+    expect(parseServicesDocument(supportPath, document)?.chunkContextPrefix).toStartWith(
+      `## ${SERVICES_OFFERING_LABELS.support}`,
+    )
   })
 
   it('recognises only the two offering folders, and no inherited object key', () => {

@@ -51,13 +51,14 @@ export function parseBlogDocument(path: string, text: string): KnowledgeDocument
 
   return {
     source: { type: 'blog', sourceId, title, url: url.href },
-    // Chunking is a heading-unaware sliding window over `text` alone, so this
-    // prefix is the only context a chunk carries. The `## Blog` line comes
-    // first: a chunk that begins mid-document still states it is a blog
-    // article before it states anything else, because the row's source_type
-    // is not part of the chunk text.
-    text: `## Blog\n\n## ${category}\n\n### ${title}\n\n${body}`,
+    text: body,
     isPublic: true,
     sourceUpdatedAt: null,
+    // Chunking is a sliding window over `text` alone. The prefix repeats on
+    // every chunk: the `## Blog` line comes first, because the row's
+    // source_type is not part of the chunk text, and a chunk that begins
+    // mid-document still states it is a blog article before it states anything
+    // else.
+    chunkContextPrefix: `## Blog\n\n## ${category}\n\n### ${title}`,
   }
 }

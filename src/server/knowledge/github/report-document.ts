@@ -107,11 +107,23 @@ export function parseGithubReportDocument(path: string, text: string): Knowledge
       ? 'github-private'
       : 'github'
 
+  // Reports are section-structured: the `# <repository>` preamble is document
+  // context and every `##`/`###` section is a chunk unit. Splitting on the
+  // headings and repeating the preamble as `chunkContextPrefix` keeps the
+  // repository name on every chunk instead of only the first, and gives nested
+  // sections (`### GitHub language breakdown`) their enclosing heading as a
+  // breadcrumb.
+  const sectionStart = text.search(/^## /m)
+  const body = sectionStart > 0 ? text.slice(sectionStart).trim() : text
+  const header = sectionStart > 0 ? text.slice(0, sectionStart).trim() : ''
+
   return {
     source: { type: sourceType, sourceId, title, url: url.href },
-    text,
+    text: body,
     isPublic: visibility === 'public',
     sourceUpdatedAt: null,
+    headingDelimited: true,
+    ...(header ? { chunkContextPrefix: header } : {}),
     ...(!isContribution ? { projectCatalog: parseProjectCatalog(text) } : {}),
   }
 }

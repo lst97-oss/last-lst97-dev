@@ -50,6 +50,18 @@ describe('knowledge chunking', () => {
     ).toBe(true)
   })
 
+  it('repeats the context prefix on every sliding-window chunk without budgeting it against the body', () => {
+    const prefixed = { ...document, chunkContextPrefix: '## Reliable services' }
+    const chunks = chunkKnowledgeDocument(prefixed, { maxChars: 80, overlapChars: 20 })
+    const plainChunks = chunkKnowledgeDocument(document, { maxChars: 80, overlapChars: 20 })
+
+    expect(chunks.length).toBeGreaterThan(1)
+    expect(chunks.every(({ text: chunk }) => chunk.startsWith('## Reliable services\n\n'))).toBe(true)
+    // The prefix is concatenated, not budgeted, so it cannot change how many
+    // chunks the body produces.
+    expect(chunks.length).toBe(plainChunks.length)
+  })
+
   it('normalizes Lexical nodes into readable ordered text', () => {
     expect(
       lexicalToPlainText({
@@ -86,6 +98,32 @@ describe('knowledge chunking', () => {
     expect(chunks.every(({ text: chunk }) => /^#{1,6} /.test(chunk.split('\n\n')[1] ?? ''))).toBe(true)
     expect(chunks.map(({ chunkIndex }) => chunkIndex)).toEqual(chunks.map((_chunk, index) => index))
     expect(new Set(chunks.map(({ contentHash }) => contentHash)).size).toBe(chunks.length)
+  })
+
+  it('prefixes a nested section with its ancestor headings as a breadcrumb', () => {
+    const headingDelimited = {
+      ...document,
+      text: [
+        '## Setup',
+        'install notes. '.repeat(60),
+        '### Install',
+        'install steps. '.repeat(60),
+        '#### Notes',
+        'note text. '.repeat(60),
+        '## Limits',
+        'limit text. '.repeat(60),
+      ].join('\n'),
+      headingDelimited: true,
+      chunkContextPrefix: '## Reliable services',
+    }
+
+    const chunks = chunkHeadingDelimitedDocument(headingDelimited)
+
+    const install = chunks.find(({ text: chunk }) => chunk.includes('### Install'))
+    const notes = chunks.find(({ text: chunk }) => chunk.includes('#### Notes'))
+    // A nested section carries the heading ancestry its own heading line omits.
+    expect(install?.text).toContain('## Reliable services\n\n## Setup\n\n### Install')
+    expect(notes?.text).toContain('## Reliable services\n\n## Setup → Install\n\n#### Notes')
   })
 
   it('falls back to bounded overlapping windows for a section larger than the maximum', () => {

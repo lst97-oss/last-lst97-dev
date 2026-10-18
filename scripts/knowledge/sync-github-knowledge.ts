@@ -251,6 +251,7 @@ async function collectDocuments(): Promise<{
     ...(wakaTimeProfile ? { wakaTimeMarkdown: wakaTimeProfile.text } : {}),
     wakaTimeSourceUrl: WAKATIME_SHARE_URL,
   })
+  const profileHeading = profileMarkdown.match(/^#\s+.+$/m)?.[0]
   const documents: KnowledgeDocument[] = [
     {
       source: {
@@ -262,6 +263,11 @@ async function collectDocuments(): Promise<{
       text: profileMarkdown,
       isPublic: true,
       sourceUpdatedAt: null,
+      // The merged profile is a long sliding-window document; its heading is
+      // repeated on every chunk instead of being preserved for the first one
+      // only. Derived from the rendered text rather than re-declared so the
+      // two cannot drift.
+      ...(profileHeading ? { chunkContextPrefix: profileHeading } : {}),
     },
   ]
 

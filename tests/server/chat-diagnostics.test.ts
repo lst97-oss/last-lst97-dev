@@ -120,6 +120,7 @@ describe('chat diagnostics', () => {
             isPublic: true,
             excerpt: 'x'.repeat(300),
             retrievedRank: index + 1,
+            rerankEligible: index < 10,
             outcome: 'accepted' as const,
             finalSelected: index < 3,
           })),

@@ -5,6 +5,7 @@ import {
   boundedSearchLimit,
   chunkStateRowSchema,
   DIMENSIONS,
+  MAX_VECTOR_SEARCH_RESULTS,
   mapSearchRows,
   normalizedProjectName,
   ownerRepositoryTypes,
@@ -146,13 +147,25 @@ export function createKnowledgeChunkOperations(
       if (vector.length !== DIMENSIONS || vector.some((value) => !Number.isFinite(value))) {
         throw new Error('Knowledge embeddings must contain exactly 1024 finite values')
       }
-      const boundedLimit = boundedSearchLimit(limit)
-      const result = await database.execute(sql`
-        SELECT "source_type", "source_id", "chunk_index", "title", "url", "content", "is_public"
-        FROM "knowledge_chunks"
-        ORDER BY "embedding" <=> CAST(${vectorLiteral(vector)} AS vector(1024))
-        LIMIT ${boundedLimit}
-      `)
+      const boundedLimit = boundedSearchLimit(limit, MAX_VECTOR_SEARCH_RESULTS)
+      // Retrieval quality beats index use at this corpus size. An HNSW walk is
+      // approximate, so the true nearest chunk can fall outside any ef_search
+      // window — a recall hole the reranker and the relevance gate can never
+      // repair. A sequential scan over this table costs single-digit
+      // milliseconds and returns the exact top N. Revisit when the table grows
+      // by an order of magnitude: an index scan with a high `hnsw.ef_search`
+      // trades a little recall for a lot of speed. `SET LOCAL` only applies
+      // inside a transaction, so the setting is scoped to this statement's
+      // transaction rather than leaking into the pooled connection.
+      const result = await database.transaction(async (transaction) => {
+        await transaction.execute(sql`SET LOCAL enable_indexscan = off`)
+        return transaction.execute(sql`
+          SELECT "source_type", "source_id", "chunk_index", "title", "url", "content", "is_public"
+          FROM "knowledge_chunks"
+          ORDER BY "embedding" <=> CAST(${vectorLiteral(vector)} AS vector(1024))
+          LIMIT ${boundedLimit}
+        `)
+      })
 
       return mapSearchRows(result.rows ?? [])
     },

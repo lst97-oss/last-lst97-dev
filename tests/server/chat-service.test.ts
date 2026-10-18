@@ -2464,6 +2464,7 @@ describe('createChatService.sendStream', () => {
                   isPublic: true,
                   excerpt: 'Verified project evidence',
                   retrievedRank: 1,
+                  rerankEligible: true,
                   rerankScore: 0.9,
                   relevanceProbability: 0.95,
                   answerEvidenceProbability: 0.91,

@@ -124,11 +124,12 @@ describe('blog corpus', () => {
 
     for (const { relativePath, text } of entries) {
       const parsed = parseBlogDocument(relativePath, text)
-      // Chunking is a heading-unaware sliding window, so a chunk taken from the
-      // middle of a document carries only this prefix. If the blog line ever
-      // stops coming first, a mid-document chunk answers with no idea it came
-      // from an article.
-      expect(parsed?.text.startsWith('## Blog\n\n')).toBe(true)
+      // Chunking repeats this prefix on every chunk, so a chunk taken from the
+      // middle of a document still states it came from an article. If the blog
+      // line ever stops coming first, a mid-document chunk answers with no idea
+      // what it is part of.
+      expect(parsed?.chunkContextPrefix?.startsWith('## Blog\n\n')).toBe(true)
+      expect(parsed?.text).not.toContain('## Blog')
     }
   })
 

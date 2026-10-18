@@ -94,7 +94,7 @@ describe('services Markdown corpus stays in sync with the public /services page'
     }
   })
 
-  it('stamps the offering on the prefix of every document, so no chunk can be read as the other offering', async () => {
+  it('stamps the offering on the chunk context of every document, so no chunk can be read as the other offering', async () => {
     const corpus = await readCorpus()
 
     for (const [relativePath, text] of corpus) {
@@ -102,10 +102,16 @@ describe('services Markdown corpus stays in sync with the public /services page'
       const otherOffering = offering === 'packages' ? 'support' : 'packages'
       const parsed = parseServicesDocument(relativePath, text)
 
-      // The label leads the prefix rather than trailing it: chunking is a
-      // sliding window, so a chunk that starts mid-document keeps the leading
-      // lines but loses the body headers.
-      expect(parsed?.text.startsWith(`## ${SERVICES_OFFERING_LABELS[offering]}`)).toBe(true)
+      // The label leads the chunk context rather than trailing it, and chunking
+      // repeats that context on every chunk — a chunk that starts mid-document
+      // still states its offering.
+      const context = `${parsed?.chunkContextPrefix ?? ''}`
+      expect(context, `${relativePath} must state its offering first`).toStartWith(
+        `## ${SERVICES_OFFERING_LABELS[offering]}`,
+      )
+      expect(context, `${relativePath} must not name the other offering as its own`).not.toContain(
+        SERVICES_OFFERING_LABELS[otherOffering],
+      )
       expect(parsed?.text, `${relativePath} must not name the other offering as its own`).not.toContain(
         SERVICES_OFFERING_LABELS[otherOffering],
       )

@@ -66,6 +66,12 @@ export interface ChatRagCandidateDiagnostic {
   isPublic: boolean
   excerpt: string
   retrievedRank: number
+  /**
+   * Whether the wide candidate pool passed this candidate to the reranker. A
+   * candidate can be retrieved, trimmed away before reranking, and therefore
+   * carry no `rerankScore` — the two misses are different failures.
+   */
+  rerankEligible: boolean
   rerankScore?: number
   relevanceProbability?: number
   answerEvidenceProbability?: number

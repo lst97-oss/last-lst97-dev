@@ -23,9 +23,11 @@ describe('GitHub report Markdown document parser', () => {
         title: 'SplitTab',
         url: 'https://github.com/lst97/SplitTab',
       },
-      text: report,
+      text: report.slice(report.indexOf('## Repository metadata')),
       isPublic: false,
       sourceUpdatedAt: null,
+      headingDelimited: true,
+      chunkContextPrefix: '# SplitTab',
       projectCatalog: {
         summary: 'Expense-management application for splitting shared costs.',
         createdAt: null,
@@ -39,6 +41,17 @@ describe('GitHub report Markdown document parser', () => {
         curatedTopics: [],
       },
     })
+  })
+
+  it('keeps the repository preamble as chunk context for every section', () => {
+    const document = parseGithubReportDocument('src/data/github/private/SplitTab.md', report)
+
+    // The `# <repository>` preamble is the only place the repository name is
+    // stated as a heading, so it must repeat on every chunk rather than being
+    // budgeted into the first section's window.
+    expect(document?.chunkContextPrefix).toBe('# SplitTab')
+    expect(document?.text).not.toContain('# SplitTab')
+    expect(document?.text.startsWith('## Repository metadata')).toBe(true)
   })
 
   it('parses structured project metadata, software kinds, and both topic sources', () => {

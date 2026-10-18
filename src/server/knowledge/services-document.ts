@@ -60,12 +60,12 @@ export function parseServicesDocument(path: string, text: string): KnowledgeDocu
 
   return {
     source: { type: 'services', sourceId, title, url: url.href },
-    // Chunking is a heading-unaware sliding window over `text` alone, so this
-    // prefix is the only context a chunk carries. The offering line comes
-    // first: a chunk that begins mid-document still states which offering it
-    // describes before it states anything else.
-    text: `## ${SERVICES_OFFERING_LABELS[offering]}\n\n## ${topic}\n\n### ${title}\n\n${body}`,
+    text: body,
     isPublic: true,
     sourceUpdatedAt: null,
+    // Chunking is a sliding window over `text` alone. The prefix repeats on
+    // every chunk, so a chunk that begins mid-document still states which
+    // offering it describes before it states anything else.
+    chunkContextPrefix: `## ${SERVICES_OFFERING_LABELS[offering]}\n\n## ${topic}\n\n### ${title}`,
   }
 }

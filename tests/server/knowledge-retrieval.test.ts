@@ -98,7 +98,7 @@ function harness(
     repository: {
       search: async (_vector: number[], limit: number) => {
         calls.order.push('search')
-        expect(limit).toBe(10)
+        expect(limit).toBe(30)
         return candidates
       },
       listOwnedProjects: async () => ({ projects: [], hasMore: false, matchingTotal: 0, breakdown: [] }),
@@ -159,7 +159,7 @@ function harness(
 }
 
 describe('knowledge retrieval', () => {
-  it('embeds, searches ten candidates, reranks, and returns the top three in order', async () => {
+  it('embeds, searches a wide candidate pool, reranks, and returns the top three in order', async () => {
     const deps = harness({
       ranked: [7, 2, 1, 4].map((index, rank) => ({ ...candidates[index]!, relevanceScore: 1 - rank / 10 })),
     })
@@ -204,13 +204,14 @@ describe('knowledge retrieval', () => {
     expect(retrievals[0]?.candidates).toHaveLength(10)
     expect(retrievals[0]?.candidates[0]).toMatchObject({
       id: 'source-0',
+      rerankEligible: true,
       rerankScore: 1,
       relevanceProbability: 0.9,
       answerEvidenceProbability: 0.9,
       outcome: 'accepted',
       finalSelected: true,
     })
-    expect(retrievals[0]?.candidates[9]?.outcome).toBe('not_ranked')
+    expect(retrievals[0]?.candidates[9]).toMatchObject({ rerankEligible: true, outcome: 'not_ranked' })
   })
 
   it('keeps only direct-support documents at or above both probability thresholds', async () => {
@@ -285,6 +286,45 @@ describe('knowledge retrieval', () => {
 
     expect(deps.calls.rerankQuery).toBe('What about that?')
     expect(deps.calls.rerankCandidates).toHaveLength(10)
+  })
+
+  it('trims the wide pool to ten diverse candidates so one source cannot crowd out the rest', async () => {
+    const clustered: KnowledgeCandidate[] = [
+      ...Array.from({ length: 12 }, (_, index) => ({
+        id: `cluster-${index}`,
+        text: `Cluster passage ${index}`,
+        isPublic: true,
+        source: {
+          type: 'profile' as const,
+          sourceId: 'owner',
+          title: 'Nelson (LST97) profile',
+          url: 'https://example.test/profile',
+        },
+      })),
+      ...Array.from({ length: 18 }, (_, index) => ({
+        id: `other-${index}`,
+        text: `Other passage ${index}`,
+        isPublic: true,
+        source: {
+          type: 'post' as const,
+          sourceId: `post-${index}`,
+          title: `Article ${index}`,
+          url: `https://example.test/articles/${index}`,
+        },
+      })),
+    ]
+    const deps = harness()
+    deps.dependencies.repository.search = async () => clustered
+
+    await createRetrieveKnowledge(deps.dependencies).execute({ message: 'question', verifiedHistory: [] })
+
+    const reranked = deps.calls.rerankCandidates ?? []
+    expect(reranked).toHaveLength(10)
+    // At most two chunks of the clustered source, and the slots they free go
+    // to candidates the old top-ten window never reached.
+    expect(reranked.filter(({ source }) => source.sourceId === 'owner')).toHaveLength(2)
+    expect(reranked.some(({ id }) => id === 'other-0')).toBe(true)
+    expect(reranked.some(({ id }) => id === 'other-8')).toBe(false)
   })
 
   it('resolves elliptical follow-ups from signed topic anchors without carrying old requests forward', () => {

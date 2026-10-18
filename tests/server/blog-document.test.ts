@@ -17,7 +17,7 @@ describe('blog Markdown document parser', () => {
 
   const blogPath = 'src/data/blog/code-is-cheap-software-is-not/code-is-cheap-what-ai-changed.md'
 
-  it('builds a public blog document whose embedded text carries the blog marker, category and title', () => {
+  it('builds a public blog document whose chunk context carries the blog marker, category and title', () => {
     const parsed = parseBlogDocument(blogPath, document)
 
     expect(parsed?.source.type).toBe('blog')
@@ -25,9 +25,10 @@ describe('blog Markdown document parser', () => {
     expect(parsed?.source.title).toBe('What AI Changed')
     expect(parsed?.source.url).toBe('https://www.lst97.dev/blog/code-is-cheap-software-is-not')
     expect(parsed?.isPublic).toBe(true)
-    // The prefix is the only context a heading-unaware chunk keeps, so it is
-    // where the blog marker, the category and the title have to live.
-    expect(parsed?.text).toBe('## Blog\n\n## AI-Assisted Development\n\n### What AI Changed\n\n' + body)
+    // The body is windowed on its own; the blog marker, the category and the
+    // title reach every chunk through the repeated prefix.
+    expect(parsed?.text).toBe(body)
+    expect(parsed?.chunkContextPrefix).toBe('## Blog\n\n## AI-Assisted Development\n\n### What AI Changed')
   })
 
   it('derives the post from the folder rather than from anything the body claims', () => {

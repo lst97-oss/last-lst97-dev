@@ -81,12 +81,12 @@ validates with — so its only permitted *value* imports are `zod`, `src/lib/cha
 because its handler pulls in server-only modules.
 
 **RAG flow.** Retrieval: `src/server/knowledge/retrieve.ts` (`RetrieveKnowledge.execute`) is the only
-entry chat calls — pgvector search (10 candidates) → SiliconFlow rerank →
-`src/server/knowledge/relevance-gate.ts` → evidence budget → `src/server/knowledge/prompt-evidence.ts`
-(untrusted wrapper). Indexing: `*-source.ts` → `chunking` → `index-source` →
-`repository.upsertSourceChunks`, driven by Payload hooks/tasks and the CLI scripts. Chunk dedupe is by
-source identity `type:sourceId`, never by chunk id. RAG is opt-in via `KNOWLEDGE_RAG_ENABLED` and
-degrades to a normal reply rather than blocking.
+entry chat calls — exact pgvector search (30 candidates) → per-source diversity trim (≤10) → SiliconFlow
+rerank → `src/server/knowledge/relevance-gate.ts` → evidence budget →
+`src/server/knowledge/prompt-evidence.ts` (untrusted wrapper). Indexing: `*-source.ts` → `chunking` →
+`index-source` → `repository.upsertSourceChunks`, driven by Payload hooks/tasks and the CLI scripts.
+Chunk dedupe is by source identity `type:sourceId`, never by chunk id. RAG is opt-in via
+`KNOWLEDGE_RAG_ENABLED` and degrades to a normal reply rather than blocking.
 
 **Project deep-dive corpus.** `src/data/projects/<project>/*.md` holds hand-authored documents that
 answer "how does X actually work" for the G-NAF Address Autocomplete, SmartPlay HK OSS, and Wat Wat New
@@ -241,13 +241,15 @@ chunking is a heading-unaware sliding window. The two offerings are priced on di
 used by both — a support standard engagement and a build add-on revision round — so the corpus
 names which is which wherever the figure appears.
 
-**Retrieval budget.** pgvector 10 candidates → SiliconFlow rerank (≤10) → the decision-model `Noul`
-relevance gate on the top 3. A document reaches the prompt only when both direct-support probabilities
+**Retrieval budget.** Exact pgvector scan, 30 candidates → diversity trim (≤2 chunks per source,
+≤10 total) → SiliconFlow rerank → the decision-model `Noul` relevance gate on the top 3. A document
+reaches the prompt only when both direct-support probabilities
 are ≥ `0.60`; a single gate failure keeps that document as a reranker fallback and marks the result degraded. Private-repository
 summaries stay eligible for the gate and render a `private` citation badge — the model may describe
 what such a project does, its technology, and its structure. The browser receives citation titles/URLs
 and a generic degraded indicator, never chunk text or provider scores. Retrieval runs **after**
-moderation, never before.
+moderation, never before. `bun run knowledge:eval` measures each stage against the golden query set in
+`scripts/knowledge/eval-retrieval.queries.json`; it reads the index and never writes to it.
 
 **`coding_stats` needs no WakaTime key** — it reads Nelson's public JSON shares, shape
 `{ category, range }` with `category` ∈ activity/languages/editors/operating_systems/categories and
