@@ -6,9 +6,9 @@
  * do, not which files changed. Implementation detail lives in the GitHub
  * release notes, which this entry links to.
  *
- * Drafted ahead of the release: status stays `draft` so seeding it early cannot
- * put it on the public timeline. Flipping it to `published` at the v0.6.2 tag
- * lets `ensurePublicationDate` stamp the date.
+ * Seeded at the v0.6.2 tag as `published`, so `ensurePublicationDate` stamps
+ * the date at write time. It stayed `draft` until the tag so seeding it ahead
+ * of the release could not put it on the public timeline.
  *
  * Idempotent: matched by slug and updated in place.
  */
@@ -66,11 +66,10 @@ async function main() {
       'Every passage the assistant retrieves now states the project, section or offering it belongs to, and the search behind it returns the genuinely closest passages with no single document able to crowd out the shortlist.',
     changeTypes: ['improvement', 'maintenance'] satisfies ChangelogType[],
     tags: ['Assistant', 'Knowledge', 'Retrieval'].map((tag) => ({ tag })),
-    // Draft until the v0.6.2 tag, matching the v0.6.1 flow: release notes for
-    // code that is not deployed yet must not sit on the public timeline. A
-    // published row with no explicit `publishedAt` is stamped by the hook at
-    // write time — an explicit future date is the other, admin-scheduling path.
-    status: 'draft' as const,
+    // Published at the v0.6.2 tag. Like the v0.6.1 sibling there is no explicit
+    // `publishedAt`: the hook stamps the write moment, which is already in the
+    // past at read time.
+    status: 'published' as const,
     featured: false,
     content,
     seo: {
