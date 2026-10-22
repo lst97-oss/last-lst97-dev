@@ -202,4 +202,26 @@ describe('contact POST handler', () => {
     expect(parsed.success).toBe(true)
     expect(parsed.success && parsed.data.fields).toEqual(['name', 'email'])
   })
+
+  it('rejects a request classified as a bot before the submission workflow', async () => {
+    let submitted = false
+    const handler = createContactPostHandler({
+      submitContact: async () => {
+        submitted = true
+        return { ok: true, receiptStatus: 'sent' }
+      },
+      logger: captureLogger([]),
+      rateLimit: allowRateLimit,
+      checkBotRequest: async () => ({ isBot: true, degraded: false }),
+    })
+    const response = await handler({
+      request: new Request('https://portfolio.example/api/site/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{"name":"Ada"}',
+      }),
+    })
+    expect(response.status).toBe(403)
+    expect(submitted).toBe(false)
+  })
 })

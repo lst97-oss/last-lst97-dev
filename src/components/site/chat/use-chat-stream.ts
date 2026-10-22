@@ -132,7 +132,12 @@ export function useChatStream({ state, dispatch }: UseChatStreamOptions) {
       const data: ChatJsonResponse | null = parsed.success ? parsed.data : null
       if (!response.ok || !data?.reply) {
         if (data?.code === 'turn_limit') dispatch({ type: 'conversation/turn-limit-reached' })
-        if (data?.code === 'turnstile_invalid' || data?.code === 'turnstile_unavailable' || response.status === 429) {
+        if (
+          data?.code === 'turnstile_invalid' ||
+          data?.code === 'turnstile_unavailable' ||
+          data?.code === 'bot_detected' ||
+          response.status === 429
+        ) {
           dispatch({ type: 'conversation/restore-submission', message: nextMessage })
         }
         if (response.status === 400 && data?.error?.includes('expired')) {

@@ -66,7 +66,7 @@ Payload plugins → `viteRsc({ serverHandler: false })` → `reactStartRscVitePl
 why the wrapper plugin is not used; re-copy that directory after any `@payloadcms/tanstack-start` bump.
 
 **Chat request flow.** `src/routes/api.site.chat.ts` → `src/server/chat/http-handler.ts` (zod validation,
-rate limit, Turnstile) → `src/server/chat/turn-preparation.ts` (signed context, turn limits, moderation)
+rate limit, BotID, Turnstile) → `src/server/chat/turn-preparation.ts` (signed context, turn limits, moderation)
 → `src/server/chat/agent/agent-loop.ts` (up to `MAX_AGENT_STEPS = 4`) →
 `src/server/chat/tools/agent-tool-runner.ts` (fixed zod schemas, timeouts, bounded output) →
 `src/server/chat/openrouter-responder.ts` (streamed answer) → SSE. The tool tuple `CHAT_TOOL_NAMES` in

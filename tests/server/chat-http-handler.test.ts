@@ -485,4 +485,54 @@ describe('chat POST handler', () => {
     expect(actionBody.success).toBe(true)
     expect(actionBody.success && actionBody.data.event?.type).toBe('contact_started')
   })
+
+  it('rejects a request classified as a bot before the message reaches the model', async () => {
+    let sent = false
+    const handler = createTestChatHandler({
+      send: async () => {
+        sent = true
+        return { status: 'replied' as const, text: 'unused', contextToken: 'unused' }
+      },
+      logger,
+      rateLimit: async () => ({ allowed: true, remaining: 1, retryAfterSeconds: 60 }),
+      checkBotRequest: async () => ({ isBot: true, degraded: false }),
+    })
+
+    const response = await handler({
+      request: new Request('https://example.test/api/site/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: chatRequestBody({ message: 'buy now' }),
+      }),
+    })
+
+    expect(response.status).toBe(403)
+    expect(await response.json()).toMatchObject({ code: 'bot_detected' })
+    expect(sent).toBe(false)
+  })
+
+  it('rejects a bot contact action before the workflow runs', async () => {
+    let handled = false
+    const handler = createChatPostHandler({
+      send: async () => ({ status: 'replied', text: 'unused', contextToken: 'unused' }),
+      handleContactAction: async () => {
+        handled = true
+        return { ok: false as const, reason: 'invalid_context' as const }
+      },
+      logger,
+      rateLimit: async () => ({ allowed: true, remaining: 1, retryAfterSeconds: 60 }),
+      checkBotRequest: async () => ({ isBot: true, degraded: false }),
+    })
+
+    const response = await handler({
+      request: new Request('https://example.test/api/site/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'start_contact', contextToken: 'signed-pending-token' }),
+      }),
+    })
+
+    expect(response.status).toBe(403)
+    expect(handled).toBe(false)
+  })
 })

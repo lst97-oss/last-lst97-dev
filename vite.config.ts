@@ -89,6 +89,11 @@ const config = defineConfig({
     // at build time from PUBLIC_SITE_URL and falls back to the dev origin.
     // Changing it on Vercel therefore requires a redeploy to take effect.
     __LAST_OS_SITE_URL__: JSON.stringify(process.env.PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+    // Vercel serves the BotID challenge script itself, on the deployed
+    // origin. A local dev server or a local production preview does not, and
+    // the client-side challenge rejects every protected request when its
+    // script cannot load — so BotID is enabled for Vercel builds only.
+    __VERCEL_RUNTIME__: JSON.stringify(process.env.VERCEL === '1'),
   },
   environments: {
     ssr: {

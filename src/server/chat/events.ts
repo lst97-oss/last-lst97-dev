@@ -268,7 +268,7 @@ export const chatStreamEventSchema = chatStreamEventSchemaUnion as unknown as z.
 /**
  * A union, not a plain object, because the browser branch is driven by
  * `!response.ok || !data?.reply`: a body carrying neither `reply` nor `error`
- * must not parse into something that looks usable. The three `code` values are
+ * must not parse into something that looks usable. The four `code` values are
  * the only ones `http-handler.ts` ever emits.
  *
  * `z.object`, not `z.looseObject`: a loose object infers an index signature, and
@@ -287,7 +287,7 @@ const chatJsonReplyBranch = z.object({
 })
 const chatJsonErrorBranch = z.object({
   error: z.string(),
-  code: z.enum(['turnstile_invalid', 'turnstile_unavailable', 'turn_limit']).optional(),
+  code: z.enum(['turnstile_invalid', 'turnstile_unavailable', 'turn_limit', 'bot_detected']).optional(),
 })
 export const chatJsonResponseSchema = z.union([chatJsonReplyBranch, chatJsonErrorBranch])
 /**

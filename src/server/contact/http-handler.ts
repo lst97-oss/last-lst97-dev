@@ -1,11 +1,14 @@
+import { CHAT_BOT_BLOCKED_MESSAGE } from '../../lib/chat-limits'
 import { jsonResponse, readJsonBody, requestIdFrom } from '../http/request'
 import type { Logger } from '../observability/logger'
+import type { BotVerification } from '../security/botid'
 import type { ContactSubmissionResult } from './service'
 
 export interface ContactPostHandlerDependencies {
   submitContact(input: unknown, expectedHostname: string, requestId: string): Promise<ContactSubmissionResult>
   logger: Logger
   rateLimit(request: Request): Promise<{ allowed: boolean; remaining: number; retryAfterSeconds: number }>
+  checkBotRequest?(): Promise<BotVerification>
 }
 
 export function createContactPostHandler(dependencies: ContactPostHandlerDependencies) {
@@ -27,6 +30,12 @@ export function createContactPostHandler(dependencies: ContactPostHandlerDepende
         return jsonResponse(requestId, { error: 'Too many requests. Please try again later.', requestId }, 429, {
           'retry-after': String(limit.retryAfterSeconds),
         })
+      }
+      if (dependencies.checkBotRequest) {
+        const verification = await dependencies.checkBotRequest()
+        if (verification.isBot) {
+          return jsonResponse(requestId, { error: CHAT_BOT_BLOCKED_MESSAGE, requestId }, 403)
+        }
       }
       const hostname = new URL(request.url).hostname
       const result = await dependencies.submitContact(body.value, hostname, requestId)

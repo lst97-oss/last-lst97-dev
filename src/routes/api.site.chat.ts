@@ -9,6 +9,7 @@ import {
 import { getServerEnv, isVercelRuntime } from '../server/env'
 import { chatRequestMetadataFromRequest } from '../server/observability/chat-request-metadata'
 import { logger } from '../server/observability/logger'
+import { checkBotRequest } from '../server/security/botid'
 import { checkEndpointLimit } from '../server/security/rate-limit-runtime'
 
 const POST = createChatPostHandler({
@@ -29,6 +30,7 @@ const POST = createChatPostHandler({
   },
   rateLimit: (request) => checkEndpointLimit(request, 'chat'),
   contactRateLimit: (request) => checkEndpointLimit(request, 'contact'),
+  checkBotRequest: () => checkBotRequest(),
 })
 
 export const Route = createFileRoute('/api/site/chat')({

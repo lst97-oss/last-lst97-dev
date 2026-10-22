@@ -23,6 +23,8 @@ export const CHAT_TURNSTILE_REQUIRED_MESSAGE = 'Complete the security check and 
 
 export const CHAT_RATE_LIMIT_MESSAGE = 'Too many requests. Please try again later.'
 
+export const CHAT_BOT_BLOCKED_MESSAGE = 'This request was blocked by automated traffic protection.'
+
 export const CHAT_INVALID_MESSAGE_MESSAGE = 'Enter a valid message.'
 
 export const CHAT_REQUEST_TOO_LARGE_MESSAGE = 'Request is too large.'
@@ -32,6 +34,7 @@ export const AUTHORED_CHAT_MESSAGES: ReadonlySet<string> = new Set([
   CHAT_EXPIRED_MESSAGE,
   CHAT_TURNSTILE_REQUIRED_MESSAGE,
   CHAT_RATE_LIMIT_MESSAGE,
+  CHAT_BOT_BLOCKED_MESSAGE,
   CHAT_INVALID_MESSAGE_MESSAGE,
   CHAT_REQUEST_TOO_LARGE_MESSAGE,
   CHAT_TURN_LIMIT_MESSAGE,

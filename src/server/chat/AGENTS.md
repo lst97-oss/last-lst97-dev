@@ -20,7 +20,12 @@ This note governs `src/server/chat` and `src/server/moderation`. Keep it current
   other `src/server/**` import must stay `import type` or the client build fails. `../contact/contract.ts`
   is the equivalent response contract for `POST /api/site/contact`, parsed by `contact-message-form.tsx`.
 - `reply-sanitizer.ts` contains pure whole-reply and chunked-stream sanitization. `timeout.ts` owns timer cleanup for bounded asynchronous work.
-- `http-handler.ts` validates and rate-limits HTTP requests, verifies Turnstile before normal chat work, and frames SSE output.
+- `http-handler.ts` validates and rate-limits HTTP requests, gates on Vercel BotID, verifies Turnstile before normal chat work, and frames SSE output.
+- `../security/botid.ts` wraps Vercel BotID's `checkBotId()` for the chat and contact endpoints. It is
+  an additive layer over Turnstile and the rate limit, not a replacement: a failed check degrades to
+  "not a bot" and logs `bot.unavailable`, so a BotID outage cannot take the chat offline. The client
+  side lives in `src/client.tsx` (`initBotId`), which only runs for a Vercel build; the protected path
+  list there and the server-side checks must stay in agreement.
 - `../../lib/chat-limits.ts` is a shared server/client contract, not a server-only module. Every
   message the server writes for the visitor lives there as a `CHAT_*_MESSAGE` constant and is listed
   in `AUTHORED_CHAT_MESSAGES`; `http-handler.ts` and `service.ts` copy them into responses and error
@@ -48,7 +53,7 @@ question in `moderation/decision/`.
 
 ## Request flow
 
-1. `http-handler.ts` validates the incoming request, applies the chat rate limit, verifies the fresh `chat_message` Turnstile token, then delegates to `service.ts`. The token is control data only: never pass it into the decision model, OpenRouter, diagnostics, or signed context.
+1. `http-handler.ts` validates the incoming request, applies the chat rate limit, gates on Vercel BotID, verifies the fresh `chat_message` Turnstile token, then delegates to `service.ts`. The token is control data only: never pass it into the decision model, OpenRouter, diagnostics, or signed context.
 2. `turn-preparation.ts` verifies signed conversation context, applies turn/input limits, and asks moderation to classify scope and safety. In production, the initial decision request also decides whether each available source is needed.
 3. `agent/agent-loop.ts` drives the steps through `agent/tool-selection.ts`, using the initial decision labels first. On later steps, tool selection asks the decision model to route the latest request with evidence and tool outputs gathered so far. A `use` or `skip` decision is authoritative regardless of routing confidence. Only the literal `uncertain` decision may delegate that source choice to deterministic fallback logic.
 4. The OpenRouter planner receives only decision-approved tools. Its proposed calls are filtered to that approved set. If argument planning is unavailable, deterministic argument extraction may still prepare calls for approved tools; it cannot add a source.

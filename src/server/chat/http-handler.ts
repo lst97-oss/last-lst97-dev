@@ -1,4 +1,5 @@
 import {
+  CHAT_BOT_BLOCKED_MESSAGE,
   CHAT_EXPIRED_MESSAGE,
   CHAT_INVALID_MESSAGE_MESSAGE,
   CHAT_OFFLINE_MESSAGE,
@@ -13,6 +14,7 @@ import type { PublicCitation } from '../knowledge/retrieve'
 import type { ChatModerationRejectionReason } from '../moderation/types'
 import type { ChatDiagnosticsMetadata } from '../observability/chat-diagnostics'
 import type { Logger } from '../observability/logger'
+import type { BotVerification } from '../security/botid'
 import type { ChatContactActionBody, ChatContactActionRequest, ChatMessageRequest, ChatStreamEvent } from './events'
 import { chatContactActionSchema, chatMessageRequestSchema, encodeChatEvent } from './events'
 import { chatModerationRejectionMessage } from './moderation-rejection'
@@ -35,6 +37,7 @@ export interface ChatPostHandlerDependencies {
   >
   logger: Logger
   rateLimit(request: Request): Promise<{ allowed: boolean; remaining: number; retryAfterSeconds: number }>
+  checkBotRequest?(): Promise<BotVerification>
   verifyChatTurnstile?(token: string, expectedHostname: string): Promise<boolean>
   contactRateLimit?(request: Request): Promise<{ allowed: boolean; remaining: number; retryAfterSeconds: number }>
   verifyContactScreeningTurnstile?(token: string, expectedHostname: string): Promise<boolean>
@@ -96,6 +99,21 @@ async function rateLimitResponse(
   })
 }
 
+/**
+ * Vercel BotID gate. Runs after the rate limit — a local check is cheaper
+ * than the BotID call — and before Turnstile, so automated traffic never
+ * reaches the siteverify round trip or the model.
+ */
+async function botRejectedResponse(
+  requestId: string,
+  dependencies: ChatPostHandlerDependencies,
+): Promise<Response | undefined> {
+  if (!dependencies.checkBotRequest) return undefined
+  const verification = await dependencies.checkBotRequest()
+  if (!verification.isBot) return undefined
+  return jsonResponse(requestId, { error: CHAT_BOT_BLOCKED_MESSAGE, code: 'bot_detected', requestId }, 403)
+}
+
 async function handleContactActionRequest(
   request: Request,
   requestId: string,
@@ -126,6 +144,9 @@ async function handleContactActionRequest(
         )
       }
     }
+
+    const botRejected = await botRejectedResponse(requestId, dependencies)
+    if (botRejected) return botRejected
 
     // Verified here rather than inside the workflow so an unverified submission
     // never reaches the decision screen or the refiner.
@@ -283,6 +304,9 @@ async function handleChatMessageRequest(
   try {
     const rateLimited = await rateLimitResponse(request, requestId, dependencies)
     if (rateLimited) return rateLimited
+
+    const botRejected = await botRejectedResponse(requestId, dependencies)
+    if (botRejected) return botRejected
 
     const turnstileError = await verifyChatToken(request, requestId, turnstileToken, dependencies)
     if (turnstileError) return turnstileError
