@@ -5,6 +5,10 @@ export function siteHealthLabel(status: SiteHealthStatus): string {
   return status.toUpperCase()
 }
 
+export function shouldPollHealth(visibility: DocumentVisibilityState | 'prerender'): boolean {
+  return visibility === 'visible'
+}
+
 export async function fetchSiteHealthStatus(
   fetcher: FetchLike = fetch,
   signal?: AbortSignal,

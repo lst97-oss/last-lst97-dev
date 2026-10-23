@@ -4,6 +4,8 @@ import { adminRenderServerFn } from '../lib/payload/admin-render'
 import { type AdminRenderResult, buildAdminRenderRequest, getAdminRenderIntent } from '../lib/payload/admin-route'
 
 export const Route = createFileRoute('/_payload/admin/$')({
+  // Admin state must never be reused from the router cache across saves or sessions.
+  staleTime: 0,
   validateSearch: (search: Record<string, unknown>) => search,
   loaderDeps: ({ search }) => ({ searchKey: JSON.stringify(search) }),
   loader: async ({ location, params }) => {

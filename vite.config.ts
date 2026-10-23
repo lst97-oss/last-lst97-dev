@@ -170,6 +170,13 @@ const config = defineConfig({
         '/api/site/og': {
           headers: { 'cache-control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400' },
         },
+        // Edge-cacheable for 60 s: the handler returns a dependency-free literal,
+        // so a shared cache can only delay an outage signal by one minute. No
+        // stale-while-revalidate on purpose — health must fail fast. Must match
+        // HEALTH_CACHE_CONTROL in src/server/site-health.ts.
+        '/api/site/health': {
+          headers: { 'cache-control': 'public, max-age=0, s-maxage=60' },
+        },
         // Payload's admin is mounted at `/admin`, NOT `/_payload/**` — the
         // `/_payload` segment only exists as the TanStack file-route id
         // (`src/routes/_payload.tsx` registers `/_payload`, whose `admin`

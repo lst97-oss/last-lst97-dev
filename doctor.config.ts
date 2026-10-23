@@ -48,6 +48,10 @@ export default {
       '.output/**',
       '.vercel/**',
       'dist/**',
+      // graphify's generated graph: a scanned-copy artifact, not app code. It
+      // embeds source snippets, so a root scan reads environment variable names
+      // out of a file nobody wrote by hand.
+      'graphify-out/**',
     ],
     // Rules tagged `test-noise` fire on deliberate patterns this codebase
     // uses everywhere: bounded `includes()` over ≤9 fields in a render map,

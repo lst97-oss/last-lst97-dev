@@ -1,5 +1,7 @@
 import configPromise from '@payload-config'
 import { createServerFn } from '@tanstack/react-start'
+
+import { privateServerFnNoStore } from '../../server/http/server-fn-cache'
 import { buildAdminRenderParams } from './admin-route'
 
 // Bun-native: Web APIs only. Renders an /admin subpath to HTML on the server
@@ -7,6 +9,7 @@ import { buildAdminRenderParams } from './admin-route'
 // client route injects it. Redirect/notFound surface as status intents the
 // route loader converts to TanStack navigation.
 export const adminRenderServerFn = createServerFn({ method: 'GET', strict: false })
+  .middleware([privateServerFnNoStore])
   .validator((input: { segments: string[]; search: Record<string, string | string[]> }) => input)
   .handler(async ({ data }): Promise<unknown> => {
     // Keep the generated server-component map out of the browser graph. The

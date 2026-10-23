@@ -3,6 +3,8 @@ import { getLayoutData } from '@payloadcms/tanstack-start/layouts'
 import { handleServerFunctions, toSerializable } from '@payloadcms/tanstack-start/server'
 import { createServerFn } from '@tanstack/react-start'
 
+import { privateServerFnNoStore } from '../../server/http/server-fn-cache'
+
 // Bun-native: Web APIs only. Payload server functions shared by all admin
 // routes — config + importMap injection point. Client components call
 // `payloadServerFn({ data: { name, args } })`; the adapter dispatcher
@@ -29,10 +31,10 @@ export const payloadServerFn = createServerFn({ method: 'POST', strict: false })
   })
 
 // Root admin layout data, called from the _payload layout loader.
-export const payloadLayoutServerFn = createServerFn({ method: 'GET', strict: false }).handler(
-  async (): Promise<unknown> => {
+export const payloadLayoutServerFn = createServerFn({ method: 'GET', strict: false })
+  .middleware([privateServerFnNoStore])
+  .handler(async (): Promise<unknown> => {
     const { getPayloadImportMap } = await import('./import-map')
     const data = await getLayoutData({ configPromise, importMap: getPayloadImportMap() })
     return toSerializable(data)
-  },
-)
+  })

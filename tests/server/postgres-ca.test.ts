@@ -34,9 +34,9 @@ describe('Postgres pinned CA', () => {
         subjectaltname: 'DNS:localhost, DNS:postgres-pgvector.railway.internal',
       }),
     ).toBeUndefined()
-    expect(checkPinnedPostgresIdentity('zephyr.proxy.rlwy.net', { subjectaltname: 'DNS:other.example' })).toBeInstanceOf(
-      Error,
-    )
+    expect(
+      checkPinnedPostgresIdentity('zephyr.proxy.rlwy.net', { subjectaltname: 'DNS:other.example' }),
+    ).toBeInstanceOf(Error)
     expect(checkPinnedPostgresIdentity('zephyr.proxy.rlwy.net', {})).toBeInstanceOf(Error)
   })
 })
