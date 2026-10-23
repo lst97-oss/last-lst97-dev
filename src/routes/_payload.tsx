@@ -7,6 +7,8 @@ import { type PayloadLayoutData, toRootProviderProps } from '../lib/payload/layo
 import { payloadLayoutServerFn, payloadServerFn } from '../lib/payload/server-fns'
 
 export const Route = createFileRoute('/_payload')({
+  // Admin state must never be reused from the router cache across saves or sessions.
+  staleTime: 0,
   loader: async () => {
     const data = await payloadLayoutServerFn()
     return data as never

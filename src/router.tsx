@@ -14,7 +14,10 @@ export function getRouter() {
     stringifySearch: payloadStringifySearch,
     scrollRestoration: true,
     defaultPreload: 'intent',
-    defaultPreloadStaleTime: 0,
+    // Loader data is reused for repeat client navigations; SSR still runs every
+    // loader, and new params/deps always refetch (new match id).
+    defaultStaleTime: 5 * 60_000,
+    defaultPreloadStaleTime: 60_000,
     // Content loaders await a real `createServerFn` round trip, so a client
     // navigation has no visible progress between the click and the response.
     // 100ms keeps fast navigations clean; 150ms is the floor below which a
