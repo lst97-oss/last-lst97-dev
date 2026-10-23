@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { fetchSiteHealthStatus, siteHealthLabel } from '../src/lib/site-health'
+import { fetchSiteHealthStatus, shouldPollHealth, siteHealthLabel } from '../src/lib/site-health'
 
 describe('site health status', () => {
   it('reports online only for a successful health response', async () => {
@@ -31,5 +31,13 @@ describe('site health status', () => {
     expect(siteHealthLabel('checking')).toBe('CHECKING')
     expect(siteHealthLabel('online')).toBe('ONLINE')
     expect(siteHealthLabel('offline')).toBe('OFFLINE')
+  })
+})
+
+describe('shouldPollHealth', () => {
+  it('polls only a visible tab', () => {
+    expect(shouldPollHealth('visible')).toBe(true)
+    expect(shouldPollHealth('hidden')).toBe(false)
+    expect(shouldPollHealth('prerender')).toBe(false)
   })
 })
