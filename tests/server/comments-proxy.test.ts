@@ -291,7 +291,7 @@ describe('upstream responses', () => {
     const { fetcher } = service()
     const failing = (async () => {
       throw new TypeError('fetch failed')
-    }) as typeof fetch
+    }) as unknown as typeof fetch
     const response = await proxyCommentsRequest(proxied('/api/comments?url=' + encodeURIComponent(pageUrl)), {
       ...dependencies({ fetcher }),
       fetcher: failing,

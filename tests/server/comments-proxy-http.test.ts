@@ -10,7 +10,6 @@ function recordingLogger(events: string[]): Logger {
   logger.info = () => undefined
   logger.warn = (message) => events.push(message)
   logger.error = (message) => events.push(message)
-  logger.child = () => logger
   return logger
 }
 
