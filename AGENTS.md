@@ -464,6 +464,12 @@ and do not re-wire the unwired `src/server/knowledge/github/source.ts`.
   values from `.env` or `.env.local`.
 - `PUBLIC_SITE_URL` must be the real public origin in production; meta tags, canonical links, `og:url`,
   `sitemap.xml`, `robots.txt`, and `security.txt` are all baked from it at build time.
+- Build and dev run Vite through Bun (`bunx --bun vite ...`, as the scripts do). A plain `bunx vite build` runs Vite under Node, which cannot resolve the `bun` import in `src/server/database/bun-sql.ts`. `vite.config.ts` warns when it is not on Bun.
+- The comments widget is loaded only in the browser (`src/components/site/comments/content-comments.tsx`) and is external to the SSR build. Importing it statically on the server pulls in shiki's WebAssembly highlighter, which the SSR build cannot resolve.
+- Comments: `COMMENTS_API_KEY` is a server secret (never sent to the browser); `COMMENTS_SITE_KEY`,
+  `COMMENTS_BASE_URL` and `COMMENTS_TURNSTILE_SITE_KEY` are public. The Payload hooks in `src/server/comments/`
+  register a published page's thread with the comments service. A thread's pageKey is `<collection>-<id>`, so
+  slug changes keep the thread. Detail pages pass `commentsConfig` from loaders via `getCommentsConfigServerFn`.
 - `OPENROUTER_SYSTEM_PROMPT` is optional: `openrouter-responder.ts` reads `env.OPENROUTER_SYSTEM_PROMPT ??
   DEFAULT_SYSTEM_PROMPT`, so leaving it unset uses the built-in prompt. Setting it **does** override it.
 - `CLOUDFLARE_R2_API_TOKEN` exists in local `.env` but is referenced by no code and no schema. It is dead

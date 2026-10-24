@@ -47,7 +47,7 @@ afterAll(() => {
 describe('window frame controls', () => {
   test('allows a window to hide selected controls while keeping the others', async () => {
     const customWindowId = 'welcome.exe'
-    focusWindow(customWindowId)
+    await act(async () => focusWindow(customWindowId))
 
     const customRoute = createRootRoute({
       component: () =>
@@ -143,7 +143,7 @@ describe('window frame controls', () => {
     // scroll: a window taller than the viewport is reachable only through its
     // own ScrollArea. Skipping it on mobile left long detail pages running off
     // the bottom of a clipped shell with no way to reach the rest.
-    browserWindow.happyDOM.setViewport({ width: 390, height: 844 })
+    await act(async () => browserWindow.happyDOM.setViewport({ width: 390, height: 844 }))
     const originalInnerWidth = browserWindow.innerWidth
     Object.defineProperty(browserWindow, 'innerWidth', { configurable: true, value: 390 })
 

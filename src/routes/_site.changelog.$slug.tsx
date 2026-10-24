@@ -1,4 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
+import { ContentComments } from '@/components/site/comments/content-comments'
 import { ChangelogNeighbours } from '@/components/site/content/changelog-neighbours'
 import { ContentDetailLayout } from '@/components/site/content/detail-layout'
 import { RichText } from '@/components/site/content/rich-text'
@@ -9,6 +10,7 @@ import { createContentMeta, resolveContentShare } from '@/lib/content/meta'
 import { loadChangelog, loadChangelogNeighbours } from '@/lib/content/site-data'
 import { createChangelogStructuredData, withBreadcrumbs } from '@/lib/content/structured-data'
 import { canonicalUrl } from '@/lib/seo/site-seo'
+import { getCommentsConfigServerFn } from '@/server/comments/server-functions'
 
 const changeTypeLabels: Record<string, string> = {
   feature: 'FEATURE',
@@ -45,7 +47,7 @@ export const Route = createFileRoute('/_site/changelog/$slug')({
     const entry = await loadChangelog(params.slug)
     if (!entry) throw notFound()
     const neighbours = await loadChangelogNeighbours(entry.slug)
-    return { entry, neighbours }
+    return { entry, neighbours, commentsConfig: await getCommentsConfigServerFn() }
   },
   head: ({ loaderData, params }) => {
     const entry = loaderData?.entry
@@ -86,7 +88,7 @@ export const Route = createFileRoute('/_site/changelog/$slug')({
 })
 
 function ChangelogEntryPage() {
-  const { entry, neighbours } = Route.useLoaderData()
+  const { entry, neighbours, commentsConfig } = Route.useLoaderData()
   const readMinutes = readingTimeMinutes(entry.content)
   const share = resolveContentShare({
     title: entryTitle(entry),
@@ -114,6 +116,7 @@ function ChangelogEntryPage() {
       updatedAt={entry.updatedAt}
       share={share}
       related={<ChangelogNeighbours {...neighbours} />}
+      comments={<ContentComments config={commentsConfig} pageUrl={canonicalUrl(`/changelog/${entry.slug}`)} />}
     >
       <RichText value={entry.content} />
     </ContentDetailLayout>
