@@ -28,6 +28,15 @@ import { reactDomServerInRsc } from './vendor/payload-tanstack-vite/reactDomServ
 import { ssrStripDistStyleImports } from './vendor/payload-tanstack-vite/stripDistStyleImports.js'
 import { wrapCjsForClient } from './vendor/payload-tanstack-vite/wrapCjsForClient.js'
 
+// The server imports Bun's own `bun` module (src/server/database/bun-sql.ts). Vite only
+// treats it as a builtin when it runs on Bun, so run it as `bunx --bun vite ...` (the
+// build and dev scripts already do). Warn-only: the build itself is unchanged.
+if (typeof Bun === 'undefined') {
+  console.warn(
+    '[vite] Not running on Bun: use `bun run build` (or `bunx --bun vite build`), or the `bun` import fails.',
+  )
+}
+
 const projectPath = (relativePath: string) => {
   const resolvedPath = relativePath.replace(/^\.\//, '')
   return typeof Bun !== 'undefined'
@@ -120,7 +129,10 @@ const config = defineConfig({
     include: [...optimizeDepsIncludeDefaults],
   },
   ssr: {
-    external: [...ssrExternalPackages, '@openrouter/sdk'],
+    // The comments widget is loaded only in the browser (see content-comments.tsx).
+    // Keeping it out of the server bundle stops Rolldown from resolving its
+    // WebAssembly syntax highlighter (shiki) during the SSR build.
+    external: [...ssrExternalPackages, '@openrouter/sdk', '@lst97-oss/last-comments-widgets'],
     noExternal: payloadNoExternalPatterns,
   },
   plugins: [

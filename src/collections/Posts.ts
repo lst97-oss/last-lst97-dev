@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { createCommentsAfterChangeHook, createCommentsAfterDeleteHook } from '../server/comments/payload-hooks'
 import { createKnowledgeAfterChangeHook, createKnowledgeAfterDeleteHook } from '../server/knowledge/payload-hooks'
 import { authenticatedAccess, publishedAccess } from './access'
 import { contentEditor } from './fields/content-editor'
@@ -21,8 +22,8 @@ export const Posts: CollectionConfig = {
   hooks: {
     beforeValidate: [ensureContentSlug],
     beforeChange: [ensurePublicationDate],
-    afterChange: [createKnowledgeAfterChangeHook('post')],
-    afterDelete: [createKnowledgeAfterDeleteHook('post')],
+    afterChange: [createKnowledgeAfterChangeHook('post'), createCommentsAfterChangeHook('posts')],
+    afterDelete: [createKnowledgeAfterDeleteHook('post'), createCommentsAfterDeleteHook('posts')],
   },
   fields: [
     {

@@ -45,6 +45,8 @@ interface ContentDetailLayoutProps {
    * A card grid passed as children would be squeezed into the prose measure.
    */
   related?: ReactNode
+  /** Comment thread, rendered after the related items inside the window. */
+  comments?: ReactNode
   children: ReactNode
 }
 
@@ -79,6 +81,7 @@ export function ContentDetailLayout({
   updatedAt = null,
   wide = false,
   related = null,
+  comments = null,
   share = null,
 }: ContentDetailLayoutProps) {
   const coverItem = toMediaItem(coverImage, { altFallback: title })
@@ -128,6 +131,7 @@ export function ContentDetailLayout({
         </DetailLabelRow>
         <div className={cn('article-body', wide && 'article-body--wide')}>{children}</div>
         {related ? <div className="px-6 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-12">{related}</div> : null}
+        {comments ? <div className="px-6 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-12">{comments}</div> : null}
       </WindowFrame>
     </PageStack>
   )

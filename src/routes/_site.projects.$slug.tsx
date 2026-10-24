@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { cn } from 'cn'
+import { ContentComments } from '@/components/site/comments/content-comments'
 import { ContentCover } from '@/components/site/content/cover'
 import { DetailMeta } from '@/components/site/content/detail-meta'
 import { RelatedContent } from '@/components/site/content/related-content'
@@ -18,6 +19,7 @@ import { loadProject, loadRelatedProjects } from '@/lib/content/site-data'
 import { createProjectStructuredData, withBreadcrumbs } from '@/lib/content/structured-data'
 import { safeAssetHref } from '@/lib/content/url'
 import { canonicalUrl } from '@/lib/seo/site-seo'
+import { getCommentsConfigServerFn } from '@/server/comments/server-functions'
 
 export const Route = createFileRoute('/_site/projects/$slug')({
   errorComponent: () => (
@@ -38,7 +40,7 @@ export const Route = createFileRoute('/_site/projects/$slug')({
       topicIds: project.topics.map((topic) => topic.id),
       limit: 3,
     })
-    return { project, related }
+    return { project, related, commentsConfig: await getCommentsConfigServerFn() }
   },
   head: ({ loaderData, params }) => {
     const project = loaderData?.project
@@ -104,7 +106,7 @@ function ProjectFacts({
 }
 
 function ProjectPage() {
-  const { project, related } = Route.useLoaderData()
+  const { project, related, commentsConfig } = Route.useLoaderData()
   const lifecycle = getProjectLifecycleLabel(project.projectStatus)
   const timeframe = formatProjectTimeframe(project.projectStatus, project.startDate, project.endDate)
   const liveUrl = safeAssetHref(project.liveUrl)
@@ -189,6 +191,9 @@ function ProjectPage() {
         </div>
         <ImageGallery heading="Gallery" items={mediaItems} />
         <RelatedContent items={related} kind="project" />
+        <div className="px-6 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-12">
+          <ContentComments config={commentsConfig} pageUrl={canonicalUrl(`/projects/${project.slug}`)} />
+        </div>
       </WindowFrame>
     </PageStack>
   )

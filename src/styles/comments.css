@@ -1,0 +1,84 @@
+/*
+ * Pixel skin for the comments widget. The widget's colours, radius and shadow
+ * come in as tokens from ContentComments (src/components/site/comments); this
+ * file covers what tokens cannot: controls, focus and the press-down hover.
+ *
+ * Site CSS here is unlayered, so these rules beat the widget's own layered
+ * defaults and the site's global input, button and heading rules. The
+ * `.content-comments` scope keeps them away from the rest of the page.
+ */
+
+/* Site palette as aliases for the widget (see siteThemeVars in
+   src/components/site/comments/content-comments.tsx). Defined on the wrapper, so
+   they follow the site's variables, including a dark palette on `.dark`. */
+.content-comments {
+  --lc-site-foreground: var(--foreground);
+  --lc-site-card: var(--card);
+  --lc-site-popover: var(--popover);
+  --lc-site-primary: var(--primary);
+  --lc-site-primary-foreground: var(--primary-foreground);
+  --lc-site-secondary: var(--secondary);
+  --lc-site-muted: var(--muted);
+  --lc-site-muted-foreground: var(--muted-foreground);
+  --lc-site-accent: var(--accent);
+  --lc-site-border: var(--border);
+  --lc-site-input: var(--input);
+  --lc-site-ring: var(--ring);
+  --lc-site-destructive: var(--destructive);
+  --lc-site-shadow: var(--shadow-os-sm);
+  --lc-site-font-mono: var(--font-mono);
+  /* Text in the danger colour (admin names, alerts, counters). The site's coral
+     fails on paper (2.5:1), so light mode uses a deeper red (5.9:1 on paper,
+     5.6:1 on cream, 5.1:1 on muted). Dark mode keeps the site's error colour,
+     which passes there (6.3:1 on the dark card). */
+  --lc-site-danger: #b8301f;
+}
+
+.dark .content-comments {
+  --lc-site-danger: var(--error);
+}
+
+/* The widget's "primary" text (the Markdown hint, link buttons) resolves to the
+   site's yellow, which is 1.4:1 on paper. Keep it readable as ink. */
+.content-comments .lc-comments .text-primary {
+  color: var(--lc-site-foreground);
+}
+
+.content-comments .lc-comments {
+  font-size: 15px;
+}
+
+.content-comments .lc-comments :where(input, textarea, select) {
+  border: 3px solid var(--border);
+  border-radius: 0;
+  background: var(--card);
+  color: var(--foreground);
+  font: inherit;
+}
+
+.content-comments .lc-comments :where(input, textarea, select):focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.content-comments .lc-comments :where(button) {
+  border-radius: 0;
+}
+
+.content-comments .lc-comments button[type='submit'] {
+  border: 3px solid var(--border);
+  box-shadow: var(--shadow-os-sm);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.content-comments .lc-comments button[type='submit']:not(:disabled):hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--border);
+}
+
+.content-comments .lc-comments :where(h1, h2, h3, h4) {
+  font: inherit;
+  letter-spacing: normal;
+}

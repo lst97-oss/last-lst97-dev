@@ -16,6 +16,10 @@ function readRuntimeEnv(): ServerEnvSource {
   // Keep this fallback isolated here; Bun remains the normal app runtime.
   return {
     CONTACT_TO: source?.CONTACT_TO,
+    COMMENTS_API_KEY: source?.COMMENTS_API_KEY,
+    COMMENTS_BASE_URL: source?.COMMENTS_BASE_URL,
+    COMMENTS_SITE_KEY: source?.COMMENTS_SITE_KEY,
+    COMMENTS_TURNSTILE_SITE_KEY: source?.COMMENTS_TURNSTILE_SITE_KEY,
     CHAT_CONTEXT_SIGNING_SECRET: source?.CHAT_CONTEXT_SIGNING_SECRET,
     CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: source?.CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL,
     CHAT_STREAM_MAX_MS: source?.CHAT_STREAM_MAX_MS,

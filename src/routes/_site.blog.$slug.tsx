@@ -1,4 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
+import { ContentComments } from '@/components/site/comments/content-comments'
 import { ContentDetailLayout } from '@/components/site/content/detail-layout'
 import { RelatedContent } from '@/components/site/content/related-content'
 import { RichText } from '@/components/site/content/rich-text'
@@ -9,6 +10,7 @@ import { createContentMeta, resolveContentShare } from '@/lib/content/meta'
 import { loadPost, loadRelatedPosts } from '@/lib/content/site-data'
 import { createPostStructuredData, withBreadcrumbs } from '@/lib/content/structured-data'
 import { canonicalUrl } from '@/lib/seo/site-seo'
+import { getCommentsConfigServerFn } from '@/server/comments/server-functions'
 
 export const Route = createFileRoute('/_site/blog/$slug')({
   errorComponent: () => (
@@ -31,7 +33,7 @@ export const Route = createFileRoute('/_site/blog/$slug')({
       topicIds: post.topics?.map((topic) => topic.id) ?? [],
       limit: 3,
     })
-    return { post, related }
+    return { post, related, commentsConfig: await getCommentsConfigServerFn() }
   },
   head: ({ loaderData, params }) => {
     const post = loaderData?.post
@@ -73,7 +75,7 @@ export const Route = createFileRoute('/_site/blog/$slug')({
 })
 
 function PostPage() {
-  const { post, related } = Route.useLoaderData()
+  const { post, related, commentsConfig } = Route.useLoaderData()
   const readMinutes = readingTimeMinutes(post.content)
   // The same inputs `head()` passes, so the dialog preview and the emitted
   // `og:*` tags cannot disagree.
@@ -102,6 +104,7 @@ function PostPage() {
       updatedAt={post.updatedAt}
       share={share}
       related={<RelatedContent items={related} kind="post" />}
+      comments={<ContentComments config={commentsConfig} pageUrl={canonicalUrl(`/blog/${post.slug}`)} />}
     >
       <RichText value={post.content} />
     </ContentDetailLayout>

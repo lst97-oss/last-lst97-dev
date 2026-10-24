@@ -4,6 +4,10 @@ import { z } from 'zod'
 export type ServerEnvSource = Partial<
   Record<
     | 'CONTACT_TO'
+    | 'COMMENTS_API_KEY'
+    | 'COMMENTS_BASE_URL'
+    | 'COMMENTS_SITE_KEY'
+    | 'COMMENTS_TURNSTILE_SITE_KEY'
     | 'CHAT_CONTEXT_SIGNING_SECRET'
     | 'CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL'
     | 'CHAT_STREAM_MAX_MS'
@@ -55,6 +59,7 @@ export type ServerEnvSource = Partial<
 
 export type IntegrationEnvKey =
   | 'CONTACT_TO'
+  | 'COMMENTS_API_KEY'
   | 'CHAT_CONTEXT_SIGNING_SECRET'
   | 'KNOWLEDGE_DATABASE_URL'
   | 'OPENROUTER_API_KEY'
@@ -78,6 +83,13 @@ export function createServerEnv(source: ServerEnvSource) {
   return createEnv({
     server: {
       CONTACT_TO: z.email().optional(),
+      // Comment threads for blog, project and changelog pages. The secret API key
+      // (pages:write, bound to COMMENTS_SITE_KEY) lets the Payload hooks register a
+      // thread when content is published; without it the hooks do nothing.
+      COMMENTS_API_KEY: z.string().min(1).optional(),
+      COMMENTS_BASE_URL: z.url().default('https://last-comments.lst97.dev'),
+      COMMENTS_SITE_KEY: z.string().min(1).optional(),
+      COMMENTS_TURNSTILE_SITE_KEY: z.string().min(1).optional(),
       CHAT_CONTEXT_SIGNING_SECRET: z.string().min(32).optional(),
       CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: z
         .url()
@@ -160,6 +172,10 @@ export function createServerEnv(source: ServerEnvSource) {
     },
     runtimeEnvStrict: {
       CONTACT_TO: source.CONTACT_TO,
+      COMMENTS_API_KEY: source.COMMENTS_API_KEY,
+      COMMENTS_BASE_URL: source.COMMENTS_BASE_URL,
+      COMMENTS_SITE_KEY: source.COMMENTS_SITE_KEY,
+      COMMENTS_TURNSTILE_SITE_KEY: source.COMMENTS_TURNSTILE_SITE_KEY,
       CHAT_CONTEXT_SIGNING_SECRET: source.CHAT_CONTEXT_SIGNING_SECRET,
       CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: source.CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL,
       CHAT_STREAM_MAX_MS: source.CHAT_STREAM_MAX_MS,

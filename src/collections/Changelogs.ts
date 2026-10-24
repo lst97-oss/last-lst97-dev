@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
+import { createCommentsAfterChangeHook, createCommentsAfterDeleteHook } from '../server/comments/payload-hooks'
 import { authenticatedAccess, publishedAccess } from './access'
 import { contentEditor } from './fields/content-editor'
 import { seoField } from './fields/seo'
@@ -21,6 +22,8 @@ export const Changelogs: CollectionConfig = {
   hooks: {
     beforeValidate: [ensureContentSlug],
     beforeChange: [ensurePublicationDate],
+    afterChange: [createCommentsAfterChangeHook('changelogs')],
+    afterDelete: [createCommentsAfterDeleteHook('changelogs')],
   },
   fields: [
     {
