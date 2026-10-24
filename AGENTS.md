@@ -470,6 +470,13 @@ and do not re-wire the unwired `src/server/knowledge/github/source.ts`.
   `COMMENTS_BASE_URL` and `COMMENTS_TURNSTILE_SITE_KEY` are public. The Payload hooks in `src/server/comments/`
   register a published page's thread with the comments service. A thread's pageKey is `<collection>-<id>`, so
   slug changes keep the thread. Detail pages pass `commentsConfig` from loaders via `getCommentsConfigServerFn`.
+  `COMMENTS_PROXY_API_KEY` (optional, `comments:read` + `comments:write` on `COMMENTS_SITE_KEY`) switches the widget to
+  `baseUrl="/api/site/comments"`: `src/routes/api.site.comments.$.ts` forwards the widget's routes through
+  `src/server/comments/proxy.ts`, which keeps the key server-side, pins `site` and page URLs, refuses writes from
+  other origins, and limits writes per visitor. Only the widget's routes pass; `/api/comments/vote`, `/api/moderation`
+  and `/api/auth/*` (other than a local `get-session` null) are refused. The proxy key is separate from
+  `COMMENTS_API_KEY`, so a leaked request-path key cannot register or delete pages. Keep the proxy core Web-API-only
+  so a function-only host can reuse it.
 - `OPENROUTER_SYSTEM_PROMPT` is optional: `openrouter-responder.ts` reads `env.OPENROUTER_SYSTEM_PROMPT ??
   DEFAULT_SYSTEM_PROMPT`, so leaving it unset uses the built-in prompt. Setting it **does** override it.
 - `CLOUDFLARE_R2_API_TOKEN` exists in local `.env` but is referenced by no code and no schema. It is dead

@@ -21,6 +21,8 @@ const EXPECTED_PROJECTS = [
   'wat-wat-new-zealand',
   'best-maker-pty-ltd',
   'canton-101',
+  'last-cli',
+  'last-comments',
 ] as const
 
 /**

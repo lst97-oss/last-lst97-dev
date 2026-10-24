@@ -40,7 +40,7 @@ const siteThemeVars: ThemeVars = {
     borderWidth: '3px',
     controlRadius: '0px',
     avatarRadius: '0px',
-    cardShadow: 'var(--lc-site-shadow)',
+    cardShadow: 'var(--lc-site-card-shadow)',
     dropdownShadow: 'var(--lc-site-shadow)',
     fontFamily: 'var(--lc-site-font-mono)',
     fontWeightMedium: '800',

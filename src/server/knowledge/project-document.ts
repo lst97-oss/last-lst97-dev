@@ -28,6 +28,10 @@ const PROJECT_LABELS = {
   // Every Canto101 repository is unpublished, so its documents are `Private`
   // and its citations carry the private badge.
   'canton-101': 'Canto101',
+  // The scaffolding CLI and both of its public templates.
+  'last-cli': 'last-cli',
+  // The comment service and its published widget package, both public.
+  'last-comments': 'last-comments',
 } as const
 
 export type ProjectDocProject = keyof typeof PROJECT_LABELS
@@ -53,6 +57,8 @@ const PRIVATE_PROJECT_LABELS: Readonly<Record<ProjectDocProject, string>> = {
   'wat-wat-new-zealand': 'Private',
   'best-maker-pty-ltd': 'Public',
   'canton-101': 'Private',
+  'last-cli': 'Public',
+  'last-comments': 'Public',
 }
 
 const metadataPattern = (name: string) => new RegExp(`^- \\*\\*${name}:\\*\\*\\s+([^\\n]+)$`, 'm')

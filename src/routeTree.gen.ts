@@ -37,6 +37,7 @@ import { Route as ApiSiteContactRouteImport } from './routes/api.site.contact'
 import { Route as ApiSiteHealthRouteImport } from './routes/api.site.health'
 import { Route as ApiSiteOgRouteImport } from './routes/api.site.og'
 import { Route as SiteBlogTopicsSlugRouteImport } from './routes/_site.blog.topics.$slug'
+import { Route as ApiSiteCommentsSplatRouteImport } from './routes/api.site.comments.$'
 
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
@@ -177,6 +178,11 @@ const SiteBlogTopicsSlugRoute = SiteBlogTopicsSlugRouteImport.update({
   path: '/blog/topics/$slug',
   getParentRoute: () => SiteRoute,
 } as any)
+const ApiSiteCommentsSplatRoute = ApiSiteCommentsSplatRouteImport.update({
+  id: '/api/site/comments/$',
+  path: '/api/site/comments/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/$': typeof SplatRoute
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/changelog/': typeof SiteChangelogIndexRoute
   '/projects/': typeof SiteProjectsIndexRoute
   '/blog/topics/$slug': typeof SiteBlogTopicsSlugRoute
+  '/api/site/comments/$': typeof ApiSiteCommentsSplatRoute
 }
 export interface FileRoutesByTo {
   '/$': typeof SplatRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/changelog': typeof SiteChangelogIndexRoute
   '/projects': typeof SiteProjectsIndexRoute
   '/blog/topics/$slug': typeof SiteBlogTopicsSlugRoute
+  '/api/site/comments/$': typeof ApiSiteCommentsSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -264,6 +272,7 @@ export interface FileRoutesById {
   '/_site/changelog/': typeof SiteChangelogIndexRoute
   '/_site/projects/': typeof SiteProjectsIndexRoute
   '/_site/blog/topics/$slug': typeof SiteBlogTopicsSlugRoute
+  '/api/site/comments/$': typeof ApiSiteCommentsSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -294,6 +303,7 @@ export interface FileRouteTypes {
     | '/changelog/'
     | '/projects/'
     | '/blog/topics/$slug'
+    | '/api/site/comments/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/$'
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/changelog'
     | '/projects'
     | '/blog/topics/$slug'
+    | '/api/site/comments/$'
   id:
     | '__root__'
     | '/$'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/_site/changelog/'
     | '/_site/projects/'
     | '/_site/blog/topics/$slug'
+    | '/api/site/comments/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -369,6 +381,7 @@ export interface RootRouteChildren {
   ApiSiteContactRoute: typeof ApiSiteContactRoute
   ApiSiteHealthRoute: typeof ApiSiteHealthRoute
   ApiSiteOgRoute: typeof ApiSiteOgRoute
+  ApiSiteCommentsSplatRoute: typeof ApiSiteCommentsSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -569,6 +582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteBlogTopicsSlugRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/api/site/comments/$': {
+      id: '/api/site/comments/$'
+      path: '/api/site/comments/$'
+      fullPath: '/api/site/comments/$'
+      preLoaderRoute: typeof ApiSiteCommentsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -633,6 +653,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSiteContactRoute: ApiSiteContactRoute,
   ApiSiteHealthRoute: ApiSiteHealthRoute,
   ApiSiteOgRoute: ApiSiteOgRoute,
+  ApiSiteCommentsSplatRoute: ApiSiteCommentsSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
