@@ -134,5 +134,8 @@
       "esbuild",
       "lightningcss"
     ]
+  },
+  "patchedDependencies": {
+    "nf3@0.3.24": "patches/nf3@0.3.24.patch"
   }
 }
