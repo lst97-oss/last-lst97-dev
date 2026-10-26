@@ -9,12 +9,11 @@ import { MobileTabBar } from '@/components/site/mobile-tab-bar'
 import { PixelIcon } from '@/components/site/pixel-icon'
 import { GlobalRouteProgress } from '@/components/site/route-progress-bar'
 import { AboutSiteDialog } from '@/components/site/shell/about-site-dialog'
-import { useSiteHealthStatus } from '@/components/site/site-health-provider'
+import { StatusBadge } from '@/components/site/status-badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { updateOpenHeaderMenu } from '@/lib/header-menu-state'
 import { formatMelbourneDate, formatMelbourneShortDate } from '@/lib/melbourne-date'
 import { osStore } from '@/lib/os-store'
-import { siteHealthLabel } from '@/lib/site-health'
 
 const shortcuts: { href: string; label: string; icon: LucideIcon }[] = [
   { href: '/about', label: 'About', icon: User },
@@ -111,7 +110,6 @@ function MelbourneTemperature({ temperature }: { temperature: number | null }) {
 export function DesktopShell({ children, temperature = null }: { children: ReactNode; temperature?: number | null }) {
   const location = useLocation()
   const activeWindowId = useStore(osStore, (state) => state.activeWindowId)
-  const healthStatus = useSiteHealthStatus()
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
 
@@ -179,14 +177,7 @@ export function DesktopShell({ children, temperature = null }: { children: React
           className="system-menu-right ml-auto flex min-w-0 items-center gap-2 text-xs whitespace-nowrap text-muted sm:gap-4"
           aria-label="System status"
         >
-          <span
-            className="system-status text-secondary data-[health=checking]:text-primary data-[health=offline]:text-accent max-sm:hidden"
-            data-health={healthStatus}
-            role="status"
-            aria-live="polite"
-          >
-            ● {siteHealthLabel(healthStatus)}
-          </span>
+          <StatusBadge />
           {activeWindowId ? (
             <span className="system-active-window max-w-44 overflow-hidden text-ellipsis whitespace-nowrap text-muted max-sm:hidden">
               ▣ {activeWindowId}
