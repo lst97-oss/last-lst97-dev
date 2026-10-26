@@ -271,7 +271,7 @@ const config = defineConfig({
         },
         // The public policy the widget reads before a visitor types. Must match
         // COMMENTS_SETTINGS_CACHE_CONTROL in src/server/comments/proxy.ts.
-        '/api/site/comments/api/comments/settings': {
+        '/api/comments/settings': {
           headers: { 'cache-control': 'public, max-age=0, s-maxage=60', ...SECURITY_HEADERS },
         },
         // Payload's admin is mounted at `/admin`, NOT `/_payload/**` — the
