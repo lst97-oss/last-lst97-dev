@@ -1,3 +1,5 @@
+import { HttpStatus } from '@lst97-oss/last-httprism'
+
 export function requestIdFrom(request: Request): string {
   const supplied = request.headers.get('x-request-id')?.trim()
   if (supplied && /^[a-zA-Z0-9._:-]{1,100}$/.test(supplied)) {
@@ -9,7 +11,7 @@ export function requestIdFrom(request: Request): string {
 export function jsonResponse(
   requestId: string,
   body: Record<string, unknown>,
-  status = 200,
+  status = HttpStatus.OK.code,
   extraHeaders: Record<string, string> = {},
 ): Response {
   return Response.json(body, {

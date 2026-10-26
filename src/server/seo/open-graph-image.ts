@@ -1,3 +1,4 @@
+import { HttpHeader, HttpStatus, MediaType } from '@lst97-oss/last-httprism'
 import { create as createFont, type Font } from 'fontkit'
 import sharp from 'sharp'
 import { z } from 'zod'
@@ -162,8 +163,8 @@ export function createOpenGraphImageGetHandler() {
 
     if (!parsed.success) {
       return new Response('Invalid Open Graph image request', {
-        status: 400,
-        headers: { 'content-type': 'text/plain; charset=utf-8' },
+        status: HttpStatus.BAD_REQUEST.code,
+        headers: { [HttpHeader.CONTENT_TYPE]: `${MediaType.TEXT}; charset=utf-8` },
       })
     }
 
@@ -175,15 +176,15 @@ export function createOpenGraphImageGetHandler() {
 
       return new Response(image, {
         headers: {
-          'cache-control': CACHE_CONTROL,
-          'content-length': String(image.byteLength),
-          'content-type': 'image/webp',
+          [HttpHeader.CACHE_CONTROL]: CACHE_CONTROL,
+          [HttpHeader.CONTENT_LENGTH]: String(image.byteLength),
+          [HttpHeader.CONTENT_TYPE]: MediaType.WEBP,
         },
       })
     } catch {
       return new Response('Unable to render Open Graph image', {
-        status: 500,
-        headers: { 'content-type': 'text/plain; charset=utf-8' },
+        status: HttpStatus.INTERNAL_SERVER_ERROR.code,
+        headers: { [HttpHeader.CONTENT_TYPE]: `${MediaType.TEXT}; charset=utf-8` },
       })
     }
   }

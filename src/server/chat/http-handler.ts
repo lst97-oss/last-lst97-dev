@@ -1,3 +1,4 @@
+import { HttpHeader, HttpStatus, MediaType } from '@lst97-oss/last-httprism'
 import {
   CHAT_BOT_BLOCKED_MESSAGE,
   CHAT_EXPIRED_MESSAGE,
@@ -67,7 +68,7 @@ export function createChatPostHandler(dependencies: ChatPostHandlerDependencies)
           error: body.reason === 'too_large' ? CHAT_REQUEST_TOO_LARGE_MESSAGE : CHAT_INVALID_MESSAGE_MESSAGE,
           requestId,
         },
-        body.reason === 'too_large' ? 413 : 400,
+        body.reason === 'too_large' ? HttpStatus.CONTENT_TOO_LARGE.code : HttpStatus.BAD_REQUEST.code,
       )
     }
 
@@ -77,12 +78,18 @@ export function createChatPostHandler(dependencies: ChatPostHandlerDependencies)
         : undefined
     if (bodyRecord && Object.hasOwn(bodyRecord, 'action')) {
       const action = chatContactActionSchema.safeParse(body.value)
-      if (!action.success) return jsonResponse(requestId, { error: 'Enter a valid contact action.', requestId }, 400)
+      if (!action.success)
+        return jsonResponse(
+          requestId,
+          { error: 'Enter a valid contact action.', requestId },
+          HttpStatus.BAD_REQUEST.code,
+        )
       return handleContactActionRequest(request, requestId, action.data, dependencies)
     }
 
     const parsed = chatMessageRequestSchema.safeParse(body.value)
-    if (!parsed.success) return jsonResponse(requestId, { error: CHAT_INVALID_MESSAGE_MESSAGE, requestId }, 400)
+    if (!parsed.success)
+      return jsonResponse(requestId, { error: CHAT_INVALID_MESSAGE_MESSAGE, requestId }, HttpStatus.BAD_REQUEST.code)
     return handleChatMessageRequest(request, requestId, startedAt, parsed.data, dependencies)
   }
 }
@@ -94,8 +101,8 @@ async function rateLimitResponse(
 ): Promise<Response | undefined> {
   const limit = await dependencies.rateLimit(request)
   if (limit.allowed) return undefined
-  return jsonResponse(requestId, { error: CHAT_RATE_LIMIT_MESSAGE, requestId }, 429, {
-    'retry-after': String(limit.retryAfterSeconds),
+  return jsonResponse(requestId, { error: CHAT_RATE_LIMIT_MESSAGE, requestId }, HttpStatus.TOO_MANY_REQUESTS.code, {
+    [HttpHeader.RETRY_AFTER]: String(limit.retryAfterSeconds),
   })
 }
 
@@ -111,7 +118,11 @@ async function botRejectedResponse(
   if (!dependencies.checkBotRequest) return undefined
   const verification = await dependencies.checkBotRequest()
   if (!verification.isBot) return undefined
-  return jsonResponse(requestId, { error: CHAT_BOT_BLOCKED_MESSAGE, code: 'bot_detected', requestId }, 403)
+  return jsonResponse(
+    requestId,
+    { error: CHAT_BOT_BLOCKED_MESSAGE, code: 'bot_detected', requestId },
+    HttpStatus.FORBIDDEN.code,
+  )
 }
 
 async function handleContactActionRequest(
@@ -121,7 +132,11 @@ async function handleContactActionRequest(
   dependencies: ChatPostHandlerDependencies,
 ): Promise<Response> {
   if (!dependencies.handleContactAction) {
-    return jsonResponse(requestId, { error: 'The contact workflow is temporarily unavailable.', requestId }, 503)
+    return jsonResponse(
+      requestId,
+      { error: 'The contact workflow is temporarily unavailable.', requestId },
+      HttpStatus.SERVICE_UNAVAILABLE.code,
+    )
   }
 
   try {
@@ -137,9 +152,9 @@ async function handleContactActionRequest(
         return jsonResponse(
           requestId,
           { error: 'Too many contact submissions. Please try again later.', requestId },
-          429,
+          HttpStatus.TOO_MANY_REQUESTS.code,
           {
-            'retry-after': String(contactLimit.retryAfterSeconds),
+            [HttpHeader.RETRY_AFTER]: String(contactLimit.retryAfterSeconds),
           },
         )
       }
@@ -161,7 +176,7 @@ async function handleContactActionRequest(
       requestId,
     } as ChatContactActionRequest)
     if (!result.ok) {
-      const status = result.reason === 'invalid_context' ? 400 : 409
+      const status = result.reason === 'invalid_context' ? HttpStatus.BAD_REQUEST.code : HttpStatus.CONFLICT.code
       const error =
         result.reason === 'invalid_context'
           ? 'This contact session has expired. Start a new chat and try again.'
@@ -171,7 +186,11 @@ async function handleContactActionRequest(
     return jsonResponse(requestId, { event: result.event, requestId })
   } catch {
     dependencies.logger.error('chat.contact_workflow_failed', { requestId })
-    return jsonResponse(requestId, { error: 'The contact workflow is temporarily unavailable.', requestId }, 503)
+    return jsonResponse(
+      requestId,
+      { error: 'The contact workflow is temporarily unavailable.', requestId },
+      HttpStatus.SERVICE_UNAVAILABLE.code,
+    )
   }
 }
 
@@ -190,7 +209,7 @@ async function verifyChatToken(
         code: 'turnstile_invalid',
         requestId,
       },
-      403,
+      HttpStatus.FORBIDDEN.code,
     )
   }
   if (!dependencies.verifyChatTurnstile) {
@@ -202,7 +221,7 @@ async function verifyChatToken(
         code: 'turnstile_unavailable',
         requestId,
       },
-      503,
+      HttpStatus.SERVICE_UNAVAILABLE.code,
     )
   }
 
@@ -218,7 +237,7 @@ async function verifyChatToken(
         code: 'turnstile_unavailable',
         requestId,
       },
-      503,
+      HttpStatus.SERVICE_UNAVAILABLE.code,
     )
   }
   if (verified) return undefined
@@ -231,7 +250,7 @@ async function verifyChatToken(
       code: 'turnstile_invalid',
       requestId,
     },
-    403,
+    HttpStatus.FORBIDDEN.code,
   )
 }
 
@@ -257,7 +276,7 @@ async function verifyContactScreeningToken(
         code: 'turnstile_unavailable',
         requestId,
       },
-      503,
+      HttpStatus.SERVICE_UNAVAILABLE.code,
     )
   }
 
@@ -276,7 +295,7 @@ async function verifyContactScreeningToken(
         code: 'turnstile_unavailable',
         requestId,
       },
-      503,
+      HttpStatus.SERVICE_UNAVAILABLE.code,
     )
   }
   if (verified) return undefined
@@ -289,7 +308,7 @@ async function verifyContactScreeningToken(
       code: 'turnstile_invalid',
       requestId,
     },
-    403,
+    HttpStatus.FORBIDDEN.code,
   )
 }
 
@@ -324,7 +343,11 @@ async function handleChatMessageRequest(
     const result = await dependencies.send(chatInput)
     if (result.status === 'blocked') {
       dependencies.logger.warn('chat.rejected', { requestId, reason: result.reason ?? 'uncertain' })
-      return jsonResponse(requestId, { error: chatModerationRejectionMessage(result.reason), requestId }, 422)
+      return jsonResponse(
+        requestId,
+        { error: chatModerationRejectionMessage(result.reason), requestId },
+        HttpStatus.UNPROCESSABLE_CONTENT.code,
+      )
     }
     if (result.status === 'contact_confirmation') {
       return jsonResponse(requestId, {
@@ -334,13 +357,21 @@ async function handleChatMessageRequest(
     }
     if (result.status === 'unavailable') {
       dependencies.logger.error('chat.moderation_unavailable', { requestId })
-      return jsonResponse(requestId, { error: 'Message screening is temporarily unavailable.', requestId }, 503)
+      return jsonResponse(
+        requestId,
+        { error: 'Message screening is temporarily unavailable.', requestId },
+        HttpStatus.SERVICE_UNAVAILABLE.code,
+      )
     }
     if (result.status === 'invalid_context') {
-      return jsonResponse(requestId, { error: CHAT_EXPIRED_MESSAGE, requestId }, 400)
+      return jsonResponse(requestId, { error: CHAT_EXPIRED_MESSAGE, requestId }, HttpStatus.BAD_REQUEST.code)
     }
     if (result.status === 'turn_limit') {
-      return jsonResponse(requestId, { error: CHAT_TURN_LIMIT_MESSAGE, code: 'turn_limit', requestId }, 409)
+      return jsonResponse(
+        requestId,
+        { error: CHAT_TURN_LIMIT_MESSAGE, code: 'turn_limit', requestId },
+        HttpStatus.CONFLICT.code,
+      )
     }
 
     dependencies.logger.info('chat.completed', {
@@ -358,7 +389,7 @@ async function handleChatMessageRequest(
     })
   } catch {
     dependencies.logger.error('chat.failed', { requestId, failureCategory: 'chat_processing' })
-    return jsonResponse(requestId, { error: CHAT_OFFLINE_MESSAGE, requestId }, 503)
+    return jsonResponse(requestId, { error: CHAT_OFFLINE_MESSAGE, requestId }, HttpStatus.SERVICE_UNAVAILABLE.code)
   }
 }
 
@@ -373,7 +404,7 @@ function streamChatEvents(
   const maxMs = typeof maxMsOption === 'function' ? maxMsOption() : (maxMsOption ?? 90_000)
   const sendStream = dependencies.sendStream
   if (!sendStream) {
-    return jsonResponse(requestId, { error: CHAT_OFFLINE_MESSAGE, requestId }, 503)
+    return jsonResponse(requestId, { error: CHAT_OFFLINE_MESSAGE, requestId }, HttpStatus.SERVICE_UNAVAILABLE.code)
   }
   const stream = new ReadableStream({
     async start(controller) {
@@ -407,10 +438,10 @@ function streamChatEvents(
     },
   })
   return new Response(stream, {
-    status: 200,
+    status: HttpStatus.OK.code,
     headers: {
-      'content-type': 'text/event-stream; charset=utf-8',
-      'cache-control': 'no-store',
+      [HttpHeader.CONTENT_TYPE]: `${MediaType.EVENT_STREAM}; charset=utf-8`,
+      [HttpHeader.CACHE_CONTROL]: 'no-store',
       'x-request-id': requestId,
     },
   })
