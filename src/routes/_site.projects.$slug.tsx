@@ -191,7 +191,7 @@ function ProjectPage() {
         </div>
         <ImageGallery heading="Gallery" items={mediaItems} />
         <RelatedContent items={related} kind="project" />
-        <div className="px-6 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-12">
+        <div className="py-6 sm:py-8 lg:py-12">
           <ContentComments config={commentsConfig} pageUrl={canonicalUrl(`/projects/${project.slug}`)} />
         </div>
       </WindowFrame>
