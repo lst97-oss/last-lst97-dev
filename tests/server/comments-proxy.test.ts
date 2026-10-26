@@ -33,8 +33,7 @@ function dependencies(overrides: Partial<CommentsProxyDependencies> = {}): Comme
   }
 }
 
-const proxied = (path: string, init: RequestInit = {}) =>
-  new Request(`https://www.lst97.dev/api/site/comments${path}`, init)
+const proxied = (path: string, init: RequestInit = {}) => new Request(`https://www.lst97.dev${path}`, init)
 
 const jsonWrite = (method: string, path: string, body: unknown, headers: Record<string, string> = {}) =>
   proxied(path, {
@@ -98,8 +97,8 @@ describe('route allowlist', () => {
     expect(classifyCommentsRoute('GET', '/api/comments/abc-123')).toBeNull()
   })
 
-  it('reads the upstream path after the host prefix', () => {
-    expect(commentsPathOf('https://www.lst97.dev/api/site/comments/api/comments?site=x')).toBe('/api/comments')
+  it('reads the API path without a proxy prefix', () => {
+    expect(commentsPathOf('https://www.lst97.dev/api/comments?site=x')).toBe('/api/comments')
   })
 })
 

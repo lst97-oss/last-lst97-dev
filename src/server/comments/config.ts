@@ -1,5 +1,4 @@
 import { getServerEnv, type ServerEnv } from '../env'
-import { COMMENTS_PROXY_PREFIX } from './proxy'
 
 // Server-side comments settings. The API key is a secret: it stays on the server
 // and only the public subset below may reach the browser.
@@ -34,7 +33,7 @@ export function commentsPublicConfigFrom(env: CommentsEnv): CommentsPublicConfig
   const config = commentsConfigFrom(env)
   if (!config) return null
   return {
-    baseUrl: COMMENTS_PROXY_PREFIX,
+    baseUrl: '',
     siteKey: config.siteKey,
   }
 }

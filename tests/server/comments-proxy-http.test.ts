@@ -38,7 +38,7 @@ function harness(overrides: Partial<Parameters<typeof createCommentsProxyHandler
 }
 
 const request = (method: string, path: string, body?: unknown) =>
-  new Request(`https://www.lst97.dev/api/site/comments${path}`, {
+  new Request(`https://www.lst97.dev${path}`, {
     method,
     headers: { origin: 'https://www.lst97.dev', 'content-type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -49,9 +49,9 @@ describe('comments proxy handler', () => {
     const { handler, forwarded, limited, botChecked } = harness()
     const response = await handler({ request: request('POST', '/api/comments', { url: pageUrl }) })
     expect(response.status).toBe(200)
-    expect(limited).toEqual(['/api/site/comments/api/comments'])
+    expect(limited).toEqual(['/api/comments'])
     expect(botChecked).toEqual(['checked'])
-    expect(forwarded).toEqual(['POST /api/site/comments/api/comments'])
+    expect(forwarded).toEqual(['POST /api/comments'])
   })
 
   it('rate-limits writes and refuses with a retry-after, without forwarding', async () => {
@@ -71,7 +71,7 @@ describe('comments proxy handler', () => {
     expect(response.status).toBe(200)
     expect(limited).toHaveLength(0)
     expect(botChecked).toHaveLength(0)
-    expect(forwarded).toEqual(['GET /api/site/comments/api/comments'])
+    expect(forwarded).toEqual(['GET /api/comments'])
   })
 
   it('refuses a bot-classified create without forwarding it', async () => {

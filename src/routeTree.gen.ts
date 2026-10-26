@@ -24,6 +24,7 @@ import { Route as SiteChatRouteImport } from './routes/_site.chat'
 import { Route as SiteContactRouteImport } from './routes/_site.contact'
 import { Route as SiteServicesRouteImport } from './routes/_site.services'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
+import { Route as ApiCommentsRouteImport } from './routes/api.comments'
 import { Route as PayloadAdminIndexRouteImport } from './routes/_payload.admin.index'
 import { Route as PayloadAdminSplatRouteImport } from './routes/_payload.admin.$'
 import { Route as SiteBlogIndexRouteImport } from './routes/_site.blog.index'
@@ -32,12 +33,13 @@ import { Route as SiteChangelogIndexRouteImport } from './routes/_site.changelog
 import { Route as SiteChangelogSlugRouteImport } from './routes/_site.changelog.$slug'
 import { Route as SiteProjectsIndexRouteImport } from './routes/_site.projects.index'
 import { Route as SiteProjectsSlugRouteImport } from './routes/_site.projects.$slug'
+import { Route as ApiAuthGetSessionRouteImport } from './routes/api.auth.get-session'
+import { Route as ApiCommentsSplatRouteImport } from './routes/api.comments.$'
 import { Route as ApiSiteChatRouteImport } from './routes/api.site.chat'
 import { Route as ApiSiteContactRouteImport } from './routes/api.site.contact'
 import { Route as ApiSiteHealthRouteImport } from './routes/api.site.health'
 import { Route as ApiSiteOgRouteImport } from './routes/api.site.og'
 import { Route as SiteBlogTopicsSlugRouteImport } from './routes/_site.blog.topics.$slug'
-import { Route as ApiSiteCommentsSplatRouteImport } from './routes/api.site.comments.$'
 
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
@@ -113,6 +115,11 @@ const ApiSplatRoute = ApiSplatRouteImport.update({
   path: '/api/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCommentsRoute = ApiCommentsRouteImport.update({
+  id: '/api/comments',
+  path: '/api/comments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PayloadAdminIndexRoute = PayloadAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -153,6 +160,16 @@ const SiteProjectsSlugRoute = SiteProjectsSlugRouteImport.update({
   path: '/projects/$slug',
   getParentRoute: () => SiteRoute,
 } as any)
+const ApiAuthGetSessionRoute = ApiAuthGetSessionRouteImport.update({
+  id: '/api/auth/get-session',
+  path: '/api/auth/get-session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCommentsSplatRoute = ApiCommentsSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => ApiCommentsRoute,
+} as any)
 const ApiSiteChatRoute = ApiSiteChatRouteImport.update({
   id: '/api/site/chat',
   path: '/api/site/chat',
@@ -178,11 +195,6 @@ const SiteBlogTopicsSlugRoute = SiteBlogTopicsSlugRouteImport.update({
   path: '/blog/topics/$slug',
   getParentRoute: () => SiteRoute,
 } as any)
-const ApiSiteCommentsSplatRoute = ApiSiteCommentsSplatRouteImport.update({
-  id: '/api/site/comments/$',
-  path: '/api/site/comments/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/$': typeof SplatRoute
@@ -198,10 +210,13 @@ export interface FileRoutesByFullPath {
   '/contact': typeof SiteContactRoute
   '/services': typeof SiteServicesRoute
   '/api/$': typeof ApiSplatRoute
+  '/api/comments': typeof ApiCommentsRouteWithChildren
   '/admin/$': typeof PayloadAdminSplatRoute
   '/blog/$slug': typeof SiteBlogSlugRoute
   '/changelog/$slug': typeof SiteChangelogSlugRoute
   '/projects/$slug': typeof SiteProjectsSlugRoute
+  '/api/auth/get-session': typeof ApiAuthGetSessionRoute
+  '/api/comments/$': typeof ApiCommentsSplatRoute
   '/api/site/chat': typeof ApiSiteChatRoute
   '/api/site/contact': typeof ApiSiteContactRoute
   '/api/site/health': typeof ApiSiteHealthRoute
@@ -211,7 +226,6 @@ export interface FileRoutesByFullPath {
   '/changelog/': typeof SiteChangelogIndexRoute
   '/projects/': typeof SiteProjectsIndexRoute
   '/blog/topics/$slug': typeof SiteBlogTopicsSlugRoute
-  '/api/site/comments/$': typeof ApiSiteCommentsSplatRoute
 }
 export interface FileRoutesByTo {
   '/$': typeof SplatRoute
@@ -227,10 +241,13 @@ export interface FileRoutesByTo {
   '/contact': typeof SiteContactRoute
   '/services': typeof SiteServicesRoute
   '/api/$': typeof ApiSplatRoute
+  '/api/comments': typeof ApiCommentsRouteWithChildren
   '/admin/$': typeof PayloadAdminSplatRoute
   '/blog/$slug': typeof SiteBlogSlugRoute
   '/changelog/$slug': typeof SiteChangelogSlugRoute
   '/projects/$slug': typeof SiteProjectsSlugRoute
+  '/api/auth/get-session': typeof ApiAuthGetSessionRoute
+  '/api/comments/$': typeof ApiCommentsSplatRoute
   '/api/site/chat': typeof ApiSiteChatRoute
   '/api/site/contact': typeof ApiSiteContactRoute
   '/api/site/health': typeof ApiSiteHealthRoute
@@ -240,7 +257,6 @@ export interface FileRoutesByTo {
   '/changelog': typeof SiteChangelogIndexRoute
   '/projects': typeof SiteProjectsIndexRoute
   '/blog/topics/$slug': typeof SiteBlogTopicsSlugRoute
-  '/api/site/comments/$': typeof ApiSiteCommentsSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -258,11 +274,14 @@ export interface FileRoutesById {
   '/_site/contact': typeof SiteContactRoute
   '/_site/services': typeof SiteServicesRoute
   '/api/$': typeof ApiSplatRoute
+  '/api/comments': typeof ApiCommentsRouteWithChildren
   '/_site/': typeof SiteIndexRoute
   '/_payload/admin/$': typeof PayloadAdminSplatRoute
   '/_site/blog/$slug': typeof SiteBlogSlugRoute
   '/_site/changelog/$slug': typeof SiteChangelogSlugRoute
   '/_site/projects/$slug': typeof SiteProjectsSlugRoute
+  '/api/auth/get-session': typeof ApiAuthGetSessionRoute
+  '/api/comments/$': typeof ApiCommentsSplatRoute
   '/api/site/chat': typeof ApiSiteChatRoute
   '/api/site/contact': typeof ApiSiteContactRoute
   '/api/site/health': typeof ApiSiteHealthRoute
@@ -272,7 +291,6 @@ export interface FileRoutesById {
   '/_site/changelog/': typeof SiteChangelogIndexRoute
   '/_site/projects/': typeof SiteProjectsIndexRoute
   '/_site/blog/topics/$slug': typeof SiteBlogTopicsSlugRoute
-  '/api/site/comments/$': typeof ApiSiteCommentsSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -290,10 +308,13 @@ export interface FileRouteTypes {
     | '/contact'
     | '/services'
     | '/api/$'
+    | '/api/comments'
     | '/admin/$'
     | '/blog/$slug'
     | '/changelog/$slug'
     | '/projects/$slug'
+    | '/api/auth/get-session'
+    | '/api/comments/$'
     | '/api/site/chat'
     | '/api/site/contact'
     | '/api/site/health'
@@ -303,7 +324,6 @@ export interface FileRouteTypes {
     | '/changelog/'
     | '/projects/'
     | '/blog/topics/$slug'
-    | '/api/site/comments/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/$'
@@ -319,10 +339,13 @@ export interface FileRouteTypes {
     | '/contact'
     | '/services'
     | '/api/$'
+    | '/api/comments'
     | '/admin/$'
     | '/blog/$slug'
     | '/changelog/$slug'
     | '/projects/$slug'
+    | '/api/auth/get-session'
+    | '/api/comments/$'
     | '/api/site/chat'
     | '/api/site/contact'
     | '/api/site/health'
@@ -332,7 +355,6 @@ export interface FileRouteTypes {
     | '/changelog'
     | '/projects'
     | '/blog/topics/$slug'
-    | '/api/site/comments/$'
   id:
     | '__root__'
     | '/$'
@@ -349,11 +371,14 @@ export interface FileRouteTypes {
     | '/_site/contact'
     | '/_site/services'
     | '/api/$'
+    | '/api/comments'
     | '/_site/'
     | '/_payload/admin/$'
     | '/_site/blog/$slug'
     | '/_site/changelog/$slug'
     | '/_site/projects/$slug'
+    | '/api/auth/get-session'
+    | '/api/comments/$'
     | '/api/site/chat'
     | '/api/site/contact'
     | '/api/site/health'
@@ -363,7 +388,6 @@ export interface FileRouteTypes {
     | '/_site/changelog/'
     | '/_site/projects/'
     | '/_site/blog/topics/$slug'
-    | '/api/site/comments/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -377,11 +401,12 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   Char91DotwellKnownChar93SecurityChar91DottxtChar93Route: typeof Char91DotwellKnownChar93SecurityChar91DottxtChar93Route
   ApiSplatRoute: typeof ApiSplatRoute
+  ApiCommentsRoute: typeof ApiCommentsRouteWithChildren
+  ApiAuthGetSessionRoute: typeof ApiAuthGetSessionRoute
   ApiSiteChatRoute: typeof ApiSiteChatRoute
   ApiSiteContactRoute: typeof ApiSiteContactRoute
   ApiSiteHealthRoute: typeof ApiSiteHealthRoute
   ApiSiteOgRoute: typeof ApiSiteOgRoute
-  ApiSiteCommentsSplatRoute: typeof ApiSiteCommentsSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -491,6 +516,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/comments': {
+      id: '/api/comments'
+      path: '/api/comments'
+      fullPath: '/api/comments'
+      preLoaderRoute: typeof ApiCommentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_payload/admin/': {
       id: '/_payload/admin/'
       path: '/admin'
@@ -547,6 +579,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteProjectsSlugRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/api/auth/get-session': {
+      id: '/api/auth/get-session'
+      path: '/api/auth/get-session'
+      fullPath: '/api/auth/get-session'
+      preLoaderRoute: typeof ApiAuthGetSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/comments/$': {
+      id: '/api/comments/$'
+      path: '/$'
+      fullPath: '/api/comments/$'
+      preLoaderRoute: typeof ApiCommentsSplatRouteImport
+      parentRoute: typeof ApiCommentsRoute
+    }
     '/api/site/chat': {
       id: '/api/site/chat'
       path: '/api/site/chat'
@@ -581,13 +627,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/blog/topics/$slug'
       preLoaderRoute: typeof SiteBlogTopicsSlugRouteImport
       parentRoute: typeof SiteRoute
-    }
-    '/api/site/comments/$': {
-      id: '/api/site/comments/$'
-      path: '/api/site/comments/$'
-      fullPath: '/api/site/comments/$'
-      preLoaderRoute: typeof ApiSiteCommentsSplatRouteImport
-      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -637,6 +676,18 @@ const SiteRouteChildren: SiteRouteChildren = {
 
 const SiteRouteWithChildren = SiteRoute._addFileChildren(SiteRouteChildren)
 
+interface ApiCommentsRouteChildren {
+  ApiCommentsSplatRoute: typeof ApiCommentsSplatRoute
+}
+
+const ApiCommentsRouteChildren: ApiCommentsRouteChildren = {
+  ApiCommentsSplatRoute: ApiCommentsSplatRoute,
+}
+
+const ApiCommentsRouteWithChildren = ApiCommentsRoute._addFileChildren(
+  ApiCommentsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   SplatRoute: SplatRoute,
   PayloadRoute: PayloadRouteWithChildren,
@@ -649,11 +700,12 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotwellKnownChar93SecurityChar91DottxtChar93Route:
     Char91DotwellKnownChar93SecurityChar91DottxtChar93Route,
   ApiSplatRoute: ApiSplatRoute,
+  ApiCommentsRoute: ApiCommentsRouteWithChildren,
+  ApiAuthGetSessionRoute: ApiAuthGetSessionRoute,
   ApiSiteChatRoute: ApiSiteChatRoute,
   ApiSiteContactRoute: ApiSiteContactRoute,
   ApiSiteHealthRoute: ApiSiteHealthRoute,
   ApiSiteOgRoute: ApiSiteOgRoute,
-  ApiSiteCommentsSplatRoute: ApiSiteCommentsSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
