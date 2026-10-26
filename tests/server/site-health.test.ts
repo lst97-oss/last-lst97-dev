@@ -7,7 +7,7 @@ describe('site health endpoint', () => {
     const response = await createSiteHealthGetHandler()()
 
     expect(response.status).toBe(200)
-    expect(response.headers.get('cache-control')).toBe('public, max-age=0, s-maxage=60')
+    expect(response.headers.get('cache-control')).toBe('public, max-age=0, s-maxage=300')
     expect(await response.json()).toEqual({ status: 'ok' })
   })
 })

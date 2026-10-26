@@ -44,6 +44,23 @@ const projectPath = (relativePath: string) => {
     : `${process.cwd()}/${resolvedPath}`
 }
 
+// Shared security headers for all first-party responses. No CSP: Payload admin
+// ships inline scripts a static policy would break. HSTS only in production
+// builds — dev serves plain http://localhost.
+const SECURITY_HEADERS =
+  process.env.NODE_ENV === 'production'
+    ? {
+        'referrer-policy': 'same-origin',
+        'x-content-type-options': 'nosniff',
+        'permissions-policy': 'camera=(), microphone=(), geolocation=()',
+        'strict-transport-security': 'max-age=31536000; includeSubDomains',
+      }
+    : {
+        'referrer-policy': 'same-origin',
+        'x-content-type-options': 'nosniff',
+        'permissions-policy': 'camera=(), microphone=(), geolocation=()',
+      }
+
 // Public pages render identical HTML for every visitor, so the shared CDN may
 // hold them. `max-age=0` is deliberate: the browser still revalidates on every
 // navigation, so a deploy or a Payload edit is visible to the editor
@@ -52,11 +69,19 @@ const projectPath = (relativePath: string) => {
 // previous copy while that refresh runs, so a slow origin never shows a stall.
 const PUBLIC_CACHE = {
   'cache-control': 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400',
+  ...SECURITY_HEADERS,
+}
+
+// Stable marketing pages change rarely; a 24h edge lifetime is safe and cuts
+// hourly origin re-renders to one per day per region.
+const STABLE_PUBLIC_CACHE = {
+  'cache-control': 'public, max-age=0, s-maxage=86400, stale-while-revalidate=86400',
+  ...SECURITY_HEADERS,
 }
 
 // Never shared-cache. The admin is authenticated and cookie-bearing, so a
 // stored response is how one operator's session could reach another.
-const PRIVATE_NO_STORE = { 'cache-control': 'private, no-store' }
+const PRIVATE_NO_STORE = { 'cache-control': 'private, no-store', ...SECURITY_HEADERS }
 
 const config = defineConfig({
   resolve: {
@@ -180,14 +205,22 @@ const config = defineConfig({
         // the REST API both emit the platform default `public` header, which on
         // a shared cache is how one operator's session could reach another.
         '/api/site/og': {
-          headers: { 'cache-control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400' },
+          headers: {
+            'cache-control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400',
+            ...SECURITY_HEADERS,
+          },
         },
-        // Edge-cacheable for 60 s: the handler returns a dependency-free literal,
-        // so a shared cache can only delay an outage signal by one minute. No
+        // Edge-cacheable for 5 min: the handler returns a dependency-free literal,
+        // so a shared cache can only delay an outage signal by five minutes. No
         // stale-while-revalidate on purpose — health must fail fast. Must match
         // HEALTH_CACHE_CONTROL in src/server/site-health.ts.
         '/api/site/health': {
-          headers: { 'cache-control': 'public, max-age=0, s-maxage=60' },
+          headers: { 'cache-control': 'public, max-age=0, s-maxage=300', ...SECURITY_HEADERS },
+        },
+        // The public policy the widget reads before a visitor types. Must match
+        // COMMENTS_SETTINGS_CACHE_CONTROL in src/server/comments/proxy.ts.
+        '/api/site/comments/api/comments/settings': {
+          headers: { 'cache-control': 'public, max-age=0, s-maxage=60', ...SECURITY_HEADERS },
         },
         // Payload's admin is mounted at `/admin`, NOT `/_payload/**` — the
         // `/_payload` segment only exists as the TanStack file-route id
@@ -212,8 +245,8 @@ const config = defineConfig({
         // The `.well-known` and `.txt` routes set their own `max-age=3600`
         // and are left to that.
         '/': { headers: PUBLIC_CACHE },
-        '/about': { headers: PUBLIC_CACHE },
-        '/services': { headers: PUBLIC_CACHE },
+        '/about': { headers: STABLE_PUBLIC_CACHE },
+        '/services': { headers: STABLE_PUBLIC_CACHE },
         '/chat': { headers: PUBLIC_CACHE },
         '/contact': { headers: PUBLIC_CACHE },
         '/projects': { headers: PUBLIC_CACHE },
