@@ -203,25 +203,40 @@ const config = defineConfig({
             // nf3 (Nitro's tracer) drops @img/sharp-libvips-*: the package is only
             // reachable through sharp's native @rpath link, and its restrictive
             // exports map makes nf3's optionalDependencies fallback miss it. Copy
-            // the installed platform package into the server output so sharp can
-            // dlopen libvips at runtime. Remove once nf3 resolves `./package`.
-            nitro.hooks.hook('compiled', async () => {
-              const imgDir = `${nitro.options.rootDir}/node_modules/@img`
-              let entries: string[]
-              try {
-                entries = [...new Bun.Glob('sharp-libvips-*').scanSync({ cwd: imgDir, onlyFiles: false })]
-              } catch {
-                return
-              }
-              await Promise.all(
-                entries.map(async (name) => {
-                  const destination = `${nitro.options.output.serverDir}/node_modules/@img/${name}`
-                  // nf3 leaves this as a symlink into `.nf3`; replace it with a real
-                  // copy so the shared library travels with the function.
-                  await run(['rm', '-rf', destination])
-                  await run(['cp', '-R', `${imgDir}/${name}`, destination])
-                }),
-              )
+            // the installed or traced platform package into the server output so
+            // sharp can dlopen libvips at runtime. Remove once nf3 resolves
+            // `./package`.
+            //
+            // Register on `build:before` so the copy listener is appended after
+            // the Vercel preset's `compiled` hook, which writes the routes.
+            nitro.hooks.hook('build:before', () => {
+              nitro.hooks.hook('compiled', async () => {
+                const serverDir = nitro.options.output.serverDir
+                const sources = [
+                  `${nitro.options.rootDir}/node_modules/@img`,
+                  `${serverDir}/node_modules/.nf3/@img`,
+                ]
+                const copied = new Set<string>()
+                for (const source of sources) {
+                  let entries: string[]
+                  try {
+                    entries = [...new Bun.Glob('sharp-libvips-*').scanSync({ cwd: source, onlyFiles: false })]
+                  } catch {
+                    continue
+                  }
+                  for (const entry of entries) {
+                    const name = entry.replace(/@\d+\.\d+\.\d+$/, '')
+                    if (copied.has(name)) continue
+                    copied.add(name)
+                    const destination = `${serverDir}/node_modules/@img/${name}`
+                    // nf3 leaves the destination as a symlink into `.nf3`;
+                    // replace it with a real copy so the shared library travels
+                    // with the function.
+                    await run(['rm', '-rf', destination])
+                    await run(['cp', '-R', `${source}/${entry}`, destination])
+                  }
+                }
+              })
             })
           },
         },
