@@ -40,7 +40,7 @@ const siteThemeVars: ThemeVars = {
     borderWidth: '3px',
     controlRadius: '0px',
     avatarRadius: '0px',
-    cardShadow: 'var(--lc-site-card-shadow)',
+    cardShadow: 'none',
     dropdownShadow: 'var(--lc-site-shadow)',
     fontFamily: 'var(--lc-site-font-mono)',
     fontWeightMedium: '800',
@@ -49,6 +49,11 @@ const siteThemeVars: ThemeVars = {
     adminBadgeForeground: 'var(--lc-site-foreground)',
     memberBadgeBackground: 'var(--lc-site-secondary)',
     memberBadgeForeground: 'var(--lc-site-foreground)',
+    signInBackground: 'var(--lc-site-card)',
+    signInBorder: 'var(--lc-site-border)',
+    signInForeground: 'var(--lc-site-foreground)',
+    signInButtonBackground: 'var(--lc-site-primary)',
+    signInButtonForeground: 'var(--lc-site-primary-foreground)',
   },
 }
 
@@ -107,10 +112,10 @@ export function ContentComments({ config, pageUrl }: { config: CommentsPublicCon
           site={config.siteKey}
           baseUrl={config.baseUrl}
           pageUrl={pageUrl}
-          turnstileSiteKey={config.turnstileSiteKey ?? undefined}
           theme={theme}
           themeVars={siteThemeVars}
-          bodyLimit={4096}
+          math
+          mermaid
           lazy
         />
       ) : null}

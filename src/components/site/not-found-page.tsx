@@ -4,7 +4,6 @@ import { cn } from 'cn'
 import { Eyebrow, PageStack, pixelButtonVariants, Tag } from '@/components/site/os-ui'
 import { PixelIcon } from '@/components/site/pixel-icon'
 import { DesktopShell } from '@/components/site/shell'
-import { SiteHealthProvider } from '@/components/site/site-health-provider'
 import { WindowFrame } from '@/components/site/window-frame'
 
 const NOT_FOUND_WINDOW_ID = '404.exe'
@@ -26,40 +25,38 @@ export function NotFoundPage() {
   const { pathname } = useLocation()
 
   return (
-    <SiteHealthProvider>
-      <DesktopShell>
-        <PageStack>
-          <WindowFrame
-            title={NOT_FOUND_WINDOW_ID}
-            icon="⚠"
-            className="not-found-window"
-            closeHref="/"
-            windowId={NOT_FOUND_WINDOW_ID}
-            // A long requested path would otherwise grow this frame, and below
-            // 650px the shell clamp is only re-applied for `window-frame--scroll`.
-            scrollable
-          >
-            <Eyebrow>
-              <PixelIcon glyph="⚠" /> ERROR / 404
-            </Eyebrow>
-            <h1>
-              404<span>.exe not found.</span>
-            </h1>
-            <p className="lead-copy mt-4">This path does not exist on the system.</p>
-            <p className="not-found-path mt-4">
-              <Tag>REQUESTED: {pathname}</Tag>
-            </p>
-            <div className="not-found-actions mt-7 flex flex-wrap gap-2.5">
-              <Link className={cn(pixelButtonVariants())} to="/">
-                <PixelIcon glyph="◆" /> RETURN TO DESKTOP
-              </Link>
-              <Link className={cn(pixelButtonVariants())} to="/projects">
-                <PixelIcon glyph="▤" /> BROWSE PROJECTS
-              </Link>
-            </div>
-          </WindowFrame>
-        </PageStack>
-      </DesktopShell>
-    </SiteHealthProvider>
+    <DesktopShell>
+      <PageStack>
+        <WindowFrame
+          title={NOT_FOUND_WINDOW_ID}
+          icon="⚠"
+          className="not-found-window"
+          closeHref="/"
+          windowId={NOT_FOUND_WINDOW_ID}
+          // A long requested path would otherwise grow this frame, and below
+          // 650px the shell clamp is only re-applied for `window-frame--scroll`.
+          scrollable
+        >
+          <Eyebrow>
+            <PixelIcon glyph="⚠" /> ERROR / 404
+          </Eyebrow>
+          <h1>
+            404<span>.exe not found.</span>
+          </h1>
+          <p className="lead-copy mt-4">This path does not exist on the system.</p>
+          <p className="not-found-path mt-4">
+            <Tag>REQUESTED: {pathname}</Tag>
+          </p>
+          <div className="not-found-actions mt-7 flex flex-wrap gap-2.5">
+            <Link className={cn(pixelButtonVariants())} to="/">
+              <PixelIcon glyph="◆" /> RETURN TO DESKTOP
+            </Link>
+            <Link className={cn(pixelButtonVariants())} to="/projects">
+              <PixelIcon glyph="▤" /> BROWSE PROJECTS
+            </Link>
+          </div>
+        </WindowFrame>
+      </PageStack>
+    </DesktopShell>
   )
 }

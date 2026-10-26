@@ -39,9 +39,9 @@ function sanitizeUpload(value: unknown): RecordValue | null {
     if (typeof item === 'string' || typeof item === 'number') upload[key] = item
   }
 
-  if (isRecord(value.sizes)) {
+  if (isRecord(value.variants)) {
     const sizes: RecordValue = {}
-    for (const [key, rawSize] of Object.entries(value.sizes)) {
+    for (const [key, rawSize] of Object.entries(value.variants)) {
       if (!isRecord(rawSize)) continue
       const sizeURL = safeAssetHref(rawSize.url)
       if (!sizeURL || typeof rawSize.mimeType !== 'string' || typeof rawSize.width !== 'number') continue

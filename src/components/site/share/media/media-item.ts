@@ -26,7 +26,7 @@ export type MediaViewerItem = {
  * How a candidate's aspect ratio is judged before it may join a `w`-descriptor
  * `srcset`.
  *
- * Payload's fixed-size `imageSizes` are crops (sharp's default `cover` fit with
+ * Payload's fixed-size `variants` are crops (sharp's default `cover` fit with
  * a `position`), not width-preserving derivatives: `thumbnail` is 320x240
  * (4:3) while `card`/`hero` are 16:9. A `srcset` whose candidates disagree
  * with the box they will be painted into is invalid — the browser picks by
@@ -196,8 +196,8 @@ export function uploadToMediaItem(value: {
  * map, so it drops the responsive sources rather than guessing.
  *
  * The allowlist mirrors the five names in the Media collection's
- * `upload.imageSizes`; an unknown key is dropped rather than passed through, so
- * a size removed from that config cannot leak into a `srcset`.
+ * `sharpTransformer` variants; an unknown key is dropped rather than passed
+ * through, so a size removed from that config cannot leak into a `srcset`.
  */
 function imageSizes(value: unknown): CoverImage['sizes'] | undefined {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined

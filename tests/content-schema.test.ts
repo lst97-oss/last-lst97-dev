@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { Changelogs } from '../src/collections/Changelogs'
-import { Media } from '../src/collections/Media'
+import { Media, mediaVariants } from '../src/collections/Media'
 import { Posts } from '../src/collections/Posts'
 import { Projects } from '../src/collections/Projects'
 import { Topics } from '../src/collections/Topics'
@@ -122,11 +122,11 @@ describe('Payload editorial schemas', () => {
     if (!upload || upload === true) throw new Error('Media upload config should be an object')
     // The three crops back the covers; the two width-preserving sizes back the
     // surfaces that paint an image at its own ratio. Every entry must stay
-    // `fit: 'inside'` without a height — `Media` enables `focalPoint`, so a
-    // fixed-height size takes Payload's focal-point branch and CROPS, which is
-    // exactly what an uncropped derivative must not do.
-    expect(upload.imageSizes?.map(({ name }) => name)).toEqual(['thumbnail', 'card', 'hero', 'gallerySm', 'galleryLg'])
-    for (const size of upload.imageSizes?.slice(3) ?? []) {
+    // `fit: 'inside'` without a height — the Sharp transformer enables
+    // `focalPoint`, so a fixed-height size takes Payload's focal-point branch
+    // and CROPS, which is exactly what an uncropped derivative must not do.
+    expect(mediaVariants.map(({ name }) => name)).toEqual(['thumbnail', 'card', 'hero', 'gallerySm', 'galleryLg'])
+    for (const size of mediaVariants.slice(3)) {
       expect(size.fit).toBe('inside')
       expect(size.height).toBeUndefined()
       expect(size.withoutEnlargement).toBe(true)
@@ -146,27 +146,27 @@ describe('Media schema drift guard', () => {
   if (!upload || upload === true) throw new Error('Media upload config should be an object')
 
   // A collection field with no migration behind it fails at QUERY time, not
-  // compile time: drizzle selects every `sizes_*` column the collection
-  // declares, so a newly declared image size with no `ADD COLUMN` aborts the
-  // whole media read with `column "sizes_<name>_url" does not exist` — which
+  // compile time: drizzle selects every `variants_*` column the collection
+  // declares, so a newly declared variant with no `ADD COLUMN` aborts the
+  // whole media read with `column "variants_<name>_url" does not exist` — which
   // takes out every image on the page, not just the new size. Assert the newest
-  // committed snapshot actually carries a column group for each declared size.
-  test('every declared image size has its columns in the newest migration snapshot', async () => {
+  // committed snapshot actually carries a column group for each variant.
+  test('every declared media variant has its columns in the newest migration snapshot', async () => {
     const snapshot = (await Bun.file(`${migrationsDir}/${NEWEST_MIGRATION.name}.json`).json()) as MigrationSnapshot
     const mediaColumns = Object.keys(snapshot.tables['public.media'].columns)
 
-    for (const { name } of upload.imageSizes ?? []) {
-      expect(mediaColumns).toContain(`sizes_${toSnakeCase(name)}_url`)
-      expect(mediaColumns).toContain(`sizes_${toSnakeCase(name)}_filename`)
+    for (const { name } of mediaVariants) {
+      expect(mediaColumns).toContain(`variants_${toSnakeCase(name)}_url`)
+      expect(mediaColumns).toContain(`variants_${toSnakeCase(name)}_filename`)
     }
   })
 
-  test('versions table carries a version_ prefixed column per declared image size', async () => {
+  test('versions table carries a version_ prefixed column per declared variant', async () => {
     const snapshot = (await Bun.file(`${migrationsDir}/${NEWEST_MIGRATION.name}.json`).json()) as MigrationSnapshot
     const versionColumns = Object.keys(snapshot.tables['public._media_v'].columns)
 
-    for (const { name } of upload.imageSizes ?? []) {
-      expect(versionColumns).toContain(`version_sizes_${toSnakeCase(name)}_url`)
+    for (const { name } of mediaVariants) {
+      expect(versionColumns).toContain(`version_variants_${toSnakeCase(name)}_url`)
     }
   })
 })

@@ -6,7 +6,7 @@ describe('site health status', () => {
   it('reports online only for a successful health response', async () => {
     const status = await fetchSiteHealthStatus(async (input, init) => {
       expect(input).toBe('/api/site/health')
-      expect(init?.cache).toBe('no-store')
+      expect(init?.cache).toBe('default')
       return new Response(JSON.stringify({ status: 'ok' }), { status: 200 })
     })
 

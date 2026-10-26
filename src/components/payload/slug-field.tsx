@@ -1,11 +1,11 @@
 'use client'
 
 import { TextField, useField, useFormFields } from '@payloadcms/ui'
-import type { TextFieldClientComponent } from 'payload'
+import type { SlugFieldClientProps } from 'payload'
 import { useEffect, useState } from 'react'
 import { automaticSlugForTitle } from '@/lib/content/automatic-slug'
 
-export const SlugField: TextFieldClientComponent = (props) => {
+export const SlugField = (props: SlugFieldClientProps) => {
   const titlePath = props.path.replace(/\.slug$/, '.title')
   const title = useFormFields(([fields]) => fields[titlePath]?.value)
   const slug = useField<string>({ path: props.path })

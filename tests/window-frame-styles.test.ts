@@ -355,9 +355,10 @@ describe('window frame styles', () => {
     expect(rootRoute).not.toContain('styles.css')
     // `/_payload` is a sibling of `/_site` and the admin routes own their
     // boundary, so Payload's own not-found always wins under `/admin` and
-    // the site page can never render there.
-    expect(adminIndex).toMatch(/notFoundComponent:\s*AdminNotFound/)
-    expect(adminSplat).toMatch(/notFoundComponent:\s*AdminNotFound/)
+    // the site page can never render there. Payload 4's route factories own
+    // that boundary; the app only selects the factory.
+    expect(adminIndex).toMatch(/payloadAdminIndexRoute/)
+    expect(adminSplat).toMatch(/payloadAdminSplatRoute/)
   })
 
   test('renders the desktop navigation as a compact floating glass dock', () => {

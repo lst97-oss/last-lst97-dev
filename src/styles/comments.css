@@ -26,9 +26,6 @@
   --lc-site-ring: var(--ring);
   --lc-site-destructive: var(--destructive);
   --lc-site-shadow: var(--shadow-os-sm);
-  /* Comment cards keep the offset on the right only. A bottom shadow reads as a
-     border under every card, so the card drops it and keeps the side. */
-  --lc-site-card-shadow: 4px 0 0 var(--border);
   --lc-site-font-mono: var(--font-mono);
   /* Text in the danger colour (admin names, alerts, counters). The site's coral
      fails on paper (2.5:1), so light mode uses a deeper red (5.9:1 on paper,

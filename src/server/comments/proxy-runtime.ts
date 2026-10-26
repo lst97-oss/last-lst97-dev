@@ -1,9 +1,10 @@
+import { HttpStatus } from '@lst97-oss/last-httprism'
 import { getServerEnv, isVercelRuntime, requiredServerEnv } from '../env'
 import { logger } from '../observability/logger'
 import { checkBotRequest } from '../security/botid'
 import { clientKeyFromRequest } from '../security/client-key'
 import { checkEndpointLimit } from '../security/rate-limit-runtime'
-import { commentsProxyConfig } from './config'
+import { commentsConfig } from './config'
 import { createCommentsProxyHandler } from './http-handler'
 import { commentsErrorResponse, proxyCommentsRequest } from './proxy'
 import { readSiteOrigin } from './public-url'
@@ -24,10 +25,14 @@ export const commentsProxyHandler = createCommentsProxyHandler({
   rateLimit: (request) => checkEndpointLimit(request, 'comments'),
   checkBotRequest: () => checkBotRequest(),
   forward: async (request) => {
-    const upstream = commentsProxyConfig()
+    const upstream = commentsConfig()
     const siteOrigin = readSiteOrigin()
     if (!upstream || !siteOrigin) {
-      return commentsErrorResponse(503, 'COMMENTS_UNAVAILABLE', 'Comments are temporarily unavailable')
+      return commentsErrorResponse(
+        HttpStatus.SERVICE_UNAVAILABLE.code,
+        'COMMENTS_UNAVAILABLE',
+        'Comments are temporarily unavailable',
+      )
     }
     return proxyCommentsRequest(request, {
       upstream,

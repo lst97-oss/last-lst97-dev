@@ -1,31 +1,11 @@
-import { createFileRoute, notFound, redirect } from '@tanstack/react-router'
-import { AdminNotFound } from '../lib/payload/admin-not-found'
-import { adminRenderServerFn } from '../lib/payload/admin-render'
-import { type AdminRenderResult, getAdminRenderIntent, parseAdminSearchParams } from '../lib/payload/admin-route'
+import { payloadAdminIndexRoute } from '@payloadcms/tanstack-start/client'
+import { createFileRoute } from '@tanstack/react-router'
+import { payloadAdminPageServerFn } from '../lib/payload/server-fns'
 
 export const Route = createFileRoute('/_payload/admin/')({
   // Admin state must never be reused from the router cache across saves or sessions.
   staleTime: 0,
-  validateSearch: (search: Record<string, unknown>) => search,
-  loaderDeps: ({ search }) => ({ searchKey: JSON.stringify(search) }),
-  notFoundComponent: AdminNotFound,
-  loader: async ({ location }) => {
-    const result = (await adminRenderServerFn({
-      data: { search: parseAdminSearchParams(location.searchStr), segments: [] },
-    })) as AdminRenderResult
-    const intent = getAdminRenderIntent(result.intent)
-    if (intent.type === 'redirect') {
-      throw redirect({ to: intent.url })
-    }
-    if (intent.type === 'not-found') {
-      throw notFound({ data: { element: result.element } })
-    }
-    return result
-  },
-  component: AdminIndex,
+  ...payloadAdminIndexRoute({
+    load: ({ data }) => payloadAdminPageServerFn({ data: { splat: '', search: data.search } }),
+  }),
 })
-
-function AdminIndex() {
-  const data = Route.useLoaderData()
-  return <>{data.element}</>
-}

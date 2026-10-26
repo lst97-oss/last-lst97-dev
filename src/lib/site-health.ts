@@ -15,7 +15,7 @@ export async function fetchSiteHealthStatus(
 ): Promise<Exclude<SiteHealthStatus, 'checking'>> {
   try {
     const response = await fetcher('/api/site/health', {
-      cache: 'no-store',
+      cache: 'default',
       headers: { accept: 'application/json' },
       ...(signal ? { signal } : {}),
     })

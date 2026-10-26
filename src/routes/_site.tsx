@@ -3,7 +3,6 @@ import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { BootGate } from '@/components/site/boot-gate'
 import { NotFoundPage } from '@/components/site/not-found-page'
 import { DesktopShell } from '@/components/site/shell'
-import { SiteHealthProvider } from '@/components/site/site-health-provider'
 import { Toaster } from '@/components/ui/toast'
 import { getMelbourneTemperatureServerFn } from '@/server/melbourne-temperature/server-functions'
 import siteCss from '@/styles.css?url'
@@ -32,7 +31,7 @@ function SiteLayout() {
   const { temperature } = Route.useLoaderData()
 
   return (
-    <SiteHealthProvider>
+    <>
       <BootGate>
         <DesktopShell temperature={temperature}>
           <Outlet />
@@ -49,6 +48,6 @@ function SiteLayout() {
           and it must never be moved inside a window frame, whose
           `overflow: hidden` viewport scrolls its content. */}
       <Toaster />
-    </SiteHealthProvider>
+    </>
   )
 }
