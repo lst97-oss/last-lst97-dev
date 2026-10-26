@@ -11,6 +11,8 @@ import { convertMarkdownToLexical, editorConfigFactory } from '@payloadcms/richt
 import type { Payload, RichTextField } from 'payload'
 import { getPayload } from 'payload'
 import config from '../../../payload.config'
+import type { LexicalNodes_206F9798 } from '../../../payload-types'
+import { savedDocument } from '../payload-result'
 
 const POST_SLUG = 'how-software-engineers-use-ai-differently'
 
@@ -618,7 +620,7 @@ async function main() {
   if (!contentField) throw new Error('The posts collection has no richText content field')
 
   const editorConfig = editorConfigFactory.fromField({ field: contentField })
-  const content = convertMarkdownToLexical({ editorConfig, markdown: MARKDOWN })
+  const content = convertMarkdownToLexical<LexicalNodes_206F9798>({ editorConfig, markdown: MARKDOWN })
 
   const topicIds = await upsertVocabulary(payload, 'topics', TOPICS)
 
@@ -648,9 +650,11 @@ async function main() {
   })
 
   const current = existing.docs[0]
-  const saved = current
-    ? await payload.update({ collection: 'posts', id: current.id, data, overrideAccess: true })
-    : await payload.create({ collection: 'posts', data, overrideAccess: true })
+  const saved = savedDocument(
+    current
+      ? await payload.update({ collection: 'posts', id: current.id, data, overrideAccess: true })
+      : await payload.create({ collection: 'posts', data, overrideAccess: true }),
+  )
 
   console.log('\nPost ' + (current ? 'updated' : 'created') + ': ' + saved.slug + ' (id ' + saved.id + ')')
   console.log('  topics: ' + topicIds.length)

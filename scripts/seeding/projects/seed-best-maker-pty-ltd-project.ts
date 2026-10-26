@@ -41,6 +41,8 @@ import { convertMarkdownToLexical, editorConfigFactory } from '@payloadcms/richt
 import type { Payload, RichTextField } from 'payload'
 import { getPayload } from 'payload'
 import config from '../../../payload.config'
+import type { LexicalNodes_206F9798 } from '../../../payload-types'
+import { savedDocument } from '../payload-result'
 
 const PROJECT_SLUG = 'best-maker-pty-ltd'
 
@@ -382,7 +384,7 @@ async function main() {
   if (!contentField) throw new Error('The projects collection has no richText content field')
 
   const editorConfig = editorConfigFactory.fromField({ field: contentField })
-  const content = convertMarkdownToLexical({ editorConfig, markdown: MARKDOWN })
+  const content = convertMarkdownToLexical<LexicalNodes_206F9798>({ editorConfig, markdown: MARKDOWN })
 
   const topicIds = await upsertVocabulary(payload, 'topics', TOPICS)
   const tagIds = await upsertVocabulary(payload, 'tags', TAGS)
@@ -444,9 +446,11 @@ async function main() {
   })
 
   const current = existing.docs[0]
-  const saved = current
-    ? await payload.update({ collection: 'projects', id: current.id, data, overrideAccess: true })
-    : await payload.create({ collection: 'projects', data, overrideAccess: true })
+  const saved = savedDocument(
+    current
+      ? await payload.update({ collection: 'projects', id: current.id, data, overrideAccess: true })
+      : await payload.create({ collection: 'projects', data, overrideAccess: true }),
+  )
 
   const children: unknown[] = Array.isArray(saved.content?.root?.children) ? [...saved.content.root.children] : []
   const blockLanguages = children

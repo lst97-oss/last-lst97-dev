@@ -12,6 +12,8 @@ import { convertMarkdownToLexical, editorConfigFactory } from '@payloadcms/richt
 import type { RichTextField } from 'payload'
 import { getPayload } from 'payload'
 import config from '../../../payload.config'
+import type { LexicalNodes_206F9798 } from '../../../payload-types'
+import { savedDocument } from '../payload-result'
 
 /** The changelog change-type union, mirroring the select options on the collection. */
 type ChangelogType =
@@ -88,7 +90,7 @@ async function main() {
   if (!contentField) throw new Error('The changelogs collection has no richText content field')
 
   const editorConfig = editorConfigFactory.fromField({ field: contentField })
-  const content = convertMarkdownToLexical({ editorConfig, markdown: MARKDOWN })
+  const content = convertMarkdownToLexical<LexicalNodes_206F9798>({ editorConfig, markdown: MARKDOWN })
 
   const data = {
     slug: CHANGELOG_SLUG,
@@ -124,9 +126,11 @@ async function main() {
   })
 
   const current = existing.docs[0]
-  const saved = current
-    ? await payload.update({ collection: 'changelogs', id: current.id, data, overrideAccess: true })
-    : await payload.create({ collection: 'changelogs', data, overrideAccess: true })
+  const saved = savedDocument(
+    current
+      ? await payload.update({ collection: 'changelogs', id: current.id, data, overrideAccess: true })
+      : await payload.create({ collection: 'changelogs', data, overrideAccess: true }),
+  )
 
   console.log(`\nChangelog ${current ? 'updated' : 'created'}: ${saved.slug} (id ${saved.id})`)
   console.log(`  version: ${saved.version}, change types: ${JSON.stringify(saved.changeTypes)}`)
