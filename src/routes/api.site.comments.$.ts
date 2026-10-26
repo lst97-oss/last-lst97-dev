@@ -4,7 +4,7 @@ import { commentsProxyHandler } from '../server/comments/proxy-runtime'
 
 // The comment widget's API, forwarded to the comments service with the host's key.
 // Only the routes in src/server/comments/proxy.ts pass through.
-export const Route = createFileRoute('/api/comments/$')({
+export const Route = createFileRoute('/api/site/comments/$')({
   server: {
     handlers: {
       GET: commentsProxyHandler,
