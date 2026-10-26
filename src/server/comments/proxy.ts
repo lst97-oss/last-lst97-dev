@@ -204,7 +204,16 @@ export async function proxyCommentsRequest(request: Request, deps: CommentsProxy
   // host without a usable client address can still show comments.
   const { upstream } = deps
   const site = upstream.siteKey
-  const headers: Record<string, string> = { 'x-api-key': upstream.apiKey, [HttpHeader.ACCEPT]: MediaType.JSON }
+  const headers: Record<string, string> = {
+    'x-api-key': upstream.apiKey,
+    [HttpHeader.ACCEPT]: MediaType.JSON,
+    // Cloudflare challenges requests from serverless egress that do not look
+    // like a browser. Identify as the site's own client rather than a bare
+    // fetch/undici request.
+    'user-agent':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'accept-language': 'en-US,en;q=0.9',
+  }
   if (isWriteOperation(operation)) {
     try {
       headers['x-lc-client'] = await deps.clientId(request)
