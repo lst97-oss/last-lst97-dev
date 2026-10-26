@@ -1,14 +1,13 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { s3Storage } from '@payloadcms/storage-s3'
-import { sharpTransformer } from '@payloadcms/transformer-sharp'
 import nodemailer from 'nodemailer'
 import { buildConfig } from 'payload'
 
 import { denyUserCreation } from './src/collections/access'
 import { Changelogs } from './src/collections/Changelogs'
 import { contentEditor } from './src/collections/fields/content-editor'
-import { Media, mediaVariants } from './src/collections/Media'
+import { Media } from './src/collections/Media'
 import { Posts } from './src/collections/Posts'
 import { Projects } from './src/collections/Projects'
 import { Tags } from './src/collections/Tags'
@@ -132,11 +131,6 @@ export default buildConfig({
   editor: contentEditor,
   secret: env.PAYLOAD_SECRET,
   storage: r2StorageOptions ? [s3Storage(r2StorageOptions)] : [],
-  upload: {
-    // Payload 4 removed the top-level `sharp` option and `upload.imageSizes`;
-    // the Sharp transformer owns both, and writes `variants` back onto Media.
-    transformers: [sharpTransformer({ collections: { media: { variants: mediaVariants } } })],
-  },
   typescript: {
     outputFile: projectPath('./payload-types.ts'),
   },
