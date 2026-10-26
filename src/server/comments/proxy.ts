@@ -262,7 +262,15 @@ export async function proxyCommentsRequest(request: Request, deps: CommentsProxy
     })
     // Anything but the service's JSON envelope (an HTML error page, say) is a
     // failure of ours, not something to show a visitor.
-    if (!(response.headers.get(HttpHeader.CONTENT_TYPE) ?? '').includes(MediaType.JSON)) return unavailable()
+    if (!(response.headers.get(HttpHeader.CONTENT_TYPE) ?? '').includes(MediaType.JSON)) {
+      console.error('[comments-proxy] upstream returned non-JSON', {
+        baseUrl: upstream.baseUrl,
+        status: response.status,
+        contentType: response.headers.get(HttpHeader.CONTENT_TYPE),
+        body: (await response.text()).slice(0, 200),
+      })
+      return unavailable()
+    }
     return new Response(await response.text(), {
       status: response.status,
       headers: {
@@ -270,7 +278,15 @@ export async function proxyCommentsRequest(request: Request, deps: CommentsProxy
         [HttpHeader.CACHE_CONTROL]: operation === 'settings' ? COMMENTS_SETTINGS_CACHE_CONTROL : 'no-store',
       },
     })
-  } catch {
+  } catch (error) {
+    const cause = error instanceof Error ? error.cause : undefined
+    const code =
+      cause && typeof cause === 'object' && 'code' in cause && typeof cause.code === 'string' ? cause.code : undefined
+    console.error('[comments-proxy] upstream request failed', {
+      baseUrl: upstream.baseUrl,
+      message: error instanceof Error ? error.message : String(error),
+      code,
+    })
     return unavailable()
   }
 }
