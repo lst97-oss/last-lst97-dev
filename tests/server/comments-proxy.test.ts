@@ -43,10 +43,37 @@ const jsonWrite = (method: string, path: string, body: unknown, headers: Record<
     body: JSON.stringify(body),
   })
 
+describe('public settings', () => {
+  it('reads the document without the key and passes it through with the edge cache header', async () => {
+    const { calls, fetcher } = service(() => Response.json({ data: { settings: { access: 'login' } } }))
+    const response = await proxyCommentsRequest(proxied('/api/comments/settings'), dependencies({ fetcher }))
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toBe('public, max-age=0, s-maxage=60')
+    expect(await response.json()).toEqual({ data: { settings: { access: 'login' } } })
+    expect(calls[0]?.url).toBe('https://comments.test/api/comments/settings?site=lst97-dev')
+    expect(new Headers(calls[0]?.init.headers).has('x-api-key')).toBe(false)
+  })
+
+  it('uses the host site key, whatever site the visitor names', async () => {
+    const { calls, fetcher } = service(() => Response.json({ data: { settings: {} } }))
+    await proxyCommentsRequest(proxied('/api/comments/settings?site=someone-else'), dependencies({ fetcher }))
+    expect(calls[0]?.url).toBe('https://comments.test/api/comments/settings?site=lst97-dev')
+  })
+
+  it('refuses writes to the settings path', async () => {
+    const response = await proxyCommentsRequest(
+      jsonWrite('PATCH', '/api/comments/settings', { bodyMarkdown: 'x' }),
+      dependencies(),
+    )
+    expect(response.status).toBe(404)
+  })
+})
+
 describe('route allowlist', () => {
   it('admits exactly the routes the widget calls', () => {
     expect(classifyCommentsRoute('GET', '/api/auth/get-session')?.operation).toBe('session')
     expect(classifyCommentsRoute('GET', '/api/comments')?.operation).toBe('list')
+    expect(classifyCommentsRoute('GET', '/api/comments/settings')?.operation).toBe('settings')
     expect(classifyCommentsRoute('POST', '/api/comments')?.operation).toBe('create')
     expect(classifyCommentsRoute('PATCH', '/api/comments/abc-123')).toEqual({ operation: 'edit', commentId: 'abc-123' })
     expect(classifyCommentsRoute('DELETE', '/api/comments/abc-123')).toEqual({
@@ -55,8 +82,10 @@ describe('route allowlist', () => {
     })
   })
 
-  it('refuses the vote route even though its path looks like a comment id', () => {
+  it('refuses the vote route and the settings path even though they look like comment ids', () => {
     expect(classifyCommentsRoute('DELETE', '/api/comments/vote')).toBeNull()
+    expect(classifyCommentsRoute('PATCH', '/api/comments/settings')).toBeNull()
+    expect(classifyCommentsRoute('DELETE', '/api/comments/settings')).toBeNull()
     expect(classifyCommentsRoute('PUT', '/api/comments/vote')).toBeNull()
   })
 
@@ -249,6 +278,55 @@ describe('writes', () => {
     expect(calls[0]!.url).toBe('https://comments.test/api/comments/abc-123?site=lst97-dev')
     expect(calls[0]!.init.method).toBe('DELETE')
     expect(calls[0]!.init.body).toBeUndefined()
+  })
+
+  it('relays a guest edit key in a header on delete, and keeps it out of the URL', async () => {
+    const { calls, fetcher } = service()
+    const response = await proxyCommentsRequest(
+      proxied('/api/comments/abc-123', {
+        method: 'DELETE',
+        headers: { origin: siteOrigin, 'x-lc-edit-key': 'Ab_9-key' },
+      }),
+      dependencies({ fetcher }),
+    )
+    expect(response.status).toBe(200)
+    expect(calls[0]!.url).toBe('https://comments.test/api/comments/abc-123?site=lst97-dev')
+    const headers = new Headers(calls[0]!.init.headers)
+    expect(headers.get('x-lc-edit-key')).toBe('Ab_9-key')
+    expect(headers.get('x-api-key')).toBe('lck_proxy_secret')
+  })
+
+  it('refuses a malformed edit key before the service is contacted', async () => {
+    const { calls, fetcher } = service()
+    const response = await proxyCommentsRequest(
+      proxied('/api/comments/abc-123', {
+        method: 'DELETE',
+        headers: { origin: siteOrigin, 'x-lc-edit-key': 'not a key!' },
+      }),
+      dependencies({ fetcher }),
+    )
+    expect(response.status).toBe(400)
+    expect(await response.json()).toMatchObject({ error: { code: 'VALIDATION_ERROR' } })
+    expect(calls).toHaveLength(0)
+  })
+
+  it('sends no edit key header when the visitor sent none, and refuses a foreign origin even with one', async () => {
+    const { calls, fetcher } = service()
+    await proxyCommentsRequest(
+      proxied('/api/comments/abc-123', { method: 'DELETE', headers: { origin: siteOrigin } }),
+      dependencies({ fetcher }),
+    )
+    expect(new Headers(calls[0]!.init.headers).has('x-lc-edit-key')).toBe(false)
+
+    const foreign = await proxyCommentsRequest(
+      proxied('/api/comments/abc-123', {
+        method: 'DELETE',
+        headers: { origin: 'https://elsewhere.test', 'x-lc-edit-key': 'Ab_9-key' },
+      }),
+      dependencies({ fetcher }),
+    )
+    expect(foreign.status).toBe(403)
+    expect(calls).toHaveLength(1)
   })
 
   it('refuses a write without contacting the service when no visitor identity can be formed', async () => {
