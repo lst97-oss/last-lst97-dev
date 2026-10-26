@@ -47,7 +47,7 @@ The comment section reads the site's access level, length limit, guest edit wind
 
 ## A sturdier admin and a clearer system status
 
-The CMS moved to Payload 4, including the Sharp image transformer; existing media was preserved by renaming the stored image variants in place. The desktop system menu now carries the site status as its own badge, and first-party responses send HSTS, nosniff and a strict referrer policy in production.
+The CMS moved to Payload 4. Existing media derivatives were preserved by renaming the stored image variants in place; native image processing is paused on the serverless host while its libvips packaging is resolved. The desktop system menu now carries the site status as its own badge, and first-party responses send HSTS, nosniff and a strict referrer policy in production.
 
 Full technical detail is in the [v0.8.0 release notes](https://github.com/lst97-oss/last-lst97-dev/releases/tag/v0.8.0).`
 
@@ -68,7 +68,7 @@ async function main() {
     title: 'A sturdier CMS, richer comments and two new project pages',
     version: 'v0.8.0',
     excerpt:
-      'Payload 4 and the Sharp image transformer, math and Mermaid in comments, a comment policy the widget follows, flatter threads, a system status badge, and project pages for last-cli and last-comments.',
+      'Payload 4, math and Mermaid comments, a policy-driven comment widget, flatter threads, a system status badge, and project pages for last-cli and last-comments.',
     changeTypes: ['feature'] satisfies ChangelogType[],
     tags: ['Comments', 'CMS', 'Projects'].map((tag) => ({ tag })),
     // Published at the v0.8.0 tag. There is no explicit `publishedAt`: the hook
