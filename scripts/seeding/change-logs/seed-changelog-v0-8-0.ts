@@ -5,8 +5,8 @@
  * Audience: the customer-facing `/changelog` timeline — what a visitor can now
  * do, not which files changed.
  *
- * Seeded as a `draft`, so it stays off `/changelog` until the v0.8.0 tag. At
- * that point, flip `status` to `published` and rerun this seed.
+ * Seeded at the v0.8.0 tag as `published`, so `ensurePublicationDate` stamps
+ * the date at write time.
  *
  * Idempotent: matched by slug and updated in place.
  */
@@ -14,6 +14,8 @@ import { convertMarkdownToLexical, editorConfigFactory } from '@payloadcms/richt
 import type { RichTextField } from 'payload'
 import { getPayload } from 'payload'
 import config from '../../../payload.config'
+import type { LexicalNodes_206F9798 } from '../../../payload-types'
+import { savedDocument } from '../payload-result'
 
 /** The changelog change-type union, mirroring the select options on the collection. */
 type ChangelogType =
@@ -29,11 +31,25 @@ const CHANGELOG_SLUG = 'v0-8-0'
 
 const MARKDOWN = `## Quieter comment threads
 
-Comment cards no longer draw a shadow along their bottom edge. The ⋮ menu on each comment is a flat popover with a solid border.
+Comment cards no longer draw a shadow along their bottom edge. The ⋮ menu on each comment is a flat popover with a solid border, and the thread now spans the full width of its window instead of sitting inside the article padding.
+
+## Math and diagrams in comments
+
+Comments can render \`$…$\` / \`$$…$$\` formulas with KaTeX and \`\`\`mermaid fences as diagrams. Both are off by default for hosts that do not need them and load lazily, so a page without a formula downloads neither library. The site enables both.
+
+## Comment threads follow the site's policy
+
+The comment section reads the site's access level, length limit, guest edit window and voting switch from the comments service. A site that asks readers to sign in shows one sign-in card instead of a refused request, and a guest can delete their own comment with the edit key issued when they posted.
 
 ## Two new project pages
 
-[last-cli](/projects/last-cli) is the scaffolding CLI, with its two public templates. [last-comments](/projects/last-comments) is the self-hosted comment service, and the widgets that embed it on any page.`
+[last-cli](/projects/last-cli) is the scaffolding CLI, with its two public templates. [last-comments](/projects/last-comments) is the self-hosted comment service, and the widgets that embed it on any page.
+
+## A sturdier admin and a clearer system status
+
+The CMS moved to Payload 4, including the Sharp image transformer; existing media was preserved by renaming the stored image variants in place. The desktop system menu now carries the site status as its own badge, and first-party responses send HSTS, nosniff and a strict referrer policy in production.
+
+Full technical detail is in the [v0.8.0 release notes](https://github.com/lst97-oss/last-lst97-dev/releases/tag/v0.8.0).`
 
 async function main() {
   const payload = await getPayload({ config })
@@ -45,23 +61,25 @@ async function main() {
   if (!contentField) throw new Error('The changelogs collection has no richText content field')
 
   const editorConfig = editorConfigFactory.fromField({ field: contentField })
-  const content = convertMarkdownToLexical({ editorConfig, markdown: MARKDOWN })
+  const content = convertMarkdownToLexical<LexicalNodes_206F9798>({ editorConfig, markdown: MARKDOWN })
 
   const data = {
     slug: CHANGELOG_SLUG,
-    title: 'Flatter comment threads, and two new project pages',
+    title: 'A sturdier CMS, richer comments and two new project pages',
     version: 'v0.8.0',
     excerpt:
-      'Comment cards and the ⋮ menu are flatter, and the site now has project pages for last-cli and last-comments.',
+      'Payload 4 and the Sharp image transformer, math and Mermaid in comments, a comment policy the widget follows, flatter threads, a system status badge, and project pages for last-cli and last-comments.',
     changeTypes: ['feature'] satisfies ChangelogType[],
-    tags: ['Comments', 'Projects'].map((tag) => ({ tag })),
-    // A draft until the v0.8.0 tag: the publish hook stamps the date when this flips to published.
-    status: 'draft' as const,
+    tags: ['Comments', 'CMS', 'Projects'].map((tag) => ({ tag })),
+    // Published at the v0.8.0 tag. There is no explicit `publishedAt`: the hook
+    // stamps the write moment, which is already in the past at read time.
+    status: 'published' as const,
     featured: false,
     content,
     seo: {
       title: 'LAST//OS v0.8.0',
-      description: 'Flatter comment threads, and project pages for last-cli and last-comments.',
+      description:
+        'Payload 4, math and Mermaid comments, a policy-driven comment widget, flatter threads, a system status badge, and project pages for last-cli and last-comments.',
     },
   }
 
@@ -74,9 +92,11 @@ async function main() {
   })
 
   const current = existing.docs[0]
-  const saved = current
-    ? await payload.update({ collection: 'changelogs', id: current.id, data, overrideAccess: true })
-    : await payload.create({ collection: 'changelogs', data, overrideAccess: true })
+  const saved = savedDocument(
+    current
+      ? await payload.update({ collection: 'changelogs', id: current.id, data, overrideAccess: true })
+      : await payload.create({ collection: 'changelogs', data, overrideAccess: true }),
+  )
 
   console.log(`\nChangelog ${current ? 'updated' : 'created'}: ${saved.slug} (id ${saved.id})`)
   console.log(
