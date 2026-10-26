@@ -4,6 +4,7 @@ import { commentsConfigFrom, commentsPublicConfigFrom } from '../../src/server/c
 const base = {
   COMMENTS_API_KEY: 'lck_single_key',
   COMMENTS_BASE_URL: 'https://last-comments.test/',
+  COMMENTS_PUBLIC_URL: 'https://last-comments.test/',
   COMMENTS_SITE_KEY: 'lst97-dev',
 }
 
@@ -24,9 +25,9 @@ describe('comments config', () => {
 })
 
 describe('comments public config', () => {
-  it('always points the widget at this host, never at the comments service', () => {
+  it('points the widget at the comments service, not at a host proxy', () => {
     expect(commentsPublicConfigFrom(base)).toEqual({
-      baseUrl: '/api/site/comments',
+      baseUrl: 'https://last-comments.test',
       siteKey: 'lst97-dev',
     })
   })

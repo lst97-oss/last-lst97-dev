@@ -1,5 +1,4 @@
 import { getServerEnv, type ServerEnv } from '../env'
-import { COMMENTS_PROXY_PREFIX } from './proxy'
 
 // Server-side comments settings. The API key is a secret: it stays on the server
 // and only the public subset below may reach the browser.
@@ -14,7 +13,10 @@ export type CommentsPublicConfig = {
   siteKey: string
 }
 
-type CommentsEnv = Pick<ServerEnv, 'COMMENTS_API_KEY' | 'COMMENTS_BASE_URL' | 'COMMENTS_SITE_KEY'>
+type CommentsEnv = Pick<
+  ServerEnv,
+  'COMMENTS_API_KEY' | 'COMMENTS_BASE_URL' | 'COMMENTS_PUBLIC_URL' | 'COMMENTS_SITE_KEY'
+>
 
 function trimmedBaseUrl(env: CommentsEnv): string {
   return env.COMMENTS_BASE_URL.replace(/\/+$/, '')
@@ -28,13 +30,14 @@ export function commentsConfigFrom(env: CommentsEnv): CommentsConfig | null {
   return { baseUrl: trimmedBaseUrl(env), siteKey: env.COMMENTS_SITE_KEY, apiKey: env.COMMENTS_API_KEY }
 }
 
-// The browser always talks to this host, so the comments service's origin never reaches
-// the page. The public config is server-cached, so it must not depend on the request.
+// The browser calls the comments service directly. Its CORS allow-list echoes
+// this site's registered origin, so reads, writes and the built-in auth flow
+// stay cross-origin but credentialed; the API key never leaves the server.
 export function commentsPublicConfigFrom(env: CommentsEnv): CommentsPublicConfig | null {
   const config = commentsConfigFrom(env)
   if (!config) return null
   return {
-    baseUrl: COMMENTS_PROXY_PREFIX,
+    baseUrl: env.COMMENTS_PUBLIC_URL.replace(/\/+$/, ''),
     siteKey: config.siteKey,
   }
 }

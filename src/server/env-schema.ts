@@ -6,6 +6,7 @@ export type ServerEnvSource = Partial<
     | 'CONTACT_TO'
     | 'COMMENTS_API_KEY'
     | 'COMMENTS_BASE_URL'
+    | 'COMMENTS_PUBLIC_URL'
     | 'COMMENTS_SITE_KEY'
     | 'CHAT_CONTEXT_SIGNING_SECRET'
     | 'CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL'
@@ -88,6 +89,10 @@ export function createServerEnv(source: ServerEnvSource) {
       // Without it, and without COMMENTS_SITE_KEY, no thread renders.
       COMMENTS_API_KEY: z.string().min(1).optional(),
       COMMENTS_BASE_URL: z.url().default('https://last-comments.lst97.dev'),
+      // The browser calls the comments service directly: its CORS allow-list
+      // carries this site's registered origin, and the public URL stays stable
+      // even when the server-side base URL points at a temporary ingress.
+      COMMENTS_PUBLIC_URL: z.url().default('https://last-comments.lst97.dev'),
       COMMENTS_SITE_KEY: z.string().min(1).optional(),
       CHAT_CONTEXT_SIGNING_SECRET: z.string().min(32).optional(),
       CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: z
@@ -173,6 +178,7 @@ export function createServerEnv(source: ServerEnvSource) {
       CONTACT_TO: source.CONTACT_TO,
       COMMENTS_API_KEY: source.COMMENTS_API_KEY,
       COMMENTS_BASE_URL: source.COMMENTS_BASE_URL,
+      COMMENTS_PUBLIC_URL: source.COMMENTS_PUBLIC_URL,
       COMMENTS_SITE_KEY: source.COMMENTS_SITE_KEY,
       CHAT_CONTEXT_SIGNING_SECRET: source.CHAT_CONTEXT_SIGNING_SECRET,
       CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL: source.CHAT_OBSERVABILITY_DISCORD_WEBHOOK_URL,
