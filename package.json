@@ -136,6 +136,7 @@
     ]
   },
   "patchedDependencies": {
-    "nf3@0.3.24": "patches/nf3@0.3.24.patch"
+    "nf3@0.3.24": "patches/nf3@0.3.24.patch",
+    "@lst97-oss/last-comments-widgets@0.6.1": "patches/@lst97-oss%2Flast-comments-widgets@0.6.1.patch"
   }
 }
