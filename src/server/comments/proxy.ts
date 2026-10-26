@@ -3,9 +3,11 @@ import { z } from 'zod'
 
 import { readJsonBody } from '../http/request'
 
-// The widget builds `${baseUrl}/api/comments`; with an empty host base the
-// browser calls this host's `/api/comments` directly and the proxy forwards
-// that same path upstream, so no path rewriting is needed.
+// The widget builds every URL as `${baseUrl}/api/...`. With baseUrl set to this
+// prefix, the path after it is the comments-service path the widget expects.
+export const COMMENTS_PROXY_PREFIX = '/api/site/comments'
+// The public policy is the same for every visitor and safe to share at the edge for a minute.
+// Must match the exact-path route rule in vite.config.ts.
 export const COMMENTS_SETTINGS_CACHE_CONTROL = 'public, max-age=0, s-maxage=60'
 
 const MAX_BODY_BYTES = 16 * 1024
@@ -71,10 +73,10 @@ export function isWriteOperation(operation: ProxyOperation): boolean {
   return operation === 'create' || operation === 'edit' || operation === 'delete'
 }
 
-// The path the widget called, e.g. `/api/comments/abc`. The proxy is mounted
-// at the same paths as the comments service, so no prefix is stripped.
+// The path after the prefix, e.g. `/api/comments/abc`, from the request URL.
 export function commentsPathOf(requestUrl: string): string {
-  return new URL(requestUrl).pathname
+  const { pathname } = new URL(requestUrl)
+  return pathname.startsWith(COMMENTS_PROXY_PREFIX) ? pathname.slice(COMMENTS_PROXY_PREFIX.length) : pathname
 }
 
 function isUrlOnSite(value: string, siteOrigin: string): boolean {

@@ -26,7 +26,7 @@ describe('comments config', () => {
 describe('comments public config', () => {
   it('always points the widget at this host, never at the comments service', () => {
     expect(commentsPublicConfigFrom(base)).toEqual({
-      baseUrl: '',
+      baseUrl: '/api/site/comments',
       siteKey: 'lst97-dev',
     })
   })

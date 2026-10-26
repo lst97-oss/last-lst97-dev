@@ -470,11 +470,10 @@ and do not re-wire the unwired `src/server/knowledge/github/source.ts`.
   and `COMMENTS_BASE_URL` are public; the widget reads the Turnstile key and the site's policy from the comments service's settings endpoint. The Payload hooks in `src/server/comments/`
   register a published page's thread with the comments service. A thread's pageKey is `<collection>-<id>`, so
   slug changes keep the thread. Detail pages pass `commentsConfig` from loaders via `getCommentsConfigServerFn`.
-  The widget always uses `baseUrl=""` (root): `src/routes/api.comments.ts` and `src/routes/api.comments.$.ts` forward the widget's
-  `/api/comments…` routes through `src/server/comments/proxy.ts` with `COMMENTS_API_KEY`, and
-  `src/routes/api.auth.get-session.ts` answers the session probe. The proxy keeps the key server-side, pins `site`
+  The widget always uses `baseUrl="/api/site/comments"`: `src/routes/api.site.comments.$.ts` forwards the widget's
+  routes through `src/server/comments/proxy.ts` with `COMMENTS_API_KEY`, which keeps the key server-side, pins `site`
   and page URLs, refuses writes from other origins, and limits writes per visitor. Only the widget's routes pass;
-  `/api/comments/vote`, `/api/moderation` and `/api/auth/*` (other than the local `get-session` null) are refused. A guest's edit key
+  `/api/comments/vote`, `/api/moderation` and `/api/auth/*` (other than a local `get-session` null) are refused. A guest's edit key
   travels in the `x-lc-edit-key` header on delete only, validated as 1 to 128 letters, digits, `-` or `_`, never in the URL.
   Keep the proxy core Web-API-only so a function-only host can reuse it.
 - `OPENROUTER_SYSTEM_PROMPT` is optional: `openrouter-responder.ts` reads `env.OPENROUTER_SYSTEM_PROMPT ??
