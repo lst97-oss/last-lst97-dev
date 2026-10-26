@@ -1,6 +1,5 @@
 import { HttpHeader, HttpStatus, MediaType } from '@lst97-oss/last-httprism'
 import { create as createFont, type Font } from 'fontkit'
-import sharp from 'sharp'
 import { z } from 'zod'
 import {
   SITE_NAME,
@@ -169,6 +168,7 @@ export function createOpenGraphImageGetHandler() {
     }
 
     try {
+      const { default: sharp } = await import('sharp')
       const image = await sharp(artworkBytes)
         .composite([{ input: Buffer.from(renderOverlay(parsed.data.title, parsed.data.description)) }])
         .webp({ quality: 92, effort: 6 })

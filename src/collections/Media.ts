@@ -1,10 +1,12 @@
-import type { CollectionConfig, ImageSize } from 'payload'
+import type { SharpCollectionConfig } from '@payloadcms/transformer-sharp'
+import type { CollectionConfig } from 'payload'
 import { authenticatedAccess } from './access'
 import { ensureVersionedMediaFilename } from './hooks/versioned-media-filename'
 
 // Payload 4 moves generated sizes out of `upload.imageSizes`: the Sharp
 // transformer owns them and stores the files under each document's `variants`.
-export const mediaVariants: ImageSize[] = [
+type MediaVariant = NonNullable<SharpCollectionConfig['variants']>[number]
+export const mediaVariants: MediaVariant[] = [
   { name: 'thumbnail', width: 320, height: 240, position: 'centre' },
   { name: 'card', width: 768, height: 432, position: 'centre' },
   { name: 'hero', width: 1600, height: 900, position: 'centre' },
