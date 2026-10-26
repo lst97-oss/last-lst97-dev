@@ -213,11 +213,11 @@ const config = defineConfig({
               nitro.hooks.hook('compiled', async () => {
                 const serverDir = nitro.options.output.serverDir
                 const sources = [
-                  `${nitro.options.rootDir}/node_modules/@img`,
                   `${serverDir}/node_modules/.nf3/@img`,
+                  `${nitro.options.rootDir}/node_modules/@img`,
                 ]
-                const copied = new Set<string>()
-                for (const source of sources) {
+                const chosen = new Map<string, { entry: string; source: string; priority: number; version: number }>()
+                for (const [index, source] of sources.entries()) {
                   let entries: string[]
                   try {
                     entries = [...new Bun.Glob('sharp-libvips-*').scanSync({ cwd: source, onlyFiles: false })]
@@ -225,16 +225,23 @@ const config = defineConfig({
                     continue
                   }
                   for (const entry of entries) {
-                    const name = entry.replace(/@\d+\.\d+\.\d+$/, '')
-                    if (copied.has(name)) continue
-                    copied.add(name)
-                    const destination = `${serverDir}/node_modules/@img/${name}`
-                    // nf3 leaves the destination as a symlink into `.nf3`;
-                    // replace it with a real copy so the shared library travels
-                    // with the function.
-                    await run(['rm', '-rf', destination])
-                    await run(['cp', '-R', `${source}/${entry}`, destination])
+                    const match = /^(sharp-libvips-[^@]+?)(?:@(\d+)\.(\d+)\.(\d+))?$/.exec(entry)
+                    if (!match) continue
+                    const name = match[1]
+                    const version = Number(`${match[2] ?? 0}${String(match[3] ?? 0).padStart(2, '0')}${String(match[4] ?? 0).padStart(2, '0')}`)
+                    const priority = index === 0 ? 2 : 1
+                    const current = chosen.get(name)
+                    if (current && (priority < current.priority || (priority === current.priority && version <= current.version))) continue
+                    chosen.set(name, { entry, source, priority, version })
                   }
+                }
+                for (const [name, { entry, source }] of chosen) {
+                  const destination = `${serverDir}/node_modules/@img/${name}`
+                  // nf3 leaves the destination as a symlink into `.nf3`;
+                  // replace it with a real copy so the shared library travels
+                  // with the function. `-L` dereferences the traced package.
+                  await run(['rm', '-rf', destination])
+                  await run(['cp', '-RL', `${source}/${entry}`, destination])
                 }
               })
             })
