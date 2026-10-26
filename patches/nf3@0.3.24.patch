@@ -1,0 +1,14 @@
+diff --git a/dist/_chunks/trace.mjs b/dist/_chunks/trace.mjs
+index a72bc1ec57fbd03dfb7e3c80c490c3f4f14fc5df..e3a6f05bb3820364ad0bfe72291228ed1b1f8c5f 100644
+--- a/dist/_chunks/trace.mjs
++++ b/dist/_chunks/trace.mjs
+@@ -258,6 +258,9 @@ async function traceNodeModules(input, opts) {
+ 			const resolved = resolveModulePath(depName + "/package.json", {
+ 				try: true,
+ 				from: versionEntry.path
++			}) ?? resolveModulePath(depName + "/package", {
++				try: true,
++				from: versionEntry.path
+ 			});
+ 			const depPath = resolved ? dirname(resolved) : await resolvePackageDir(depName, versionEntry.path);
+ 			if (!depPath) continue;
