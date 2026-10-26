@@ -196,6 +196,31 @@ const config = defineConfig({
     // inside Nitro, so the override has to happen here.
     nitro({
       preset: process.env.NITRO_PRESET ?? 'vercel',
+      hooks: {
+        // nf3 (Nitro's tracer) drops @img/sharp-libvips-*: the package is only
+        // reachable through sharp's native @rpath link, and its restrictive
+        // exports map makes nf3's optionalDependencies fallback miss it. Copy
+        // the installed platform package into the server output so sharp can
+        // dlopen libvips at runtime. Remove once nf3 resolves `./package`.
+        async compiled(nitro) {
+          const imgDir = `${nitro.options.rootDir}/node_modules/@img`
+          let entries: string[]
+          try {
+            entries = [...new Bun.Glob('sharp-libvips-*').scanSync({ cwd: imgDir, onlyFiles: false })]
+          } catch {
+            return
+          }
+          await Promise.all(
+            entries.map(async (name) => {
+              const destination = `${nitro.options.output.serverDir}/node_modules/@img/${name}`
+              // nf3 leaves this as a symlink into `.nf3`; replace it with a real
+              // copy so the shared library travels with the function.
+              await run(['rm', '-rf', destination])
+              await run(['cp', '-R', `${imgDir}/${name}`, destination])
+            }),
+          )
+        },
+      },
       // Public pages were re-rendered on every request (Vercel's default is
       // `public, max-age=0, must-revalidate`, so every hit was a
       // `x-vercel-cache: MISS`), which charged each visitor a full origin
@@ -259,5 +284,10 @@ const config = defineConfig({
     }),
   ],
 })
+
+async function run(command: string[]): Promise<void> {
+  const proc = Bun.spawn(command, { stdout: 'ignore', stderr: 'inherit' })
+  if ((await proc.exited) !== 0) throw new Error(`${command.join(' ')} failed`)
+}
 
 export default config
