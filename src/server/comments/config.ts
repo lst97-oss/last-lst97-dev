@@ -22,9 +22,10 @@ function trimmedBaseUrl(env: CommentsEnv): string {
   return env.COMMENTS_BASE_URL.replace(/\/+$/, '')
 }
 
-// One key does all of the host's comment work: it registers and removes page threads
-// (pages:write, pages:delete) and carries the widget's reads and writes through the
-// proxy (comments:read, comments:write). Without the site key and the key, no thread renders.
+// One key does the host's server-side comment work: it registers and removes page
+// threads (pages:write, pages:delete). The browser never receives it; visitor
+// reads, writes, votes and sign-in go directly to the comments service, whose CORS
+// allow-list carries this site's registered origin.
 export function commentsConfigFrom(env: CommentsEnv): CommentsConfig | null {
   if (!env.COMMENTS_SITE_KEY || !env.COMMENTS_API_KEY || !env.COMMENTS_BASE_URL) return null
   return { baseUrl: trimmedBaseUrl(env), siteKey: env.COMMENTS_SITE_KEY, apiKey: env.COMMENTS_API_KEY }

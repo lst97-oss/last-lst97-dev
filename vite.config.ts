@@ -212,10 +212,7 @@ const config = defineConfig({
             nitro.hooks.hook('build:before', () => {
               nitro.hooks.hook('compiled', async () => {
                 const serverDir = nitro.options.output.serverDir
-                const sources = [
-                  `${serverDir}/node_modules/.nf3/@img`,
-                  `${nitro.options.rootDir}/node_modules/@img`,
-                ]
+                const sources = [`${serverDir}/node_modules/.nf3/@img`, `${nitro.options.rootDir}/node_modules/@img`]
                 const chosen = new Map<string, { entry: string; source: string; priority: number; version: number }>()
                 for (const [index, source] of sources.entries()) {
                   let entries: string[]
@@ -228,10 +225,16 @@ const config = defineConfig({
                     const match = /^(sharp-libvips-[^@]+?)(?:@(\d+)\.(\d+)\.(\d+))?$/.exec(entry)
                     if (!match) continue
                     const name = match[1]
-                    const version = Number(`${match[2] ?? 0}${String(match[3] ?? 0).padStart(2, '0')}${String(match[4] ?? 0).padStart(2, '0')}`)
+                    const version = Number(
+                      `${match[2] ?? 0}${String(match[3] ?? 0).padStart(2, '0')}${String(match[4] ?? 0).padStart(2, '0')}`,
+                    )
                     const priority = index === 0 ? 2 : 1
                     const current = chosen.get(name)
-                    if (current && (priority < current.priority || (priority === current.priority && version <= current.version))) continue
+                    if (
+                      current &&
+                      (priority < current.priority || (priority === current.priority && version <= current.version))
+                    )
+                      continue
                     chosen.set(name, { entry, source, priority, version })
                   }
                 }
@@ -268,11 +271,6 @@ const config = defineConfig({
         // HEALTH_CACHE_CONTROL in src/server/site-health.ts.
         '/api/site/health': {
           headers: { 'cache-control': 'public, max-age=0, s-maxage=300', ...SECURITY_HEADERS },
-        },
-        // The public policy the widget reads before a visitor types. Must match
-        // COMMENTS_SETTINGS_CACHE_CONTROL in src/server/comments/proxy.ts.
-        '/api/site/comments/api/comments/settings': {
-          headers: { 'cache-control': 'public, max-age=0, s-maxage=60', ...SECURITY_HEADERS },
         },
         // Payload's admin is mounted at `/admin`, NOT `/_payload/**` — the
         // `/_payload` segment only exists as the TanStack file-route id

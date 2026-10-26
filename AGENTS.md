@@ -466,16 +466,13 @@ and do not re-wire the unwired `src/server/knowledge/github/source.ts`.
   `sitemap.xml`, `robots.txt`, and `security.txt` are all baked from it at build time.
 - Build and dev run Vite through Bun (`bunx --bun vite ...`, as the scripts do). A plain `bunx vite build` runs Vite under Node, which cannot resolve the `bun` import in `src/server/database/bun-sql.ts`. `vite.config.ts` warns when it is not on Bun.
 - The comments widget is loaded only in the browser (`src/components/site/comments/content-comments.tsx`) and is external to the SSR build. Importing it statically on the server pulls in shiki's WebAssembly highlighter, which the SSR build cannot resolve.
-- Comments: `COMMENTS_API_KEY` is a server secret (never sent to the browser); `COMMENTS_SITE_KEY`
-  and `COMMENTS_BASE_URL` are public; the widget reads the Turnstile key and the site's policy from the comments service's settings endpoint. The Payload hooks in `src/server/comments/`
-  register a published page's thread with the comments service. A thread's pageKey is `<collection>-<id>`, so
-  slug changes keep the thread. Detail pages pass `commentsConfig` from loaders via `getCommentsConfigServerFn`.
-  The widget always uses `baseUrl="/api/site/comments"`: `src/routes/api.site.comments.$.ts` forwards the widget's
-  routes through `src/server/comments/proxy.ts` with `COMMENTS_API_KEY`, which keeps the key server-side, pins `site`
-  and page URLs, refuses writes from other origins, and limits writes per visitor. Only the widget's routes pass;
-  `/api/comments/vote`, `/api/moderation` and `/api/auth/*` (other than a local `get-session` null) are refused. A guest's edit key
-  travels in the `x-lc-edit-key` header on delete only, validated as 1 to 128 letters, digits, `-` or `_`, never in the URL.
-  Keep the proxy core Web-API-only so a function-only host can reuse it.
+- Comments: `COMMENTS_API_KEY` is a server secret (never sent to the browser); it is used by the Payload
+  hooks in `src/server/comments/` to register a published page's thread against `COMMENTS_BASE_URL`. A thread's
+  pageKey is `<collection>-<id>`, so slug changes keep the thread. Detail pages pass `commentsConfig` from loaders
+  via `getCommentsConfigServerFn`. The widget calls `COMMENTS_PUBLIC_URL` directly: the comments service echoes this
+  site's registered origin in credentialed CORS, so reads, writes, votes and the built-in sign-in/session flow run
+  cross-origin without a host proxy. The service pins `site` and page URLs, checks the origin, enforces Turnstile
+  and rate limits. A guest's edit key travels in the `x-lc-edit-key` header on delete only.
 - `OPENROUTER_SYSTEM_PROMPT` is optional: `openrouter-responder.ts` reads `env.OPENROUTER_SYSTEM_PROMPT ??
   DEFAULT_SYSTEM_PROMPT`, so leaving it unset uses the built-in prompt. Setting it **does** override it.
 - `CLOUDFLARE_R2_API_TOKEN` exists in local `.env` but is referenced by no code and no schema. It is dead
