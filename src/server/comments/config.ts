@@ -24,7 +24,7 @@ function trimmedBaseUrl(env: CommentsEnv): string {
 // (pages:write, pages:delete) and carries the widget's reads and writes through the
 // proxy (comments:read, comments:write). Without the site key and the key, no thread renders.
 export function commentsConfigFrom(env: CommentsEnv): CommentsConfig | null {
-  if (!env.COMMENTS_SITE_KEY || !env.COMMENTS_API_KEY) return null
+  if (!env.COMMENTS_SITE_KEY || !env.COMMENTS_API_KEY || !env.COMMENTS_BASE_URL) return null
   return { baseUrl: trimmedBaseUrl(env), siteKey: env.COMMENTS_SITE_KEY, apiKey: env.COMMENTS_API_KEY }
 }
 

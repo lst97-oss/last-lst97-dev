@@ -131,9 +131,10 @@ export function ContentDetailLayout({
         </DetailLabelRow>
         <div className={cn('article-body', wide && 'article-body--wide')}>{children}</div>
         {related ? <div className="px-6 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-12">{related}</div> : null}
-        {/* The window content pads its children by p-6 / sm:p-8 / lg:p-12. A negative margin of the same size
-            lets the thread span the full width of the window shell; only its vertical rhythm is kept. */}
-        {comments ? <div className="-mx-6 py-6 sm:-mx-8 sm:py-8 lg:-mx-12 lg:py-12">{comments}</div> : null}
+        {/* The window content pads its children by p-6 / sm:p-8 / lg:p-12. Keep the
+            thread inside that measure so it never touches the shell edge; only its
+            vertical rhythm is added. */}
+        {comments ? <div className="py-6 sm:py-8 lg:py-12">{comments}</div> : null}
       </WindowFrame>
     </PageStack>
   )
