@@ -30,6 +30,18 @@ export function HomeHeroSection() {
               ABOUT THE OPERATOR
             </Link>
           </div>
+          {/* Youtube-nocookie defers cookies until play. Hidden by default and shown
+              when zoomed or on phones (see home.css), so the lazy iframe loads only then. */}
+          <div className="hero-video relative mx-auto mt-8 aspect-video w-full max-w-4xl bg-foreground shadow-os-coral-sm border-3 border-border">
+            <iframe
+              allow="encrypted-media; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="strict-origin-when-cross-origin"
+              src="https://www.youtube-nocookie.com/embed/VsDBWv9BrS4"
+              title="lst97.dev personal website introduction"
+            />
+          </div>
         </div>
         <div className="hero-terminal-col flex min-w-0 flex-col items-center lg:col-span-2">
           {/* The avatar is the largest above-the-fold image on the page and the
