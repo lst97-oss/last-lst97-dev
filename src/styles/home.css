@@ -4,6 +4,48 @@
   display: none;
 }
 
+.hero-video {
+  display: none;
+}
+
+.hero-window.is-maximized .hero-video {
+  display: block;
+}
+
+.hero-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Zoomed, the text column takes the full row and the avatar and status log drop out.
+   The video sits under the buttons at every width. */
+.hero-window.is-maximized .hero-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.hero-window.is-maximized .hero-grid > * {
+  grid-column: 1 / -1;
+}
+
+.hero-window.is-maximized .hero-terminal-col {
+  display: none;
+}
+
+/* Phones have no zoom state, so the video shows in their stacked card too. The avatar
+   and status log are dropped there. */
+@media (max-width: 650px) {
+  .hero-video {
+    display: block;
+  }
+
+  .hero-terminal-col {
+    display: none;
+  }
+}
+
 .hero-window.is-maximized .welcome-expanded {
   display: grid;
   grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1.25fr);
