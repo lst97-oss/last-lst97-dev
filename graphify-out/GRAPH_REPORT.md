@@ -1,155 +1,167 @@
-# Graph Report - last-lst97-dev-web  (2026-10-23)
+# Graph Report - last-lst97-dev-web  (2026-11-04)
 
 ## Corpus Check
-- Large corpus: 949 files · ~634,713 words. Semantic extraction will be expensive (many Claude tokens). Consider running on a subfolder.
+- 988 files · ~660,162 words
+- Verdict: corpus is large enough that graph structure adds value.
+- Unclassified: 33 file(s) not represented in the graph (top: .css 22, (none) 4, .ttf 2)
 
 ## Summary
-- 4578 nodes · 10605 edges · 293 communities (215 shown, 78 thin omitted)
-- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 578 edges (avg confidence: 0.84)
+- 4946 nodes · 11596 edges · 324 communities (242 shown, 82 thin omitted)
+- Extraction: 93% EXTRACTED · 7% INFERRED · 0% AMBIGUOUS · INFERRED: 780 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
+## Graph Freshness
+- Built from commit: `b95c886c`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
+
 ## Community Hubs (Navigation)
-- Route Tree And SEO Shell
+- routeTree.gen.ts
 - Chat Context Site Cards
-- Rich Text Content Views
+- rich-text.tsx
 - Embedding Server Dev Scripts
-- Knowledge Repository Database Adapter
+- site-seo.ts
 - Chat Diagnostics Capture
-- Content Detail Layouts
+- repository-inspector.ts
 - Service Package Components
 - Route Progress Bar
 - Pixel Battle Background Simulation
-- Chat Help Dialogs
-- Chat Agent Loop
-- GitHub Content Safety Guards
+- lucide-react
+- chat-contact.ts
+- sync-project-catalog.ts
 - WakaTime Coding Stats
-- Runtime Dependency Manifest
+- dependencies
 - Chat Tool Execution Layer
-- Boot Gate Skeletons
-- GitHub Knowledge Source
-- Mermaid Diagram Rendering
-- Knowledge Document Parsers
-- Moderation Model Arms Config
+- sidebar.tsx
+- source-types.ts
+- logger-format.ts
+- project-document.ts
+- drizzle-orm
 - GitHub Knowledge Sync
-- Payload Config And Seeding
-- Bun SQL Database Layer
-- Payload CMS Migrations
-- Chat Contact Form Fields
-- Server Chat Agent Core
-- Agent Guidance Docs
-- Chat Agent Planner Prompts
+- savedDocument
+- history/database.ts
+- migrations/index.ts
+- chat-contact-panel.tsx
+- moderation/types.ts
+- Owned Project Catalogue Tool
+- chat/runtime.ts
 - Payload Collection Access
 - Package Script Pipeline
-- OS Window State Store
+- home-sections.test.tsx
 - Moderation Decision Classifier
-- Package Manifest Configuration
-- Sidebar UI Primitives
-- Chat Contact HTTP Handlers
+- _site.projects.$slug.tsx
+- media-item.ts
+- chat/http-handler.ts
 - Biome Config Rules
-- Project Catalog Sync
+- context-signer.ts
 - Chat Transcript UI
 - Chat Event Schemas
-- Knowledge Query Resolution
-- Knowledge Document Chunking
+- retrieve.ts
+- react
 - Vite Build Plugins
 - Chat Session State Reducer
-- Chat Stream Hook
+- comments/payload-hooks.ts
 - Chat Contact Approvals
-- Decision Filter Benchmarks
+- coding-stats-tool.ts
 - AI Engineering Judgment Essays
 - Site Content Data Loaders
-- Combobox UI Primitives
+- combobox.tsx
 - Server AGENTS Documentation
-- Payload Content Readers
-- Lexical Markdown Editor Seeding
+- share-dialog.test.tsx
+- @payloadcms/richtext-lexical
 - Debugging Interview Answers
 - GitHub Contributions Knowledge
 - Open Graph Image Renderer
-- Benchmark Gate Reporting
+- report.ts
 - AI Coding Blog Essays
-- Chat Runtime Wiring
-- Base UI Primitive Components
-- Retrieval Eval and Reranking
-- Chat Context Signing
-- Cover Placeholder Patterns
-- OpenRouter Contact Refiner
-- Contact Chat Workflow
-- Melbourne Temperature Service
-- JSON Logging Sink
-- Moderation Service Types
-- Chat Composer UI
-- Public Lexical Sanitizer
-- Chat Contact API Security
-- Payload Content Mappers
-- Decision Benchmark Cases
+- shell.tsx
+- Component Composition
+- zod
+- sidebar.tsx
+- chat-service.test.ts
+- openrouter-refiner-json-mode.test.ts
+- chat-contact.ts
+- payload-readers.ts
+- shared.ts
+- payload-mappers.ts
+- ref_bun_test
+- chunking.ts
+- Commands
+- content/types.ts
+- chat-request-metadata.ts
 - TypeScript Compiler Config
-- SEO Sitemap Sharing
-- Decision Gating Benchmarks
-- Chat Page Health Boundary
-- Chat Contact Panel UI
-- Turnstile Challenge Verification
+- MermaidDiagram
+- form.tsx
+- masonry-rows.test.ts
+- system-one-client.ts
+- vite-logger.ts
 - Content Server Functions
-- Coding History Streaks
-- Contact Email Templates
-- Dev Tool Dependencies
+- CodingHistoryRepository
+- ChatContactSubmission
+- devDependencies
 - Browser Globals Test Harness
-- Contact Message Form
+- writeLogLine
 - Career Interview Answers
-- Chat Contact Email Submission
+- Customization & Theming
 - WakaTime History Import
-- Payload Admin Route Render
-- UI Button Calendar Primitives
+- chat-citation-colors.test.ts
+- Button
 - Menubar UI Primitive
 - Chat Tool Selection
-- Coding History Range Presets
-- Content Reader Service
-- Alert Badge Primitives
+- history/repository.ts
+- botid
+- Component Selection
 - Chat Markdown Citations
-- Carousel UI Primitive
-- Payload Admin Layout Routes
-- Toast Notification Components
+- Context Menu Primitives
+- Dropdown Menu Primitives
+- Tools
+- browser-capability-boundary.tsx
+- content-comments.tsx
 - Chart UI Components
-- Chat Prompt Suggestions
+- @payloadcms/db-postgres
 - Coursework Repository Summaries
 - St Zita Platform Docs
-- Contact Field Refinement
-- Form UI Primitive
-- Alert Dialog Primitives
-- Table UI Primitives
+- coding-history-tool.ts
+- @base-ui/react
+- Local Qwen Embedding to pgvector to Rerank Pipeline
+- import-wakatime-history.ts
 - Cantolyrics Project Notes
 - shadcn Component Config
-- Server Function Caching
-- Browser Capability Detection
-- Accordion List Filters
-- Attachment UI Components
-- Form Field Primitives
-- Item Layout Components
-- Sheet Sidebar Overlays
+- seed-demo-content.ts
+- chat-page.tsx
+- Vercel x-forwarded-for Trust with Fail-Closed Parsing
+- attachment.tsx
+- Bounded Topic Anchor Ledger
+- field.tsx
+- site-health-provider.tsx
 - Security Fundamentals Contributions
 - Council Crawler Architecture Docs
 - SIT210 Embedded Projects
 - GNAF Autocomplete Docs
-- Coding History Aggregates
-- Demo Content Seeder
+- chat/types.ts
+- logger-settings.ts
 - Contact Workflow Hook
 - Engineer AI Blog Posts
 - Best Maker Project Story
 - LAST OS Architecture Notes
 - Website Package Pricing
-- Nodemailer Email Sender
-- Chat Contact Report PDF
-- Navigation Menu Primitive
+- navigation-menu.tsx
+- createChatAgentLoop
+- __root.tsx
 - Upload Security Design Notes
 - LAST//OS AI Pipeline Docs
-- WakaTime Snapshot Service
+- Logger
 - Wakatime History Design Doc
-- Payload URL Security
+- payload-server-url.ts
 - RAG Knowledge Docs
 - Canton 101 Service Boundaries
 - Support Service Offerings
 - Deployment Support Services
-- GitHub Report Parsing
-- Empty State Components
+- report-document.ts
+- Composition: asChild (radix) vs render (base)
+- command.tsx
+- env.ts
+- Evidence-Backed Repository Summaries
 - GitHub OSS Contribution Reports
 - Thoth Tech Contribution Reports
 - Private Project Portfolio Notes
@@ -158,7 +170,7 @@
 - TypeScript Interview Answers
 - Cantonese Sentence Study Design
 - SmartPlay Crawler Resilience
-- WakaTime History Repository
+- One command, a pinned template, and a destination it will not overwrite
 - Filename Sanitizer Shim
 - Versioned Media Filenames
 - Open Source Contribution Reports
@@ -171,19 +183,19 @@
 - Service Terms FAQ Pages
 - Support Plan Services
 - Support Service FAQ Docs
-- Turnstile Challenge Tests
+- seed-projects-overview-project.ts
 - Engagement Service Artwork
-- Input OTP Component
-- Payload Vite Type Declarations
+- migrate-knowledge.ts
+- interface
 - Payload Admin CSS Script
-- Best Maker Project Seeding
-- Canton 101 Project Seeder
-- Seed Projects Overview Script
-- SmartPlay Project Seeding
-- WWNZ Project Seeding
+- package.json
+- seed-canton-101-project.ts
+- code-block-view.tsx
+- payload-style-workaround.test.ts
+- config.ts
 - Seed Script Runner
-- Automatic Slug Fields
-- Chat Bubble Components
+- chat-contact-report-pdf.ts
+- nodemailer-sender.ts
 - Code Readability Blog Posts
 - TPWFC Contribution Reports
 - Utility Library Repo Doc
@@ -193,11 +205,11 @@
 - Household Expense Data Modelling
 - Canton 101 Lexical Pipeline
 - Service Package Pricing Pages
-- Payload Admin CSS Test
-- Site Data Test Fixtures
+- empty.tsx
+- public-lexical.ts
 - Services Workflow Illustration
 - Resizable Panel Primitive
-- LAST//OS Project Seed
+- What a generated project can already prove before the first feature
 - Junior Developer Blog Thesis
 - Junior System Design Blog
 - macOS Tool Contribution Reports
@@ -214,11 +226,11 @@
 - SmartPlay Search Watchers
 - WWNZ Media Sheets
 - Support Scope FAQ Docs
-- Payload Admin Not Found
-- Postgres Rate Limiting
-- Vendored RSC Vite Shim
-- Code Is Cheap Post Seeder
-- Seed Blog Post Script
+- Two starters on one kernel, mirrored rather than forked
+- One deployment, two databases, and a tenancy model in front of every thread
+- Moderation is a state machine, and abuse control is on the write path
+- Four native widgets, one client, one theme, one published package
+- agent-tools.ts
 - Medusa Contribution Reports
 - Wakatime CLI Contributions
 - Language Practice Repositories
@@ -236,7 +248,7 @@
 - HTTP Interview Answers
 - Sheets Sync Conflict Rules
 - SEO Font Licenses
-- Payload Style Import Fix
+- Plugins are compiled in, and their events leave through an outbox
 - Payload Migration Status Check
 - Developer Passivity Blog Post
 - Sandboxie Contribution Notes
@@ -286,476 +298,498 @@
 - PE Viewer Repository
 - PixelCast Repo Doc
 - Site Data Loaders
+- database-migration.ts
+- services-document.ts
+- turnstile-challenge.test.tsx
+- seed-best-maker-pty-ltd-project.ts
+- seed-last-cli-project.ts
+- CLAUDE.md
+- .claude/CLAUDE.md
+- blog-document.ts
+- r2-storage-config.ts
+- vite
+- seed-last-comments-project.ts
+- react-dom
+- seed-gnaf-project.ts
+- seed-smartplay-project.ts
+- seed-wwnz-project.ts
+- chat-composer.test.tsx
+- public-url.ts
+- content-rendering.test.tsx
+- site-data.test.ts
+- seed-last-os-project.ts
+- interview-document.ts
+- mermaid
 
 ## God Nodes (most connected - your core abstractions)
-1. `react` - 108 edges
-2. `cn` - 96 edges
-3. `PixelIcon()` - 61 edges
-4. `logger` - 58 edges
-5. `@tanstack/react-router` - 51 edges
-6. `getServerEnv()` - 45 edges
-7. `@base-ui/react` - 41 edges
-8. `payload` - 41 edges
-9. `scripts` - 40 edges
-10. `WindowFrame()` - 40 edges
+1. `react` - 106 edges
+2. `cn` - 97 edges
+3. `PixelIcon()` - 63 edges
+4. `Logger` - 60 edges
+5. `savedDocument()` - 55 edges
+6. `getServerEnv()` - 53 edges
+7. `@tanstack/react-router` - 52 edges
+8. `payload` - 48 edges
+9. `Component Selection` - 43 edges
+10. `@base-ui/react` - 42 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Websites That Ship Metaphor` --rationale_for--> `ServicesPage()`  [INFERRED]
-  public/assets/services/web-that-ship.webp → src/routes/_site.services.tsx
-- `HomeHeroSection()` --references--> `me-pixel-art.webp (Pixel-Art Portrait Asset)`  [EXTRACTED]
-  src/components/site/home/hero-section.tsx → public/assets/me-pixel-art.webp
-- `rootRoute` --indirect_call--> `WindowFrame()`  [INFERRED]
-  tests/window-frame.test.ts → src/components/site/window-frame.tsx
-- `SITE_OG_IMAGE_PATH` --references--> `Default OG Share Card (1200x630 WebP)`  [INFERRED]
-  src/lib/seo/site-seo.ts → public/og/default.webp
-- `GatingOutcome` --references--> `ChatModerationRejectionReason`  [EXTRACTED]
-  scripts/dev/decisions-benchmark/gating.ts → src/server/moderation/types.ts
+- `Avatar always needs AvatarFallback` --references--> `AvatarFallback()`  [INFERRED]
+  .agents/skills/shadcn/rules/composition.md → src/components/ui/avatar.tsx
+- `Component Selection` --references--> `Breadcrumb()`  [INFERRED]
+  .agents/skills/shadcn/SKILL.md → src/components/ui/breadcrumb.tsx
+- `Button / trigger as non-button element (base only)` --references--> `Button()`  [INFERRED]
+  .agents/skills/shadcn/rules/base-vs-radix.md → src/components/ui/button.tsx
+- `Icons → [icons.md](./rules/icons.md)` --references--> `Button()`  [INFERRED]
+  .agents/skills/shadcn/SKILL.md → src/components/ui/button.tsx
+- `Component Selection` --references--> `Card()`  [INFERRED]
+  .agents/skills/shadcn/SKILL.md → src/components/ui/card.tsx
 
 ## Import Cycles
 - 2-file cycle: `src/components/site/share/media/index.ts -> src/components/site/share/media/prose-image.tsx -> src/components/site/share/media/index.ts`
 
 ## Hyperedges (group relationships)
-- **Knowledge RAG Pipeline** — agents_rag_retrieval_flow, docs_superpowers_plans_2026_09_23_personal_knowledge_rag_pipeline, docs_superpowers_specs_2026_09_23_personal_knowledge_rag_design_retrieval_pipeline, docs_superpowers_specs_2026_09_23_personal_knowledge_rag_design_untrusted_evidence, docs_superpowers_plans_2026_09_24_cloud_query_local_index_embeddings_split [EXTRACTED 1.00]
-- **Multi-Turn Chat Context and Follow-Up Resolution** — docs_research_multiturn_tool_use_per_turn_routing, docs_research_multiturn_tool_use_bounded_state, docs_research_multiturn_tool_use_evaluation, docs_superpowers_plans_2026_09_24_multiturn_tool_context_signed_anchors, docs_superpowers_plans_2026_09_24_multiturn_tool_context_follow_up_resolution, docs_superpowers_specs_2026_09_24_multiturn_tool_context_design_topic_anchor_ledger [EXTRACTED 1.00]
-- **Vercel Ingress Trust and Bot Protection** — docs_security_vercel_ingress_client_ip_trust, docs_security_vercel_ingress_botid, docs_superpowers_plans_2026_09_28_vercel_ingress_trust_migration, docs_superpowers_specs_2026_09_28_vercel_ingress_design_cloudflare_tunnel_removal, agents_vercel_edge_firewall [EXTRACTED 1.00]
-- **Code Is Cheap, Software Is Not Argument Chain** — src_data_blog_code_is_cheap_software_is_not_code_is_cheap_before_ai_code_is_cheap_thesis, src_data_blog_code_is_cheap_software_is_not_code_is_cheap_4000_line_website_four_thousand_line_website_problem, src_data_blog_code_is_cheap_software_is_not_code_is_cheap_engineered_not_working_engineered_vs_works, src_data_blog_code_is_cheap_software_is_not_code_is_cheap_security_difference_invisible_security_protections, src_data_blog_code_is_cheap_software_is_not_code_is_cheap_future_vibe_coding_thesis [EXTRACTED 1.00]
-- **Professional AI Engineering Workflow** — src_data_blog_how_software_engineers_use_ai_differently_engineers_ai_code_generator_productivity_multiplier, src_data_blog_how_software_engineers_use_ai_differently_engineers_ai_debugging_ai_assisted_debugging, src_data_blog_how_software_engineers_use_ai_differently_engineers_ai_orchestration_engineer_as_orchestrator, src_data_blog_how_software_engineers_use_ai_differently_engineers_ai_testing_economic_testing, src_data_blog_how_software_engineers_use_ai_differently_engineers_bounded_pieces_deliberate_decomposition, src_data_blog_how_software_engineers_use_ai_differently_engineers_code_review_ai_review_feedback_loop, src_data_blog_how_software_engineers_use_ai_differently_engineers_constrain_ai_engineering_conventions [INFERRED 0.85]
-- **WakaTime Warehouse Design Decisions** — docs_wakatime_history_wakatime_warehouse, docs_wakatime_history_daily_rollups, docs_wakatime_history_heartbeat_duration_cap, docs_wakatime_history_entity_hash_privacy, docs_wakatime_history_coding_history_tool [INFERRED 0.85]
-- **Engineering Judgment Over Syntax (core argument of the AI-workflows series)** — src_data_blog_how_software_engineers_use_ai_differently_engineers_decision_making_engineering_judgment, src_data_blog_how_software_engineers_use_ai_differently_engineers_problem_decomposition_problem_decomposition, src_data_blog_how_software_engineers_use_ai_differently_engineers_picture_in_head_local_vs_global_decision, src_data_blog_how_software_engineers_use_ai_differently_engineers_syntax_vs_engineering_engineering_reasoning, src_data_blog_how_software_engineers_use_ai_differently_engineers_readability_matters_project_structure_principles [INFERRED 0.85]
-- **Hiring and Leveling by Judgment Rather Than Code Output** — src_data_blog_what_junior_developer_means_when_ai_can_code_junior_focus_and_future_future_junior_developer, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_hiring_curiosity_hiring_for_curiosity, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_interviews_with_ai_ai_in_interviews, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_leetcode_proxy_leetcode_weak_proxy, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_level_by_ability_developer_level_by_ability, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_portfolio_projects_decision_ownership [INFERRED 0.85]
-- **Real, Deployed Projects as the AI-Era Learning Ground** — src_data_blog_what_junior_developer_means_when_ai_can_code_junior_real_projects_real_projects_learning, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_learn_more_broader_junior_knowledge, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_focus_and_future_junior_learning_priorities, src_data_blog_how_software_engineers_use_ai_differently_engineers_hard_projects_gnaf_project, src_data_blog_how_software_engineers_use_ai_differently_engineers_hard_projects_best_maker_erp [INFERRED 0.85]
-- **What a Junior Developer Means When AI Can Code** — src_data_blog_what_junior_developer_means_when_ai_can_code_junior_security_fundamentals, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_syntax_cheap, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_system_design_early, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_waits_for_tickets [EXTRACTED 1.00]
-- **TPWFC Wildfire Incident Data Pipeline** — src_data_github_contributions_public_tpwfc__tpwfc_data, src_data_github_contributions_public_tpwfc__tpwfc_deploy, src_data_github_contributions_public_tpwfc__tpwfc_worker, src_data_github_contributions_public_tpwfc__tpwfc_worker_go_crawler_pipeline, src_data_github_contributions_public_tpwfc__tpwfc_data_fire_incident_locale_branch_merges [INFERRED 0.85]
+- **Bounded A$100 Standard Support Engagements** — src_data_services_support_support_pricing_summary_single_standard_a100_rate, src_data_services_support_standard_deployment_support_deployment_fix_engagement, src_data_services_support_support_bug_fixes_bug_fix_engagement, src_data_services_support_support_cms_api_integration_cms_api_integration_engagement, src_data_services_support_support_database_backend_database_backend_support_engagement, src_data_services_support_support_domain_dns_hosting_domain_dns_hosting_setup, src_data_services_support_support_small_features_small_feature_implementation, src_data_services_support_support_production_readiness_review_production_readiness_review [EXTRACTED 1.00]
 - **AI Agent Mid-Task Stall Reports** — src_data_github_contributions_public_minimax_ai__minimax_m2, src_data_github_contributions_public_minimax_ai__minimax_m2_m2_stalled_generation_bug, src_data_github_contributions_public_anomalyco__opencode, src_data_github_contributions_public_anomalyco__opencode_agent_stall_issue [EXTRACTED 1.00]
-- **Upstream Open-Source Contributions** — src_data_github_contributions_public_medusajs__medusa_medusajs_medusa, src_data_github_contributions_public_sandboxie_plus__sandboxie_sandboxie, src_data_github_contributions_public_thoth_tech__chathistorydisplayer_chathistorydisplayer, src_data_github_contributions_public_thoth_tech__documentation_documentation, src_data_github_contributions_public_thoth_tech__handbook_handbook, src_data_github_contributions_public_wakatime__wakatime_cli_wakatime_cli [EXTRACTED 1.00]
-- **CantoLyrics Product Family** — src_data_github_private_cantolyrics_server_cantolyrics_server, src_data_github_private_cantolyrics_web_cantolyrics_web, src_data_github_private_cantolyrics_refactor_cantolyrics_refactor [INFERRED 0.95]
-- **Headless CMS Projects** — src_data_github_private_storyforge_storyforge, src_data_github_private_tpwfc_tpwfc, src_data_github_private_lst97_strapi_cms_lst97_strapi_cms, src_data_github_private_storyforge_payload_cms_integration, src_data_github_private_lst97_strapi_cms_post_content_type [INFERRED 0.85]
-- **Common* TypeScript Backend Library Family** — src_data_github_public_commonerrors_repository, src_data_github_public_commonresponse_repository, src_data_github_public_commonresponsestructure_repository, src_data_github_public_commonservices_repository, src_data_github_public_commonresponse_error_handling_library_family [INFERRED]
-- **Early Language/CS Practise Repositories (assembly, C, C++, C#, CS)** — src_data_github_public_assembly_win32_practise_repository, src_data_github_public_dos_assembly_practise_repository, src_data_github_public_c_language_practise_repository, src_data_github_public_cpp_language_practise_repository, src_data_github_public_csharp_language_practise_repository, src_data_github_public_cs_foundation_repository [INFERRED]
-- **Cantonese Speech and Lyric Tooling** — src_data_github_public_cantocap_repository, src_data_github_public_cantocap_subtitle_generation_engine, src_data_github_public_cantolyr_repository, src_data_github_public_cantolyr_lexicon_driven_lyric_composition [INFERRED]
-- **SIT210 Embedded Systems Coursework Family** — src_data_github_public_sit210_embedded_systems_repo, src_data_github_public_sit210_remote_lock_project_repo, src_data_github_public_sit210_task3_1p_webhook_repo, src_data_github_public_sit210_task3_2c_particleifttt_repo, src_data_github_public_sit210_task3_3d_cloudfunction_repo, src_data_github_public_sit210_task4_2hd_particlecloudfunction_repo, src_data_github_public_sit210_task5_2c_rpigui_repo, src_data_github_public_sit210_task5_3d_morse_gui_repo [INFERRED 0.95]
-- **QwenASR End-to-End Speech Pipeline** — src_data_github_public_qwenasr_qwen_asr_rust_crate, src_data_github_public_qwenasr_speech_recognition, src_data_github_public_qwenasr_forced_alignment, src_data_github_public_qwenasr_live_audio_capture, src_data_github_public_qwenasr_flutter_plugin, src_data_github_public_qwenasr_wer_benchmark [INFERRED 0.85]
-- **SIT305 Android Coursework App Family** — src_data_github_public_sit305_week2_hello_world_repository, src_data_github_public_sit305_itubeapp_repository, src_data_github_public_sit305_lost_found_app_repository, src_data_github_public_sit305_news_app_repository, src_data_github_public_sit305_quizeapp_repository, src_data_github_public_sit305_sharepreferences_repository, src_data_github_public_sit305_truckapp_repository, src_data_github_public_sit305_unitconvertor_repository, src_data_github_public_sit305_timer_repository [EXTRACTED 1.00]
-- **SIT210 Raspberry Pi Peripheral Interfacing** — src_data_github_public_sit210_task7_3d_rpipwm_repository, src_data_github_public_sit210_task8_1d_rpi_i2c_repository, src_data_github_public_sit210_pcb_files_repository, src_data_github_public_sit210_task7_3d_rpipwm_hcsr04_sensor, src_data_github_public_sit210_task7_3d_rpipwm_pwm_led, src_data_github_public_sit210_task8_1d_rpi_i2c_i2c_bus_protocol [INFERRED 0.85]
-- **Hand-Rolled Blockchain and Mining Implementations** — src_data_github_public_blockchain_demo_block_tx_coinbase_model, src_data_github_public_blockchain_demo_sha256_custom, src_data_github_public_sit315_mpi_blockchain_project_mpi_mining_pool, src_data_github_public_sit315_mpi_blockchain_project_distributed_mining [INFERRED 0.75]
-- **E2EE messaging product (umbrella repo + Android client + Python server)** — src_data_github_public_e2ee_messaging_android_app_repo, src_data_github_public_e2ee_messaging_android_app_backend_repo, src_data_github_public_e2ee_messaging_android_app_frontend_repo, src_data_github_public_e2ee_messaging_android_app_frontend_key_exchange [INFERRED 0.85]
-- **lst97.dev rebuild: TanStack Start app, Strapi CMS, compose deploy repo** — src_data_github_public_lst97_dev_repo, src_data_github_public_lst97_dev_rework_repo, src_data_github_public_lst97_dev_rework_strapi_repo, src_data_github_public_lst97_dev_rework_deploy_repo, src_data_github_public_lst97_dev_rework_tanstack_start_migration [INFERRED 0.85]
-- **G-NAF Australian address search implementations (Bun API and hexagonal Deno service)** — src_data_github_public_gnaf_autocomplete_repo, src_data_github_public_gnaf_autocomplete_address_search_api, src_data_github_public_info_hawker_server_repo, src_data_github_public_info_hawker_server_hexagonal_address_service [INFERRED 0.85]
-- **Frontend/backend repository pairs of the same product** — src_data_github_public_project_st_zita_backend_repo, src_data_github_public_project_st_zita_frontend_repo, src_data_github_public_simple_cms_backend_repo, src_data_github_public_simple_cms_frontend_repo, src_data_github_public_simple_receipt_manager_backend_repo, src_data_github_public_simple_receipt_manager_frontend_repo [INFERRED 0.95]
-- **Developer-tooling and automation repositories** — src_data_github_public_toonconv_repo, src_data_github_public_super_opencode_repo, src_data_github_public_subagents_sh_repo, src_data_github_public_typo_sync_server_repo [INFERRED 0.75]
-- **Interview question-and-answer corpus describing the author's engineering practice** — src_data_interview_authentication_vs_authorization_authentication, src_data_interview_authentication_vs_authorization_authorization, src_data_interview_autocomplete_performance_broad_prefix_candidate_narrowing, src_data_interview_automotive_to_software_transition_diagnostic_troubleshooting [INFERRED 0.75]
-- **Systematic Debugging Playbook Across Interview Answers** — src_data_interview_debug_production_only_issue_observability_first, src_data_interview_debug_production_only_issue_production_environment_divergence, src_data_interview_debug_wrong_value_in_database_layer_by_layer_tracing, src_data_interview_difficult_technical_problem_narrowing_debug_strategy, src_data_interview_production_monitoring_metrics_technical_health_metrics [INFERRED]
-- **Household Expense Domain: Schema, Categories, Idempotent Writes** — src_data_interview_database_relationship_modelling_household_expense_schema, src_data_interview_database_relationship_modelling_many_to_many_categories, src_data_interview_duplicate_expense_idempotency_idempotency_key, src_data_interview_duplicate_expense_idempotency_unique_constraint [INFERRED]
-- **Candidate Background Narrative: Profile, Ownership, Self-Directed Practice, Career Goals** — src_data_interview_introduce_yourself_nelson_profile, src_data_interview_exact_contribution_full_lifecycle_ownership, src_data_interview_no_software_engineering_job_experience_self_directed_practice, src_data_interview_career_next_two_years_ai_shifts_engineering_role [INFERRED]
+- **What a Junior Developer Means When AI Can Code** — src_data_blog_what_junior_developer_means_when_ai_can_code_junior_security_fundamentals, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_syntax_cheap, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_system_design_early, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_waits_for_tickets [EXTRACTED 1.00]
 - **Best Maker Quote-to-Cash Financial Spine** — src_data_projects_best_maker_pty_ltd_best_maker_quote_to_cash_quotation_to_invoice_conversion, src_data_projects_best_maker_pty_ltd_best_maker_quote_to_cash_split_payment_instalments, src_data_projects_best_maker_pty_ltd_best_maker_commerce_to_finance_order_invoice_metadata_bridge, src_data_projects_best_maker_pty_ltd_best_maker_payment_reconciliation_bank_transaction_reconciliation [EXTRACTED 1.00]
-- **SplitTab Expense Split Arithmetic** — src_data_interview_remaining_cents_split_integer_cents_arithmetic, src_data_interview_remaining_cents_split_deterministic_remainder_assignment, src_data_interview_splittab_balance_calculation_percentage_lock_split, src_data_interview_splittab_balance_calculation_net_balance_owed [INFERRED 0.85]
 - **Canto101 Corpus and Timing Spine** — src_data_projects_canton_101_canton101_lexical_data_pipeline_normalisation_stage, src_data_projects_canton_101_canton101_lexical_data_pipeline_enrichment_multiple_readings, src_data_projects_canton_101_canton101_lexical_data_pipeline_versioned_seed_snapshot, src_data_projects_canton_101_canton101_lyric_timing_alignment_word_level_alignment_service, src_data_projects_canton_101_canton101_lyric_timing_alignment_alignment_validation_score [EXTRACTED 1.00]
 - **Canto101 single-corpus learning spine (lexicon, sentences, lyrics, karaoke, practice)** — src_data_projects_canton_101_canton101_sentence_and_expression_study_one_spine_projection, src_data_projects_canton_101_canton101_sentence_and_expression_study_derived_sentence_annotation, src_data_projects_canton_101_canton101_sentence_and_expression_study_lyric_entry_bidirectional_link, src_data_projects_canton_101_canton101_sentence_and_expression_study_karaoke_timing_view, src_data_projects_canton_101_canton101_sentence_and_expression_study_practice_loop [EXTRACTED 1.00]
-- **Zita chat turn: decide, plan tools, gate evidence, respond** — src_data_projects_last_os_last_os_ai_pipeline_decision_model, src_data_projects_last_os_last_os_ai_pipeline_tool_argument_planner, src_data_projects_last_os_last_os_ai_pipeline_responder_model, src_data_projects_last_os_last_os_ai_pipeline_tool_execution_bounds, src_data_projects_last_os_last_os_knowledge_retrieval_relevance_gate, src_data_projects_last_os_last_os_knowledge_retrieval_evidence_untrusted_wrapper [EXTRACTED 1.00]
-- **G-NAF autocomplete request resolved to one PostgreSQL index** — src_data_projects_gnaf_address_autocomplete_gnaf_query_routing_query_pipeline, src_data_projects_gnaf_address_autocomplete_gnaf_query_routing_query_classifier, src_data_projects_gnaf_address_autocomplete_gnaf_query_routing_search_tier_router, src_data_projects_gnaf_address_autocomplete_gnaf_query_routing_typo_correction_reentry, src_data_projects_gnaf_address_autocomplete_gnaf_data_ingestion_staging_then_materialized_view [INFERRED 0.95]
-- **Bounded A$100 Standard Support Engagements** — src_data_services_support_support_pricing_summary_single_standard_a100_rate, src_data_services_support_standard_deployment_support_deployment_fix_engagement, src_data_services_support_support_bug_fixes_bug_fix_engagement, src_data_services_support_support_cms_api_integration_cms_api_integration_engagement, src_data_services_support_support_database_backend_database_backend_support_engagement, src_data_services_support_support_domain_dns_hosting_domain_dns_hosting_setup, src_data_services_support_support_small_features_small_feature_implementation, src_data_services_support_support_production_readiness_review_production_readiness_review [EXTRACTED 1.00]
-- **Website Package Ladder (Starter to Business+)** — src_data_services_packages_packages_and_pricing_three_website_packages, src_data_services_packages_starter_package_starter_package, src_data_services_packages_business_plus_package_business_plus_package, src_data_services_packages_business_plus_package_business_package_foundation, src_data_services_packages_packages_and_pricing_business_package_recommended_default [EXTRACTED 1.00]
-- **Custom-Quoted Work Beyond Fixed Price** — src_data_services_support_support_migration_major_changes_migration_major_refactor_tier, src_data_services_packages_business_plus_package_custom_quoted_additional_development, src_data_services_packages_terms_and_quote_request_standard_exclusions_list, src_data_services_support_support_scope_notes_standard_support_scope_boundary [INFERRED 0.85]
 - **Chat turn pipeline (decide → plan → run tools → respond)** — src_server_chat_agents_decision_model_pplx_decider_v1_2, src_server_chat_agents_openrouter_planner, src_server_chat_agents_openrouter_responder, src_server_chat_agents_agent_loop, src_server_chat_agents_chat_tool_source_boundaries, src_server_chat_agents_tool_output_truncation_budget [EXTRACTED 1.00]
-- **RAG retrieval pipeline invariants** — src_server_knowledge_agents_rag_read_path, src_server_knowledge_agents_exact_vector_scan, src_server_knowledge_agents_relevance_gate, src_server_knowledge_agents_untrusted_evidence_block, src_server_knowledge_agents_private_evidence_labelling [EXTRACTED 1.00]
-- **Illustrated A$100 Support Delivery Cycle** — public_assets_services_standard_engagement_standard_engagement_scope, public_assets_services_standard_engagement_website_build_mockup, public_assets_services_standard_engagement_deployment_and_hosting, public_assets_services_standard_engagement_maintenance_and_repair, public_assets_services_standard_engagement_security_and_backend [INFERRED 0.85]
-- **Plan → Design → Build → Launch Delivery Flow Shown in Pixel Art** — public_assets_services_workflow_planning_brief, public_assets_services_workflow_wireframe_design, public_assets_services_workflow_responsive_launch, public_assets_services_workflow_launch_readiness [INFERRED 0.85]
+- **Code Is Cheap, Software Is Not Argument Chain** — src_data_blog_code_is_cheap_software_is_not_code_is_cheap_before_ai_code_is_cheap_thesis, src_data_blog_code_is_cheap_software_is_not_code_is_cheap_4000_line_website_four_thousand_line_website_problem, src_data_blog_code_is_cheap_software_is_not_code_is_cheap_engineered_not_working_engineered_vs_works, src_data_blog_code_is_cheap_software_is_not_code_is_cheap_security_difference_invisible_security_protections, src_data_blog_code_is_cheap_software_is_not_code_is_cheap_future_vibe_coding_thesis [EXTRACTED 1.00]
 - **Default OG card composition** — public_og_default_default_og_share_card, public_og_default_reserved_title_negative_space, public_og_default_pixel_art_workspace_illustration, public_og_default_cream_grid_border_frame, public_og_default_warm_pixel_palette [EXTRACTED 1.00]
+- **Knowledge RAG Pipeline** — agents_rag_retrieval_flow, docs_superpowers_plans_2026_09_23_personal_knowledge_rag_pipeline, docs_superpowers_specs_2026_09_23_personal_knowledge_rag_design_retrieval_pipeline, docs_superpowers_specs_2026_09_23_personal_knowledge_rag_design_untrusted_evidence, docs_superpowers_plans_2026_09_24_cloud_query_local_index_embeddings_split [EXTRACTED 1.00]
+- **Zita chat turn: decide, plan tools, gate evidence, respond** — src_data_projects_last_os_last_os_ai_pipeline_decision_model, src_data_projects_last_os_last_os_ai_pipeline_tool_argument_planner, src_data_projects_last_os_last_os_ai_pipeline_responder_model, src_data_projects_last_os_last_os_ai_pipeline_tool_execution_bounds, src_data_projects_last_os_last_os_knowledge_retrieval_relevance_gate, src_data_projects_last_os_last_os_knowledge_retrieval_evidence_untrusted_wrapper [EXTRACTED 1.00]
+- **Multi-Turn Chat Context and Follow-Up Resolution** — docs_research_multiturn_tool_use_per_turn_routing, docs_research_multiturn_tool_use_bounded_state, docs_research_multiturn_tool_use_evaluation, docs_superpowers_plans_2026_09_24_multiturn_tool_context_signed_anchors, docs_superpowers_plans_2026_09_24_multiturn_tool_context_follow_up_resolution, docs_superpowers_specs_2026_09_24_multiturn_tool_context_design_topic_anchor_ledger [EXTRACTED 1.00]
 - **OG Artwork Composition (empty copy zone + right-anchored illustration + framing)** — src_server_seo_og_artwork_card, src_server_seo_og_artwork_copy_safe_zone, src_server_seo_og_artwork_brand_illustration_cluster [EXTRACTED 1.00]
+- **RAG retrieval pipeline invariants** — src_server_knowledge_agents_rag_read_path, src_server_knowledge_agents_exact_vector_scan, src_server_knowledge_agents_relevance_gate, src_server_knowledge_agents_untrusted_evidence_block, src_server_knowledge_agents_private_evidence_labelling [EXTRACTED 1.00]
+- **SIT305 Android Coursework App Family** — src_data_github_public_sit305_week2_hello_world_repository, src_data_github_public_sit305_itubeapp_repository, src_data_github_public_sit305_lost_found_app_repository, src_data_github_public_sit305_news_app_repository, src_data_github_public_sit305_quizeapp_repository, src_data_github_public_sit305_sharepreferences_repository, src_data_github_public_sit305_truckapp_repository, src_data_github_public_sit305_unitconvertor_repository, src_data_github_public_sit305_timer_repository [EXTRACTED 1.00]
+- **Upstream Open-Source Contributions** — src_data_github_contributions_public_medusajs__medusa_medusajs_medusa, src_data_github_contributions_public_sandboxie_plus__sandboxie_sandboxie, src_data_github_contributions_public_thoth_tech__chathistorydisplayer_chathistorydisplayer, src_data_github_contributions_public_thoth_tech__documentation_documentation, src_data_github_contributions_public_thoth_tech__handbook_handbook, src_data_github_contributions_public_wakatime__wakatime_cli_wakatime_cli [EXTRACTED 1.00]
+- **Vercel Ingress Trust and Bot Protection** — docs_security_vercel_ingress_client_ip_trust, docs_security_vercel_ingress_botid, docs_superpowers_plans_2026_09_28_vercel_ingress_trust_migration, docs_superpowers_specs_2026_09_28_vercel_ingress_design_cloudflare_tunnel_removal, agents_vercel_edge_firewall [EXTRACTED 1.00]
+- **Website Package Ladder (Starter to Business+)** — src_data_services_packages_packages_and_pricing_three_website_packages, src_data_services_packages_starter_package_starter_package, src_data_services_packages_business_plus_package_business_plus_package, src_data_services_packages_business_plus_package_business_package_foundation, src_data_services_packages_packages_and_pricing_business_package_recommended_default [EXTRACTED 1.00]
+- **Hand-Rolled Blockchain and Mining Implementations** — src_data_github_public_blockchain_demo_block_tx_coinbase_model, src_data_github_public_blockchain_demo_sha256_custom, src_data_github_public_sit315_mpi_blockchain_project_mpi_mining_pool, src_data_github_public_sit315_mpi_blockchain_project_distributed_mining [INFERRED 0.75]
+- **Developer-tooling and automation repositories** — src_data_github_public_toonconv_repo, src_data_github_public_super_opencode_repo, src_data_github_public_subagents_sh_repo, src_data_github_public_typo_sync_server_repo [INFERRED 0.75]
+- **Interview question-and-answer corpus describing the author's engineering practice** — src_data_interview_authentication_vs_authorization_authentication, src_data_interview_authentication_vs_authorization_authorization, src_data_interview_autocomplete_performance_broad_prefix_candidate_narrowing, src_data_interview_automotive_to_software_transition_diagnostic_troubleshooting [INFERRED 0.75]
+- **Custom-Quoted Work Beyond Fixed Price** — src_data_services_support_support_migration_major_changes_migration_major_refactor_tier, src_data_services_packages_business_plus_package_custom_quoted_additional_development, src_data_services_packages_terms_and_quote_request_standard_exclusions_list, src_data_services_support_support_scope_notes_standard_support_scope_boundary [INFERRED 0.85]
+- **E2EE messaging product (umbrella repo + Android client + Python server)** — src_data_github_public_e2ee_messaging_android_app_repo, src_data_github_public_e2ee_messaging_android_app_backend_repo, src_data_github_public_e2ee_messaging_android_app_frontend_repo, src_data_github_public_e2ee_messaging_android_app_frontend_key_exchange [INFERRED 0.85]
+- **Engineering Judgment Over Syntax (core argument of the AI-workflows series)** — src_data_blog_how_software_engineers_use_ai_differently_engineers_decision_making_engineering_judgment, src_data_blog_how_software_engineers_use_ai_differently_engineers_problem_decomposition_problem_decomposition, src_data_blog_how_software_engineers_use_ai_differently_engineers_picture_in_head_local_vs_global_decision, src_data_blog_how_software_engineers_use_ai_differently_engineers_syntax_vs_engineering_engineering_reasoning, src_data_blog_how_software_engineers_use_ai_differently_engineers_readability_matters_project_structure_principles [INFERRED 0.85]
+- **G-NAF Australian address search implementations (Bun API and hexagonal Deno service)** — src_data_github_public_gnaf_autocomplete_repo, src_data_github_public_gnaf_autocomplete_address_search_api, src_data_github_public_info_hawker_server_repo, src_data_github_public_info_hawker_server_hexagonal_address_service [INFERRED 0.85]
+- **Headless CMS Projects** — src_data_github_private_storyforge_storyforge, src_data_github_private_tpwfc_tpwfc, src_data_github_private_lst97_strapi_cms_lst97_strapi_cms, src_data_github_private_storyforge_payload_cms_integration, src_data_github_private_lst97_strapi_cms_post_content_type [INFERRED 0.85]
+- **Hiring and Leveling by Judgment Rather Than Code Output** — src_data_blog_what_junior_developer_means_when_ai_can_code_junior_focus_and_future_future_junior_developer, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_hiring_curiosity_hiring_for_curiosity, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_interviews_with_ai_ai_in_interviews, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_leetcode_proxy_leetcode_weak_proxy, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_level_by_ability_developer_level_by_ability, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_portfolio_projects_decision_ownership [INFERRED 0.85]
+- **lst97.dev rebuild: TanStack Start app, Strapi CMS, compose deploy repo** — src_data_github_public_lst97_dev_repo, src_data_github_public_lst97_dev_rework_repo, src_data_github_public_lst97_dev_rework_strapi_repo, src_data_github_public_lst97_dev_rework_deploy_repo, src_data_github_public_lst97_dev_rework_tanstack_start_migration [INFERRED 0.85]
+- **Professional AI Engineering Workflow** — src_data_blog_how_software_engineers_use_ai_differently_engineers_ai_code_generator_productivity_multiplier, src_data_blog_how_software_engineers_use_ai_differently_engineers_ai_debugging_ai_assisted_debugging, src_data_blog_how_software_engineers_use_ai_differently_engineers_ai_orchestration_engineer_as_orchestrator, src_data_blog_how_software_engineers_use_ai_differently_engineers_ai_testing_economic_testing, src_data_blog_how_software_engineers_use_ai_differently_engineers_bounded_pieces_deliberate_decomposition, src_data_blog_how_software_engineers_use_ai_differently_engineers_code_review_ai_review_feedback_loop, src_data_blog_how_software_engineers_use_ai_differently_engineers_constrain_ai_engineering_conventions [INFERRED 0.85]
+- **QwenASR End-to-End Speech Pipeline** — src_data_github_public_qwenasr_qwen_asr_rust_crate, src_data_github_public_qwenasr_speech_recognition, src_data_github_public_qwenasr_forced_alignment, src_data_github_public_qwenasr_live_audio_capture, src_data_github_public_qwenasr_flutter_plugin, src_data_github_public_qwenasr_wer_benchmark [INFERRED 0.85]
+- **Real, Deployed Projects as the AI-Era Learning Ground** — src_data_blog_what_junior_developer_means_when_ai_can_code_junior_real_projects_real_projects_learning, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_learn_more_broader_junior_knowledge, src_data_blog_what_junior_developer_means_when_ai_can_code_junior_focus_and_future_junior_learning_priorities, src_data_blog_how_software_engineers_use_ai_differently_engineers_hard_projects_gnaf_project, src_data_blog_how_software_engineers_use_ai_differently_engineers_hard_projects_best_maker_erp [INFERRED 0.85]
+- **Plan → Design → Build → Launch Delivery Flow Shown in Pixel Art** — public_assets_services_workflow_planning_brief, public_assets_services_workflow_wireframe_design, public_assets_services_workflow_responsive_launch, public_assets_services_workflow_launch_readiness [INFERRED 0.85]
+- **SIT210 Raspberry Pi Peripheral Interfacing** — src_data_github_public_sit210_task7_3d_rpipwm_repository, src_data_github_public_sit210_task8_1d_rpi_i2c_repository, src_data_github_public_sit210_pcb_files_repository, src_data_github_public_sit210_task7_3d_rpipwm_hcsr04_sensor, src_data_github_public_sit210_task7_3d_rpipwm_pwm_led, src_data_github_public_sit210_task8_1d_rpi_i2c_i2c_bus_protocol [INFERRED 0.85]
+- **SplitTab Expense Split Arithmetic** — src_data_interview_remaining_cents_split_integer_cents_arithmetic, src_data_interview_remaining_cents_split_deterministic_remainder_assignment, src_data_interview_splittab_balance_calculation_percentage_lock_split, src_data_interview_splittab_balance_calculation_net_balance_owed [INFERRED 0.85]
+- **Illustrated A$100 Support Delivery Cycle** — public_assets_services_standard_engagement_standard_engagement_scope, public_assets_services_standard_engagement_website_build_mockup, public_assets_services_standard_engagement_deployment_and_hosting, public_assets_services_standard_engagement_maintenance_and_repair, public_assets_services_standard_engagement_security_and_backend [INFERRED 0.85]
+- **TPWFC Wildfire Incident Data Pipeline** — src_data_github_contributions_public_tpwfc__tpwfc_data, src_data_github_contributions_public_tpwfc__tpwfc_deploy, src_data_github_contributions_public_tpwfc__tpwfc_worker, src_data_github_contributions_public_tpwfc__tpwfc_worker_go_crawler_pipeline, src_data_github_contributions_public_tpwfc__tpwfc_data_fire_incident_locale_branch_merges [INFERRED 0.85]
+- **WakaTime Warehouse Design Decisions** — docs_wakatime_history_wakatime_warehouse, docs_wakatime_history_daily_rollups, docs_wakatime_history_heartbeat_duration_cap, docs_wakatime_history_entity_hash_privacy, docs_wakatime_history_coding_history_tool [INFERRED 0.85]
+- **CantoLyrics Product Family** — src_data_github_private_cantolyrics_server_cantolyrics_server, src_data_github_private_cantolyrics_web_cantolyrics_web, src_data_github_private_cantolyrics_refactor_cantolyrics_refactor [INFERRED 0.95]
+- **Frontend/backend repository pairs of the same product** — src_data_github_public_project_st_zita_backend_repo, src_data_github_public_project_st_zita_frontend_repo, src_data_github_public_simple_cms_backend_repo, src_data_github_public_simple_cms_frontend_repo, src_data_github_public_simple_receipt_manager_backend_repo, src_data_github_public_simple_receipt_manager_frontend_repo [INFERRED 0.95]
+- **G-NAF autocomplete request resolved to one PostgreSQL index** — src_data_projects_gnaf_address_autocomplete_gnaf_query_routing_query_pipeline, src_data_projects_gnaf_address_autocomplete_gnaf_query_routing_query_classifier, src_data_projects_gnaf_address_autocomplete_gnaf_query_routing_search_tier_router, src_data_projects_gnaf_address_autocomplete_gnaf_query_routing_typo_correction_reentry, src_data_projects_gnaf_address_autocomplete_gnaf_data_ingestion_staging_then_materialized_view [INFERRED 0.95]
+- **SIT210 Embedded Systems Coursework Family** — src_data_github_public_sit210_embedded_systems_repo, src_data_github_public_sit210_remote_lock_project_repo, src_data_github_public_sit210_task3_1p_webhook_repo, src_data_github_public_sit210_task3_2c_particleifttt_repo, src_data_github_public_sit210_task3_3d_cloudfunction_repo, src_data_github_public_sit210_task4_2hd_particlecloudfunction_repo, src_data_github_public_sit210_task5_2c_rpigui_repo, src_data_github_public_sit210_task5_3d_morse_gui_repo [INFERRED 0.95]
+- **Candidate Background Narrative: Profile, Ownership, Self-Directed Practice, Career Goals** — src_data_interview_introduce_yourself_nelson_profile, src_data_interview_exact_contribution_full_lifecycle_ownership, src_data_interview_no_software_engineering_job_experience_self_directed_practice, src_data_interview_career_next_two_years_ai_shifts_engineering_role [INFERRED]
+- **Cantonese Speech and Lyric Tooling** — src_data_github_public_cantocap_repository, src_data_github_public_cantocap_subtitle_generation_engine, src_data_github_public_cantolyr_repository, src_data_github_public_cantolyr_lexicon_driven_lyric_composition [INFERRED]
+- **Common* TypeScript Backend Library Family** — src_data_github_public_commonerrors_repository, src_data_github_public_commonresponse_repository, src_data_github_public_commonresponsestructure_repository, src_data_github_public_commonservices_repository, src_data_github_public_commonresponse_error_handling_library_family [INFERRED]
+- **Household Expense Domain: Schema, Categories, Idempotent Writes** — src_data_interview_database_relationship_modelling_household_expense_schema, src_data_interview_database_relationship_modelling_many_to_many_categories, src_data_interview_duplicate_expense_idempotency_idempotency_key, src_data_interview_duplicate_expense_idempotency_unique_constraint [INFERRED]
+- **Early Language/CS Practise Repositories (assembly, C, C++, C#, CS)** — src_data_github_public_assembly_win32_practise_repository, src_data_github_public_dos_assembly_practise_repository, src_data_github_public_c_language_practise_repository, src_data_github_public_cpp_language_practise_repository, src_data_github_public_csharp_language_practise_repository, src_data_github_public_cs_foundation_repository [INFERRED]
+- **Systematic Debugging Playbook Across Interview Answers** — src_data_interview_debug_production_only_issue_observability_first, src_data_interview_debug_production_only_issue_production_environment_divergence, src_data_interview_debug_wrong_value_in_database_layer_by_layer_tracing, src_data_interview_difficult_technical_problem_narrowing_debug_strategy, src_data_interview_production_monitoring_metrics_technical_health_metrics [INFERRED]
 
-## Communities (293 total, 78 thin omitted)
+## Communities (324 total, 82 thin omitted)
 
-### Community 0 - "Route Tree And SEO Shell"
+### Community 0 - "routeTree.gen.ts"
 Cohesion: 0.03
-Nodes (110): RFC-9116, me-pixel-art.webp (Pixel-Art Portrait Asset), Nelson (Site Author Identity), @tanstack/react-devtools, @tanstack/react-query, @tanstack/react-router-devtools, @tanstack/react-router-ssr-query, ContentUnavailableRoute() (+102 more)
+Nodes (88): @payloadcms/tanstack-start@4.0.0-beta.4, @tanstack/react-start@latest, me-pixel-art.webp (Pixel-Art Portrait Asset), Nelson (Site Author Identity), @payloadcms/tanstack-start, @tanstack/react-start, getContext(), getPayloadImportMap() (+80 more)
 
 ### Community 1 - "Chat Context Site Cards"
-Cohesion: 0.10
-Nodes (56): Websites That Ship — Cargo Ship Illustration, @tanstack/react-router, SYSTEM_FRAMES, TRUST_LABEL, CardHeadingProps, ChangelogCard(), PostCard(), ProjectCard() (+48 more)
+Cohesion: 0.11
+Nodes (43): @tanstack/react-router, ChatContextStack(), SYSTEM_FRAMES, TRUST_LABEL, ChatPipelineContact(), ContentPagination(), searchForPage(), ContentUnavailablePanel() (+35 more)
 
-### Community 2 - "Rich Text Content Views"
-Cohesion: 0.05
-Nodes (56): react, react-dom, react-syntax-highlighter, ChecklistItem(), ChecklistItemProps, CodeBlockView(), GRAMMARS, HIGHLIGHT_LABELS (+48 more)
+### Community 2 - "rich-text.tsx"
+Cohesion: 0.16
+Nodes (22): ChecklistItem(), ChecklistItemProps, buildConverters(), collectDiagramLabels(), collectProseImages(), ConverterNode, diagramLabel(), internalHref() (+14 more)
 
 ### Community 3 - "Embedding Server Dev Scripts"
 Cohesion: 0.07
-Nodes (60): stop(), buildEmbeddingServerArgs(), childEnvironment(), EmbeddingServerArgsInput, LOOPBACK_HOSTS, startEmbeddingSidecar(), stopEmbeddingSidecar(), worker (+52 more)
+Nodes (57): stop(), buildEmbeddingServerArgs(), childEnvironment(), EmbeddingServerArgsInput, LOOPBACK_HOSTS, startEmbeddingSidecar(), stopEmbeddingSidecar(), worker (+49 more)
 
-### Community 4 - "Knowledge Repository Database Adapter"
-Cohesion: 0.06
-Nodes (49): drizzle-orm, IndexKnowledgeSourceDependencies, KnowledgeIndexJobInput, KnowledgeSourceSynchronizerDependencies, PROJECT_SOFTWARE_KINDS, createKnowledgeCatalogOperations(), ProjectCatalogEntry, updateOwnedProjectCatalogWithinTransaction() (+41 more)
+### Community 4 - "site-seo.ts"
+Cohesion: 0.05
+Nodes (68): RFC-9116, ContentMeta, ContentMetaDescriptor, ContentMetaInput, createContentMeta(), resolveContentShare(), AUTHOR_NODE, BreadcrumbCrumb (+60 more)
 
 ### Community 5 - "Chat Diagnostics Capture"
-Cohesion: 0.07
-Nodes (59): StageResult, createDiagnosticsCapture(), createDiagnosticsCapture(), createChatDiagnosticsCapture(), createDiscordDiagnosticsSink(), deliver(), drain(), scheduleDrain() (+51 more)
+Cohesion: 0.10
+Nodes (48): StageResult, createDiagnosticsCapture(), createChatDiagnosticsCapture(), createDiscordDiagnosticsSink(), deliver(), drain(), scheduleDrain(), webhookUrl() (+40 more)
 
-### Community 6 - "Content Detail Layouts"
-Cohesion: 0.07
-Nodes (48): ContentDetailLayout(), DetailLabelRow(), DetailMeta(), MetaField(), contentCardDate(), formatPublishedDate(), formatReadingTime(), publishedDateFormatter (+40 more)
+### Community 6 - "repository-inspector.ts"
+Cohesion: 0.06
+Nodes (33): env, index(), indexDocument(), run(), sanitizeExistingGithubMarkdown(), writeMarkdown(), writeMarkdownAtomically(), assertSafeGithubMarkdown() (+25 more)
 
 ### Community 7 - "Service Package Components"
-Cohesion: 0.06
-Nodes (55): ServiceAddOnTable(), ServiceInfoPanel(), TONE_CLASS, PROCESS_STEP_ICONS, ServiceProcessSteps(), RECOMMENDED_PACKAGE_SLUG, SERVICE_ADDONS, SERVICE_ADDONS_NOTE (+47 more)
+Cohesion: 0.05
+Nodes (68): TabsTrigger must be inside TabsList, Websites That Ship — Cargo Ship Illustration, ChatComposerProps, CHAT_PROMPT_GROUPS, ChatPromptExample, ChatPromptGroup, ChatPromptSuggestions(), ChatPromptSuggestionsProps (+60 more)
 
 ### Community 8 - "Route Progress Bar"
-Cohesion: 0.05
-Nodes (39): GlobalRouteProgress(), RouteProgressBar(), advanceProgress(), clampProgress(), finishProgress(), HIDDEN_ROUTE_PROGRESS, progressPercent(), ROUTE_PROGRESS_CEILING (+31 more)
+Cohesion: 0.13
+Nodes (11): mount(), styles, createSiteStyleWindow(), loadSiteStylesheet(), readResponsiveBlock(), SiteStyleWindow, rules(), sheetText() (+3 more)
 
 ### Community 9 - "Pixel Battle Background Simulation"
-Cohesion: 0.07
-Nodes (55): battleVisualsSettled(), cellCenter(), LaserVisual, paint(), PixelBattleBackground, TEAM_FILL, TEAM_LASER, UnitVisual (+47 more)
-
-### Community 10 - "Chat Help Dialogs"
-Cohesion: 0.08
-Nodes (36): lucide-react, ChatContextStack(), ChatHelpDialog(), ChatPipelineContact(), ChatPipelineDiagram(), ChatPipelineSteps(), ContentDetailLayoutProps, ShareDialog() (+28 more)
-
-### Community 11 - "Chat Agent Loop"
-Cohesion: 0.05
-Nodes (33): MAX_CHAT_CONTEXT_MESSAGES, createChatAgentLoop(), applyToolResult(), pushToolCitation(), runAgentLoop(), runAgentLoopEvents(), runnerFor(), ChatContextSigner (+25 more)
-
-### Community 12 - "GitHub Content Safety Guards"
 Cohesion: 0.06
-Nodes (35): run(), sanitizeExistingGithubMarkdown(), writeMarkdown(), writeMarkdownAtomically(), assertSafeGithubMarkdown(), GithubContentFinding, inspectSensitivePath(), SanitizationResult (+27 more)
+Nodes (68): battleVisualsSettled(), cellCenter(), LaserVisual, paint(), PixelBattleBackground, TEAM_FILL, TEAM_LASER, UnitVisual (+60 more)
+
+### Community 10 - "lucide-react"
+Cohesion: 0.17
+Nodes (19): ChatHelpDialog(), ChatPipelineDiagram(), ChatPipelineSteps(), ShareDialog(), TARGET_ICONS, AboutSiteDialog(), SpecRow(), Command() (+11 more)
+
+### Community 11 - "chat-contact.ts"
+Cohesion: 0.09
+Nodes (32): Select — multiple selection and object values (base only), ChatContactCheckboxField(), ChatContactSelectField(), getChatContactFormError(), Checkbox(), SelectContent(), SelectLabel(), SelectTrigger() (+24 more)
+
+### Community 12 - "sync-project-catalog.ts"
+Cohesion: 0.10
+Nodes (24): collectDocuments(), runGh(), entries, env, excluded, githubRecords, projects, repositories (+16 more)
 
 ### Community 13 - "WakaTime Coding Stats"
-Cohesion: 0.06
-Nodes (42): CodingStatsQuery, detectCategory(), detectRange(), matchCodingStatsRequest(), RANGE_PATTERNS, activityDailyResponseSchema, activityDaySchema, activityRangeSchema (+34 more)
+Cohesion: 0.08
+Nodes (24): activityDailyResponseSchema, activityDaySchema, activityRangeSchema, activitySummaryResponseSchema, CachedWakaTimeShare, createWakaTimeStatsClient(), PERIOD_LABELS, SHARE_IDS (+16 more)
 
-### Community 14 - "Runtime Dependency Manifest"
+### Community 14 - "dependencies"
 Cohesion: 0.04
-Nodes (53): dependencies, @base-ui/react, botid, class-variance-authority, cn, date-fns, drizzle-orm, embla-carousel-react (+45 more)
+Nodes (49): dependencies, cn@^0.4.0, drizzle-orm@0.45.2, embla-carousel-react@^8.6.0, @fontsource-variable/jetbrains-mono@^5.3.0, input-otp@^1.5.0, katex@^0.19.1, lucide-react@^1.61.0 (+41 more)
 
 ### Community 15 - "Chat Tool Execution Layer"
-Cohesion: 0.09
-Nodes (41): zod, withTimeout(), codingHistoryArgs, runAgentTool(), searchKnowledgeArgs, AgentToolCall, resolveCodingHistoryRange(), codingStatsLabel() (+33 more)
+Cohesion: 0.15
+Nodes (30): codingHistoryArgs, runAgentTool(), searchKnowledgeArgs, AgentToolCall, displayProjectKind(), formatProjectCount(), formatProjectDuration(), projectEvidence() (+22 more)
 
-### Community 16 - "Boot Gate Skeletons"
+### Community 16 - "sidebar.tsx"
 Cohesion: 0.17
 Nodes (36): BootGate(), BootSkeleton(), MENU_STUBS, SHORTCUT_STUBS, CardKickerSkeleton(), CardLinkSkeleton(), ChangelogCardSkeleton(), PostCardSkeleton() (+28 more)
 
-### Community 17 - "GitHub Knowledge Source"
+### Community 17 - "source-types.ts"
 Cohesion: 0.07
-Nodes (30): createGithubKnowledgeSource(), FetchFunction, GithubKnowledgeSourceConfig, readmeSchema, repositorySchema, createKnowledgeSourceSynchronizer(), enqueueKnowledgeSourceIndex(), KNOWLEDGE_SYNC_CRON (+22 more)
+Nodes (40): IndexKnowledgeSourceDependencies, IndexKnowledgeSourceResult, createKnowledgeSourceSynchronizer(), KNOWLEDGE_SYNC_CRON, KnowledgeIndexJobInput, KnowledgeListSource, KnowledgeSourceSynchronizerDependencies, KnowledgeSourceSyncResult (+32 more)
 
-### Community 18 - "Mermaid Diagram Rendering"
-Cohesion: 0.07
-Nodes (27): CHAT_CONTACT_FLOW_DIAGRAM, CHAT_PIPELINE_DIAGRAM, DiagramKey, DIAGRAMS, DiagramStatus, MermaidDiagram(), MermaidDiagramProps, isCurrent() (+19 more)
+### Community 18 - "logger-format.ts"
+Cohesion: 0.17
+Nodes (20): cellValue(), errorKey(), formatJson(), formatPretty(), formatTime(), inlineValue(), isRecord(), isRecordList() (+12 more)
 
-### Community 19 - "Knowledge Document Parsers"
-Cohesion: 0.06
-Nodes (26): metadataPattern(), parseBlogDocument(), metadataPattern(), parseInterviewDocument(), isProjectDocProject(), metadataPattern(), parseProjectDocument(), PRIVATE_PROJECT_LABELS (+18 more)
+### Community 19 - "project-document.ts"
+Cohesion: 0.24
+Nodes (8): isProjectDocProject(), metadataPattern(), parseProjectDocument(), PRIVATE_PROJECT_LABELS, PROJECT_LABELS, ProjectDocProject, EXPECTED_PROJECTS, PRIVATE_PROJECTS
 
-### Community 20 - "Moderation Model Arms Config"
-Cohesion: 0.07
-Nodes (35): ARM_IDS, ARM_MODELS, ArmOptions, createArm(), DEFAULT_ARMS, OPENROUTER_PROMPT_USD_PER_MILLION, requiredKey(), createKnowledgeRelevanceGate() (+27 more)
+### Community 20 - "drizzle-orm"
+Cohesion: 0.23
+Nodes (8): drizzle-orm, ChatContactApprovalStore, createChatContactApprovalStore(), executePayloadSql(), loadDrizzle(), SqlExecute, createPostgresRateLimitStore(), RateLimitStore
 
 ### Community 21 - "GitHub Knowledge Sync"
-Cohesion: 0.09
-Nodes (31): GithubContributionRepository, GithubKnowledgeSyncDependencies, GithubKnowledgeSyncResult, GithubSyncRepository, reportDirectory(), reportType(), safeFilename(), syncGithubRepositoryReports() (+23 more)
+Cohesion: 0.07
+Nodes (40): GithubContributionRepository, GithubKnowledgeSyncDependencies, GithubKnowledgeSyncResult, GithubSyncRepository, reportDirectory(), reportType(), safeFilename(), syncGithubRepositoryReports() (+32 more)
 
-### Community 22 - "Payload Config And Seeding"
-Cohesion: 0.06
-Nodes (17): env, postgresCa, r2StorageOptions, payload, ChangelogType, ChangelogType, ChangelogType, ChangelogType (+9 more)
+### Community 22 - "savedDocument"
+Cohesion: 0.07
+Nodes (40): ChangelogType, main(), ChangelogType, main(), ChangelogType, main(), ChangelogType, main() (+32 more)
 
-### Community 23 - "Bun SQL Database Layer"
-Cohesion: 0.10
-Nodes (28): client, connectionString, env, fail(), flush(), insertBatch(), refreshDayRollups(), streamDumpDays() (+20 more)
+### Community 23 - "history/database.ts"
+Cohesion: 0.29
+Nodes (9): BunSqlClientOptions, createBunSqlClient(), createQueryPort(), QueryPort, toBunSqlUrl(), getCodingHistoryRepository(), createCodingHistoryRepository(), insertHeartbeat() (+1 more)
 
-### Community 25 - "Chat Contact Form Fields"
-Cohesion: 0.09
-Nodes (31): ChatContactCheckboxField(), ChatContactSelectField(), getChatContactFormError(), Checkbox(), SelectContent(), SelectItem(), SelectTrigger(), SelectValue() (+23 more)
+### Community 25 - "chat-contact-panel.tsx"
+Cohesion: 0.16
+Nodes (18): ChatContactPanelProps, ContactPhaseContent(), getContactHeading(), ChatContactReview, ChatContactWorkflowViewModel, ChatContactDeliveredPhase(), ChatContactFormPhase(), ChatContactReviewPhase() (+10 more)
 
-### Community 26 - "Server Chat Agent Core"
-Cohesion: 0.14
-Nodes (30): AgentTurnState, SignedContextV5, ChatServiceDependencies, PreparedChatInput, AgentPlanner, AgentToolName, AgentToolResult, AgentToolRoutingInput (+22 more)
-
-### Community 27 - "Agent Guidance Docs"
-Cohesion: 0.06
-Nodes (25): Base UI State Attribute Vocabulary, Chat Agent Loop and Tool Tuple, RAG Retrieval Flow and Relevance Gate, Vercel Edge Firewall Rules, Multi-Turn Routing Evaluations, Vercel BotID Additive Bot Protection, Fail-Closed Sensitive Content Gate, Typed GitHub Contribution Inventory (+17 more)
-
-### Community 28 - "Chat Agent Planner Prompts"
+### Community 26 - "moderation/types.ts"
 Cohesion: 0.08
-Nodes (27): @openrouter/sdk, ARGUMENT_TOOL_GUIDANCE, parseAgentPlan(), PLANNER_SYSTEM_PROMPT, planSchema, toolCallSchema, buildChatSystemPrompt(), PERSONAL_SCOPE_POLICY (+19 more)
+Nodes (49): Capture, createCapture(), errorCategory(), executeSurface(), runCase(), CapturedDecision, CapturedModelCall, CaseRunRecord (+41 more)
+
+### Community 27 - "Owned Project Catalogue Tool"
+Cohesion: 0.22
+Nodes (6): Chat Agent Loop and Tool Tuple, Vercel BotID Additive Bot Protection, Owned Project Catalogue Tool, Embedding Provider Role Configuration, Catalogue Filter Semantics, Controlled Software Kind Taxonomy
+
+### Community 28 - "chat/runtime.ts"
+Cohesion: 0.18
+Nodes (20): TURNSTILE_ACTIONS, TurnstileAction, createAgentPlanner(), requestPlanText(), createOpenRouterResponder(), createKnowledgeRetriever(), getChatContactWorkflow(), getChatDiagnosticsSink() (+12 more)
 
 ### Community 29 - "Payload Collection Access"
 Cohesion: 0.13
-Nodes (24): authenticatedAccess(), publishedAccess(), Changelogs, contentEditor, MERMAID_LANGUAGES, MarkdownModeFeature, seoField(), ensureContentSlug() (+16 more)
+Nodes (27): payload, authenticatedAccess(), publishedAccess(), Changelogs, contentEditor, seoField(), ensureContentSlug(), nonEmptyString() (+19 more)
 
 ### Community 30 - "Package Script Pipeline"
 Cohesion: 0.05
 Nodes (40): scripts, build, check:server, db:migrate, db:migrate:check, deploy:migrate, dev, dev:rag (+32 more)
 
-### Community 31 - "OS Window State Store"
-Cohesion: 0.09
-Nodes (25): @tanstack/react-store, @tanstack/store, useIsMobile(), FEATURED_AUTOPLAY_MS, WindowControls(), WindowControlsProps, WindowFrameControls, closeWindow() (+17 more)
+### Community 31 - "home-sections.test.tsx"
+Cohesion: 0.15
+Nodes (8): installDomGlobals(), mountedRoots, mountNotes(), mountProjects(), mountSection(), SAVED_GLOBALS, savedGlobals, Timer
 
 ### Community 32 - "Moderation Decision Classifier"
 Cohesion: 0.10
-Nodes (34): DecisionAnswer, normalizeAnswers(), optionalContactIntent(), readAnswerProbability(), readToolDecisions(), requiredAnswer(), createDecisionClassifier(), SystemOneCall (+26 more)
+Nodes (35): DecisionAnswer, normalizeAnswers(), optionalContactIntent(), readAnswerProbability(), readToolDecisions(), requiredAnswer(), createDecisionClassifier(), SystemOneCall (+27 more)
 
-### Community 33 - "Package Manifest Configuration"
+### Community 33 - "_site.projects.$slug.tsx"
+Cohesion: 0.09
+Nodes (36): CardHeadingProps, ChangelogCard(), PostCard(), ProjectCard(), ChangelogNeighbours(), ContentCover(), Cell, Pattern (+28 more)
+
+### Community 34 - "media-item.ts"
+Cohesion: 0.23
+Nodes (14): ImageGallery(), MediaTrigger(), BOX_ASPECT, coverSrcSet(), intrinsicRatio(), matchesAspect(), MediaViewerItem, SrcSetAspectReference (+6 more)
+
+### Community 35 - "chat/http-handler.ts"
 Cohesion: 0.06
-Nodes (34): imports, name, pnpm, onlyBuiltDependencies, private, type, @biomejs/biome, botid (+26 more)
-
-### Community 34 - "Sidebar UI Primitives"
-Cohesion: 0.08
-Nodes (16): Input(), SidebarContext, SidebarContextProps, SidebarInput(), SidebarMenuButton(), sidebarMenuButtonVariants, SidebarMenuSkeleton(), SidebarProvider() (+8 more)
-
-### Community 35 - "Chat Contact HTTP Handlers"
-Cohesion: 0.13
-Nodes (20): CHAT_BOT_BLOCKED_MESSAGE, ChatContactActionRequest, encodeChatEvent(), botRejectedResponse(), ChatPostHandlerDependencies, createChatPostHandler(), handleChatMessageRequest(), handleContactActionRequest() (+12 more)
+Nodes (43): @lst97-oss/last-httprism@0.2.0, @lst97-oss/last-httprism, AUTHORED_CHAT_MESSAGES, CHAT_BOT_BLOCKED_MESSAGE, CHAT_EXPIRED_MESSAGE, CHAT_INVALID_MESSAGE_MESSAGE, CHAT_RATE_LIMIT_MESSAGE, CHAT_REQUEST_TOO_LARGE_MESSAGE (+35 more)
 
 ### Community 36 - "Biome Config Rules"
 Cohesion: 0.06
 Nodes (32): source, assist, actions, enabled, includes, files, includes, formatter (+24 more)
 
-### Community 37 - "Project Catalog Sync"
-Cohesion: 0.08
-Nodes (27): collectDocuments(), runGh(), entries, env, excluded, githubRecords, projects, repositories (+19 more)
+### Community 37 - "context-signer.ts"
+Cohesion: 0.12
+Nodes (23): boundedAnchors(), boundedMessages(), boundedProjectListState(), contactReviewPayload(), createChatContextSigner(), FullChatContextSigner, hasProjectState(), isAnchor() (+15 more)
 
 ### Community 38 - "Chat Transcript UI"
-Cohesion: 0.13
-Nodes (22): ChatTranscript(), ChatTranscriptProps, ChatViewMessage, Avatar(), AvatarFallback(), BubbleContent(), Marker(), MarkerContent() (+14 more)
+Cohesion: 0.11
+Nodes (36): Chat & Messaging, Contents, Escape hatch: the scroller hooks, Message rows use Message, Message surfaces use Bubble, Scrollable threads use MessageScroller, Streaming, anchoring, and jump-to-latest are built in, System notes and dividers use Marker (+28 more)
 
 ### Community 39 - "Chat Event Schemas"
+Cohesion: 0.09
+Nodes (33): useChatStream(), failDraft(), readStream(), sendMessage(), CHAT_OFFLINE_MESSAGE, safeChatFailureMessage(), CHAT_STATUS_LABELS, ChatCitationParity (+25 more)
+
+### Community 40 - "retrieve.ts"
 Cohesion: 0.06
-Nodes (29): CHAT_STATUS_LABELS, chatCitationSchema, chatCitationShape, ChatContactActionBody, chatContactActionResponseSchema, chatContactActionSchema, chatContactEventSchema, chatContactEventSchemaUnion (+21 more)
+Nodes (31): dateSchema, PROJECT_BREAKDOWN_DIMENSIONS, ProjectCatalogBreakdownEntry, projectCatalogFiltersSchema, ProjectCatalogQuery, escapeUntrustedValue(), formatKnowledgeEvidence(), PromptKnowledgeEvidence (+23 more)
 
-### Community 40 - "Knowledge Query Resolution"
-Cohesion: 0.11
-Nodes (25): anchorHasSource(), buildStandaloneFollowUp(), historyOnlyFollowUp(), namedEntity(), resolveKnowledgeQuery(), sanitize(), selectRelevantTopicAnchor(), assessRelevantCandidates() (+17 more)
-
-### Community 41 - "Knowledge Document Chunking"
-Cohesion: 0.12
-Nodes (22): adjustCodePointBoundary(), breadcrumbPrefix(), buildChunk(), chunkHeadingDelimitedDocument(), ChunkingOptions, chunkKnowledgeDocument(), documentPrefix(), HeadingSegment (+14 more)
+### Community 41 - "react"
+Cohesion: 0.06
+Nodes (42): Field validation and disabled states, InputGroup requires InputGroupInput/InputGroupTextarea, cn, lucide-react, react, @tanstack/react-store, useIsMobile(), ChatComposer() (+34 more)
 
 ### Community 42 - "Vite Build Plugins"
 Cohesion: 0.09
-Nodes (19): nitro, @tailwindcss/vite, @tanstack/devtools-vite, @vitejs/plugin-react, @vitejs/plugin-rsc, clientModuleResolution(), optimizeDepsExcludeDefaults, optimizeDepsIncludeDefaults (+11 more)
+Nodes (18): clientModuleResolution(), optimizeDepsExcludeDefaults, optimizeDepsIncludeDefaults, payloadNoExternalPatterns, payloadRscNoExternalPatterns, ssrExternalPackages, payloadDevTransforms(), defaultImportProtectionIgnoreImporters (+10 more)
 
 ### Community 43 - "Chat Session State Reducer"
 Cohesion: 0.16
-Nodes (24): appendAssistantMessage(), applyContactEvent(), chatSessionReducer(), ChatSessionState, createInitialChatSessionState(), emptyFieldErrors(), resetSession(), updateLastMessage() (+16 more)
+Nodes (22): appendAssistantMessage(), applyContactEvent(), CHAT_WELCOME_MESSAGE, ChatSessionAction, chatSessionReducer(), ChatSessionState, createInitialChatSessionState(), emptyFieldErrors() (+14 more)
 
-### Community 44 - "Chat Stream Hook"
-Cohesion: 0.12
-Nodes (25): CHAT_WELCOME_MESSAGE, ChatSessionAction, useChatStream(), failDraft(), readStream(), sendMessage(), UseChatStreamOptions, AUTHORED_CHAT_MESSAGES (+17 more)
+### Community 44 - "comments/payload-hooks.ts"
+Cohesion: 0.13
+Nodes (19): CommentsConfig, CommentsHookDeps, ContentDoc, createCommentsAfterChangeHook(), defaultDeps, isPubliclyVisible(), needsThreadRegistration(), timestamp() (+11 more)
 
 ### Community 45 - "Chat Contact Approvals"
-Cohesion: 0.10
-Nodes (19): ChatContactApprovalStore, createChatContactApprovalStore(), getChatContactApprovalStore(), lazyContactEmailService, lazyEmailSender, lazyTurnstileVerifier, submitChatContact(), submitContact() (+11 more)
+Cohesion: 0.16
+Nodes (12): submitContact(), ContactSubmissionDependencies, readTurnstileToken(), submitContactMessage(), TurnstileVerifier, contactSchema, ContactValidation, parseContactInput() (+4 more)
 
-### Community 46 - "Decision Filter Benchmarks"
-Cohesion: 0.14
-Nodes (26): ArmId, BenchmarkCase, Capture, createCapture(), errorCategory(), mapConcurrent(), runCase(), ArmSummary (+18 more)
+### Community 46 - "coding-stats-tool.ts"
+Cohesion: 0.13
+Nodes (18): withTimeout(), codingStatsLabel(), CodingStatsQuery, detectCategory(), detectRange(), matchCodingStatsRequest(), parseCodingStatsToolArguments(), RANGE_PATTERNS (+10 more)
 
 ### Community 47 - "AI Engineering Judgment Essays"
 Cohesion: 0.08
 Nodes (7): Engineering Judgment as the Real Skill, Vibe Coding (unexamined acceptance of AI output), Vibe Coding (no future context), Booking System Domain Model, AI Usage Observation Criteria, Judgment-Revealing Interview Questions, Old Junior Developer Model
 
 ### Community 48 - "Site Content Data Loaders"
-Cohesion: 0.16
-Nodes (14): createSiteDataLoaders(), FilterablePageInput, filtersFrom(), PageInput, RelatedInput, SiteDataSources, Changelog, ChangelogSummary (+6 more)
+Cohesion: 0.15
+Nodes (15): ContentDetailLayoutProps, createSiteDataLoaders(), FilterablePageInput, filtersFrom(), PageInput, RelatedInput, SiteDataSources, Changelog (+7 more)
 
-### Community 49 - "Combobox UI Primitives"
-Cohesion: 0.11
-Nodes (11): ComboboxChip(), ComboboxClear(), ComboboxInput(), ComboboxTrigger(), InputGroupAddon(), inputGroupAddonVariants, InputGroupButton(), inputGroupButtonVariants (+3 more)
+### Community 49 - "combobox.tsx"
+Cohesion: 0.12
+Nodes (8): ComboboxChip(), ComboboxClear(), ComboboxInput(), ComboboxTrigger(), InputGroupAddon(), inputGroupAddonVariants, InputGroupButton(), inputGroupButtonVariants
 
 ### Community 50 - "Server AGENTS Documentation"
 Cohesion: 0.10
 Nodes (11): Vibe Code Rescue (Go Support Plan), Chat agent loop, Chat source boundaries (inventory vs knowledge vs site_content vs services), Signed chat contact workflow state machine, Decision model (perplexity/pplx-decider-v1.2), OpenRouter planner (tool-argument preparation), OpenRouter responder (answer writing), Zita (on-site portfolio assistant) (+3 more)
 
-### Community 51 - "Payload Content Readers"
-Cohesion: 0.10
-Nodes (16): PayloadDocument, createPayloadReaders(), findPublishedDocuments(), PayloadCollection, PayloadReaderClient, PayloadReaderDependencies, PayloadResult, PublishedQuery (+8 more)
+### Community 51 - "share-dialog.test.tsx"
+Cohesion: 0.16
+Nodes (14): ShareDialogProps, previewLocation(), SharePreview(), SharePreviewProps, buildShareTargets(), ShareTarget, ShareCopy, ShareCopyStatus (+6 more)
 
-### Community 52 - "Lexical Markdown Editor Seeding"
-Cohesion: 0.11
-Nodes (16): @payloadcms/richtext-lexical, @payloadcms/ui, main(), TOPICS, upsertVocabulary(), codeBlockLanguage(), main(), TAGS (+8 more)
+### Community 52 - "@payloadcms/richtext-lexical"
+Cohesion: 0.16
+Nodes (9): @payloadcms/richtext-lexical, MERMAID_LANGUAGES, MarkdownModeFeature, UPLOAD_MARKDOWN_TRANSFORMER, MarkdownEditorFeatureClient, MarkdownEditorModePlugin(), buildEditor(), exportPopulatedImage() (+1 more)
 
 ### Community 53 - "Debugging Interview Answers"
 Cohesion: 0.10
 Nodes (19): Interview Answer: Debugging a Production-Only Issue, Production Divergence: Config, Dependency Versions, Data, Concurrency, Caching, Interview Answer: Frontend Succeeds but Database Holds the Wrong Value, Regression Test Added After Root Cause Is Found, Interview Answer: Difficult Technical Problem (Tailscale MagicDNS), Tailscale MagicDNS Hostname Resolution Breaking SSH Deploys, Interview Answer: Where Environment Variables and API Keys Belong, Cost-Aware Deployment Architecture (Tailscale, Cloudflare Tunnel, Docker Compose) (+11 more)
 
 ### Community 54 - "GitHub Contributions Knowledge"
-Cohesion: 0.10
-Nodes (17): aggregateGithubContributions(), contributionCollectionSchema, contributionKindCountsSchema, contributionReference(), contributionReferenceSchema, discoverGithubContributions(), GithubContributionInventory, GithubContributionsGateway (+9 more)
+Cohesion: 0.09
+Nodes (18): aggregateGithubContributions(), contributionCollectionSchema, contributionKindCountsSchema, contributionReference(), contributionReferenceSchema, createGithubContributionsGateway(), discoverGithubContributions(), GithubContributionInventory (+10 more)
 
 ### Community 55 - "Open Graph Image Renderer"
-Cohesion: 0.12
-Nodes (18): fontkit, SITE_OG_IMAGE_DESCRIPTION_LIMIT, SITE_OG_IMAGE_TITLE_LIMIT, archivoBlackFont, artworkBytes, createFontFromDataUrl(), createOpenGraphImageGetHandler(), decodeFontDataUrl() (+10 more)
+Cohesion: 0.07
+Nodes (28): fontkit@^2.0.4, Cream Grid Canvas with Double Border and Corner Brackets, Default OG Share Card (1200x630 WebP), Pixel-Art Workspace Illustration, Reserved Title Negative Space, Warm Pixel Palette (cream, navy outline, coral, teal, mustard), fontkit, SITE_OG_IMAGE_DESCRIPTION_LIMIT (+20 more)
 
-### Community 56 - "Benchmark Gate Reporting"
-Cohesion: 0.16
-Nodes (24): benignRate(), emptySurfaceSummary(), evaluateGates(), GateResult, HOSTILE_COUNT(), IN_SCOPE_LABELS, isUnavailable(), labelKey() (+16 more)
+### Community 56 - "report.ts"
+Cohesion: 0.06
+Nodes (51): ArmId, BenchmarkCase, mapConcurrent(), DecisionSnapshot, evaluateChatGating(), evaluateContactGating(), evaluateWorkflowGating(), GatingOutcome (+43 more)
 
-### Community 58 - "Chat Runtime Wiring"
-Cohesion: 0.18
-Nodes (20): createAgentPlanner(), requestPlanText(), createChatContextSigner(), createOpenRouterResponder(), getChatContactWorkflow(), getChatDiagnosticsSink(), getChatService(), verifyChatTurnstile() (+12 more)
+### Community 58 - "shell.tsx"
+Cohesion: 0.07
+Nodes (47): isCurrent(), mobileMoreItems, MobileTabBar(), mobileTabBarItems, moreDescriptions, GlobalRouteProgress(), RouteProgressBar(), DesktopShell() (+39 more)
 
-### Community 59 - "Base UI Primitive Components"
+### Community 59 - "Component Composition"
 Cohesion: 0.10
-Nodes (8): @base-ui/react, ButtonGroup(), ButtonGroupSeparator(), buttonGroupVariants, FieldSeparator(), ItemSeparator(), Separator(), SidebarSeparator()
+Nodes (16): Address Schemes, Build and Verify, GitHub Registries, Include, Item Definitions, Mental Model, Registry Authoring and Addresses, Registry Dependencies (+8 more)
 
-### Community 60 - "Retrieval Eval and Reranking"
-Cohesion: 0.11
-Nodes (17): alwaysRelevant, args, asJson, candidateIdentity(), env, kindFilter, padRank(), poolOrderReranker (+9 more)
+### Community 60 - "zod"
+Cohesion: 0.12
+Nodes (11): zod, createGithubKnowledgeSource(), FetchFunction, GithubKnowledgeSourceConfig, readmeSchema, repositorySchema, createSiliconFlowReranker(), FetchFunction (+3 more)
 
-### Community 61 - "Chat Context Signing"
-Cohesion: 0.14
-Nodes (20): boundedAnchors(), boundedMessages(), boundedProjectListState(), contactReviewPayload(), FullChatContextSigner, hasProjectState(), isAnchor(), isContactTemplate() (+12 more)
+### Community 61 - "sidebar.tsx"
+Cohesion: 0.08
+Nodes (20): SheetContent(), SheetDescription(), SheetHeader(), SheetOverlay(), SheetPortal(), SheetTitle(), Sidebar(), SidebarContext (+12 more)
 
-### Community 62 - "Cover Placeholder Patterns"
+### Community 62 - "chat-service.test.ts"
+Cohesion: 0.07
+Nodes (19): ARGUMENT_TOOL_GUIDANCE, parseAgentPlan(), PLANNER_SYSTEM_PROMPT, planSchema, toolCallSchema, OPENROUTER_CHAT_REQUEST_OPTIONS, AgentPlan, CHAT_TOOL_NAMES (+11 more)
+
+### Community 63 - "openrouter-refiner-json-mode.test.ts"
+Cohesion: 0.10
+Nodes (14): ChatContactRefinerOverrides, send(), OpenRouterHttpClient, withTimeout(), ChatContactRefinementRequest, createChatContactRefiner(), bug, CapturedBody (+6 more)
+
+### Community 64 - "chat-contact.ts"
+Cohesion: 0.08
+Nodes (32): validateChatContactDraft(), ChatContactEvent, ChatWorkflowContext, ChatContactRefinementCompletion, ChatContactRefinementResult, makeRequest(), parseRefinedFields(), ParseRefinedFieldsResult (+24 more)
+
+### Community 65 - "payload-readers.ts"
+Cohesion: 0.13
+Nodes (17): PayloadDocument, createPayloadReaders(), findPublishedDocuments(), PayloadCollection, PayloadReaderClient, PayloadReaderDependencies, PayloadResult, PublishedQuery (+9 more)
+
+### Community 66 - "shared.ts"
 Cohesion: 0.09
-Nodes (9): cn, Cell, Pattern, PLACEHOLDER_PATTERNS, PLACEHOLDER_TONES, Row, seedHash(), SPAN_CLASS (+1 more)
+Nodes (33): PROJECT_SOFTWARE_KINDS, projectCatalogQuerySchema, createKnowledgeCatalogOperations(), ProjectCatalogEntry, updateOwnedProjectCatalogWithinTransaction(), upsertProjectCatalogEntry(), createKnowledgeChunkOperations(), createKnowledgeIndexRepository() (+25 more)
 
-### Community 63 - "OpenRouter Contact Refiner"
-Cohesion: 0.11
-Nodes (15): ChatContactRefinerOverrides, createOpenRouterChatContactRefiner(), send(), OpenRouterHttpClient, withTimeout(), ChatContactRefinementRequest, createChatContactRefiner(), bug (+7 more)
-
-### Community 64 - "Contact Chat Workflow"
-Cohesion: 0.12
-Nodes (19): ChatContactEvent, ChatConversationContext, ChatWorkflowContext, ChatContactWorkflowResult, ConfirmSendAction, contactModeContext(), ContactReportRefiner, confirmSend() (+11 more)
-
-### Community 65 - "Melbourne Temperature Service"
-Cohesion: 0.14
-Nodes (17): melbourneTemperatureReader, bomSchema, bomUrl, createMelbourneTemperatureReader(), loadTemperature(), request(), forecastSchema, forecastUrl (+9 more)
-
-### Community 66 - "JSON Logging Sink"
-Cohesion: 0.12
-Nodes (5): JsonLogger, LogFields, logger, sanitize(), serializeError()
-
-### Community 67 - "Moderation Service Types"
-Cohesion: 0.19
-Nodes (12): executeSurface(), createModerationService(), isConfident(), ClassificationDecision, ContactWorkflowFinding, ContactWorkflowModerationResult, ModerationClassifier, ModerationDiagnosticsObserver (+4 more)
-
-### Community 68 - "Chat Composer UI"
-Cohesion: 0.17
-Nodes (10): CHAT_INPUT_MAX_HEIGHT_PX, ChatComposer(), ChatComposerProps, ChatPromptSuggestionsProps, ChatConversationViewModel, MediaViewerKeyHint(), InputGroup(), Kbd() (+2 more)
-
-### Community 69 - "Public Lexical Sanitizer"
-Cohesion: 0.16
-Nodes (17): CHANGELOG_CHANGE_TYPE_LABELS, isRecord(), publicRelatedRecord(), RecordValue, sanitizeNode(), sanitizeUpload(), ChangelogChangeType, ContentFilters (+9 more)
-
-### Community 70 - "Chat Contact API Security"
-Cohesion: 0.18
-Nodes (12): POST, Route, POST, Route, isVercelRuntime(), BotIdCheck, checkBotRequest(), createRateLimiter() (+4 more)
-
-### Community 71 - "Payload Content Mappers"
+### Community 67 - "payload-mappers.ts"
 Cohesion: 0.32
 Nodes (18): CHANGE_TYPES, changeTypes(), coverImage(), labelSummaries(), mapChangelog(), mapChangelogSummary(), mapPost(), mapPostSummary() (+10 more)
 
-### Community 72 - "Decision Benchmark Cases"
+### Community 68 - "ref_bun_test"
+Cohesion: 0.12
+Nodes (7): build, FAVICON_DIR, aboutRouteFlat, REQUIRED, ROOTS, SKIPPED, users
+
+### Community 69 - "chunking.ts"
 Cohesion: 0.21
-Nodes (14): chatBenchmarkCases, contactDirectBenchmarkCases, contactWorkflowBenchmarkCases, routingBenchmarkCases, relevanceBenchmarkCases, ALL_CASES, ChatBenchmarkCase, ContactDirectBenchmarkCase (+6 more)
+Nodes (18): adjustCodePointBoundary(), breadcrumbPrefix(), buildChunk(), chunkHeadingDelimitedDocument(), ChunkingOptions, chunkKnowledgeDocument(), documentPrefix(), HeadingSegment (+10 more)
+
+### Community 70 - "Commands"
+Cohesion: 0.12
+Nodes (17): `add` — Add components, `apply` — Apply a preset to an existing project, `build` — Build a custom registry, Commands, Contents, `diff` — Check for updates, `docs` — Get component documentation URLs, Dry-Run Mode (+9 more)
+
+### Community 71 - "content/types.ts"
+Cohesion: 0.08
+Nodes (18): CHANGELOG_CHANGE_TYPE_LABELS, contentReader, createContentReader(), BlogReader, ChangelogChangeType, ChangelogReader, ContentFilters, hasValidChildren() (+10 more)
+
+### Community 72 - "chat-request-metadata.ts"
+Cohesion: 0.21
+Nodes (10): redactDiagnosticsText(), browserFromUserAgent(), chatRequestMetadataFromRequest(), locationFromRequest(), referrerPath(), safeHeader(), clientKeyFromRequest(), encoder (+2 more)
 
 ### Community 73 - "TypeScript Compiler Config"
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowImportingTsExtensions, jsx, lib, module, moduleResolution, noEmit, noFallthroughCasesInSwitch (+11 more)
 
-### Community 74 - "SEO Sitemap Sharing"
+### Community 74 - "MermaidDiagram"
 Cohesion: 0.15
-Nodes (16): Cream Grid Canvas with Double Border and Corner Brackets, Default OG Share Card (1200x630 WebP), Pixel-Art Workspace Illustration, Reserved Title Negative Space, Warm Pixel Palette (cream, navy outline, coral, teal, mustard), sharp, SITE_OG_IMAGE_PATH, Route (+8 more)
+Nodes (7): CHAT_CONTACT_FLOW_DIAGRAM, CHAT_PIPELINE_DIAGRAM, DiagramKey, DIAGRAMS, DiagramStatus, MermaidDiagram(), MermaidDiagramProps
 
-### Community 75 - "Decision Gating Benchmarks"
-Cohesion: 0.15
-Nodes (11): DecisionSnapshot, evaluateChatGating(), evaluateContactGating(), evaluateWorkflowGating(), GatingOutcome, IN_SCOPE_LABELS, isConfident(), ChatResult (+3 more)
+### Community 75 - "form.tsx"
+Cohesion: 0.17
+Nodes (13): react-hook-form@^7.91.0, react-hook-form, FieldLabel(), FormControl(), FormDescription(), FormFieldContext, FormFieldContextValue, FormItemContext (+5 more)
 
-### Community 76 - "Chat Page Health Boundary"
-Cohesion: 0.20
-Nodes (13): BrowserCapabilityBoundary(), ChatPage(), ChatPageProps, SiteHealthContext, SiteHealthProvider(), useSiteHealthStatus(), ChatPrivacyNoticePhase, getChatPrivacyNotice() (+5 more)
+### Community 76 - "masonry-rows.test.ts"
+Cohesion: 0.14
+Nodes (5): styles, HappyRect, SAVED_GLOBALS, savedGlobals, FIELD_CONTROL_PADDING
 
-### Community 77 - "Chat Contact Panel UI"
-Cohesion: 0.28
-Nodes (14): ChatContactPanel(), ChatContactPanelProps, ContactPhaseContent(), getContactHeading(), ChatContactWorkflowViewModel, ChatContactDeliveredPhase(), ChatContactDiscardActions(), ChatContactFormPhase() (+6 more)
+### Community 77 - "system-one-client.ts"
+Cohesion: 0.07
+Nodes (36): ARM_IDS, ARM_MODELS, ArmOptions, createArm(), DEFAULT_ARMS, OPENROUTER_PROMPT_USD_PER_MILLION, requiredKey(), createKnowledgeRelevanceGate() (+28 more)
 
-### Community 78 - "Turnstile Challenge Verification"
-Cohesion: 0.13
-Nodes (9): loadTurnstileScript(), TurnstileAPI, TurnstileOptions, Window, TURNSTILE_ACTIONS, TurnstileAction, SiteverifyResponse, TurnstileVerifierOptions (+1 more)
+### Community 78 - "vite-logger.ts"
+Cohesion: 0.22
+Nodes (13): classifyEnvRunnerLine(), classifyViteLine(), consolaLevel(), plainLines(), routeConsola(), routeDevToolLogs(), routeEnvRunnerWarnings(), Rule (+5 more)
 
 ### Community 79 - "Content Server Functions"
-Cohesion: 0.28
-Nodes (16): siteData, cleanFilters(), getChangelogNeighboursServerFn, getChangelogServerFn, getPostServerFn, getProjectServerFn, getTopicServerFn, listAllPostsByUpdatedServerFn (+8 more)
+Cohesion: 0.18
+Nodes (23): siteData, Route, cleanFilters(), getChangelogNeighboursServerFn, getChangelogServerFn, getPostServerFn, getProjectServerFn, getTopicServerFn (+15 more)
 
-### Community 80 - "Coding History Streaks"
-Cohesion: 0.12
-Nodes (14): activeDayRowSchema, coverageRowSchema, dateSchema, dayIsNextDay(), dayRowSchema, HistoryStreaks, MAX_SERIES_DAYS, MAX_TOP_ENTRIES (+6 more)
-
-### Community 81 - "Contact Email Templates"
-Cohesion: 0.27
-Nodes (14): ContactMessage, createContactEmailService(), CUSTOMER_RECEIPT_MESSAGE, escapeHtml(), palette, renderChatContactNotification(), renderChatContactReceipt(), renderContactNotification() (+6 more)
-
-### Community 82 - "Dev Tool Dependencies"
+### Community 81 - "ChatContactSubmission"
 Cohesion: 0.11
-Nodes (18): devDependencies, @biomejs/biome, bun-types, nitro, sass, @tanstack/devtools-event-client, @tanstack/devtools-vite, @tanstack/router-cli (+10 more)
+Nodes (32): ChatContactSubmission, approvalClaimFailureCategory(), ChatContactEmailSubmissionDependencies, ChatContactEmailSubmissionResult, submitChatContactEmail(), getChatContactApprovalStore(), getContactEmailService(), lazyContactEmailService (+24 more)
+
+### Community 82 - "devDependencies"
+Cohesion: 0.06
+Nodes (33): devDependencies, @biomejs/biome@2.5.15, bun-types@^1.4.4, consola@3.4.2, nitro@^3.0.260903-beta, @tanstack/devtools-event-client@latest, @tanstack/devtools-vite@latest, @tanstack/router-cli@^1.167.46 (+25 more)
 
 ### Community 83 - "Browser Globals Test Harness"
-Cohesion: 0.14
-Nodes (11): browserWindow, globalKeys, originalGlobalDescriptors, BROWSER_GLOBALS, BrowserGlobal, installBrowserGlobals(), InstalledBrowserGlobals, installed (+3 more)
+Cohesion: 0.11
+Nodes (15): browserWindow, globalKeys, originalGlobalDescriptors, BROWSER_GLOBALS, BrowserGlobal, installBrowserGlobals(), InstalledBrowserGlobals, browserWindow (+7 more)
 
-### Community 84 - "Contact Message Form"
-Cohesion: 0.14
-Nodes (14): @tanstack/react-form, ContactFormValues, ContactMessageForm(), ContactMessageFormContent(), fieldErrorText(), initialForm, websiteSchema, formErrorClass (+6 more)
+### Community 84 - "writeLogLine"
+Cohesion: 0.20
+Nodes (10): writeLogLine(), levelFromPino(), PayloadLogDestination, payloadLogDestination(), payloadLoggerConfig(), PINO_KEYS, Redact, sanitize() (+2 more)
 
 ### Community 85 - "Career Interview Answers"
 Cohesion: 0.14
 Nodes (12): Interview Answer: Career Progression Over the Next Two Years, Long-Term Goal: Reverse Engineering and Lower-Level Systems, Interview Answer: Delivery Speed Versus Maintainability Under Deadlines, Interview Answer: 60-90 Second Self Introduction, Nelson: Hong Kong-Born Melbourne Full-Stack Developer, 3000+ Tracked Hours, TypeScript/React Frontend with Node, Deno and Bun Runtimes, Interview Answer: Choosing Local State, Props, Context or Server Store, TanStack Store for TanStack-Ecosystem Consistency (+4 more)
 
-### Community 86 - "Chat Contact Email Submission"
-Cohesion: 0.20
-Nodes (11): ChatContactSubmission, approvalClaimFailureCategory(), ChatContactEmailSubmissionDependencies, ChatContactEmailSubmissionResult, submitChatContactEmail(), ChatContactEmailService, EmailAttachment, EmailTemplate (+3 more)
+### Community 86 - "Customization & Theming"
+Cohesion: 0.14
+Nodes (14): 1. Built-in variants, 2. Tailwind classes via `className`, 3. Add a new variant, 4. Wrapper components, Adding Custom Colors, Border Radius, Changing the Theme, Checking for Updates (+6 more)
 
 ### Community 87 - "WakaTime History Import"
-Cohesion: 0.18
-Nodes (15): topLines(), formatHours(), cleanText(), computeDurations(), dumpDaySchema, EMPTY_ENTITY_HASH, entityHashCache, entityHashFor() (+7 more)
+Cohesion: 0.23
+Nodes (12): cleanText(), computeDurations(), dumpDaySchema, EMPTY_ENTITY_HASH, entityHashCache, entityHashFor(), HEARTBEAT_TIMEOUT_SECONDS, parseDumpDay() (+4 more)
 
-### Community 88 - "Payload Admin Route Render"
-Cohesion: 0.26
-Nodes (11): @payloadcms/tanstack-start, adminRenderServerFn, AdminRenderIntent, AdminRenderRequest, AdminRenderResult, buildAdminRenderParams(), buildAdminRenderRequest(), getAdminRenderIntent() (+3 more)
+### Community 88 - "chat-citation-colors.test.ts"
+Cohesion: 0.19
+Nodes (11): BRAND_YELLOW, browser, CHAT_SURFACE, citationStyles, contrastRatio(), INK, parseColor(), parseHex() (+3 more)
 
-### Community 89 - "UI Button Calendar Primitives"
-Cohesion: 0.20
-Nodes (10): react-day-picker, Button(), buttonVariants, Calendar(), CalendarDayButton(), DialogFooter(), PaginationLink(), PaginationLinkProps (+2 more)
+### Community 89 - "Button"
+Cohesion: 0.08
+Nodes (27): AlertDialogAction(), AlertDialogCancel(), AlertDialogContent(), AlertDialogOverlay(), AlertDialogPortal(), Button(), buttonVariants, Calendar() (+19 more)
+
+### Community 90 - "Menubar UI Primitive"
+Cohesion: 0.12
+Nodes (5): Menubar(), MenubarContent(), MenubarGroup(), MenubarItem(), MenubarPortal()
 
 ### Community 91 - "Chat Tool Selection"
 Cohesion: 0.23
 Nodes (14): createChatToolSelection(), acceptedToolCalls(), asksForSitePages(), availableToolNames(), deterministicPlans(), diagnosticsObserver(), isAffirmativeToolAcceptance(), matchCodingPlans() (+6 more)
 
-### Community 92 - "Coding History Range Presets"
-Cohesion: 0.19
-Nodes (13): addDays(), CodingHistoryRangePreset, coverageText(), detectOp(), detectProjectName(), detectRange(), HistoryOp, matchCodingHistoryRequest() (+5 more)
+### Community 92 - "history/repository.ts"
+Cohesion: 0.13
+Nodes (13): activeDayRowSchema, coverageRowSchema, dateSchema, dayIsNextDay(), dayRowSchema, MAX_SERIES_DAYS, MAX_TOP_ENTRIES, previousDay() (+5 more)
 
-### Community 93 - "Content Reader Service"
-Cohesion: 0.12
-Nodes (4): createContentReader(), BlogReader, ChangelogReader, ProjectReader
-
-### Community 94 - "Alert Badge Primitives"
-Cohesion: 0.17
-Nodes (9): class-variance-authority, Alert(), alertVariants, Badge(), badgeVariants, ToggleGroupContext, ToggleGroupItem(), Toggle() (+1 more)
+### Community 94 - "Component Selection"
+Cohesion: 0.08
+Nodes (17): Choosing between overlay components, No manual z-index on overlay components, Component Selection, Use Components, Not Custom Markup → [composition.md](./rules/composition.md), Alert(), alertVariants, AlertDialog(), Badge() (+9 more)
 
 ### Community 95 - "Chat Markdown Citations"
-Cohesion: 0.20
-Nodes (11): react-markdown, remark-gfm, ChatCitations(), safeHttpHref(), ChatMessageText(), linkifyBareUrls(), linkifyTextNode(), normalizeCollapsedPipeTables() (+3 more)
+Cohesion: 0.24
+Nodes (9): ChatCitations(), safeHttpHref(), ChatMessageText(), linkifyBareUrls(), linkifyTextNode(), normalizeCollapsedPipeTables(), remarkAutoLinkBareUrls(), safeHttpHref() (+1 more)
 
-### Community 98 - "Carousel UI Primitive"
+### Community 96 - "Context Menu Primitives"
+Cohesion: 0.12
+Nodes (3): ContextMenu(), ContextMenuGroup(), ContextMenuItem()
+
+### Community 97 - "Dropdown Menu Primitives"
+Cohesion: 0.11
+Nodes (8): Icons, Icons in Button use data-icon attribute, No sizing classes on icons inside components, Pass icons as component objects, not string keys, DropdownMenuGroup(), DropdownMenuItem(), DropdownMenuLabel(), DropdownMenuSub()
+
+### Community 98 - "Tools"
 Cohesion: 0.17
-Nodes (13): embla-carousel-react, CarouselApi, CarouselContent(), CarouselContext, CarouselContextProps, CarouselItem(), CarouselNext(), CarouselOptions (+5 more)
+Nodes (11): Configuring Registries, Setup, `shadcn:get_add_command_for_items`, `shadcn:get_audit_checklist`, `shadcn:get_item_examples_from_registries`, `shadcn:get_project_registries`, `shadcn:list_items_in_registries`, shadcn MCP Server (+3 more)
 
-### Community 99 - "Payload Admin Layout Routes"
-Cohesion: 0.21
-Nodes (7): getPayloadImportMap(), PayloadLayoutData, toRootProviderProps(), payloadLayoutServerFn, payloadServerFn, PayloadLayout(), Route
+### Community 99 - "browser-capability-boundary.tsx"
+Cohesion: 0.29
+Nodes (9): BrowserCapabilityBoundaryProps, CAPABILITY_LABELS, BrowserCapability, BrowserCapabilityEnvironment, BrowserCapabilityInspection, CHAT_BROWSER_REQUIREMENTS, CONTACT_BROWSER_REQUIREMENTS, inspectBrowserCapabilities() (+1 more)
 
-### Community 100 - "Toast Notification Components"
-Cohesion: 0.26
-Nodes (14): toast, ToastAction(), ToastClose(), ToastContent(), ToastDescription(), Toaster(), ToastIcon(), ToastList() (+6 more)
+### Community 100 - "content-comments.tsx"
+Cohesion: 0.25
+Nodes (9): @lst97-oss/last-comments-widgets@^0.6.2, @lst97-oss/last-comments-widgets, CommentsComponent, ContentComments(), siteThemeVars, subscribeTheme(), themeSnapshot(), ThemeVars (+1 more)
 
 ### Community 101 - "Chart UI Components"
-Cohesion: 0.20
-Nodes (13): recharts, ChartConfig, ChartContainer(), ChartContext, ChartContextProps, ChartLegendContent(), ChartStyle(), ChartTooltipContent() (+5 more)
-
-### Community 102 - "Chat Prompt Suggestions"
-Cohesion: 0.29
-Nodes (9): CHAT_PROMPT_GROUPS, ChatPromptExample, ChatPromptGroup, ChatPromptSuggestions(), Tabs(), TabsContent(), TabsList(), tabsListVariants (+1 more)
+Cohesion: 0.18
+Nodes (14): recharts@3.10.1, recharts, ChartConfig, ChartContainer(), ChartContext, ChartContextProps, ChartLegendContent(), ChartStyle() (+6 more)
 
 ### Community 103 - "Coursework Repository Summaries"
 Cohesion: 0.22
@@ -765,17 +799,21 @@ Nodes (13): Block, TX and Coinbase Model (src/Block.js), lst97/blockchain_demo R
 Cohesion: 0.21
 Nodes (11): project-st-zita-backend, Staff appointment scheduling domain, project-st-zita-frontend, Schedule planner UI, Share appointment dialog, Dynamic collection schema builder, simple-cms-backend, Collection builder stepper UI (+3 more)
 
-### Community 105 - "Contact Field Refinement"
-Cohesion: 0.18
-Nodes (11): ChatContactRefinementCompletion, ChatContactRefinementResult, makeRequest(), parseRefinedFields(), ParseRefinedFieldsResult, refinableFields(), RefinedSubmission, RefinedTemplate (+3 more)
+### Community 105 - "coding-history-tool.ts"
+Cohesion: 0.10
+Nodes (25): addDays(), CodingHistoryRangePreset, coverageText(), detectOp(), detectProjectName(), detectRange(), HistoryOp, HistoryQuery (+17 more)
 
-### Community 106 - "Form UI Primitive"
-Cohesion: 0.21
-Nodes (10): react-hook-form, FormControl(), FormDescription(), FormFieldContext, FormFieldContextValue, FormItemContext, FormItemContextValue, FormLabel() (+2 more)
+### Community 106 - "@base-ui/react"
+Cohesion: 0.09
+Nodes (18): @base-ui/react@^1.9.0, class-variance-authority@^0.7.1, @base-ui/react, class-variance-authority, ButtonGroup(), ButtonGroupSeparator(), buttonGroupVariants, Item() (+10 more)
 
-### Community 107 - "Alert Dialog Primitives"
-Cohesion: 0.18
-Nodes (5): AlertDialogAction(), AlertDialogCancel(), AlertDialogContent(), AlertDialogOverlay(), AlertDialogPortal()
+### Community 107 - "Local Qwen Embedding to pgvector to Rerank Pipeline"
+Cohesion: 0.25
+Nodes (6): RAG Retrieval Flow and Relevance Gate, Local Qwen Embedding to pgvector to Rerank Pipeline, Payload Job Worker Source Lifecycle, 134-Document Corpus Refresh, RAG Retrieval Pipeline Contract, Canonical Owner-Provided Profile Facts
+
+### Community 108 - "import-wakatime-history.ts"
+Cohesion: 0.29
+Nodes (9): client, connectionString, env, fail(), flush(), insertBatch(), refreshDayRollups(), streamDumpDays() (+1 more)
 
 ### Community 109 - "Cantolyrics Project Notes"
 Cohesion: 0.21
@@ -785,33 +823,33 @@ Nodes (13): cantolyrics_refactor, Gemini Streaming Client, Supabase + Stripe Bil
 Cohesion: 0.17
 Nodes (11): aliases, components, utils, iconLibrary, $schema, style, tailwind, baseColor (+3 more)
 
-### Community 112 - "Server Function Caching"
-Cohesion: 0.35
-Nodes (4): @tanstack/react-start, privateServerFnNoStore, publicServerFnCache, getWakaTimeSnapshotServerFn
+### Community 112 - "seed-demo-content.ts"
+Cohesion: 0.22
+Nodes (10): ChangelogSeed, DEMO_CHANGELOGS, DEMO_POSTS, DEMO_PROJECTS, main(), NOW, PostSeed, ProjectSeed (+2 more)
 
-### Community 113 - "Browser Capability Detection"
+### Community 113 - "chat-page.tsx"
+Cohesion: 0.14
+Nodes (17): BrowserCapabilityBoundary(), ChatContactPanel(), ChatPage(), ChatPageProps, ChatContactDiscardActions(), ContactFormValues, ContactMessageForm(), ContactMessageFormContent() (+9 more)
+
+### Community 114 - "Vercel x-forwarded-for Trust with Fail-Closed Parsing"
 Cohesion: 0.29
-Nodes (9): BrowserCapabilityBoundaryProps, CAPABILITY_LABELS, BrowserCapability, BrowserCapabilityEnvironment, BrowserCapabilityInspection, CHAT_BROWSER_REQUIREMENTS, CONTACT_BROWSER_REQUIREMENTS, inspectBrowserCapabilities() (+1 more)
+Nodes (4): Base UI State Attribute Vocabulary, Vercel Edge Firewall Rules, Cloudflare Tunnel to Vercel Ingress Trust Migration, LAST//OS Platform Overview
 
-### Community 114 - "Accordion List Filters"
-Cohesion: 0.36
-Nodes (7): ListFilters(), Accordion(), AccordionContent(), AccordionItem(), AccordionTrigger(), Switch(), { window: browser, restore }
+### Community 115 - "attachment.tsx"
+Cohesion: 0.09
+Nodes (19): Attachments use Attachment, Built-in variants first, className for layout only, Contents, No manual dark: color overrides, No raw color values for status/state indicators, No space-x-* / space-y-*, Prefer size-* over w-* h-* when equal (+11 more)
 
-### Community 115 - "Attachment UI Components"
-Cohesion: 0.20
-Nodes (5): Attachment(), AttachmentAction(), AttachmentMedia(), attachmentMediaVariants, attachmentVariants
+### Community 116 - "Bounded Topic Anchor Ledger"
+Cohesion: 0.32
+Nodes (6): Multi-Turn Routing Evaluations, Standalone Follow-Up Query Resolution, Versioned Signed Context with Topic Anchors, Non-Reversible Review Approval Binding, Jev-Gated Contact Workflow State Machine, Bounded Topic Anchor Ledger
 
-### Community 116 - "Form Field Primitives"
-Cohesion: 0.20
-Nodes (4): Field(), FieldLabel(), fieldVariants, Label()
+### Community 117 - "field.tsx"
+Cohesion: 0.14
+Nodes (17): Buttons inside inputs use InputGroup + InputGroupAddon, Contents, FieldSet + FieldLegend for grouping related fields, Forms & Inputs, Forms use FieldGroup + Field, Option sets (2–7 choices) use ToggleGroup, Forms & Inputs → [forms.md](./rules/forms.md), Field() (+9 more)
 
-### Community 117 - "Item Layout Components"
-Cohesion: 0.20
-Nodes (4): Item(), ItemMedia(), itemMediaVariants, itemVariants
-
-### Community 118 - "Sheet Sidebar Overlays"
-Cohesion: 0.26
-Nodes (8): Sheet(), SheetContent(), SheetDescription(), SheetHeader(), SheetOverlay(), SheetPortal(), SheetTitle(), Sidebar()
+### Community 118 - "site-health-provider.tsx"
+Cohesion: 0.38
+Nodes (7): SiteHealthContext, SiteHealthProvider(), FetchLike, fetchSiteHealthStatus(), shouldPollHealth(), siteHealthLabel(), SiteHealthStatus
 
 ### Community 119 - "Security Fundamentals Contributions"
 Cohesion: 0.26
@@ -829,13 +867,13 @@ Nodes (12): SIT210-Embedded-Systems (repository), Android BLE Controller, Blueto
 Cohesion: 0.17
 Nodes (9): G-NAF API Key System, Cloudflare Tunnel Container Deployment, p95 < 50 ms Uncached Autocomplete Benchmark, Nine Parallel State/Territory Workers, Repeatable Release Refresh, Query Classifier Intent, Fixed Autocomplete Query Pipeline, Search Tier Router (+1 more)
 
-### Community 123 - "Coding History Aggregates"
-Cohesion: 0.26
-Nodes (7): HistoryQuery, runCodingHistoryTool(), withCoverage(), HistoryDayPoint, HistoryRange, HistorySummary, HistoryTopEntry
+### Community 123 - "chat/types.ts"
+Cohesion: 0.07
+Nodes (34): MAX_CHAT_CONTEXT_MESSAGES, ChatContextSigner, buildChatSystemPrompt(), PERSONAL_SCOPE_POLICY, createAssistantReplyStreamSanitizer(), take(), removeToolSyntax(), sanitizeAssistantReply() (+26 more)
 
-### Community 124 - "Demo Content Seeder"
-Cohesion: 0.22
-Nodes (10): ChangelogSeed, DEMO_CHANGELOGS, DEMO_POSTS, DEMO_PROJECTS, main(), NOW, PostSeed, ProjectSeed (+2 more)
+### Community 124 - "logger-settings.ts"
+Cohesion: 0.27
+Nodes (8): choose(), LEVEL_ORDER, levelAtLeast(), LEVELS, LogFormat, LogLevel, LogSettings, resolveLogSettings()
 
 ### Community 125 - "Contact Workflow Hook"
 Cohesion: 0.33
@@ -853,17 +891,17 @@ Nodes (6): Autocomplete Prefix Cache, Best Maker Pty Ltd System, Best Maker Pty 
 Cohesion: 0.24
 Nodes (9): Business Package Foundation, Business+ Website Package, Custom-Quoted Additional Development, Business+ Package FAQ Page, Website Cost FAQ Page, Three Website Packages (A$1,000 / A$2,200 / A$3,500), Starter Package FAQ Page, Starter Website Package (from A$1,000) (+1 more)
 
-### Community 130 - "Nodemailer Email Sender"
-Cohesion: 0.27
-Nodes (5): nodemailer, createGmailEmailSender(), MailTransport, MailTransportFactory, EmailSender
-
-### Community 131 - "Chat Contact Report PDF"
-Cohesion: 0.31
-Nodes (8): pdfkit, COLORS, originalReportFields(), pdfSafeText(), renderOriginalChatContactReportPdf(), renderOriginalChatContactReportText(), REPORT_TITLE, ReportSubmission
-
-### Community 132 - "Navigation Menu Primitive"
+### Community 130 - "navigation-menu.tsx"
 Cohesion: 0.24
-Nodes (4): NavigationMenu(), NavigationMenuTrigger(), navigationMenuTriggerStyle, NavigationMenuViewport()
+Nodes (5): NavigationMenu(), NavigationMenuLink(), NavigationMenuTrigger(), navigationMenuTriggerStyle, NavigationMenuViewport()
+
+### Community 131 - "createChatAgentLoop"
+Cohesion: 0.48
+Nodes (6): createChatAgentLoop(), applyToolResult(), pushToolCitation(), runAgentLoop(), runAgentLoopEvents(), runnerFor()
+
+### Community 132 - "__root.tsx"
+Cohesion: 0.31
+Nodes (5): NoJavaScriptNotice(), MyRouterContext, RootDocument(), Route, FileRoutesById
 
 ### Community 133 - "Upload Security Design Notes"
 Cohesion: 0.22
@@ -873,17 +911,17 @@ Nodes (4): Magika Content-Type Detection, Orphaned Upload Cleanup Job, Malware S
 Cohesion: 0.24
 Nodes (6): Decision Model (Perplexity Decider via OpenRouter Decisions API), Four-Step Planner/Responder Loop, Responder Model, Tool Argument Planner, Relevance Gate at 0.60, Retrieval View Boundary
 
-### Community 135 - "WakaTime Snapshot Service"
-Cohesion: 0.22
-Nodes (7): wakaTimeReader, allTimeSnapshotSchema, createWakaTimeReader(), WakaTimeFetcher, WakaTimeReader, WakaTimeSnapshot, WakaTimeSnapshotResult
+### Community 135 - "Logger"
+Cohesion: 0.06
+Nodes (35): cachedPayloads(), countFailures(), Destroyable, destroyCachedPayloads(), drainAll(), payloadShutdownPlugin(), scope, bomSchema (+27 more)
 
 ### Community 136 - "Wakatime History Design Doc"
 Cohesion: 0.25
 Nodes (3): coding_history Chat Tool, coding_stats Chat Tool, WakaTime Coding-History Warehouse
 
-### Community 137 - "Payload URL Security"
-Cohesion: 0.36
-Nodes (6): denyUserCreation(), isLoopbackHost(), LOCALHOST_URL, PayloadServerUrlEnv, PayloadServerUrlError, resolvePayloadServerUrl()
+### Community 137 - "payload-server-url.ts"
+Cohesion: 0.18
+Nodes (10): env, postgresCa, r2StorageOptions, denyUserCreation(), Tags, isLoopbackHost(), LOCALHOST_URL, PayloadServerUrlEnv (+2 more)
 
 ### Community 139 - "Canton 101 Service Boundaries"
 Cohesion: 0.25
@@ -897,9 +935,25 @@ Nodes (7): Deployment Rescue, Deployment Rescue FAQ Page, Support for AI-Assiste
 Cohesion: 0.22
 Nodes (6): Deployment / Deployment Fix Engagement, Standard Deployment Support FAQ Page, Domain, DNS and Hosting FAQ Page, Domain / DNS / Hosting Setup Engagement, Production Readiness Review FAQ Page, Production Readiness Review
 
-### Community 142 - "GitHub Report Parsing"
+### Community 142 - "report-document.ts"
 Cohesion: 0.39
 Nodes (7): metadataValue(), parseCountPair(), parseDate(), parseGithubReportDocument(), parseProjectCatalog(), parseTagLine(), projectSoftwareKindSchema
+
+### Community 143 - "Composition: asChild (radix) vs render (base)"
+Cohesion: 0.08
+Nodes (11): Composition: asChild (radix) vs render (base), AlertDialogTrigger(), Breadcrumb(), BreadcrumbLink(), Collapsible(), CollapsibleTrigger(), DialogClose(), DropdownMenuTrigger() (+3 more)
+
+### Community 144 - "command.tsx"
+Cohesion: 0.06
+Nodes (35): Avatar always needs AvatarFallback, Button has no isPending or isLoading prop, Callouts use Alert, Card structure, Component Composition, Contents, Dialog, Sheet, and Drawer always need a Title, Empty states use Empty component (+27 more)
+
+### Community 145 - "env.ts"
+Cohesion: 0.15
+Nodes (16): POST, POST, isVercelRuntime(), readRuntimeEnv(), runtimeEnvironment(), IntegrationEnvKey, ServerEnvSource, ServerEnv (+8 more)
+
+### Community 146 - "Evidence-Backed Repository Summaries"
+Cohesion: 0.38
+Nodes (3): Fail-Closed Sensitive Content Gate, Typed GitHub Contribution Inventory, Isolated Local Repository Inspection
 
 ### Community 147 - "GitHub OSS Contribution Reports"
 Cohesion: 0.29
@@ -929,13 +983,17 @@ Nodes (7): Alignment Provenance and Quality Evidence, Derived Sentence Annotatio
 Cohesion: 0.29
 Nodes (3): Persisted Crawl Scheduler, Database-backed Dead Letter Queue, Jittered Exponential Backoff
 
+### Community 155 - "One command, a pinned template, and a destination it will not overwrite"
+Cohesion: 0.29
+Nodes (6): Download and rename, One command, a pinned template, and a destination it will not overwrite, Setup is a convenience, not a precondition, The interactive path, What is deliberately absent, What the destination rules protect
+
 ### Community 156 - "Filename Sanitizer Shim"
 Cohesion: 0.39
 Nodes (6): encoder, replaceMatches(), Replacement, sanitize(), sanitizeFilename(), truncateUtf8()
 
 ### Community 157 - "Versioned Media Filenames"
-Cohesion: 0.57
-Nodes (3): ensureVersionedMediaFilename(), resolveVersionedFilename(), Media
+Cohesion: 0.20
+Nodes (10): ensureVersionedMediaFilename(), resolveVersionedFilename(), Media, MediaVariant, mediaVariants, expectSeoGroup(), field(), FieldShape (+2 more)
 
 ### Community 158 - "Open Source Contribution Reports"
 Cohesion: 0.33
@@ -973,49 +1031,53 @@ Nodes (5): Go Support Plan Overview Page, Go Support Plan, Bug Fix Engagement, B
 Cohesion: 0.33
 Nodes (4): Migration and Major Changes Pricing FAQ Page, Migration / Major Refactor Tier (No Starting Price), Support Engagement Process FAQ Page, Technical Consultation FAQ Page
 
-### Community 169 - "Turnstile Challenge Tests"
-Cohesion: 0.33
-Nodes (6): browserWindow, challengeTree(), ConditionalSuspension(), globalKeys, neverResolves, originalGlobalDescriptors
+### Community 169 - "seed-projects-overview-project.ts"
+Cohesion: 0.47
+Nodes (5): codeBlockLanguage(), main(), TAGS, TOPICS, upsertVocabulary()
 
 ### Community 170 - "Engagement Service Artwork"
 Cohesion: 0.47
 Nodes (6): standard-engagement.webp (A$100 support illustration), Deployment & Cloud Hosting Motif, Maintenance & Repair Motif, Security & Backend Data Motif, A$100 Standard Engagement Scope, Website Build Mockup Windows
 
+### Community 171 - "migrate-knowledge.ts"
+Cohesion: 0.33
+Nodes (6): client, connectionString, env, checkPinnedPostgresIdentity(), decodePostgresCa(), withoutSslMode()
+
+### Community 172 - "interface"
+Cohesion: 0.33
+Nodes (5): interface, display_name, icon_large, icon_small, short_description
+
 ### Community 173 - "Payload Admin CSS Script"
 Cohesion: 0.47
 Nodes (5): collect(), main(), ROOTS, SKIPPED, toSpecifier()
 
-### Community 174 - "Best Maker Project Seeding"
+### Community 174 - "package.json"
+Cohesion: 0.05
+Nodes (43): date-fns@^4.4.0, @fontsource/archivo-black@^5.3.0, @openrouter/sdk@^1.5.7, @payloadcms/drizzle@4.0.0-beta.4, @payloadcms/email-nodemailer@4.0.0-beta.4, @payloadcms/graphql@4.0.0-beta.4, @payloadcms/storage-s3@4.0.0-beta.4, @payloadcms/transformer-sharp@4.0.0-beta.4 (+35 more)
+
+### Community 175 - "seed-canton-101-project.ts"
 Cohesion: 0.47
 Nodes (5): codeBlockLanguage(), main(), TAGS, TOPICS, upsertVocabulary()
 
-### Community 175 - "Canton 101 Project Seeder"
-Cohesion: 0.47
-Nodes (5): codeBlockLanguage(), main(), TAGS, TOPICS, upsertVocabulary()
+### Community 176 - "code-block-view.tsx"
+Cohesion: 0.25
+Nodes (8): CodeBlockView(), GRAMMARS, HIGHLIGHT_LABELS, HighlightLanguage, highlightLanguage(), LANGUAGE_ALIASES, pixelCodeTheme, PLAIN_LABELS
 
-### Community 176 - "Seed Projects Overview Script"
-Cohesion: 0.47
-Nodes (5): codeBlockLanguage(), main(), TAGS, TOPICS, upsertVocabulary()
-
-### Community 177 - "SmartPlay Project Seeding"
-Cohesion: 0.47
-Nodes (5): codeBlockLanguage(), main(), TAGS, TOPICS, upsertVocabulary()
-
-### Community 178 - "WWNZ Project Seeding"
-Cohesion: 0.47
-Nodes (5): codeBlockLanguage(), main(), TAGS, TOPICS, upsertVocabulary()
+### Community 178 - "config.ts"
+Cohesion: 0.36
+Nodes (7): commentsConfig(), commentsConfigFrom(), CommentsEnv, CommentsPublicConfig, commentsPublicConfigFrom(), trimmedBaseUrl(), base
 
 ### Community 179 - "Seed Script Runner"
 Cohesion: 0.47
 Nodes (5): Collection, COLLECTION_ORDER, discoverSeeds(), isCollection(), main()
 
-### Community 180 - "Automatic Slug Fields"
-Cohesion: 0.53
-Nodes (4): SlugField(), automaticSlugForTitle(), AutomaticSlugInput, slugifyContentTitle()
+### Community 180 - "chat-contact-report-pdf.ts"
+Cohesion: 0.36
+Nodes (7): COLORS, originalReportFields(), pdfSafeText(), renderOriginalChatContactReportPdf(), renderOriginalChatContactReportText(), REPORT_TITLE, ReportSubmission
 
-### Community 181 - "Chat Bubble Components"
-Cohesion: 0.47
-Nodes (4): Bubble(), BubbleReactions(), bubbleReactionsVariants, bubbleVariants
+### Community 181 - "nodemailer-sender.ts"
+Cohesion: 0.38
+Nodes (4): nodemailer, createGmailEmailSender(), MailTransport, MailTransportFactory
 
 ### Community 183 - "TPWFC Contribution Reports"
 Cohesion: 0.40
@@ -1045,21 +1107,17 @@ Nodes (6): Interview Answer: Modelling Users, Households, Expenses, Categories a
 Cohesion: 0.40
 Nodes (6): Website Add-on Price Catalogue, Go Support Plan Is a Different Service, Maintenance Billed Separately from Build, Business Package (from A$2,200), Business Package Excludes Existing-Site Work, Starter Package Baseline (from A$1,000)
 
-### Community 191 - "Payload Admin CSS Test"
-Cohesion: 0.33
-Nodes (3): REQUIRED, ROOTS, SKIPPED
-
-### Community 192 - "Site Data Test Fixtures"
-Cohesion: 0.33
-Nodes (4): emptyChangelogPage, emptyPostPage, emptyProjectPage, topic
+### Community 192 - "public-lexical.ts"
+Cohesion: 0.52
+Nodes (6): isRecord(), publicRelatedRecord(), RecordValue, sanitizeNode(), sanitizeUpload(), LexicalContent
 
 ### Community 193 - "Services Workflow Illustration"
 Cohesion: 0.70
 Nodes (5): Launch Readiness (Green Check, Rocket, Sparkles), Services Process Pixel-Art Illustration (workflow.webp), Planning Brief (Clipboard, House Sketch, Pencil), Responsive Site Across Desktop, Tablet, Phone, Wireframe / Design Comp Stage
 
-### Community 195 - "LAST//OS Project Seed"
-Cohesion: 0.50
-Nodes (4): main(), TAGS, TOPICS, upsertVocabulary()
+### Community 195 - "What a generated project can already prove before the first feature"
+Cohesion: 0.33
+Nodes (5): The boot sequence, The inherited contract, The smoke check is the point, What a generated project can already prove before the first feature, Why the contract lives in the starter
 
 ### Community 196 - "Junior Developer Blog Thesis"
 Cohesion: 0.70
@@ -1113,13 +1171,25 @@ Nodes (3): Original Currency plus HKD Base, Authenticated UploadThing Uploads, S
 Cohesion: 0.40
 Nodes (3): Standard Support Scope FAQ Page, Small Features FAQ Page, Small Feature Implementation
 
-### Community 215 - "Code Is Cheap Post Seeder"
-Cohesion: 0.67
-Nodes (3): main(), TOPICS, upsertVocabulary()
+### Community 212 - "Two starters on one kernel, mirrored rather than forked"
+Cohesion: 0.33
+Nodes (5): The blank template, The kernel both share, The Payload template, The sync rule, Two starters on one kernel, mirrored rather than forked
 
-### Community 216 - "Seed Blog Post Script"
-Cohesion: 0.67
-Nodes (3): main(), TOPICS, upsertVocabulary()
+### Community 213 - "One deployment, two databases, and a tenancy model in front of every thread"
+Cohesion: 0.33
+Nodes (5): One deployment, two databases, and a tenancy model in front of every thread, Origins and the request boundary, The tenancy model, Two databases, on purpose, Why this shape
+
+### Community 214 - "Moderation is a state machine, and abuse control is on the write path"
+Cohesion: 0.33
+Nodes (5): Abuse controls on the write path, Author controls, Comment and page states, Moderation is a state machine, and abuse control is on the write path, Why fail closed
+
+### Community 215 - "Four native widgets, one client, one theme, one published package"
+Cohesion: 0.33
+Nodes (5): Four native widgets, one client, one theme, one published package, Host requirements, One package, six entry points, The shared client, What a host gets
+
+### Community 216 - "agent-tools.ts"
+Cohesion: 0.15
+Nodes (23): AgentTurnState, ChatStreamEvent, ChatServiceDependencies, PreparedChatInput, AgentPlanner, AgentToolResult, AgentToolRunner, AgentToolUseDecision (+15 more)
 
 ### Community 217 - "Medusa Contribution Reports"
 Cohesion: 0.67
@@ -1181,6 +1251,10 @@ Nodes (4): Interview Answer: GET, POST, PUT, PATCH, DELETE, HTTP Verb to CRUD Op
 Cohesion: 0.50
 Nodes (4): Archivo Black font, SIL Open Font License 1.1 (Archivo Black), JetBrains Mono font, SIL Open Font License 1.1 (JetBrains Mono)
 
+### Community 234 - "Plugins are compiled in, and their events leave through an outbox"
+Cohesion: 0.40
+Nodes (4): Plugins are compiled in, and their events leave through an outbox, Running it, The capability surface, The outbox
+
 ### Community 237 - "Sandboxie Contribution Notes"
 Cohesion: 0.67
 Nodes (3): Sandboxie Key Insertion Issue, sandboxie-plus/Sandboxie, SBIE Troubleshooting Scripts
@@ -1225,30 +1299,136 @@ Nodes (3): CLI progress and stats reporting, toonconv, JSON to TOON conversion e
 Cohesion: 1.00
 Nodes (3): Interview Answer: Promise, async and await, Async Work Without Blocking the Main Thread, Promise as the Eventual State and Value of an Async Operation
 
+### Community 293 - "database-migration.ts"
+Cohesion: 0.38
+Nodes (4): KnowledgeMigrationExecutor, migrateKnowledgeDatabase(), migrationStatements, sourceTypeSchema
+
+### Community 294 - "services-document.ts"
+Cohesion: 0.52
+Nodes (5): isServicesOffering(), metadataPattern(), parseServicesDocument(), SERVICES_OFFERING_LABELS, ServicesOffering
+
+### Community 295 - "turnstile-challenge.test.tsx"
+Cohesion: 0.33
+Nodes (6): browserWindow, challengeTree(), ConditionalSuspension(), globalKeys, neverResolves, originalGlobalDescriptors
+
+### Community 296 - "seed-best-maker-pty-ltd-project.ts"
+Cohesion: 0.47
+Nodes (5): codeBlockLanguage(), main(), TAGS, TOPICS, upsertVocabulary()
+
+### Community 297 - "seed-last-cli-project.ts"
+Cohesion: 0.47
+Nodes (5): codeBlockLanguage(), main(), TAGS, TOPICS, upsertVocabulary()
+
+### Community 300 - "blog-document.ts"
+Cohesion: 0.36
+Nodes (4): metadataPattern(), parseBlogDocument(), EXPECTED_TOPIC_COUNT, EXPECTED_TOPICS
+
+### Community 301 - "r2-storage-config.ts"
+Cohesion: 0.19
+Nodes (10): createServerEnv(), assertRequiredR2Settings(), buildR2StorageOptions(), ConfiguredR2StorageEnv, R2StorageEnv, RequiredR2Setting, requiredR2Settings, ServerEnv (+2 more)
+
+### Community 303 - "seed-last-comments-project.ts"
+Cohesion: 0.47
+Nodes (5): codeBlockLanguage(), main(), TAGS, TOPICS, upsertVocabulary()
+
+### Community 304 - "react-dom"
+Cohesion: 0.26
+Nodes (5): react-dom, pixelJsonTheme, MediaViewerKeyHint(), Kbd(), KbdGroup()
+
+### Community 305 - "seed-gnaf-project.ts"
+Cohesion: 0.47
+Nodes (5): codeBlockLanguage(), main(), TAGS, TOPICS, upsertVocabulary()
+
+### Community 306 - "seed-smartplay-project.ts"
+Cohesion: 0.47
+Nodes (5): codeBlockLanguage(), main(), TAGS, TOPICS, upsertVocabulary()
+
+### Community 307 - "seed-wwnz-project.ts"
+Cohesion: 0.47
+Nodes (5): codeBlockLanguage(), main(), TAGS, TOPICS, upsertVocabulary()
+
+### Community 309 - "public-url.ts"
+Cohesion: 0.40
+Nodes (4): CommentedCollection, contentPageUrl(), readSiteOrigin(), ROUTE_SEGMENT
+
+### Community 310 - "content-rendering.test.tsx"
+Cohesion: 0.33
+Nodes (3): changelog, post, project
+
+### Community 311 - "site-data.test.ts"
+Cohesion: 0.33
+Nodes (4): emptyChangelogPage, emptyPostPage, emptyProjectPage, topic
+
+### Community 312 - "seed-last-os-project.ts"
+Cohesion: 0.50
+Nodes (4): main(), TAGS, TOPICS, upsertVocabulary()
+
+### Community 314 - "mermaid"
+Cohesion: 0.67
+Nodes (3): mermaid@^12.2.0, mermaid, renderDiagram()
+
 ## Ambiguous Edges - Review These
 - `Traditional-Simplified Chinese Conversion` → `GitHub Folder URL Schema Handler`  [AMBIGUOUS]
   src/data/github/contributions/public/liam-hq__liam.md · relation: semantically_similar_to
 
 ## Knowledge Gaps
-- **183 isolated node(s):** `@fontsource-variable/jetbrains-mono`, `@fontsource/archivo-black`, `@hookform/resolvers`, `@payloadcms/drizzle`, `@payloadcms/graphql` (+178 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1595 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **78 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **163 isolated node(s):** `RFC-9116`, `{
+  loadAllPostsByUpdated,
+  loadChangelog,
+  loadChangelogNeighbours,
+  loadChangelogs,
+  loadChangelogsPage,
+  loadPost,
+  loadPosts,
+  loadPostsByTopic,
+  loadPostsPage,
+  loadPostsPageFiltered,
+  loadProject,
+  loadProjects,
+  loadProjectsPage,
+  loadProjectsPageFiltered,
+  loadRelatedPosts,
+  loadRelatedProjects,
+  loadTopic,
+  loadTopics,
+}`, `JetBrains Mono font`, `AntiRecoil`, `Betty-Employment-Accounting` (+158 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1623 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **82 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `react` connect `Rich Text Content Views` to `Route Tree And SEO Shell`, `Chat Context Site Cards`, `Navigation Menu Primitive`, `Content Detail Layouts`, `Service Package Components`, `Route Progress Bar`, `Pixel Battle Background Simulation`, `Chat Help Dialogs`, `Breadcrumb UI Primitives`, `Boot Gate Skeletons`, `Card UI Primitives`, `Mermaid Diagram Rendering`, `Popover UI Primitive`, `Chat Contact Form Fields`, `OS Window State Store`, `Package Manifest Configuration`, `Sidebar UI Primitives`, `Chat Transcript UI`, `Chat Session State Reducer`, `Chat Stream Hook`, `Input OTP Component`, `Combobox UI Primitives`, `Automatic Slug Fields`, `Lexical Markdown Editor Seeding`, `Chat Bubble Components`, `Base UI Primitive Components`, `Cover Placeholder Patterns`, `Chat Composer UI`, `Chat Page Health Boundary`, `Chat Contact Panel UI`, `Turnstile Challenge Verification`, `Contact Message Form`, `Payload Admin Not Found`, `Payload Admin Route Render`, `UI Button Calendar Primitives`, `Menubar UI Primitive`, `Alert Badge Primitives`, `Context Menu Primitives`, `Dropdown Menu Primitives`, `Carousel UI Primitive`, `Payload Admin Layout Routes`, `Toast Notification Components`, `Chart UI Components`, `Chat Prompt Suggestions`, `Form UI Primitive`, `Alert Dialog Primitives`, `Table UI Primitives`, `Browser Capability Detection`, `Accordion List Filters`, `Attachment UI Components`, `Form Field Primitives`, `Item Layout Components`, `Sheet Sidebar Overlays`?**
-  _High betweenness centrality (0.103) - this node is a cross-community bridge._
-- **What connects `@fontsource-variable/jetbrains-mono`, `@fontsource/archivo-black`, `@hookform/resolvers` to the rest of the system?**
-  _183 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Route Tree And SEO Shell` be split into smaller, more focused modules?**
-  _Cohesion score 0.028213507625272333 - nodes in this community are weakly interconnected._
-- **Why does `zod` connect `Chat Tool Execution Layer` to `Embedding Server Dev Scripts`, `Knowledge Repository Database Adapter`, `WakaTime Snapshot Service`, `WakaTime Coding Stats`, `GitHub Knowledge Source`, `Moderation Model Arms Config`, `Chat Contact Form Fields`, `Chat Agent Planner Prompts`, `Package Manifest Configuration`, `Project Catalog Sync`, `Chat Event Schemas`, `Chat Contact Approvals`, `GitHub Contributions Knowledge`, `Open Graph Image Renderer`, `Retrieval Eval and Reranking`, `Melbourne Temperature Service`, `Coding History Streaks`, `Contact Message Form`, `WakaTime History Import`, `Contact Field Refinement`?**
-  _High betweenness centrality (0.066) - this node is a cross-community bridge._
-- **Should `Chat Context Site Cards` be split into smaller, more focused modules?**
-  _Cohesion score 0.09507883420926899 - nodes in this community are weakly interconnected._
-- **Why does `cn` connect `Cover Placeholder Patterns` to `Chat Context Site Cards`, `Rich Text Content Views`, `Navigation Menu Primitive`, `Content Detail Layouts`, `Service Package Components`, `Chat Help Dialogs`, `Breadcrumb UI Primitives`, `Card UI Primitives`, `Empty State Components`, `Mermaid Diagram Rendering`, `Popover UI Primitive`, `Boot Gate Skeletons`, `Chat Contact Form Fields`, `OS Window State Store`, `Package Manifest Configuration`, `Sidebar UI Primitives`, `Chat Transcript UI`, `Chat Session State Reducer`, `Input OTP Component`, `Combobox UI Primitives`, `Chat Bubble Components`, `Base UI Primitive Components`, `Resizable Panel Primitive`, `Chat Composer UI`, `Chat Page Health Boundary`, `Chat Contact Panel UI`, `Contact Message Form`, `UI Button Calendar Primitives`, `Menubar UI Primitive`, `Alert Badge Primitives`, `Context Menu Primitives`, `Dropdown Menu Primitives`, `Carousel UI Primitive`, `Toast Notification Components`, `Chart UI Components`, `Chat Prompt Suggestions`, `Form UI Primitive`, `Alert Dialog Primitives`, `Table UI Primitives`, `Accordion List Filters`, `Attachment UI Components`, `Form Field Primitives`, `Item Layout Components`, `Sheet Sidebar Overlays`?**
+- **Why does `react` connect `react` to `Chat Context Site Cards`, `rich-text.tsx`, `navigation-menu.tsx`, `__root.tsx`, `Service Package Components`, `Pixel Battle Background Simulation`, `lucide-react`, `chat-contact.ts`, `dependencies`, `Composition: asChild (radix) vs render (base)`, `sidebar.tsx`, `command.tsx`, `chat-contact-panel.tsx`, `moderation/types.ts`, `Payload Collection Access`, `home-sections.test.tsx`, `_site.projects.$slug.tsx`, `media-item.ts`, `Chat Transcript UI`, `Chat Event Schemas`, `Chat Session State Reducer`, `package.json`, `code-block-view.tsx`, `react-dom`, `combobox.tsx`, `share-dialog.test.tsx`, `@payloadcms/richtext-lexical`, `chat-composer.test.tsx`, `content-rendering.test.tsx`, `shell.tsx`, `sidebar.tsx`, `MermaidDiagram`, `form.tsx`, `masonry-rows.test.ts`, `Button`, `Menubar UI Primitive`, `botid`, `Component Selection`, `Context Menu Primitives`, `Dropdown Menu Primitives`, `browser-capability-boundary.tsx`, `content-comments.tsx`, `Chart UI Components`, `@base-ui/react`, `chat-page.tsx`, `attachment.tsx`, `field.tsx`, `site-health-provider.tsx`?**
+  _High betweenness centrality (0.095) - this node is a cross-community bridge._
+- **What connects `RFC-9116`, `{
+  loadAllPostsByUpdated,
+  loadChangelog,
+  loadChangelogNeighbours,
+  loadChangelogs,
+  loadChangelogsPage,
+  loadPost,
+  loadPosts,
+  loadPostsByTopic,
+  loadPostsPage,
+  loadPostsPageFiltered,
+  loadProject,
+  loadProjects,
+  loadProjectsPage,
+  loadProjectsPageFiltered,
+  loadRelatedPosts,
+  loadRelatedProjects,
+  loadTopic,
+  loadTopics,
+}`, `JetBrains Mono font` to the rest of the system?**
+  _163 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `routeTree.gen.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.029198119925936475 - nodes in this community are weakly interconnected._
+- **Why does `zod` connect `zod` to `Embedding Server Dev Scripts`, `Logger`, `chat-contact.ts`, `sync-project-catalog.ts`, `WakaTime Coding Stats`, `dependencies`, `Chat Tool Execution Layer`, `source-types.ts`, `Chat Event Schemas`, `retrieve.ts`, `Chat Contact Approvals`, `package.json`, `GitHub Contributions Knowledge`, `Open Graph Image Renderer`, `chat-service.test.ts`, `chat-contact.ts`, `shared.ts`, `system-one-client.ts`, `WakaTime History Import`, `history/repository.ts`, `chat-page.tsx`?**
   _High betweenness centrality (0.054) - this node is a cross-community bridge._
+- **Should `Chat Context Site Cards` be split into smaller, more focused modules?**
+  _Cohesion score 0.11428571428571428 - nodes in this community are weakly interconnected._
+- **Why does `cn` connect `react` to `Chat Context Site Cards`, `navigation-menu.tsx`, `Service Package Components`, `lucide-react`, `chat-contact.ts`, `dependencies`, `Composition: asChild (radix) vs render (base)`, `command.tsx`, `sidebar.tsx`, `chat-contact-panel.tsx`, `_site.projects.$slug.tsx`, `media-item.ts`, `Chat Transcript UI`, `package.json`, `react-dom`, `combobox.tsx`, `shell.tsx`, `sidebar.tsx`, `empty.tsx`, `Resizable Panel Primitive`, `form.tsx`, `Button`, `Menubar UI Primitive`, `Component Selection`, `Context Menu Primitives`, `Dropdown Menu Primitives`, `Chart UI Components`, `@base-ui/react`, `chat-page.tsx`, `attachment.tsx`, `field.tsx`?**
+  _High betweenness centrality (0.038) - this node is a cross-community bridge._
 
 ### Low-confidence Hints
 _AMBIGUOUS edges — the extractor was unsure. Verify before acting on these._

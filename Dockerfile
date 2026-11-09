@@ -91,11 +91,16 @@ COPY --chown=bun:bun --chmod=755 docker-entrypoint.sh ./docker-entrypoint.sh
 
 ENV HOST=0.0.0.0 \
     PORT=3000 \
-    NODE_ENV=production
+    NODE_ENV=production \
+    SERVER_SHUTDOWN_TIMEOUT=10
 
 USER bun
 
 EXPOSE 3000
+
+# Run `docker stop` with a grace period above SERVER_SHUTDOWN_TIMEOUT (for example `--stop-timeout 20`),
+# or the platform SIGKILLs the process before the pools close.
+STOPSIGNAL SIGTERM
 
 # Bun is always present, so no curl/wget dependency for the health probe.
 # /api/site/health returns { status: 'ok' } with cache-control: no-store.

@@ -2,6 +2,10 @@
 
 Production chat and contact rate limits use Vercel's platform-overwritten `x-forwarded-for` request header. The application reads it only when the `VERCEL=1` runtime marker is present, and accepts exactly one valid IPv4 or IPv6 literal. Missing, malformed, or comma-separated values fail closed so rate-limited requests never fall back to a shared production identity.
 
+Outside Vercel (the Docker image, for example) no address is trusted by default, so chat and contact fail closed. An operator behind a proxy they control can set `TRUSTED_CLIENT_IP_HEADER` to the name of a header that proxy overwrites with the visitor's IP, such as `x-real-ip` or `cf-connecting-ip`. The same single-IP rule applies. Never set `VERCEL=1` to get around this: it makes the application trust `x-forwarded-for` from any client. Leave `TRUSTED_CLIENT_IP_HEADER` unset on Vercel; it is ignored there.
+
+`NODE_ENV` has no default. A host that does not set it is not treated as development, so rate limits stay on. Every visitor then shares one `local-development-client` bucket, which trips quickly, so set `NODE_ENV=production` on any real host.
+
 Chat diagnostics use the same validated address and may record Vercel's country, region code, city, and timezone headers. They omit location when the request has no trusted address and never collect coordinates or postal codes. Browser metadata remains parsed from the user-agent without retaining the raw header.
 
 Vercel provides the ingress boundary for these headers. Do not route production traffic through a separate Cloudflare Tunnel for this application. Cloudflare R2 and Turnstile settings are unrelated and remain configured through their existing integrations.

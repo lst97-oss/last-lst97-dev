@@ -1,4 +1,4 @@
-import { HttpHeader, HttpStatus, MediaType } from '@lst97-oss/last-httprism'
+import { HttpHeader, HttpStatus } from '@lst97-oss/last-httprism'
 import {
   CHAT_BOT_BLOCKED_MESSAGE,
   CHAT_EXPIRED_MESSAGE,
@@ -17,8 +17,9 @@ import type { ChatDiagnosticsMetadata } from '../observability/chat-diagnostics'
 import type { Logger } from '../observability/logger'
 import type { BotVerification } from '../security/botid'
 import type { ChatContactActionBody, ChatContactActionRequest, ChatMessageRequest, ChatStreamEvent } from './events'
-import { chatContactActionSchema, chatMessageRequestSchema, encodeChatEvent } from './events'
+import { chatContactActionSchema, chatMessageRequestSchema } from './events'
 import { chatModerationRejectionMessage } from './moderation-rejection'
+import { streamChatEvents } from './stream-response'
 
 export interface ChatPostHandlerDependencies {
   send(input: { message: string; contextToken?: string; diagnosticsMetadata?: ChatDiagnosticsMetadata }): Promise<
@@ -166,7 +167,19 @@ async function handleContactActionRequest(
     // Verified here rather than inside the workflow so an unverified submission
     // never reaches the decision screen or the refiner.
     if (action.action === 'submit_form') {
-      const screeningError = await verifyContactScreeningToken(request, requestId, action.turnstileToken, dependencies)
+      const screeningError = await verifyTurnstileToken(
+        request,
+        requestId,
+        action.turnstileToken,
+        {
+          verify: dependencies.verifyContactScreeningTurnstile,
+          logBase: 'chat.contact_screening_turnstile',
+          unavailableMessage: 'The contact security check is temporarily unavailable.',
+          rejectedMessage:
+            'The security check expired or could not be verified. Complete it again to screen your request.',
+        },
+        dependencies.logger,
+      )
       if (screeningError) return screeningError
     }
 
@@ -194,120 +207,61 @@ async function handleContactActionRequest(
   }
 }
 
-async function verifyChatToken(
-  request: Request,
-  requestId: string,
-  token: string | undefined,
-  dependencies: ChatPostHandlerDependencies,
-): Promise<Response | undefined> {
-  if (!token) {
-    dependencies.logger.warn('chat.turnstile_rejected', { requestId, reason: 'token_missing' })
-    return jsonResponse(
-      requestId,
-      {
-        error: CHAT_TURNSTILE_REQUIRED_MESSAGE,
-        code: 'turnstile_invalid',
-        requestId,
-      },
-      HttpStatus.FORBIDDEN.code,
-    )
-  }
-  if (!dependencies.verifyChatTurnstile) {
-    dependencies.logger.error('chat.turnstile_unavailable', { requestId, failureCategory: 'verifier_missing' })
-    return jsonResponse(
-      requestId,
-      {
-        error: 'The chat security check is temporarily unavailable.',
-        code: 'turnstile_unavailable',
-        requestId,
-      },
-      HttpStatus.SERVICE_UNAVAILABLE.code,
-    )
-  }
+type TurnstileVerify = (token: string, expectedHostname: string) => Promise<boolean>
 
-  let verified = false
-  try {
-    verified = await dependencies.verifyChatTurnstile(token, new URL(request.url).hostname)
-  } catch {
-    dependencies.logger.error('chat.turnstile_unavailable', { requestId, failureCategory: 'siteverify_failed' })
-    return jsonResponse(
-      requestId,
-      {
-        error: 'The chat security check is temporarily unavailable.',
-        code: 'turnstile_unavailable',
-        requestId,
-      },
-      HttpStatus.SERVICE_UNAVAILABLE.code,
-    )
-  }
-  if (verified) return undefined
-
-  dependencies.logger.warn('chat.turnstile_rejected', { requestId, reason: 'token_invalid' })
-  return jsonResponse(
-    requestId,
-    {
-      error: 'The security check expired or could not be verified. Complete it again and retry.',
-      code: 'turnstile_invalid',
-      requestId,
-    },
-    HttpStatus.FORBIDDEN.code,
-  )
+interface TurnstileGate {
+  verify: TurnstileVerify | undefined
+  // Log events are `${logBase}_rejected` and `${logBase}_unavailable`.
+  logBase: 'chat.turnstile' | 'chat.contact_screening_turnstile'
+  unavailableMessage: string
+  rejectedMessage: string
+  // Only the chat message gate has a token-required copy; screening sends an empty token to siteverify instead.
+  missingTokenMessage?: string
 }
 
 /**
- * Fail-closed check for the screening step, mirroring `verifyChatToken`; only
- * the log event and copy differ.
+ * Fail-closed Turnstile check for chat messages and contact screening. A missing verifier, a failed
+ * siteverify call and an invalid token all refuse the request; the gates differ only in log base and copy.
  */
-async function verifyContactScreeningToken(
+async function verifyTurnstileToken(
   request: Request,
   requestId: string,
   token: string,
-  dependencies: ChatPostHandlerDependencies,
+  gate: TurnstileGate,
+  logger: Logger,
 ): Promise<Response | undefined> {
-  if (!dependencies.verifyContactScreeningTurnstile) {
-    dependencies.logger.error('chat.contact_screening_turnstile_unavailable', {
+  const unavailable = () =>
+    jsonResponse(
       requestId,
-      failureCategory: 'verifier_missing',
-    })
-    return jsonResponse(
-      requestId,
-      {
-        error: 'The contact security check is temporarily unavailable.',
-        code: 'turnstile_unavailable',
-        requestId,
-      },
+      { error: gate.unavailableMessage, code: 'turnstile_unavailable', requestId },
       HttpStatus.SERVICE_UNAVAILABLE.code,
     )
+  if (!token && gate.missingTokenMessage) {
+    logger.warn(`${gate.logBase}_rejected`, { requestId, reason: 'token_missing' })
+    return jsonResponse(
+      requestId,
+      { error: gate.missingTokenMessage, code: 'turnstile_invalid', requestId },
+      HttpStatus.FORBIDDEN.code,
+    )
+  }
+  if (!gate.verify) {
+    logger.error(`${gate.logBase}_unavailable`, { requestId, failureCategory: 'verifier_missing' })
+    return unavailable()
   }
 
   let verified = false
   try {
-    verified = await dependencies.verifyContactScreeningTurnstile(token, new URL(request.url).hostname)
+    verified = await gate.verify(token, new URL(request.url).hostname)
   } catch {
-    dependencies.logger.error('chat.contact_screening_turnstile_unavailable', {
-      requestId,
-      failureCategory: 'siteverify_failed',
-    })
-    return jsonResponse(
-      requestId,
-      {
-        error: 'The contact security check is temporarily unavailable.',
-        code: 'turnstile_unavailable',
-        requestId,
-      },
-      HttpStatus.SERVICE_UNAVAILABLE.code,
-    )
+    logger.error(`${gate.logBase}_unavailable`, { requestId, failureCategory: 'siteverify_failed' })
+    return unavailable()
   }
   if (verified) return undefined
 
-  dependencies.logger.warn('chat.contact_screening_turnstile_rejected', { requestId, reason: 'token_invalid' })
+  logger.warn(`${gate.logBase}_rejected`, { requestId, reason: 'token_invalid' })
   return jsonResponse(
     requestId,
-    {
-      error: 'The security check expired or could not be verified. Complete it again to screen your request.',
-      code: 'turnstile_invalid',
-      requestId,
-    },
+    { error: gate.rejectedMessage, code: 'turnstile_invalid', requestId },
     HttpStatus.FORBIDDEN.code,
   )
 }
@@ -327,7 +281,19 @@ async function handleChatMessageRequest(
     const botRejected = await botRejectedResponse(requestId, dependencies)
     if (botRejected) return botRejected
 
-    const turnstileError = await verifyChatToken(request, requestId, turnstileToken, dependencies)
+    const turnstileError = await verifyTurnstileToken(
+      request,
+      requestId,
+      turnstileToken ?? '',
+      {
+        verify: dependencies.verifyChatTurnstile,
+        logBase: 'chat.turnstile',
+        unavailableMessage: 'The chat security check is temporarily unavailable.',
+        rejectedMessage: 'The security check expired or could not be verified. Complete it again and retry.',
+        missingTokenMessage: CHAT_TURNSTILE_REQUIRED_MESSAGE,
+      },
+      dependencies.logger,
+    )
     if (turnstileError) return turnstileError
 
     const diagnosticsMetadata = dependencies.getDiagnosticsMetadata?.(request)
@@ -391,58 +357,4 @@ async function handleChatMessageRequest(
     dependencies.logger.error('chat.failed', { requestId, failureCategory: 'chat_processing' })
     return jsonResponse(requestId, { error: CHAT_OFFLINE_MESSAGE, requestId }, HttpStatus.SERVICE_UNAVAILABLE.code)
   }
-}
-
-function streamChatEvents(
-  requestId: string,
-  startedAt: number,
-  dependencies: ChatPostHandlerDependencies,
-  input: { message: string; contextToken?: string; diagnosticsMetadata?: ChatDiagnosticsMetadata },
-  signal: AbortSignal,
-): Response {
-  const maxMsOption = dependencies.streamMaxMs
-  const maxMs = typeof maxMsOption === 'function' ? maxMsOption() : (maxMsOption ?? 90_000)
-  const sendStream = dependencies.sendStream
-  if (!sendStream) {
-    return jsonResponse(requestId, { error: CHAT_OFFLINE_MESSAGE, requestId }, HttpStatus.SERVICE_UNAVAILABLE.code)
-  }
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder()
-      const push = (event: ChatStreamEvent) => controller.enqueue(encoder.encode(encodeChatEvent(event)))
-      const deadline = Date.now() + maxMs
-      try {
-        for await (const event of sendStream(input, signal)) {
-          if (Date.now() > deadline) {
-            push({ type: 'error', message: CHAT_OFFLINE_MESSAGE })
-            break
-          }
-          push(event)
-          if (event.type === 'done' || event.type === 'error') {
-            dependencies.logger.info('chat.stream_completed', {
-              requestId,
-              durationMs: Math.round(performance.now() - startedAt),
-              outcome: event.type,
-            })
-            break
-          }
-        }
-      } catch {
-        try {
-          push({ type: 'error', message: CHAT_OFFLINE_MESSAGE })
-        } catch {
-          // Client already went away; nothing left to report.
-        }
-      }
-      controller.close()
-    },
-  })
-  return new Response(stream, {
-    status: HttpStatus.OK.code,
-    headers: {
-      [HttpHeader.CONTENT_TYPE]: `${MediaType.EVENT_STREAM}; charset=utf-8`,
-      [HttpHeader.CACHE_CONTROL]: 'no-store',
-      'x-request-id': requestId,
-    },
-  })
 }

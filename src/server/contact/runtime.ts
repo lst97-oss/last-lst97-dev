@@ -2,7 +2,7 @@ import type { ChatContactSubmission } from '../../lib/chat-contact'
 import { createGmailEmailSender } from '../email/nodemailer-sender'
 import { createContactEmailService } from '../email/service'
 import type { ChatContactEmailService, EmailSender } from '../email/types'
-import { requiredServerEnv } from '../env'
+import { getServerEnv, requiredServerEnv } from '../env'
 import { getModerationService } from '../moderation/runtime'
 import { logger } from '../observability/logger'
 import { createChatContactApprovalStore } from './chat/approval-store'
@@ -54,6 +54,7 @@ const lazyTurnstileVerifier: TurnstileVerifier = {
   verify(token, expectedHostname) {
     turnstileVerifier ??= createTurnstileVerifier({
       secret: requiredServerEnv('TURNSTILE_SECRET_KEY'),
+      production: getServerEnv().NODE_ENV === 'production',
     })
     return turnstileVerifier.verify(token, expectedHostname)
   },

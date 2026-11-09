@@ -20,7 +20,7 @@ This note governs `src/server/chat` and `src/server/moderation`. Keep it current
   other `src/server/**` import must stay `import type` or the client build fails. `../contact/contract.ts`
   is the equivalent response contract for `POST /api/site/contact`, parsed by `contact-message-form.tsx`.
 - `reply-sanitizer.ts` contains pure whole-reply and chunked-stream sanitization. `timeout.ts` owns timer cleanup for bounded asynchronous work.
-- `http-handler.ts` validates and rate-limits HTTP requests, gates on Vercel BotID, verifies Turnstile before normal chat work, and frames SSE output.
+- `http-handler.ts` validates and rate-limits HTTP requests, gates on Vercel BotID, and verifies Turnstile before normal chat work. `stream-response.ts` frames the SSE output.
 - `../security/botid.ts` wraps Vercel BotID's `checkBotId()` for the chat and contact endpoints. It is
   an additive layer over Turnstile and the rate limit, not a replacement: a failed check degrades to
   "not a bot" and logs `bot.unavailable`, so a BotID outage cannot take the chat offline. The client

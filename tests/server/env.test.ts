@@ -8,6 +8,10 @@ const validCoreEnv = {
 }
 
 describe('createServerEnv', () => {
+  it('leaves NODE_ENV unset rather than defaulting it to development', () => {
+    expect(createServerEnv({ ...validCoreEnv }).NODE_ENV).toBeUndefined()
+  })
+
   it('applies defaults and treats blank optional integrations as unset', () => {
     const env = createServerEnv({
       ...validCoreEnv,

@@ -62,9 +62,9 @@ RAG and content-corpora maintenance: `knowledge:migrate`, `knowledge:sync`, `kno
 `embedding:serve`, `embedding:test`.
 
 **Build output is not `dist/`.** Fresh Vite output goes to `.vercel/output/` under the default
-`NITRO_PRESET=vercel`, or `.output/` when the Dockerfile sets `NITRO_PRESET=node-server`. The `dist/`
-directory is a stale artifact from an earlier config revision, which also makes the `bun run start`
-script (`bun ./dist/server/server.js`) a dead path against a current build.
+`NITRO_PRESET=vercel`, or `.output/` when the Dockerfile sets `NITRO_PRESET=node-server`. To run the
+production server locally, build with `NITRO_PRESET=node-server bun run build`, then `bun run start`
+(which runs `.output/server/index.mjs`, the same file the Docker image runs).
 
 **Production runs on Bun.** Vercel's function runtime is Bun because the build command is
 `bun run build` — Nitro detects a Bun build process and emits a `bun1.x` function; the build log line
@@ -112,6 +112,10 @@ still have every box unticked. Treat the code and the per-directory `AGENTS.md` 
 Vercel is the production target (`nitro` preset `vercel`, runtime `bun1.x`). A Docker image is also
 provided: four stages on `oven/bun:1.4.3-slim`, non-root `bun` user, port 3000, a healthcheck against
 `/api/site/health`, and an entrypoint that runs `payload migrate` before serving unless `SKIP_MIGRATIONS=true`.
+
+The Docker image cannot serve chat or contact on its own: rate limits need a visitor IP it does not have. Put it behind
+a proxy that overwrites a single-IP header, and set `TRUSTED_CLIENT_IP_HEADER` to that header's name. See
+[`docs/security/vercel-ingress.md`](docs/security/vercel-ingress.md).
 
 `PUBLIC_SITE_URL` must be the real public origin in production — canonical links, `og:url`,
 `sitemap.xml`, `robots.txt` and `security.txt` are all baked from it at build time via the

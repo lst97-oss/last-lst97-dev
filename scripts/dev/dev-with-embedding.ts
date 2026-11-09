@@ -14,7 +14,12 @@ try {
   if (ragEnabled) sidecar = await startEmbeddingSidecar()
   const vite = Bun.spawn(['bunx', '--bun', 'vite', 'dev', '--port', '3000'], {
     cwd: projectRoot,
-    env: childEnvironment(),
+    // The dev server answers requests in a worker thread, which never reports a terminal, so the format is set here.
+    env: {
+      ...childEnvironment(),
+      LOG_FORMAT: Bun.env.LOG_FORMAT ?? 'pretty',
+      LOG_COLOR: Bun.env.LOG_COLOR ?? 'always',
+    },
     stderr: 'inherit',
     stdout: 'inherit',
   })

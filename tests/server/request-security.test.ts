@@ -28,6 +28,19 @@ describe('clientKeyFromRequest', () => {
     ).rejects.toThrow()
   })
 
+  it('keys a production request from the operator-named header when not on Vercel', async () => {
+    const request = new Request('https://example.test', { headers: { 'x-real-ip': '198.51.100.2' } })
+    const key = await clientKeyFromRequest(
+      request,
+      'a-secret-key-with-at-least-32-characters',
+      true,
+      false,
+      'x-real-ip',
+    )
+    expect(key).toMatch(/^[a-f0-9]{64}$/)
+    expect(key).not.toContain('198.51.100.2')
+  })
+
   it('uses a stable development identity without trusting forwarded headers', async () => {
     const first = new Request('https://example.test', { headers: { 'x-forwarded-for': '203.0.113.8' } })
     const second = new Request('https://example.test', { headers: { 'x-forwarded-for': '192.0.2.7' } })

@@ -419,8 +419,11 @@ These produce *confidently wrong* results rather than obvious errors. Each has b
   status. Capture first, read second: `bun check >/tmp/check.txt 2>&1; echo $?`, or use
   `${PIPESTATUS[0]}`. Same for `bun test … | grep …`, where `grep` exits 1 on "no matches".
 - **Build output is not `dist/`.** Fresh output is `.vercel/output/` (default preset) or `.output/`
-  (`NITRO_PRESET=node-server`). `dist/` is stale from an earlier config revision, which also makes
-  `bun run start` a dead path. Never grep `dist/` for compiled CSS.
+  (`NITRO_PRESET=node-server`). `bun run start` runs `.output/server/index.mjs`, so build with
+  `NITRO_PRESET=node-server` first. There is no `dist/` in this repo any more. Never grep `dist/` for compiled CSS.
+- **Some packages look unused but are not.** `katex`, `shiki` and `tailwind-merge` have no direct imports in `src`, but
+  they are optional peer dependencies of `@lst97-oss/last-comments-widgets`, which imports all three at runtime. Check the
+  widget's `dist` before removing any of them.
 - **A green test run is not pgvector coverage.** Two integration blocks stay skipped unless
   `KNOWLEDGE_TEST_DATABASE_URL` is exported. That variable is absent from `.env.example`; it is
   described under **RAG & Knowledge Operations** above.

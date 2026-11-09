@@ -51,6 +51,7 @@ export type ServerEnvSource = Partial<
     | 'DECISION_API_KEY'
     | 'DECISION_MODEL'
     | 'RATE_LIMIT_HASH_SECRET'
+    | 'TRUSTED_CLIENT_IP_HEADER'
     | 'SILICONFLOW_API_KEY'
     | 'UNSLOTH_EMBEDDING_MODEL_PATH',
     string | undefined
@@ -145,7 +146,8 @@ export function createServerEnv(source: ServerEnvSource) {
       // the low end; hostile payloads still score 0.99-1.0, so the reduced floor
       // buys tolerance for unusual-but-genuine enquiries without admitting them.
       MODERATION_MIN_CONFIDENCE: z.coerce.number().min(0).max(1).default(0.6),
-      NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+      // Deliberately no default: an unset value must not look like development, which switches rate limits off.
+      NODE_ENV: z.enum(['development', 'production', 'test']).optional(),
       OPENROUTER_API_KEY: z.string().min(1).optional(),
       OPENROUTER_APP_TITLE: z.string().default('Personal OS Portfolio'),
       OPENROUTER_MODEL: z.string().min(1).optional(),
@@ -171,6 +173,13 @@ export function createServerEnv(source: ServerEnvSource) {
       DECISION_API_KEY: z.string().min(1).optional(),
       DECISION_MODEL: z.string().min(1).default('perplexity/pplx-decider-v1.2'),
       RATE_LIMIT_HASH_SECRET: z.string().min(32).optional(),
+      // Header that carries the visitor IP outside Vercel (for example behind a proxy you control).
+      TRUSTED_CLIENT_IP_HEADER: z
+        .string()
+        .trim()
+        .toLowerCase()
+        .regex(/^[a-z0-9-]{1,64}$/, { message: 'must be a single header name' })
+        .optional(),
       SILICONFLOW_API_KEY: z.string().min(1).optional(),
       UNSLOTH_EMBEDDING_MODEL_PATH: z.string().min(1).optional(),
     },
@@ -223,6 +232,7 @@ export function createServerEnv(source: ServerEnvSource) {
       DECISION_API_KEY: source.DECISION_API_KEY,
       DECISION_MODEL: source.DECISION_MODEL,
       RATE_LIMIT_HASH_SECRET: source.RATE_LIMIT_HASH_SECRET,
+      TRUSTED_CLIENT_IP_HEADER: source.TRUSTED_CLIENT_IP_HEADER,
       SILICONFLOW_API_KEY: source.SILICONFLOW_API_KEY,
       UNSLOTH_EMBEDDING_MODEL_PATH: source.UNSLOTH_EMBEDDING_MODEL_PATH,
     },

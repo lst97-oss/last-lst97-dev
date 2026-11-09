@@ -11,6 +11,7 @@ import viteReact from '@vitejs/plugin-react'
 import viteRsc from '@vitejs/plugin-rsc'
 import { nitro } from 'nitro/vite'
 import { defineConfig } from 'vite'
+import { routeDevToolLogs, viteLogger } from './scripts/vite-logger.ts'
 import { clientModuleResolution } from './vendor/payload-tanstack-vite/clientModuleResolution.js'
 import {
   optimizeDepsExcludeDefaults,
@@ -83,7 +84,14 @@ const STABLE_PUBLIC_CACHE = {
 // stored response is how one operator's session could reach another.
 const PRIVATE_NO_STORE = { 'cache-control': 'private, no-store', ...SECURITY_HEADERS }
 
+// Nitro's and env-runner's lines go through the same writer as Vite's and the server's (see scripts/vite-logger.ts).
+routeDevToolLogs()
+
 const config = defineConfig({
+  // Same format and settings as the server's logs (see scripts/vite-logger.ts).
+  customLogger: viteLogger(),
+  // graphify rewrites graphify-out on every update; Vite would reload the page for each one. Vite appends this to its defaults.
+  server: { watch: { ignored: ['**/graphify-out/**'] } },
   resolve: {
     alias: [
       {
@@ -195,6 +203,7 @@ const config = defineConfig({
     // standalone container server). Explicit config wins over the env var
     // inside Nitro, so the override has to happen here.
     nitro({
+      plugins: ['./src/payload/payload-shutdown.ts'],
       preset: process.env.NITRO_PRESET ?? 'vercel',
       modules: [
         {

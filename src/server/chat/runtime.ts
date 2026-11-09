@@ -36,6 +36,7 @@ let contactScreeningTurnstileVerifier: TurnstileVerifier | undefined
 export function verifyChatTurnstile(token: string, expectedHostname: string): Promise<boolean> {
   chatTurnstileVerifier ??= createTurnstileVerifier({
     secret: requiredServerEnv('TURNSTILE_SECRET_KEY'),
+    production: getServerEnv().NODE_ENV === 'production',
     action: TURNSTILE_ACTIONS.chatMessage,
   })
   return chatTurnstileVerifier.verify(token, expectedHostname)
@@ -49,6 +50,7 @@ export function verifyChatTurnstile(token: string, expectedHostname: string): Pr
 export function verifyContactScreeningTurnstile(token: string, expectedHostname: string): Promise<boolean> {
   contactScreeningTurnstileVerifier ??= createTurnstileVerifier({
     secret: requiredServerEnv('TURNSTILE_SECRET_KEY'),
+    production: getServerEnv().NODE_ENV === 'production',
     action: TURNSTILE_ACTIONS.contactScreening,
   })
   return contactScreeningTurnstileVerifier.verify(token, expectedHostname)
