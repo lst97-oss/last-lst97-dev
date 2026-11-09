@@ -167,7 +167,19 @@ async function handleContactActionRequest(
     // Verified here rather than inside the workflow so an unverified submission
     // never reaches the decision screen or the refiner.
     if (action.action === 'submit_form') {
-      const screeningError = await verifyContactScreeningToken(request, requestId, action.turnstileToken, dependencies)
+      const screeningError = await verifyTurnstileToken(
+        request,
+        requestId,
+        action.turnstileToken,
+        {
+          verify: dependencies.verifyContactScreeningTurnstile,
+          logBase: 'chat.contact_screening_turnstile',
+          unavailableMessage: 'The contact security check is temporarily unavailable.',
+          rejectedMessage:
+            'The security check expired or could not be verified. Complete it again to screen your request.',
+        },
+        dependencies.logger,
+      )
       if (screeningError) return screeningError
     }
 
@@ -195,120 +207,61 @@ async function handleContactActionRequest(
   }
 }
 
-async function verifyChatToken(
-  request: Request,
-  requestId: string,
-  token: string | undefined,
-  dependencies: ChatPostHandlerDependencies,
-): Promise<Response | undefined> {
-  if (!token) {
-    dependencies.logger.warn('chat.turnstile_rejected', { requestId, reason: 'token_missing' })
-    return jsonResponse(
-      requestId,
-      {
-        error: CHAT_TURNSTILE_REQUIRED_MESSAGE,
-        code: 'turnstile_invalid',
-        requestId,
-      },
-      HttpStatus.FORBIDDEN.code,
-    )
-  }
-  if (!dependencies.verifyChatTurnstile) {
-    dependencies.logger.error('chat.turnstile_unavailable', { requestId, failureCategory: 'verifier_missing' })
-    return jsonResponse(
-      requestId,
-      {
-        error: 'The chat security check is temporarily unavailable.',
-        code: 'turnstile_unavailable',
-        requestId,
-      },
-      HttpStatus.SERVICE_UNAVAILABLE.code,
-    )
-  }
+type TurnstileVerify = (token: string, expectedHostname: string) => Promise<boolean>
 
-  let verified = false
-  try {
-    verified = await dependencies.verifyChatTurnstile(token, new URL(request.url).hostname)
-  } catch {
-    dependencies.logger.error('chat.turnstile_unavailable', { requestId, failureCategory: 'siteverify_failed' })
-    return jsonResponse(
-      requestId,
-      {
-        error: 'The chat security check is temporarily unavailable.',
-        code: 'turnstile_unavailable',
-        requestId,
-      },
-      HttpStatus.SERVICE_UNAVAILABLE.code,
-    )
-  }
-  if (verified) return undefined
-
-  dependencies.logger.warn('chat.turnstile_rejected', { requestId, reason: 'token_invalid' })
-  return jsonResponse(
-    requestId,
-    {
-      error: 'The security check expired or could not be verified. Complete it again and retry.',
-      code: 'turnstile_invalid',
-      requestId,
-    },
-    HttpStatus.FORBIDDEN.code,
-  )
+interface TurnstileGate {
+  verify: TurnstileVerify | undefined
+  // Log events are `${logBase}_rejected` and `${logBase}_unavailable`.
+  logBase: 'chat.turnstile' | 'chat.contact_screening_turnstile'
+  unavailableMessage: string
+  rejectedMessage: string
+  // Only the chat message gate has a token-required copy; screening sends an empty token to siteverify instead.
+  missingTokenMessage?: string
 }
 
 /**
- * Fail-closed check for the screening step, mirroring `verifyChatToken`; only
- * the log event and copy differ.
+ * Fail-closed Turnstile check for chat messages and contact screening. A missing verifier, a failed
+ * siteverify call and an invalid token all refuse the request; the gates differ only in log base and copy.
  */
-async function verifyContactScreeningToken(
+async function verifyTurnstileToken(
   request: Request,
   requestId: string,
   token: string,
-  dependencies: ChatPostHandlerDependencies,
+  gate: TurnstileGate,
+  logger: Logger,
 ): Promise<Response | undefined> {
-  if (!dependencies.verifyContactScreeningTurnstile) {
-    dependencies.logger.error('chat.contact_screening_turnstile_unavailable', {
+  const unavailable = () =>
+    jsonResponse(
       requestId,
-      failureCategory: 'verifier_missing',
-    })
-    return jsonResponse(
-      requestId,
-      {
-        error: 'The contact security check is temporarily unavailable.',
-        code: 'turnstile_unavailable',
-        requestId,
-      },
+      { error: gate.unavailableMessage, code: 'turnstile_unavailable', requestId },
       HttpStatus.SERVICE_UNAVAILABLE.code,
     )
+  if (!token && gate.missingTokenMessage) {
+    logger.warn(`${gate.logBase}_rejected`, { requestId, reason: 'token_missing' })
+    return jsonResponse(
+      requestId,
+      { error: gate.missingTokenMessage, code: 'turnstile_invalid', requestId },
+      HttpStatus.FORBIDDEN.code,
+    )
+  }
+  if (!gate.verify) {
+    logger.error(`${gate.logBase}_unavailable`, { requestId, failureCategory: 'verifier_missing' })
+    return unavailable()
   }
 
   let verified = false
   try {
-    verified = await dependencies.verifyContactScreeningTurnstile(token, new URL(request.url).hostname)
+    verified = await gate.verify(token, new URL(request.url).hostname)
   } catch {
-    dependencies.logger.error('chat.contact_screening_turnstile_unavailable', {
-      requestId,
-      failureCategory: 'siteverify_failed',
-    })
-    return jsonResponse(
-      requestId,
-      {
-        error: 'The contact security check is temporarily unavailable.',
-        code: 'turnstile_unavailable',
-        requestId,
-      },
-      HttpStatus.SERVICE_UNAVAILABLE.code,
-    )
+    logger.error(`${gate.logBase}_unavailable`, { requestId, failureCategory: 'siteverify_failed' })
+    return unavailable()
   }
   if (verified) return undefined
 
-  dependencies.logger.warn('chat.contact_screening_turnstile_rejected', { requestId, reason: 'token_invalid' })
+  logger.warn(`${gate.logBase}_rejected`, { requestId, reason: 'token_invalid' })
   return jsonResponse(
     requestId,
-    {
-      error: 'The security check expired or could not be verified. Complete it again to screen your request.',
-      code: 'turnstile_invalid',
-      requestId,
-    },
+    { error: gate.rejectedMessage, code: 'turnstile_invalid', requestId },
     HttpStatus.FORBIDDEN.code,
   )
 }
@@ -328,7 +281,19 @@ async function handleChatMessageRequest(
     const botRejected = await botRejectedResponse(requestId, dependencies)
     if (botRejected) return botRejected
 
-    const turnstileError = await verifyChatToken(request, requestId, turnstileToken, dependencies)
+    const turnstileError = await verifyTurnstileToken(
+      request,
+      requestId,
+      turnstileToken ?? '',
+      {
+        verify: dependencies.verifyChatTurnstile,
+        logBase: 'chat.turnstile',
+        unavailableMessage: 'The chat security check is temporarily unavailable.',
+        rejectedMessage: 'The security check expired or could not be verified. Complete it again and retry.',
+        missingTokenMessage: CHAT_TURNSTILE_REQUIRED_MESSAGE,
+      },
+      dependencies.logger,
+    )
     if (turnstileError) return turnstileError
 
     const diagnosticsMetadata = dependencies.getDiagnosticsMetadata?.(request)
