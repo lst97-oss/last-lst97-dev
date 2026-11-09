@@ -62,9 +62,9 @@ RAG and content-corpora maintenance: `knowledge:migrate`, `knowledge:sync`, `kno
 `embedding:serve`, `embedding:test`.
 
 **Build output is not `dist/`.** Fresh Vite output goes to `.vercel/output/` under the default
-`NITRO_PRESET=vercel`, or `.output/` when the Dockerfile sets `NITRO_PRESET=node-server`. The `dist/`
-directory is a stale artifact from an earlier config revision, which also makes the `bun run start`
-script (`bun ./dist/server/server.js`) a dead path against a current build.
+`NITRO_PRESET=vercel`, or `.output/` when the Dockerfile sets `NITRO_PRESET=node-server`. To run the
+production server locally, build with `NITRO_PRESET=node-server bun run build`, then `bun run start`
+(which runs `.output/server/index.mjs`, the same file the Docker image runs).
 
 **Production runs on Bun.** Vercel's function runtime is Bun because the build command is
 `bun run build` — Nitro detects a Bun build process and emits a `bun1.x` function; the build log line

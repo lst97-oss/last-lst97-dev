@@ -25,7 +25,7 @@
     "generate:payload-admin-css": "bun run scripts/assets/generate-payload-admin-css.ts",
     "generate:og-image": "bun run scripts/assets/generate-og-image.ts",
     "build": "bun run generate:payload-admin-css && bun run generate:types && bun run generate:importmap && bun run deploy:migrate && bunx --bun vite build",
-    "start": "bun ./dist/server/server.js",
+    "start": "bun .output/server/index.mjs",
     "payload": "bunx payload",
     "generate:types": "bunx ${PAYLOAD_BUNX_FLAGS:-} payload ${PAYLOAD_CLI_ARGS:-} generate:types",
     "generate:importmap": "bunx ${PAYLOAD_BUNX_FLAGS:-} payload ${PAYLOAD_CLI_ARGS:-} generate:importmap",
