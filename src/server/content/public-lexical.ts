@@ -1,4 +1,4 @@
-import { safeAssetHref, safeContentHref } from '../../lib/content-url'
+import { safeAssetHref, safeContentHref } from '../../lib/content/url'
 import type { LexicalContent } from './types'
 import { parseLexicalContent } from './types'
 
