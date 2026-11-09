@@ -1,4 +1,4 @@
-import { HttpHeader, HttpStatus, MediaType } from '@lst97-oss/last-httprism'
+import { HttpHeader, HttpStatus } from '@lst97-oss/last-httprism'
 import {
   CHAT_BOT_BLOCKED_MESSAGE,
   CHAT_EXPIRED_MESSAGE,
@@ -17,8 +17,9 @@ import type { ChatDiagnosticsMetadata } from '../observability/chat-diagnostics'
 import type { Logger } from '../observability/logger'
 import type { BotVerification } from '../security/botid'
 import type { ChatContactActionBody, ChatContactActionRequest, ChatMessageRequest, ChatStreamEvent } from './events'
-import { chatContactActionSchema, chatMessageRequestSchema, encodeChatEvent } from './events'
+import { chatContactActionSchema, chatMessageRequestSchema } from './events'
 import { chatModerationRejectionMessage } from './moderation-rejection'
+import { streamChatEvents } from './stream-response'
 
 export interface ChatPostHandlerDependencies {
   send(input: { message: string; contextToken?: string; diagnosticsMetadata?: ChatDiagnosticsMetadata }): Promise<
@@ -391,58 +392,4 @@ async function handleChatMessageRequest(
     dependencies.logger.error('chat.failed', { requestId, failureCategory: 'chat_processing' })
     return jsonResponse(requestId, { error: CHAT_OFFLINE_MESSAGE, requestId }, HttpStatus.SERVICE_UNAVAILABLE.code)
   }
-}
-
-function streamChatEvents(
-  requestId: string,
-  startedAt: number,
-  dependencies: ChatPostHandlerDependencies,
-  input: { message: string; contextToken?: string; diagnosticsMetadata?: ChatDiagnosticsMetadata },
-  signal: AbortSignal,
-): Response {
-  const maxMsOption = dependencies.streamMaxMs
-  const maxMs = typeof maxMsOption === 'function' ? maxMsOption() : (maxMsOption ?? 90_000)
-  const sendStream = dependencies.sendStream
-  if (!sendStream) {
-    return jsonResponse(requestId, { error: CHAT_OFFLINE_MESSAGE, requestId }, HttpStatus.SERVICE_UNAVAILABLE.code)
-  }
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder()
-      const push = (event: ChatStreamEvent) => controller.enqueue(encoder.encode(encodeChatEvent(event)))
-      const deadline = Date.now() + maxMs
-      try {
-        for await (const event of sendStream(input, signal)) {
-          if (Date.now() > deadline) {
-            push({ type: 'error', message: CHAT_OFFLINE_MESSAGE })
-            break
-          }
-          push(event)
-          if (event.type === 'done' || event.type === 'error') {
-            dependencies.logger.info('chat.stream_completed', {
-              requestId,
-              durationMs: Math.round(performance.now() - startedAt),
-              outcome: event.type,
-            })
-            break
-          }
-        }
-      } catch {
-        try {
-          push({ type: 'error', message: CHAT_OFFLINE_MESSAGE })
-        } catch {
-          // Client already went away; nothing left to report.
-        }
-      }
-      controller.close()
-    },
-  })
-  return new Response(stream, {
-    status: HttpStatus.OK.code,
-    headers: {
-      [HttpHeader.CONTENT_TYPE]: `${MediaType.EVENT_STREAM}; charset=utf-8`,
-      [HttpHeader.CACHE_CONTROL]: 'no-store',
-      'x-request-id': requestId,
-    },
-  })
 }
