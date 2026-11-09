@@ -19,7 +19,7 @@ describe('tool failure diagnosis', () => {
   it('distinguishes a real timeout from an underlying error', async () => {
     const warnings: Array<{ event: string; data: Record<string, unknown> }> = []
     const logger = {
-      warn: (event: string, data: Record<string, unknown>) => {
+      warn: (event: string, data: Record<string, unknown> = {}) => {
         warnings.push({ event, data })
       },
     }
@@ -79,7 +79,7 @@ describe('retrieval degradation', () => {
         },
       },
       logger: {
-        warn: (event: string, data: Record<string, unknown>) => {
+        warn: (event: string, data: Record<string, unknown> = {}) => {
           warnings.push({ event, data })
         },
         info() {},

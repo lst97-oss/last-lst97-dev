@@ -3,7 +3,7 @@ import { describe, expect, it, spyOn } from 'bun:test'
 import { contactResponseSchema } from '../../src/server/contact/contract'
 import { createContactPostHandler } from '../../src/server/contact/http-handler'
 import type { LogFields, Logger } from '../../src/server/observability/logger'
-import { JsonLogger } from '../../src/server/observability/logger'
+import { logger as appLogger } from '../../src/server/observability/logger'
 
 function captureLogger(events: Array<{ level: string; event: string; fields?: LogFields }>): Logger {
   return {
@@ -146,7 +146,7 @@ describe('contact POST handler', () => {
         submitContact: async () => {
           throw failure
         },
-        logger: new JsonLogger('debug'),
+        logger: appLogger,
         rateLimit: allowRateLimit,
       })
 
@@ -174,7 +174,7 @@ describe('contact POST handler', () => {
     // than a cast, so every status it can render has to survive that parse.
     const accepted = createContactPostHandler({
       submitContact: async () => ({ ok: true, receiptStatus: 'sent' }),
-      logger: new JsonLogger('debug'),
+      logger: appLogger,
       rateLimit: allowRateLimit,
     })
     const acceptedResponse = await accepted({
@@ -188,7 +188,7 @@ describe('contact POST handler', () => {
 
     const invalid = createContactPostHandler({
       submitContact: async () => ({ ok: false, issues: ['name', 'email'] }),
-      logger: new JsonLogger('debug'),
+      logger: appLogger,
       rateLimit: allowRateLimit,
     })
     const invalidResponse = await invalid({

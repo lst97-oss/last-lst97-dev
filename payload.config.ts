@@ -16,6 +16,8 @@ import { migrations } from './src/migrations'
 import { checkPinnedPostgresIdentity, decodePostgresCa, withoutSslMode } from './src/server/database/postgres-ca'
 import { getServerEnv } from './src/server/env'
 import { knowledgePayloadTasks } from './src/server/knowledge/payload-tasks'
+import { payloadLoggerConfig } from './src/server/observability/payload-logger.ts'
+import { sanitizeLogFields } from './src/server/observability/redact.ts'
 import { resolvePayloadServerUrl } from './src/server/security/payload-server-url'
 import { buildR2StorageOptions } from './src/server/storage/r2-storage-config'
 
@@ -43,6 +45,8 @@ const payloadEmailAdapter =
     : undefined
 
 export default buildConfig({
+  // Payload's lines go through our writer, with the same redaction as the app's (see payload-logger.ts).
+  logger: payloadLoggerConfig(sanitizeLogFields),
   // Nothing in this app queries GraphQL — the site reads content over REST via
   // `src/server/content/server-functions.ts`. Leaving the route mounted
   // exposes an unauthenticated schema-introspection surface and an

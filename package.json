@@ -6,7 +6,7 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "bun run db:migrate:check && bunx --bun vite dev --port 3000",
+    "dev": "bun run db:migrate:check && LOG_FORMAT=pretty LOG_COLOR=always bunx --bun vite dev --port 3000",
     "dev:rag": "bun run scripts/dev/dev-with-embedding.ts",
     "embedding:serve": "bun run scripts/dev/start-embedding.ts",
     "embedding:test": "bun test tests/server/embedding-process.test.ts tests/server/knowledge-providers.test.ts",
