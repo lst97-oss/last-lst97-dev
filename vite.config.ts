@@ -203,6 +203,7 @@ const config = defineConfig({
     // standalone container server). Explicit config wins over the env var
     // inside Nitro, so the override has to happen here.
     nitro({
+      plugins: ['./src/payload/payload-shutdown.ts'],
       preset: process.env.NITRO_PRESET ?? 'vercel',
       modules: [
         {
