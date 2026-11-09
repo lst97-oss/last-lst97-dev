@@ -113,6 +113,10 @@ Vercel is the production target (`nitro` preset `vercel`, runtime `bun1.x`). A D
 provided: four stages on `oven/bun:1.4.3-slim`, non-root `bun` user, port 3000, a healthcheck against
 `/api/site/health`, and an entrypoint that runs `payload migrate` before serving unless `SKIP_MIGRATIONS=true`.
 
+The Docker image cannot serve chat or contact on its own: rate limits need a visitor IP it does not have. Put it behind
+a proxy that overwrites a single-IP header, and set `TRUSTED_CLIENT_IP_HEADER` to that header's name. See
+[`docs/security/vercel-ingress.md`](docs/security/vercel-ingress.md).
+
 `PUBLIC_SITE_URL` must be the real public origin in production — canonical links, `og:url`,
 `sitemap.xml`, `robots.txt` and `security.txt` are all baked from it at build time via the
 `__LAST_OS_SITE_URL__` define.
