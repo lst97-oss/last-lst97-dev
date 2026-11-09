@@ -65,23 +65,6 @@ describe('chat context signer', () => {
     })
   })
 
-  it('accepts version 2 contexts with empty project discovery state', async () => {
-    const signer = createChatContextSigner(secret, () => 1_000)
-    const token = await signedPayload({
-      version: 2,
-      expiresAt: 86_401_000,
-      messages: turns,
-      topicAnchors: [anchor],
-    })
-
-    await expect(signer.verify(token)).resolves.toEqual({
-      messages: turns,
-      topicAnchors: [anchor],
-      projectListState: { clarificationAsked: false, shownProjectIds: [], shortlistStarted: false },
-      workflow: { mode: 'normal', phase: 'conversation' },
-    })
-  })
-
   it('drops invalid and duplicate project IDs and caps project discovery state', async () => {
     const signer = createChatContextSigner(secret, () => 1_000)
     const oversized = Array.from({ length: 205 }, (_, index) => `lst97/project-${index}`)
@@ -101,17 +84,6 @@ describe('chat context signer', () => {
     expect(new Set(result?.projectListState?.shownProjectIds).size).toBe(
       result?.projectListState?.shownProjectIds?.length ?? 0,
     )
-  })
-
-  it('accepts a valid signed legacy message-only payload as an empty-anchor context', async () => {
-    const signer = createChatContextSigner(secret, () => 1_000)
-    const token = await signedPayload({ expiresAt: 86_401_000, messages: turns })
-    await expect(signer.verify(token)).resolves.toEqual({
-      messages: turns,
-      topicAnchors: [],
-      projectListState: { clarificationAsked: false, shownProjectIds: [], shortlistStarted: false },
-      workflow: { mode: 'normal', phase: 'conversation' },
-    })
   })
 
   it('clears normal conversation context from a confirmed contact session', async () => {
@@ -195,12 +167,26 @@ describe('chat context signer', () => {
     expect(result?.topicAnchors[0]?.question).toBe('question 4')
 
     const invalidToken = await signedPayload({
-      version: 2,
+      version: 5,
       expiresAt: 86_401_000,
       messages: turns,
       topicAnchors: [{ ...anchor, observedAtUtc: 'yesterday', tools: [{ ...anchor.tools[0], status: 'raw-output' }] }],
+      workflow: { mode: 'normal', phase: 'conversation' },
     })
     await expect(signer.verify(invalidToken)).resolves.toBeNull()
+  })
+
+  it('rejects legacy context versions and unversioned payloads', async () => {
+    const signer = createChatContextSigner(secret, () => 1_000)
+    const legacyPayloads = [
+      { expiresAt: 86_401_000, messages: turns },
+      { version: 2, expiresAt: 86_401_000, messages: turns, topicAnchors: [anchor] },
+      { version: 3, expiresAt: 86_401_000, messages: turns, topicAnchors: [anchor] },
+      { version: 4, expiresAt: 86_401_000, messages: turns, topicAnchors: [anchor] },
+    ]
+    for (const payload of legacyPayloads) {
+      await expect(signer.verify(await signedPayload(payload))).resolves.toBeNull()
+    }
   })
 
   it('rejects tampering and expired context', async () => {

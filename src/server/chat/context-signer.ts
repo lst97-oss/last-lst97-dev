@@ -325,47 +325,24 @@ export function createChatContextSigner(secret: string, now: () => number = Date
         )
           return null
 
-        if (parsed.version === undefined && parsed.topicAnchors === undefined) {
-          return {
-            messages: parsed.messages,
-            topicAnchors: [],
-            projectListState: emptyProjectListState(),
-            workflow: { mode: 'normal', phase: 'conversation' },
-          }
-        }
         if (
-          (parsed.version !== 2 &&
-            parsed.version !== 3 &&
-            parsed.version !== 4 &&
-            parsed.version !== CONTEXT_VERSION) ||
+          parsed.version !== CONTEXT_VERSION ||
           !Array.isArray(parsed.topicAnchors) ||
           parsed.topicAnchors.length > MAX_TOPIC_ANCHORS ||
           !parsed.topicAnchors.every(isAnchor)
         )
           return null
-
-        if (parsed.version === CONTEXT_VERSION) {
-          if (!isWorkflow(parsed.workflow)) return null
-          if (
-            parsed.workflow.mode === 'contact' &&
-            (parsed.messages.length > 0 || parsed.topicAnchors.length > 0 || hasProjectState(parsed.projectListState))
-          )
-            return null
-          return {
-            messages: parsed.messages,
-            topicAnchors: parsed.topicAnchors,
-            projectListState: boundedProjectListState(parsed.projectListState),
-            workflow: parsed.workflow,
-          }
-        }
-
+        if (!isWorkflow(parsed.workflow)) return null
+        if (
+          parsed.workflow.mode === 'contact' &&
+          (parsed.messages.length > 0 || parsed.topicAnchors.length > 0 || hasProjectState(parsed.projectListState))
+        )
+          return null
         return {
           messages: parsed.messages,
           topicAnchors: parsed.topicAnchors,
-          projectListState: boundedProjectListState(
-            parsed.version === 3 || parsed.version === 4 ? parsed.projectListState : undefined,
-          ),
-          workflow: { mode: 'normal', phase: 'conversation' },
+          projectListState: boundedProjectListState(parsed.projectListState),
+          workflow: parsed.workflow,
         }
       } catch {
         return null
