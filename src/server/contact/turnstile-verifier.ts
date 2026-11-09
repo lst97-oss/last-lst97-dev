@@ -26,6 +26,7 @@ interface TurnstileVerifierOptions {
   secret: string
   action?: TurnstileAction
   fetcher?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+  production?: boolean
 }
 
 export function createTurnstileVerifier(options: TurnstileVerifierOptions): TurnstileVerifier {
@@ -33,6 +34,12 @@ export function createTurnstileVerifier(options: TurnstileVerifierOptions): Turn
   const action = options.action ?? TURNSTILE_ACTIONS.contact
   if (!secret) {
     throw new Error('Missing required server environment variable: TURNSTILE_SECRET_KEY')
+  }
+  // The test key passes every token, so a copy-pasted test secret would silently switch off the human check.
+  if (options.production && secret === TURNSTILE_TEST_SECRET) {
+    throw new Error(
+      'TURNSTILE_SECRET_KEY is the Cloudflare test key, which accepts every token; refusing it in production',
+    )
   }
 
   const fetcher = options.fetcher ?? fetch

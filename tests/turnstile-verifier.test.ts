@@ -20,6 +20,11 @@ function siteverify(payload: Record<string, unknown>) {
 const DUMMY_TOKEN = 'XXXX.DUMMY.TOKEN.XXXX'
 
 describe('turnstile verifier with Cloudflare dummy keys', () => {
+  it('refuses the dummy secret in production but allows it elsewhere', () => {
+    expect(() => createTurnstileVerifier({ secret: TEST_SECRET, production: true })).toThrow('test key')
+    expect(() => createTurnstileVerifier({ secret: TEST_SECRET, production: false })).not.toThrow()
+  })
+
   it('accepts a success payload that omits action and reports the dummy hostname', async () => {
     const verify = createTurnstileVerifier({
       secret: TEST_SECRET,

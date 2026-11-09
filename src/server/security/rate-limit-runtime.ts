@@ -25,6 +25,7 @@ export async function checkEndpointLimit(request: Request, bucket: 'chat' | 'con
     requiredServerEnv('RATE_LIMIT_HASH_SECRET'),
     production,
     isVercelRuntime(),
+    env.TRUSTED_CLIENT_IP_HEADER,
   )
   const policy = POLICIES[bucket]
   return createRateLimiter(store, policy).check(bucket, clientKey)
